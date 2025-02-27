@@ -1,0 +1,14 @@
+<div class="header" [class.sticky]="isSticky" #header>
+  <div class="content-icon">
+    <div class="icon-box">
+      <i [ngClass]="['uil', icon]"></i>
+    </div>
+  </div>
+  <div class="content-text">
+    <div class="small-text">{{ title }}</div>
+    <h1 class="title">{{ type }}</h1>
+    <h5 class="sub-title">
+      <span>{{ number }} {{ type }}</span>
+    </h5>
+  </div>
+</div>

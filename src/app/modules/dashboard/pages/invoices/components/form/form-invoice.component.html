@@ -1,0 +1,234 @@
+<div class="flex flex-col">
+  <div class="text-center pb-5 uppercase">
+    <p class="text-2xl">{{ titleForm }}</p>
+  </div>
+  <form
+    (ngSubmit)="onSendFormInvoice()"
+    [formGroup]="formInvoice"
+    class="login-auth-form"
+  >
+    <div class="flex flex-col gap-y-4">
+      <div class="flex justify-between gap-x-4">
+        <div class="flex flex-col flex-1 gap-y-4">
+          <!-- Ingreso o gasto -->
+          <div>
+            <mat-radio-group
+              formControlName="typeInvoice"
+              class="-ml-3 custom-radio-button"
+            >
+              <mat-radio-button value="Factura">Gasto Factura</mat-radio-button>
+              <mat-radio-button value="Ticket">Gasto Ticket</mat-radio-button>
+              <mat-radio-button value="Ingreso">Ingreso</mat-radio-button>
+            </mat-radio-group>
+            <div
+              *ngIf="submitted && formInvoice.get('typeInvoice')?.invalid"
+              class="is-invalid-text"
+            >
+              Debes seleccionar un tipo de factura.
+            </div>
+          </div>
+          <!-- Número factura -->
+          <div class="flex box-input gap-x-4 flex-1">
+            <label for="numberInvoice">Num. Factura</label>
+            <input formControlName="numberInvoice" type="text" />
+          </div>
+          <!-- Acreedor -->
+          <div class="flex box-input gap-x-4">
+            <label for="creditor">Acreedor</label>
+            <input
+              type="text"
+              matInput
+              [formControl]="searchInput"
+              (input)="searchCreditor()"
+              [matAutocomplete]="auto"
+              style="z-index: 1200"
+            />
+            <mat-autocomplete
+              autoActiveFirstOption
+              #auto="matAutocomplete"
+              style="z-index: 1200; position: fixed"
+              (optionSelected)="onSelectedOption($event)"
+            >
+              <mat-option
+                *ngFor="let creditor of creditors"
+                [value]="creditor"
+                (onSelectionChange)="creditorSelected(creditor)"
+              >
+                {{ creditor.company }}
+              </mat-option>
+              <mat-option
+                *ngIf="
+                  creditors.length === 0 &&
+                  searchInput.value &&
+                  searchInput.value.length > 0
+                "
+                value=""
+                >No se encontró ningún acreedor con el término
+                {{ searchInput.value }}
+              </mat-option>
+            </mat-autocomplete>
+          </div>
+        </div>
+        <div class="flex flex-col gap-y-4 w-1/3 bg-lilaMuyClaro p-4">
+          <!-- Fecha Factura -->
+          <div class="flex box-input gap-x-4">
+            <label for="dateInvoice" class="flex-1">F. Compra</label>
+            <div class="flex flex-col flex-1">
+              <input
+                formControlName="dateInvoice"
+                type="date"
+                class="w-54"
+                [ngClass]="{
+                  'strong-border': !formInvoice.get('dateInvoice')?.invalid,
+                  'is-invalid':
+                    submitted && formInvoice.get('dateInvoice')?.invalid
+                }"
+              />
+              <div
+                *ngIf="submitted && formInvoice.get('dateInvoice')?.invalid"
+                class="is-invalid-text"
+              >
+                Campo requerido
+              </div>
+            </div>
+          </div>
+          <!-- Fecha libreta contabilidad -->
+          <div class="flex box-input gap-x-4">
+            <label for="dateAccounting" class="flex-1">F. Libro cont</label>
+            <input formControlName="dateAccounting" type="date" class="w-54" />
+          </div>
+          <!-- Fecha pago -->
+          <div class="flex box-input gap-x-4">
+            <label for="datePayment" class="flex-1">F. Pago</label>
+            <input formControlName="datePayment" type="date" class="w-54" />
+          </div>
+        </div>
+      </div>
+      <!-- Descripción -->
+      <div class="flex box-input gap-x-4 mt-4">
+        <label for="description">Descripción</label>
+        <div class="flex flex-col flex-1">
+          <mat-card-content>
+            <editor
+              apiKey="c8uxjgc7f76nt677zqdn22a8a97bjhc7fyph9y4oxuj7nrx3"
+              [init]="{
+                height: 300,
+                plugins: ['advlist', 'lists', 'wordcount'],
+                toolbar:
+                  'undo redo | bold italic  underline strikethrough | fontfamily fontsize forecolor  backcolor| \
+               alignleft aligncenter alignright alignjustify | \
+               bullist numlist  | removeformat '
+              }"
+              formControlName="description"
+              [ngClass]="{
+                'is-invalid':
+                  submitted && formInvoice.get('description')?.invalid
+              }"
+            ></editor>
+          </mat-card-content>
+          <div
+            *ngIf="submitted && formInvoice.get('description')?.invalid"
+            class="is-invalid-text"
+          >
+            Campo requerido
+          </div>
+        </div>
+      </div>
+
+      <!-- Cantidad -->
+      <div
+        class="flex justify-between gap-x-4 bg-lilaMuyClaro pt-4 pb-8 px-4 my-4"
+      >
+        <div class="flex flex-col box-input gap-x-4">
+          <label for="amount">Cantidad</label>
+          <input formControlName="amount" type="number" />
+        </div>
+        <!-- IVA -->
+        <div class="flex flex-col box-input gap-x-4">
+          <label for="iva">IVA</label>
+          <input formControlName="iva" type="number" />
+        </div>
+        <!-- IRPF -->
+        <div class="flex flex-col box-input gap-x-4">
+          <label for="irpf">IRPF</label>
+          <input formControlName="irpf" type="number" />
+        </div>
+        <!-- TOTAL -->
+        <div class="flex flex-col box-input gap-x-4">
+          <label for="totalAmount" class="font-medium">Total</label>
+          <div class="flex flex-col flex-1">
+            <input
+              formControlName="totalAmount"
+              type="number"
+              [ngClass]="{
+                'strong-border': !formInvoice.get('totalAmount')?.invalid,
+                'is-invalid':
+                  submitted && formInvoice.get('totalAmount')?.invalid
+              }"
+            />
+
+            <div
+              *ngIf="submitted && formInvoice.get('totalAmount')?.invalid"
+              class="is-invalid-text"
+            >
+              Campo requerido
+            </div>
+          </div>
+        </div>
+        <!-- <div class="box-input flex flex-col">
+          <label for="totalAmountIrpf">Total + IRPF</label>
+          <input formControlName="totalAmountIrpf" type="number" />
+        </div> -->
+      </div>
+
+      <!-- Subvención -->
+      <div class="flex justify-between gap-x-4">
+        <div class="flex box-input gap-y-2 gap-x-4 flex-1">
+          <label for="subsidy">Subvención</label>
+          <select formControlName="subsidy">
+            <option
+              *ngFor="let subsidy of FilterSubsidies"
+              [value]="subsidy.code"
+            >
+              {{ subsidy.name }}
+            </option>
+          </select>
+        </div>
+        <!-- Año -->
+        <div class="flex box-input gap-x-4 w-1/3">
+          <label for="subsidyYear">Año solicitud</label>
+          <div class="flex flex-col flex-1">
+            <select
+              formControlName="subsidyYear"
+              [ngClass]="{
+                'is-invalid':
+                  submitted && formInvoice.get('subsidyYear')?.invalid
+              }"
+            >
+              <option *ngFor="let year of years" [value]="year">
+                {{ year }}
+              </option>
+            </select>
+            <div
+              *ngIf="submitted && formInvoice.get('subsidyYear')?.invalid"
+              class="is-invalid-text"
+            >
+              Campo requerido si hay subvención
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Mensaje de error global -->
+      <div *ngIf="errorSession" class="is-invalid-text">
+        Ocurrió un error con el envío del formulario
+      </div>
+
+      <!-- Botón de envío -->
+      <div class="flex justify-center">
+        <button class="bg-black p-4 text-white" type="submit">
+          {{ buttonAction }}
+        </button>
+      </div>
+    </div>
+  </form>
+</div>

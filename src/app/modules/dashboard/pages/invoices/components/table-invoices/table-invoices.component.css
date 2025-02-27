@@ -1,0 +1,170 @@
+.table-container {
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed; /* Fija el ancho de las columnas */
+  border: none !important;
+  box-shadow: none !important;
+  z-index: 900;
+}
+
+th {
+  text-transform: uppercase;
+  font-size: 12px;
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+}
+
+td {
+  padding: 5px;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap; /* Evita que el contenido de las celdas se desborde */
+}
+.mat-mdc-row .mat-mdc-cell {
+  border-bottom: 1px solid transparent;
+  border-top: 1px solid transparent;
+  cursor: default;
+}
+/* Rows body */
+.mat-mdc-row {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.mat-mdc-row:hover {
+  background-color: rgb(245, 235, 246);
+  font-weight: 500;
+}
+
+th.mat-sort-header-sorted {
+  color: rgb(232, 148, 243);
+}
+
+.mat-column-numberInvoice {
+  text-align: left;
+  width: 100px;
+}
+
+.mat-column-dateInvoice,
+.mat-column-dateAccounting,
+.mat-column-datePayment {
+  text-align: left;
+  width: 100px;
+}
+.mat-column-creditor {
+  text-align: left;
+  width: 150px;
+}
+.mat-column-description {
+  text-align: left;
+  flex: 1;
+}
+.mat-column-amount,
+.mat-column-iva,
+.mat-column-irpf,
+.mat-column-totalAmount,
+.mat-column-totalAmountIrpf {
+  text-align: right;
+  width: 80px;
+}
+.mat-column-totalAmountIrpf {
+  text-align: right;
+  width: 120px;
+}
+.mat-column-subsidy {
+  text-align: right;
+  width: 140px;
+}
+
+.mat-column-typeInvoice {
+  text-align: left;
+  width: 70px;
+}
+.mat-column-subsidy > div > span,
+.mat-column-typeInvoice > div > span {
+  border-radius: 5px;
+  padding: 4px;
+  font-size: 10px;
+}
+.mat-column-subsidy > div > .subsidy-dipu {
+  background-color: rgb(245, 205, 250);
+}
+.mat-column-subsidy > div > .subsidy-gener {
+  background-color: rgb(125, 229, 174);
+}
+.mat-column-subsidy > div > .subsidy-minis {
+  background-color: rgb(231, 236, 110);
+}
+.mat-column-subsidy > div > .subsidy-ayunt {
+  background-color: rgb(100, 185, 224);
+}
+.mat-column-subsidy > div > .subsidy-dipu {
+  background-color: rgb(245, 205, 250);
+}
+.mat-column-subsidy > div > .subsidy-gener {
+  background-color: rgb(125, 229, 174);
+}
+.mat-column-subsidy > div > .subsidy-minis {
+  background-color: rgb(231, 236, 110);
+}
+.mat-column-subsidy > div > .subsidy-ayunt-equip {
+  background-color: rgb(100, 185, 224);
+}
+.mat-column-subsidy > div > .subsidy-ayunt-activ {
+  background-color: rgb(174, 179, 213);
+}
+.mat-column-typeInvoice > div > .type-ticket {
+  background-color: rgba(245, 178, 178, 0.91);
+}
+.mat-column-typeInvoice > div > .type-ingreso {
+  background-color: rgba(149, 218, 202, 0.908);
+}
+.mat-column-typeInvoice > div > .type-factura {
+  background-color: rgba(210, 218, 149, 0.941);
+}
+.mat-column-actions {
+  text-align: right;
+  width: 130px;
+}
+.show {
+  text-align: center;
+  width: 50px;
+}
+.mat-column-number {
+  text-align: left;
+  width: 55px;
+}
+.circle {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+}
+
+.negative {
+  background-color: rgb(246, 71, 71);
+}
+.custom-header-row {
+  position: sticky;
+}
+.custom-list-row {
+  top: 800px;
+}
+.bg-red {
+  background-color: rgba(245, 178, 178, 0.154);
+}
+.bg-green {
+  background-color: rgba(149, 218, 202, 0.111);
+}
+.bg-yellow {
+  background-color: rgba(210, 218, 149, 0.111);
+}
+.footer {
+  border-top: 2px solid #ddd;
+  border-bottom: 1px solid #ddd;
+}
+.footer {
+  font-weight: 500;
+}

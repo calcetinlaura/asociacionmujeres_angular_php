@@ -1,0 +1,14 @@
+<div class="flex flex-col justify-between">
+  <div class="mb-4">
+    <app-text-title [text]="item.title" />
+    <app-text-subtitle [text]="item.author" />
+    <div class="my-4">
+      <app-text-background [text]="item.gender" />
+    </div>
+    <app-text-editor [text]="item.description" />
+  </div>
+  <app-text-background
+    [text]="'Donación Biblioteca Municipal: Año ' + item.year"
+    [colorBack]="'#bcf39a'"
+  />
+</div>

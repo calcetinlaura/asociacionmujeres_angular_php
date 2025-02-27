@@ -1,0 +1,15 @@
+.circle {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+}
+
+.positive {
+  background-color: rgb(245, 235, 246);
+}
+.mat-mdc-row:hover .positive {
+  background-color: rgb(245, 205, 250);
+}
+.negative {
+  background-color: rgb(246, 71, 71);
+}

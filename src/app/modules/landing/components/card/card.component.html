@@ -1,0 +1,72 @@
+<!-- Diseño del mode (big)-->
+<div [ngClass]="type === typeList.Piteras ? 'card card-pitera' : 'card'">
+  <img appImgBroken [src]="item.img | itemImage : type" alt="" class="cover" />
+  <div class="flex flex-col gap-y-1 text-center py-4">
+    <div class="item-title">{{ item.title }}</div>
+    <div
+      *ngIf="type === typeList.Events && item.time && item.time !== '00:00:00'"
+      class="flex justify-center"
+    >
+      <app-text-border [text]="item.time?.slice(0, 5) + ' h'">
+      </app-text-border>
+    </div>
+    <div class="item-subTitle" *ngIf="type !== typeList.Piteras">
+      {{ item.author || item.director || item.place }}
+    </div>
+    <div class="item-subTitle" *ngIf="type === typeList.Piteras">
+      {{ item.year }}
+    </div>
+    <div class="flex justify-center">
+      <app-text-background
+        *ngIf="
+          type === typeList.Books ||
+          type === typeList.Movies ||
+          type === typeList.Recipes
+        "
+        [text]="item.gender || item.category"
+      >
+      </app-text-background>
+      <app-text-link
+        *ngIf="type === typeList.Piteras && item.url"
+        [text]="'Ver pdf'"
+        [url]="item.url"
+      ></app-text-link>
+    </div>
+    <div
+      *ngIf="type === typeList.Events && item.start !== ''"
+      class="item-date"
+    >
+      <div class="flex justify-center">
+        <ng-container *ngIf="datesEquals; else dateRange" class="lowercase">
+          <app-text-background
+            *ngIf="item.start"
+            [text]="item.start | date : 'EEEE dd MMMM yyyy'"
+          ></app-text-background>
+        </ng-container>
+        <ng-template #dateRange>
+          <app-text-background
+            *ngIf="item.start && item.end"
+            [text]="
+              (item.start | date : 'EEEE dd MMMM') +
+              ' - ' +
+              (item.end | date : 'EEEE dd MMMM yyyy')
+            "
+          ></app-text-background>
+        </ng-template>
+      </div>
+    </div>
+    <div class="flex justify-center">
+      <app-text-background
+        *ngIf="item.status === 'Cancelado'"
+        [text]="'Evento ' + item.status"
+        [colorBack]="'#de7a71'"
+      ></app-text-background>
+      <app-text-background
+        *ngIf="item.status === 'Agotadas'"
+        [text]="'Inscripciones ' + item.status"
+        [colorBack]="'#de7a71'"
+        [colorText]="'white'"
+      ></app-text-background>
+    </div>
+  </div>
+</div>

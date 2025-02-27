@@ -1,0 +1,103 @@
+<div class="flex flex-col">
+  <div class="text-center pb-5 uppercase">
+    <p class="text-2xl">{{ titleForm }}</p>
+  </div>
+  <form
+    (ngSubmit)="onSendFormPitera()"
+    [formGroup]="formPitera"
+    class="login-auth-form"
+  >
+    <div class="flex flex-col gap-y-4">
+      <div class="flex justify-between gap-x-4 bg-lilaMuyClaro p-4">
+        <!-- Título -->
+        <div class="box-input gap-x-4 flex-1">
+          <label for="title">Título</label>
+          <div class="flex flex-col flex-1">
+            <input
+              formControlName="title"
+              type="text"
+              [ngClass]="{
+                'is-invalid': submitted && formPitera.get('title')?.invalid
+              }"
+            />
+            <div
+              *ngIf="submitted && formPitera.get('title')?.invalid"
+              class="is-invalid-text"
+            >
+              Campo requerido
+            </div>
+          </div>
+        </div>
+        <!-- Año -->
+        <div class="box-input gap-x-4">
+          <label for="year">Año publicación</label>
+          <div class="flex flex-col flex-1">
+            <select
+              formControlName="year"
+              [ngClass]="{
+                'is-invalid': submitted && formPitera.get('year')?.invalid
+              }"
+            >
+              <option *ngFor="let year of years" [value]="year">
+                {{ year }}
+              </option>
+            </select>
+            <div
+              *ngIf="submitted && formPitera.get('year')?.invalid"
+              class="is-invalid-text"
+            >
+              Selecciona un año
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Descripción -->
+      <div class="box-input gap-x-4 px-4">
+        <label for="theme">Temática</label>
+        <textarea formControlName="theme" rows="3"></textarea>
+      </div>
+
+      <!-- Portada (Imagen) -->
+      <div class="box-input gap-x-4 px-4">
+        <label for="img">Portada</label>
+        <!-- <input
+          formControlName="img"
+          type="file"
+          accept="image/*"
+          (change)="onFileChange($event)"
+          
+          [ngClass]="{
+            'is-invalid': submitted && formPitera.get('img')?.invalid
+          }"
+        /> -->
+        <div *ngIf="formPitera.get('img')?.value">
+          Archivo seleccionado: {{ formPitera.get("img")?.value }}
+        </div>
+        <div
+          *ngIf="submitted && formPitera.get('img')?.invalid"
+          class="is-invalid-text"
+        >
+          Debes subir una imagen
+        </div>
+      </div>
+
+      <!-- URL -->
+      <div class="box-input gap-x-4 px-4">
+        <label for="url">URL</label>
+        <input formControlName="url" type="text" />
+      </div>
+
+      <!-- Mensaje de error global -->
+      <div *ngIf="errorSession" class="is-invalid-text">
+        Ocurrió un error con el envío del formulario
+      </div>
+
+      <!-- Botón de envío -->
+      <div class="flex justify-center">
+        <button class="bg-black p-4 text-white" type="submit">
+          {{ buttonAction }}
+        </button>
+      </div>
+    </div>
+  </form>
+</div>

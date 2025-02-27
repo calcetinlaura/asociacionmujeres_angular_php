@@ -1,0 +1,70 @@
+<div>
+  <app-dashboard-header
+    [icon]="'uil uil-calculator'"
+    [title]="'Contabilidad'"
+    [number]="number"
+    [type]="'Cuentas'"
+  />
+</div>
+<div class="flex flex-col py-8 px-4" [class.sticky-toolbar]="isStickyToolbar">
+  <app-filters
+    [filters]="filtersYears"
+    (filterClicked)="filterYearSelected($event)"
+    class="mb-3"
+  ></app-filters>
+  <mat-tab-group
+    (selectedTabChange)="tabActive($event)"
+    [selectedIndex]="selectedIndex"
+  >
+    <mat-tab label="Contabilidad completa">
+      <ng-container *ngTemplateOutlet="templateTableInvoice"></ng-container>
+    </mat-tab>
+    <!-- Pestaña para Facturas -->
+    <mat-tab label="Facturas">
+      <ng-container *ngTemplateOutlet="templateTableInvoice"></ng-container>
+    </mat-tab>
+    <!-- Pestaña para Tickets -->
+    <mat-tab label="Tickets">
+      <ng-container *ngTemplateOutlet="templateTableInvoice"></ng-container>
+    </mat-tab>
+
+    <!-- Pestaña para Ingresos -->
+    <mat-tab label="Ingresos">
+      <ng-container *ngTemplateOutlet="templateTableInvoice"></ng-container>
+    </mat-tab>
+  </mat-tab-group>
+</div>
+
+<ng-template #templateTableInvoice>
+  <div class="flex flex-row pt-8 pb-4 px-4">
+    <app-button-add
+      [buttonText]="'Añadir movimiento'"
+      [iconClass]="'uil-plus'"
+      (addClicked)="addNewInvoiceModal()"
+    />
+    <app-input-search (onDebounce)="applyFiltersWords($event)" class="flex-1" />
+  </div>
+  <!-- Spinner Loading -->
+  <app-spinner-loading *ngIf="!dataLoaded; else results" />
+  <!-- Tabla -->
+  <ng-template #results>
+    <div class="py-8 px-4">
+      <app-table-invoices
+        [data]="filteredInvoices"
+        [type]="typeList"
+        (openModal)="onOpenModal($event)"
+      />
+    </div>
+  </ng-template>
+</ng-template>
+
+<!-- Modal -->
+<app-modal
+  *ngIf="isModalVisible"
+  [item]="item"
+  [type]="typeList"
+  [action]="currentModalAction"
+  (closeModal)="onCloseModal()"
+  (confirmDelete)="confirmDeleteInvoice(item)"
+  (sendFormInvoiceData)="sendFormInvoice($event)"
+></app-modal>

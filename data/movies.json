@@ -1,0 +1,22 @@
+{
+  "data": [
+    {
+      "title": "Jurassic Parck",
+      "director": "Manolito",
+      "description": "Una peli fabulosa",
+      "gender": "Drama",
+      "id": 1,
+      "year": 2022,
+      "img": "https://mir-s3-cdn-cf.behance.net/project_modules/max_1200/f00bf346385235.58520f9022451.jpg"
+    },
+    {
+      "title": "Terminator",
+      "author": "Manolito",
+      "director": "Una peli fabulosa",
+      "gender": "Drama",
+      "id": 2,
+      "year": 2022,
+      "img": "https://im.ziffdavisinternational.com/ign_es/screenshot/default/terminatorintlposter1_7s3r.jpg"
+    }
+  ]
+}

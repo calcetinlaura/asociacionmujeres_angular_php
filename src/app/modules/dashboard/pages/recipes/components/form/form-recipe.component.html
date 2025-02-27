@@ -1,0 +1,155 @@
+<div class="flex flex-col">
+  <div class="text-center pb-5 uppercase">
+    <p class="text-2xl">{{ titleForm }}</p>
+  </div>
+  <form
+    (ngSubmit)="onSendFormRecipe()"
+    [formGroup]="formRecipe"
+    class="login-auth-form"
+  >
+    <div class="flex flex-col gap-y-4">
+      <div class="flex flex-col bg-lilaMuyClaro p-4 gap-y-4">
+        <!-- Título -->
+        <div class="box-input gap-x-4">
+          <label for="email">Título</label>
+          <div class="flex flex-col flex-1">
+            <input
+              formControlName="title"
+              type="text"
+              [ngClass]="{
+                'is-invalid': submitted && formRecipe.get('title')?.invalid
+              }"
+            />
+            <div
+              *ngIf="submitted && formRecipe.get('title')?.invalid"
+              class="is-invalid-text"
+            >
+              Campo requerido
+            </div>
+          </div>
+        </div>
+
+        <!-- Autor -->
+        <div class="box-input gap-x-4">
+          <label for="owner">Autor/a</label>
+          <input formControlName="owner" type="text" />
+        </div>
+        <div class="flex gap-x-4">
+          <!-- Categoría -->
+          <div class="box-input gap-y-2 gap-x-4 flex-1">
+            <label for="category">Categoría</label>
+            <div class="flex flex-col flex-1">
+              <select
+                formControlName="category"
+                [ngClass]="{
+                  'is-invalid': submitted && formRecipe.get('category')?.invalid
+                }"
+              >
+                <option
+                  *ngFor="let category of FilterRecipes"
+                  [value]="category.code"
+                >
+                  {{ category.name }}
+                </option>
+              </select>
+              <div
+                *ngIf="submitted && formRecipe.get('category')?.invalid"
+                class="is-invalid-text"
+              >
+                Selecciona una categoría
+              </div>
+            </div>
+          </div>
+          <!-- Año -->
+          <div class="box-input gap-x-4">
+            <label for="year">Año publicación</label>
+            <div class="flex flex-col flex-1">
+              <select
+                formControlName="year"
+                [ngClass]="{
+                  'is-invalid': submitted && formRecipe.get('category')?.invalid
+                }"
+              >
+                <option *ngFor="let year of years" [value]="year">
+                  {{ year }}
+                </option>
+              </select>
+              <div
+                *ngIf="submitted && formRecipe.get('year')?.invalid"
+                class="is-invalid-text"
+              >
+                Selecciona un año
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Ingredientes -->
+      <div class="box-input gap-x-4 px-4">
+        <label for="ingredients">Ingredientes</label>
+        <mat-card-content>
+          <editor
+            apiKey="c8uxjgc7f76nt677zqdn22a8a97bjhc7fyph9y4oxuj7nrx3"
+            [init]="{
+              height: 300,
+              plugins: ['advlist', 'lists', 'wordcount'],
+              toolbar:
+                'undo redo | bold italic  underline strikethrough | fontfamily fontsize forecolor  backcolor| \
+               alignleft aligncenter alignright alignjustify | \
+               bullist numlist  | removeformat '
+            }"
+            formControlName="ingredients"
+          ></editor>
+        </mat-card-content>
+      </div>
+      <!-- Receta -->
+      <div class="box-input gap-x-4 px-4">
+        <label for="recipe">Receta</label>
+        <mat-card-content>
+          <editor
+            apiKey="c8uxjgc7f76nt677zqdn22a8a97bjhc7fyph9y4oxuj7nrx3"
+            [init]="{
+              height: 300,
+              plugins: ['advlist', 'lists', 'wordcount'],
+              toolbar:
+                'undo redo | bold italic  underline strikethrough | fontfamily fontsize forecolor  backcolor| \
+               alignleft aligncenter alignright alignjustify | \
+               bullist numlist  | removeformat '
+            }"
+            formControlName="recipe"
+          ></editor>
+        </mat-card-content>
+      </div>
+      <!-- Portada (Imagen) -->
+      <div class="box-input gap-x-4 px-4">
+        <label for="img">Portada</label>
+        <!-- <input
+          formControlName="img"
+          type="file"
+          (change)="onFileSelected($event)"
+        /> -->
+        <div *ngIf="formRecipe.get('img')?.value">
+          Archivo seleccionado: {{ formRecipe.get("img")?.value }}
+        </div>
+        <div
+          *ngIf="submitted && formRecipe.get('img')?.invalid"
+          class="is-invalid-text"
+        >
+          Debes subir una imagen
+        </div>
+      </div>
+
+      <!-- Mensaje de error global -->
+      <div *ngIf="errorSession" class="is-invalid-text">
+        Ocurrió un error con el envío del formulario
+      </div>
+
+      <!-- Botón de envío -->
+      <div class="flex justify-center">
+        <button class="bg-black p-4 text-white" type="submit">
+          {{ buttonAction }}
+        </button>
+      </div>
+    </div>
+  </form>
+</div>

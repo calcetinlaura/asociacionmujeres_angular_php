@@ -1,0 +1,44 @@
+<div>
+  <app-dashboard-header
+    [icon]="'uil uil-utensils'"
+    [title]="'Recetario'"
+    [number]="number"
+    [type]="'recetas'"
+  />
+  <div
+    class="pt-8 px-8 flex add"
+    [class.sticky-toolbar]="isStickyToolbar"
+    #toolbar
+  >
+    <app-button-add
+      [buttonText]="'Nueva receta'"
+      [iconClass]="'uil-plus'"
+      (addClicked)="addNewRecipeModal()"
+    />
+    <app-input-search (onDebounce)="applyFilter($event)" class="flex-1" />
+  </div>
+  <!-- Spinner Loading -->
+  <app-spinner-loading *ngIf="!dataLoaded; else results" />
+  <!-- Tabla -->
+  <ng-template #results>
+    <app-table
+      [data]="filteredRecipes"
+      [type]="typeList"
+      [headerColumns]="headerListRecipes"
+      (openModal)="onOpenModal($event)"
+      class="pb-4 px-8 flex"
+      [class.sticky-table]="isStickyToolbar"
+    />
+  </ng-template>
+</div>
+
+<!-- Modal -->
+<app-modal
+  *ngIf="isModalVisible"
+  [item]="item"
+  [type]="typeList"
+  [action]="currentModalAction"
+  (closeModal)="onCloseModal()"
+  (confirmDelete)="confirmDeleteRecipe(item)"
+  (sendFormRecipeData)="sendFormRecipe($event)"
+></app-modal>

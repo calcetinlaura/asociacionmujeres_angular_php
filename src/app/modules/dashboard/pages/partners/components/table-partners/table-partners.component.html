@@ -1,0 +1,88 @@
+<table
+  mat-table
+  [dataSource]="dataSource"
+  matSort
+  (matSortChange)="announceSortChange($event)"
+  class="mat-elevation-z8 table"
+>
+  <ng-container matColumnDef="number">
+    <th mat-header-cell *matHeaderCellDef>Num.</th>
+    <td mat-cell *matCellDef="let element; let i = index">
+      {{ i + 1 }}
+    </td>
+  </ng-container>
+  <!-- NOMBRE -->
+  <ng-container matColumnDef="name">
+    <th mat-header-cell *matHeaderCellDef mat-sort-header>Nombre</th>
+    <td mat-cell *matCellDef="let element">{{ element.name }}</td>
+  </ng-container>
+  <!-- APELLIDOS -->
+  <ng-container matColumnDef="surname">
+    <th mat-header-cell *matHeaderCellDef mat-sort-header>Apellidos</th>
+    <td mat-cell *matCellDef="let element">{{ element.surname }}</td>
+  </ng-container>
+  <!-- FECHA NACIMIENTO -->
+  <ng-container matColumnDef="birthday">
+    <th mat-header-cell *matHeaderCellDef mat-sort-header>Fecha nacimiento</th>
+    <td mat-cell *matCellDef="let element">
+      <div class="startColumn" *ngIf="element.birthday">
+        <div>
+          <mat-icon class="calendar-icon">calendar_today</mat-icon>
+        </div>
+        <div>
+          <span class="dateColumn">
+            {{ element.birthday | date : "dd MMM yyyy" }} |
+            {{ element.birthday | calculateAge }} años
+          </span>
+        </div>
+      </div>
+    </td>
+    <td mat-footer-cell *matFooterCellDef></td>
+  </ng-container>
+  <!-- DIRECCIÓN -->
+  <ng-container matColumnDef="address">
+    <th mat-header-cell *matHeaderCellDef mat-sort-header>Dirección</th>
+    <td mat-cell *matCellDef="let element">
+      <ng-container *ngIf="element.town">
+        {{ element.town }}
+        <ng-container *ngIf="element.address">
+          - {{ element.address }}
+        </ng-container>
+      </ng-container>
+    </td>
+  </ng-container>
+  <!-- TELÉFONO -->
+  <ng-container matColumnDef="phone">
+    <th mat-header-cell *matHeaderCellDef>Teléfono</th>
+    <td mat-cell *matCellDef="let element">{{ element.phone }}</td>
+  </ng-container>
+  <!-- EMAIL -->
+  <ng-container matColumnDef="email">
+    <th mat-header-cell *matHeaderCellDef>Email</th>
+    <td mat-cell *matCellDef="let element">{{ element.email }}</td>
+  </ng-container>
+  <!-- ACCIONES -->
+  <ng-container matColumnDef="actions">
+    <th mat-header-cell *matHeaderCellDef></th>
+    <td mat-cell *matCellDef="let element">
+      <app-icon-action
+        [icon]="'uil-eye'"
+        (click)="onOpenModal(typeActionModal.Show, element)"
+      ></app-icon-action>
+      <app-icon-action
+        [icon]="'uil-edit'"
+        (click)="onOpenModal(typeActionModal.Edit, element)"
+      ></app-icon-action>
+      <app-icon-action
+        [icon]="'uil-trash-alt'"
+        (click)="onOpenModal(typeActionModal.Delete, element)"
+      ></app-icon-action>
+    </td>
+  </ng-container>
+  <tr
+    mat-header-row
+    *matHeaderRowDef="displayedColumns"
+    class="custom-header-row"
+  ></tr>
+  <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+</table>

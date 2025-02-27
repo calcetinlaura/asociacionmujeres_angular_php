@@ -1,0 +1,18 @@
+.button-filter {
+  color: white;
+  padding: 4px 8px;
+  font-size: 16px;
+  background-color: #2a202b;
+  text-transform: capitalize;
+  border-radius: 4px;
+}
+.button-filter:hover {
+  cursor: pointer;
+  background-color: rgb(163, 130, 176);
+  color: white;
+}
+.active {
+  background-color: rgb(222, 199, 231);
+  color: #2a202b;
+  cursor: pointer;
+}

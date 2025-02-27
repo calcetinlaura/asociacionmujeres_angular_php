@@ -1,0 +1,181 @@
+<table
+  mat-table
+  [dataSource]="dataSource"
+  matSort
+  (matSortChange)="announceSortChange($event)"
+  class="mat-elevation-z8 table"
+>
+  <!-- NOMBRE -->
+  <ng-container matColumnDef="name">
+    <th mat-header-cell *matHeaderCellDef mat-sort-header>Nombre</th>
+    <td mat-cell *matCellDef="let element">
+      {{ element.name | i18nSelect : nameSubsidy }}
+    </td>
+    <td mat-footer-cell *matFooterCellDef></td>
+  </ng-container>
+  <!-- AÑO -->
+  <ng-container matColumnDef="year">
+    <th mat-header-cell *matHeaderCellDef mat-sort-header>Año</th>
+    <td mat-cell *matCellDef="let element">{{ element.year }}</td>
+    <td mat-footer-cell *matFooterCellDef></td>
+  </ng-container>
+  <!-- fECHA LIMITE PRESENTACIÓN -->
+  <ng-container matColumnDef="datePresentation">
+    <th mat-header-cell *matHeaderCellDef>Fecha Presentación</th>
+    <td mat-cell *matCellDef="let element">
+      {{ element.datePresentation | date : "dd MMM yyyy" }}
+    </td>
+    <td mat-footer-cell *matFooterCellDef></td>
+  </ng-container>
+  <!-- fECHA LIMITE jUSTIFICACIÓN -->
+  <ng-container matColumnDef="dateJustification">
+    <th mat-header-cell *matHeaderCellDef>Fecha Justificación</th>
+    <td mat-cell *matCellDef="let element">
+      {{ element.dateJustification | date : "dd MMM yyyy" }}
+    </td>
+    <td mat-footer-cell *matFooterCellDef></td>
+  </ng-container>
+  <!-- PERIODO -->
+  <ng-container matColumnDef="period">
+    <th mat-header-cell *matHeaderCellDef>Periodo subvencionar</th>
+    <td mat-cell *matCellDef="let element">
+      {{ element.periodStart | date : "dd MMM yyyy" }}-{{
+        element.periodEnd | date : "dd MMM yyyy"
+      }}
+    </td>
+    <td mat-footer-cell *matFooterCellDef></td>
+  </ng-container>
+  <!-- ACTIVIDADES -->
+  <ng-container matColumnDef="activities">
+    <th mat-header-cell *matHeaderCellDef>Actividades</th>
+    <td mat-cell *matCellDef="let element">
+      <app-circle-indicator [item]="element.activities"></app-circle-indicator>
+    </td>
+    <td mat-footer-cell *matFooterCellDef></td>
+  </ng-container>
+  <!-- FACTURAS -->
+  <ng-container matColumnDef="invoices">
+    <th mat-header-cell *matHeaderCellDef>Facturas</th>
+    <td mat-cell *matCellDef="let element">{{ element.invoices }}</td>
+    <td mat-footer-cell *matFooterCellDef></td>
+  </ng-container>
+  <!-- LINK BASES -->
+  <ng-container matColumnDef="urlPresentation">
+    <th mat-header-cell *matHeaderCellDef>Link bases</th>
+
+    <td mat-cell *matCellDef="let element">
+      <app-circle-indicator
+        [item]="element.urlPresentation"
+      ></app-circle-indicator>
+    </td>
+    <td mat-footer-cell *matFooterCellDef></td>
+  </ng-container>
+  <!-- LINK RESOLUCIÓN -->
+  <ng-container matColumnDef="urlJustification">
+    <th mat-header-cell *matHeaderCellDef>Link resolución</th>
+    <td mat-cell *matCellDef="let element">
+      <app-circle-indicator
+        [item]="element.urlJustification"
+      ></app-circle-indicator>
+    </td>
+    <td mat-footer-cell *matFooterCellDef></td>
+  </ng-container>
+  <!-- CANTIDAD SOLICITADA -->
+  <ng-container matColumnDef="amountRequested">
+    <th
+      mat-header-cell
+      *matHeaderCellDef
+      sortActionDescription="Sort by amountRequested"
+    >
+      Cant. Solicitada
+    </th>
+    <td mat-cell *matCellDef="let element">
+      <span *ngIf="element.amountRequested !== null"
+        >{{ element.amountRequested | eurosFormat }}
+      </span>
+    </td>
+    <td mat-footer-cell *matFooterCellDef></td>
+  </ng-container>
+
+  <!-- CANTIDAD ADJUDICADA -->
+  <ng-container matColumnDef="amountGranted">
+    <th
+      mat-header-cell
+      *matHeaderCellDef
+      mat-sort-header
+      sortActionDescription="Sort by amountGranted"
+    >
+      Cant. Adjudicada
+    </th>
+    <td mat-cell *matCellDef="let element">
+      <span *ngIf="element.amountGranted !== null"
+        >{{ element.amountGranted | eurosFormat }}
+      </span>
+    </td>
+    <td mat-footer-cell *matFooterCellDef>
+      {{ getTotalAmountGranted() | eurosFormat }}
+    </td>
+  </ng-container>
+  <!-- CANTIDAD JUSTIFICADA -->
+  <ng-container matColumnDef="amountJustified">
+    <th
+      mat-header-cell
+      *matHeaderCellDef
+      mat-sort-header
+      sortActionDescription="Sort by amountJustified"
+    >
+      Cant. Justificada
+    </th>
+    <td mat-cell *matCellDef="let element">
+      <span *ngIf="element.amountJustified !== null"
+        >{{ element.amountJustified | eurosFormat }}
+      </span>
+    </td>
+    <td mat-footer-cell *matFooterCellDef></td>
+  </ng-container>
+  <!-- CANTIDAD ASOCIACIÓN -->
+  <ng-container matColumnDef="amountAssociation">
+    <th
+      mat-header-cell
+      *matHeaderCellDef
+      mat-sort-header
+      sortActionDescription="Sort by amountAssociation"
+    >
+      Cant. Asociación
+    </th>
+    <td mat-cell *matCellDef="let element">
+      <span *ngIf="element.amountAssociation !== null"
+        >{{ element.amountAssociation | eurosFormat }}
+      </span>
+    </td>
+    <td mat-footer-cell *matFooterCellDef>
+      {{ getTotalAmountAssociation() | eurosFormat }}
+    </td>
+  </ng-container>
+  <!-- ACCIONES -->
+  <ng-container matColumnDef="actions">
+    <th mat-header-cell *matHeaderCellDef></th>
+    <td mat-cell *matCellDef="let element">
+      <app-icon-action
+        [icon]="'uil-eye'"
+        (click)="onOpenModal(type, typeActionModal.Show, element)"
+      ></app-icon-action>
+      <app-icon-action
+        [icon]="'uil-edit'"
+        (click)="onOpenModal(type, typeActionModal.Edit, element)"
+      ></app-icon-action>
+      <app-icon-action
+        [icon]="'uil-trash-alt'"
+        (click)="onOpenModal(type, typeActionModal.Delete, element)"
+      ></app-icon-action>
+    </td>
+    <td mat-footer-cell *matFooterCellDef></td>
+  </ng-container>
+  <tr
+    mat-header-row
+    *matHeaderRowDef="displayedColumns"
+    class="custom-header-row"
+  ></tr>
+  <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+  <tr mat-footer-row *matFooterRowDef="displayedColumns" class="footer"></tr>
+</table>

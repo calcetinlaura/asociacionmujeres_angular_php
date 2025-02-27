@@ -1,0 +1,27 @@
+.search {
+  display: flex;
+  flex: 1;
+  padding-left: 100px;
+  align-items: center;
+  justify-content: flex-end;
+}
+.search > i {
+  /* border: 1px solid #5d4364; */
+  color: #5d4364;
+  font-size: 25px;
+  padding-right: 6px;
+  /* background-color: #cb8dd952; */
+  border-radius: 6px;
+  height: 40px;
+  padding-left: 6px;
+  margin-right: 10px;
+}
+.search > input {
+  flex: 1;
+  border: 1px solid #cb8dd952;
+  padding-left: 8px;
+  padding-right: 8px;
+  margin: 0;
+  height: 40px;
+  border-radius: 6px;
+}

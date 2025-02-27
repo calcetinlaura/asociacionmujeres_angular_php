@@ -1,0 +1,59 @@
+.section--generic {
+  position: relative;
+}
+.section--generic--total {
+  border: 0;
+  font-size: 16px;
+  display: inline-block;
+  border-radius: 0.4rem;
+  color: rgb(66, 65, 64);
+  margin: 1rem 0rem;
+  text-transform: capitalize;
+  font-weight: 500;
+  > span {
+    font-weight: 600;
+  }
+}
+
+.section--generic--list .list {
+  display: grid;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: 2rem;
+  grid-template-columns: repeat(5, minmax(200px, 1fr));
+}
+
+/* Media Queries para dispositivos más pequeños */
+
+/* Ordenador pequeño */
+@media (max-width: 1200px) {
+  .section--generic--list .list {
+    grid-template-columns: repeat(4, minmax(150px, 1fr));
+  }
+}
+/* Tablet */
+@media (max-width: 1024px) {
+  .section--generic--list .list {
+    grid-template-columns: repeat(3, minmax(150px, 1fr));
+  }
+}
+/* Móvil */
+@media (max-width: 768px) {
+  .section--generic--list .list {
+    grid-template-columns: repeat(2, minmax(150px, 1fr));
+  }
+  .section--generic--total {
+    font-size: 14px; /* Tamaño de fuente más pequeño en móviles */
+  }
+}
+/* Móvil pequeño */
+@media (max-width: 480px) {
+  .section--generic--list .list {
+    grid-template-columns: 1fr;
+  }
+
+  .section--generic--total {
+    font-size: 12px; /* Tamaño de fuente más pequeño en móviles pequeños */
+  }
+}

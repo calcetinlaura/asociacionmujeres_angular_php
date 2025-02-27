@@ -1,0 +1,7 @@
+{
+  "/api": {
+    "target": "https://asociaciondemujerescallosadesegura.com",
+    "secure": false,
+    "changeOrigin": true
+  }
+}

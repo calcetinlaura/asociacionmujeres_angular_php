@@ -1,0 +1,96 @@
+<div class="flex flex-col">
+  <div class="text-center pb-5 uppercase">
+    <p class="text-2xl">{{ titleForm }}</p>
+  </div>
+  <form
+    (ngSubmit)="onSendFormPartner()"
+    [formGroup]="formPartner"
+    class="login-auth-form"
+  >
+    <div class="flex flex-col gap-y-4">
+      <div class="flex flex-col bg-lilaMuyClaro p-4 gap-y-4">
+        <div class="flex justify-between gap-x-4">
+          <!-- Nombre -->
+          <div class="box-input gap-x-4 flex-1">
+            <label for="name">Nombre</label>
+            <div class="flex flex-col">
+              <input
+                formControlName="name"
+                type="text"
+                [ngClass]="{
+                  'is-invalid': submitted && formPartner.get('name')?.invalid
+                }"
+              />
+              <div
+                *ngIf="submitted && formPartner.get('name')?.invalid"
+                class="is-invalid-text"
+              >
+                Campo requerido
+              </div>
+            </div>
+          </div>
+          <!-- Fecha de nacimiento -->
+          <div class="box-input gap-x-4 w-auto">
+            <label for="birthday">Fecha Nac.</label>
+            <input formControlName="birthday" type="date" />
+          </div>
+        </div>
+        <!-- Apellidos -->
+        <div class="box-input gap-x-4">
+          <label for="surname">Apellidos</label>
+          <input formControlName="surname" type="text" />
+        </div>
+        <div class="flex justify-between gap-x-4">
+          <!-- Teléfono -->
+          <div class="box-input gap-x-4">
+            <label for="address">Teléfono</label>
+            <input formControlName="phone" type="text" />
+          </div>
+          <!-- Email -->
+          <div class="box-input gap-x-4 flex-1">
+            <label for="address">Email</label>
+            <input formControlName="email" type="text" />
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-between gap-x-4 px-4">
+        <!-- Municipio -->
+        <div class="box-input gap-x-4 flex-1">
+          <label for="town">Municipio</label>
+          <input formControlName="town" type="text" />
+        </div>
+        <div class="box-input gap-x-4">
+          <label for="postCode">C.Postal</label>
+          <input formControlName="postCode" type="text" />
+        </div>
+      </div>
+      <!-- Dirección -->
+      <div class="box-input gap-x-4 px-4">
+        <label for="address">Dirección</label>
+        <input formControlName="address" type="text" />
+      </div>
+      <div class="boxCuotas p-4">
+        <h3 class="titleCuotas">Cuotas</h3>
+        <!-- Cuota -->
+        <div class="flex flex-col flex-wrap h-96">
+          <div *ngFor="let year of years" class="flex flex-col flex-wrap w-40">
+            <mat-checkbox [formControlName]="'cuota_' + year" color="secondary"
+              >Cuota {{ year }}</mat-checkbox
+            >
+          </div>
+        </div>
+      </div>
+      <!-- Mensaje de error global -->
+      <div *ngIf="errorSession" class="is-invalid-text">
+        Ocurrió un error con el envío del formulario
+      </div>
+
+      <!-- Botón de envío -->
+      <div class="flex justify-center">
+        <button class="bg-black p-4 text-white" type="submit">
+          {{ buttonAction }}
+        </button>
+      </div>
+    </div>
+  </form>
+</div>

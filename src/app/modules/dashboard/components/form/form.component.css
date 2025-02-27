@@ -1,0 +1,72 @@
+.box-input {
+  display: flex;
+}
+.box-input label {
+  min-width: 95px;
+}
+.box-input input,
+.box-input select,
+.box-input textarea {
+  padding: 2px 4px;
+  flex: 1;
+  border: 1px solid rgb(202, 200, 200);
+}
+.is-invalid {
+  border: 1px solid red !important;
+}
+.is-invalid-text {
+  color: Red;
+  font-size: 11px;
+}
+.strong-border {
+  border: 2px solid black !important;
+}
+.linea {
+  border: 1px solid #cb8dd952;
+}
+.boxCuotas {
+  border: 1px solid #cb8dd952;
+}
+.titleCuotas {
+  color: #5d4364;
+}
+input[disabled],
+select[disabled] {
+  background-color: #f0f0f0; /* Color de fondo gris claro */
+  color: #a0a0a0; /* Color de texto gris */
+  cursor: not-allowed; /* Cambia el cursor a un "no permitido" */
+}
+
+input[disabled]::placeholder,
+select[disabled] {
+  color: #a0a0a0; /* Color de texto del placeholder gris */
+}
+
+.autocomplete-container {
+  position: relative; /* For absolute positioning of the suggestions */
+}
+
+.suggestions-list {
+  border: 1px solid #ccc;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 150px; /* Limit the height of the dropdown */
+  overflow-y: auto; /* Enable scrolling if there are many items */
+  position: absolute;
+  z-index: 1000; /* Ensure it's on top of other elements */
+  background: white;
+}
+
+.suggestions-list li {
+  padding: 8px;
+  cursor: pointer; /* Indicate that items are clickable */
+}
+
+.suggestions-list li:hover {
+  background-color: #f0f0f0; /* Highlight on hover */
+}
+.mat-autocomplete-panel {
+  position: fixed !important; /* Or 'absolute' if that fits your design */
+  z-index: 1150 !important; /* Ensure this is high enough to be above most elements */
+}

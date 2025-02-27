@@ -1,0 +1,28 @@
+{
+  "data": [
+    {
+      "title": "Club de lectura",
+      "date": "23/05/2023",
+      "description": "Bla bla bla",
+      "town": "Callosa de Segura",
+      "id": "03da",
+      "place": "Centro Social",
+      "price": "Gratis",
+      "status": "Terminado",
+      "inscription": true,
+      "img": "https://jenesaispop.com/wp-content/uploads/2009/09/guetta_onelove.jpg"
+    },
+    {
+      "title": "Club de lecturaMujercitas",
+      "date": "23/05/2023",
+      "description": "Bla bla bla",
+      "town": "Callosa de Segura",
+      "id": "03da",
+      "place": "Centro Social",
+      "price": "Gratis",
+      "status": "Terminado",
+      "inscription": true,
+      "img": "https://jenesaispop.com/wp-content/uploads/2009/09/guetta_onelove.jpg"
+    }
+  ]
+}

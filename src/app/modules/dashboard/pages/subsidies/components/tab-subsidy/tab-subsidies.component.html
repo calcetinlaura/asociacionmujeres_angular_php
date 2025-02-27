@@ -1,0 +1,124 @@
+<div class="flex flex-1 flex-col justify-between my-8 mx-40 card-subsidy">
+  <h1 class="text-center mb-4">
+    Subvención {{ item.name | i18nSelect : nameSubsidy }} {{ item.year }}
+    <app-icon-action
+      [icon]="'uil-edit'"
+      (click)="
+        onOpenModal({
+          type: typeList.Subsidies,
+          action: typeActionModal.Edit,
+          item: item
+        })
+      "
+    ></app-icon-action>
+  </h1>
+  <div class="flex flex-row">
+    <div class="flex flex-col justify-center flex-1 gap-y-4">
+      <h2>Nombre: {{ item.urlPresentation }}</h2>
+      <h2>URL Subvención: {{ item.urlPresentation }}</h2>
+      <h2>URL Resolución: {{ item.urlJustification }}</h2>
+    </div>
+    <div
+      class="flex flex-col p-4 pr-10 gap-y-4 w-auto rounded"
+      style="background-color: #d0a9d952"
+    >
+      <div
+        class="flex flex-row gap-x-4 justify-start items-center align-middle"
+      >
+        <mat-icon class="calendar-icon">calendar_today</mat-icon>
+        <h2>Fecha Max. Presentación:</h2>
+        <p>
+          {{ item.datePresentation | date : "EEEE dd MMM yyyy" }}
+        </p>
+      </div>
+      <div
+        class="flex flex-row gap-x-4 justify-start items-center align-middle"
+      >
+        <mat-icon class="calendar-icon">calendar_today</mat-icon>
+        <h2>Fecha Max. Justificación:</h2>
+        <p>
+          {{ item.dateJustification | date : "EEEE dd MMM yyyy" }}
+        </p>
+      </div>
+      <div
+        class="flex flex-row gap-x-4 justify-start items-center align-middle"
+      >
+        <mat-icon class="calendar-icon">calendar_today</mat-icon>
+        <h2>Periodo subvencionable:</h2>
+        <p>
+          {{ item.periodStart | date : "dd MMM yyyy" }}
+          <ng-container *ngIf="item.periodEnd">
+            - {{ item.periodEnd | date : "dd MMM yyyy" }}
+          </ng-container>
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="pt-2 pb-6">
+    <h2>Actividades solicitadas</h2>
+    <app-text-editor *ngIf="item.activities" [text]="item.activities" />
+  </div>
+  <div *ngIf="item.observations" class="pb-5">
+    <h2>Observaciones</h2>
+    <app-text-editor *ngIf="item.observations" [text]="item.observations" />
+  </div>
+  <div class="flex flex-row gap-x-4 justify-between">
+    <div class="box-amount w-auto box-invoices">
+      <p>Nº FACTURAS</p>
+      <p>{{ numberInvoices }}</p>
+    </div>
+    <div class="box-amount w-auto">
+      <p>TOTAL SOLICITADO</p>
+      <p>{{ item.amountRequested | eurosFormat }}</p>
+    </div>
+    <div class="box-amount w-auto">
+      <p>TOTAL CONCEDIDO</p>
+      <p>{{ item.amountGranted | eurosFormat }}</p>
+    </div>
+    <div class="box-amount flex-1">
+      <p>IMPORTE NECESARIO JUSTIFICAR</p>
+      <p>{{ item.amountJustified | eurosFormat }}</p>
+    </div>
+    <div class="box-amount flex-1">
+      <p>GASTO ACUMULADO</p>
+      <p><span>Total </span>{{ amountJustified | eurosFormat }}</p>
+      <p>
+        <span
+          >Total {{ amountJustified | eurosFormat }} + IRPF
+          {{ amountIrpf | eurosFormat }} =
+        </span>
+        {{ amountJustified + amountIrpf | eurosFormat }}
+      </p>
+    </div>
+    <ng-container *ngIf="amountAssociation + amountIrpf > 0; else elseTemplate">
+      <div class="box-amount flex-1 positive">
+        <p>APORTE ASOCIACIÓN</p>
+        <p><span>Total </span>{{ amountAssociation | eurosFormat }}</p>
+        <p>
+          <span>Total + IRPF </span
+          >{{ amountAssociation + amountIrpf | eurosFormat }}
+        </p>
+      </div>
+    </ng-container>
+    <ng-template #elseTemplate>
+      <div class="box-amount flex-1 negative">
+        <p>FALTAN POR FACTURAR</p>
+        <p><span>Total </span>{{ amountAssociation | eurosFormat }}</p>
+        <p>
+          <span>Total + IRPF </span
+          >{{ amountAssociation - amountIrpf | eurosFormat }}
+        </p>
+      </div>
+    </ng-template>
+  </div>
+
+  <app-table-invoices
+    *ngIf="!loading"
+    [data]="filteredInvoices"
+    (openModal)="onOpenModal($event)"
+    [delete]="false"
+    [edit]="false"
+    [tableInsideSubsidy]="true"
+    class="flex mt-8"
+  />
+</div>

@@ -1,0 +1,46 @@
+<div class="text-center pb-7">
+  <p>
+    ¿Seguro que quieres eliminar
+    <ng-container *ngIf="type === TypeList.Events">
+      el evento <span class="font-semibold">{{ item?.title }}</span>
+    </ng-container>
+    <ng-container *ngIf="type === TypeList.Books">
+      el libro
+      <span class="font-semibold">{{ item?.title }} </span> ?</ng-container
+    >
+    <ng-container *ngIf="type === TypeList.Movies">
+      la película
+      <span class="font-semibold">{{ item?.title }} </span> ?</ng-container
+    >
+    <ng-container *ngIf="type === TypeList.Recipes">
+      la receta
+      <span class="font-semibold">{{ item?.title }} </span> ?</ng-container
+    >
+    <ng-container *ngIf="type === TypeList.Partners">
+      la socia
+      <span class="font-semibold">{{ item?.name }} </span> ?</ng-container
+    >
+    <ng-container *ngIf="type === TypeList.Piteras">
+      esta Pitera ?</ng-container
+    >
+    <ng-container *ngIf="type === TypeList.Invoices">
+      la factura con <br />
+      número de facturación
+      <span class="font-semibold">{{ item?.numberInvoice }} </span>
+      ?</ng-container
+    >
+    <ng-container *ngIf="type === TypeList.Subsidies">
+      la subveción
+      <span class="font-semibold">{{ item?.name }} {{ item?.year }} </span>
+      ?</ng-container
+    >
+    <ng-container *ngIf="type === TypeList.Creditors">
+      al acreedor/a
+      <span class="font-semibold">{{ item?.company }}</span> ?</ng-container
+    >
+  </p>
+</div>
+<div class="flex flex-row justify-center buttons">
+  <button (click)="onCloseModal()" class="button-cancel">Cancelar</button>
+  <button (click)="confirmDeleteItem()" class="button-delete">Aceptar</button>
+</div>

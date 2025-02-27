@@ -1,0 +1,29 @@
+<div
+  class="footer flex flex-col sm:flex-row justify-between flex-wrap pt-2 pb-4 px-3 sm:pr-6 sm:pb-6 sm:pt-4"
+>
+  <div>
+    <div class="flex flex-row gap-x-3 justify-center sm:justify-start">
+      <a
+        href="https://m.facebook.com/p/Asociaci%C3%B3n-de-Mujeres-Callosa-de-Segura-100063464474083/"
+        target="_blank"
+      >
+        <i class="uil uil-facebook-f"></i>
+      </a>
+      <a
+        href="https://www.instagram.com/asociacionmujerescallosa/"
+        target="_blank"
+      >
+        <i class="uil uil-instagram w-10"></i>
+      </a>
+      <a [routerLink]="'/auth'">
+        <i class="uil uil-keyhole-square"></i>
+      </a>
+    </div>
+    <div class="flex justify-center sm:justify-start">
+      <p>© {{ currentYear }} Asociación de Mujeres de Callosa de Segura</p>
+    </div>
+  </div>
+  <div class="flex flex-1 justify-center pt-2 sm:pt-0 sm:justify-end">
+    <img src="./../../../../../assets/img/logoMinisterio.png" class="w-64" />
+  </div>
+</div>

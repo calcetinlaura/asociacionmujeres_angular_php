@@ -1,0 +1,18 @@
+{
+  "data": [
+    {
+      "id": 1,
+      "title": "La pitera",
+      "year": "2022",
+      "img": "https://asociaciondemujerescallosadesegura.com/assets/img/piteras/27_2022_pitera.jpg",
+      "theme": "Covid"
+    },
+    {
+      "id": 2,
+      "title": "La pitera",
+      "year": "2021",
+      "img": "https://asociaciondemujerescallosadesegura.com/assets/img/piteras/25_2019_pitera.jpg",
+      "theme": "Prostitución"
+    }
+  ]
+}

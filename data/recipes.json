@@ -1,0 +1,25 @@
+{
+  "data": [
+    {
+      "id": 1,
+      "title": "Flan",
+      "category": "Postre",
+      "owner": "Antonia Martínez",
+      "recipe": "Bla bla bla",
+      "ingredients": "03da",
+      "img": "https://www.annarecetasfaciles.com/files/flan-vainilla-fotor-20230720193459-2-815x458.jpg",
+      "year": 2022
+    },
+    {
+      "id": 2,
+      "title": "Tarta de queso",
+      "category": "Postre",
+      "owner": "Antonia Martínez",
+      "recipe": "Bla bla bla bla",
+      "ingredients": "03da",
+      "img": "https://recetasdecocina.elmundo.es/wp-content/uploads/2017/02/tarta-de-queso-fr%C3%ADa-casera.jpg",
+
+      "year": 2021
+    }
+  ]
+}

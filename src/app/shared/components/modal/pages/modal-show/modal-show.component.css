@@ -1,0 +1,38 @@
+.box-modal-show {
+  display: flex;
+  flex-direction: row;
+  width: 900px;
+}
+
+/* Media Queries para dispositivos más pequeños */
+/* Ordenador pequeño */
+@media (max-width: 1200px) {
+}
+/* Tablet */
+@media (max-width: 1024px) {
+  .box-modal-show {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+  }
+}
+/* Móvil */
+@media (max-width: 768px) {
+  .box-modal-show {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+  .box-modal-show > div:first-child {
+    width: 100%;
+    order: 2;
+  }
+
+  .box-modal-show > div:nth-child(2) {
+    width: 100%;
+    order: 1;
+  }
+}
+/* Móvil pequeño */
+@media (max-width: 480px) {
+}

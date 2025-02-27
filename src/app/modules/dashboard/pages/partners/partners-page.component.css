@@ -1,0 +1,21 @@
+.sticky-toolbar {
+  position: fixed;
+  top: 100px;
+  /* width: 100%; */
+  background-color: #fff;
+  /* padding: 1rem 2rem; */
+  transition: all 0.3s ease;
+  z-index: 1000;
+  /* height: 70px; */
+}
+
+.pt-8.px-8.flex.add {
+  transition: padding 0.3s ease;
+}
+
+.sticky-toolbard .pt-8 {
+  padding-top: 0.5rem; /* Ajuste del padding en la toolbar cuando es sticky */
+}
+.sticky-table {
+  padding-top: 320px;
+}

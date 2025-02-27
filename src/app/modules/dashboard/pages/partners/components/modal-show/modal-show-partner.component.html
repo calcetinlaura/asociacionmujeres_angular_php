@@ -1,0 +1,44 @@
+<div class="flex flex-1 flex-col justify-between">
+  <div>
+    <app-text-title [text]="item.name" />
+    <app-text-subtitle *ngIf="item.surname" [text]="item.surname" />
+    <div class="flex flex-row gap-x-4 my-4">
+      <app-text-background
+        *ngIf="item.birthday"
+        [text]="item.birthday | date : 'dd MMM yyyy'"
+      ></app-text-background>
+      <app-text-border
+        *ngIf="item.birthday"
+        [text]="(item.birthday | calculateAge) + ' años'"
+      ></app-text-border>
+    </div>
+    <app-text-icon
+      [icon]="'uil uil-building icon'"
+      [text]="item.address + ', ' + item.town + ' - ' + item.postCode"
+    ></app-text-icon>
+    <app-text-icon
+      [icon]="'uil uil-phone-alt icon'"
+      [text]="item.phone"
+    ></app-text-icon>
+    <app-text-icon
+      [icon]="'uil uil-postcard icon'"
+      [text]="item.email"
+    ></app-text-icon>
+  </div>
+  <hr class="my-4" />
+  <div class="mb-4">
+    <app-text-background
+      *ngIf="item.cuotas.length === 1"
+      [text]="item.cuotas.length + ' año en la asociación'"
+    ></app-text-background>
+    <app-text-background
+      *ngIf="item.cuotas.length > 1"
+      [text]="item.cuotas.length + ' años en la asociación'"
+    ></app-text-background>
+  </div>
+  <div class="flex flex-row gap-4">
+    <div *ngFor="let cuota of item.cuotas" class="gap-4">
+      <app-text-border [text]="cuota"></app-text-border>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,72 @@
+.login-auth-page {
+  position: absolute;
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--color-4);
+  color: var(--color-3);
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  align-content: center;
+}
+
+.login-auth-page .login-auth-wrapper {
+  width: 25%;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+}
+
+.login-auth-page .login-auth-form {
+  display: flex;
+  width: 100%;
+  justify-content: flex-start;
+  flex-direction: column;
+}
+
+.login-auth-page .login-auth-form .form-group {
+  display: flex;
+  justify-content: flex-start;
+  flex-direction: column;
+}
+
+.login-auth-page .login-auth-form .form-group input {
+  border: solid 1px #e7e7e7;
+  border-radius: var(--border-radius-1);
+  height: 30px;
+  padding: 0.25rem 0.5rem;
+  font-size: 90%;
+}
+
+.login-auth-page .login-auth-form label {
+  padding-bottom: 0.35rem;
+  font-weight: 600;
+  display: inline-block;
+  margin: 0;
+}
+
+.login-btn {
+  padding: 8px 8px;
+  background-color: #c790d352;
+  border: none;
+  border-radius: 6px;
+  color: #5d4364;
+  width: 100%;
+}
+.login-btn:hover {
+  background-color: #58385f;
+  color: #f2eef3;
+}
+.is-invalid {
+  border: 1px solid red !important;
+}
+.is-invalid-text {
+  color: Red;
+  font-size: 11px;
+}
+.is-invalid-form {
+  color: Red;
+  font-size: 16px;
+}

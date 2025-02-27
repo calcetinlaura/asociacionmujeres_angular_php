@@ -1,0 +1,103 @@
+{
+  "data": [
+    {
+      "title": "Mujercitas",
+      "author": "Jo",
+      "description": "Un libro de mujercitas",
+      "gender": "Drama",
+      "id": 123,
+      "year": 2022,
+      "img": "https://m.media-amazon.com/images/I/71sjVs-9I4L._SL1500_.jpg"
+    },
+    {
+      "title": "Orgullo y prejuicio",
+      "author": "Jane Austen",
+      "description": "Una novela clásica de Jane Austen",
+      "gender": "Romance",
+      "id": 124,
+      "year": 2022,
+      "img": "https://m.media-amazon.com/images/I/71sjVs-9I4L._SL1500_.jpg"
+    },
+    {
+      "title": "Crimen y castigo",
+      "author": "Fiodor Dostoievski",
+      "description": "Una obra maestra de la literatura rusa",
+      "gender": "Novela",
+      "id": 125,
+      "year": 2022,
+      "img": "https://m.media-amazon.com/images/I/71sjVs-9I4L._SL1500_.jpg"
+    },
+    {
+      "title": "1984",
+      "author": "George Orwell",
+      "description": "Un clásico de la distopía",
+      "gender": "Ciencia ficción",
+      "id": 126,
+      "year": 2022,
+      "img": "https://m.media-amazon.com/images/I/71sjVs-9I4L._SL1500_.jpg"
+    },
+    {
+      "title": "Ulises",
+      "author": "James Joyce",
+      "description": "Una obra literaria experimental",
+      "gender": "Modernismo",
+      "id": 127,
+      "year": 2022,
+      "img": "https://m.media-amazon.com/images/I/71sjVs-9I4L._SL1500_.jpg"
+    },
+    {
+      "title": "Matar a un ruiseñor",
+      "author": "Harper Lee",
+      "description": "Una novela clásica de la literatura estadounidense",
+      "gender": "Drama",
+      "id": 128,
+      "year": 2022,
+      "img": "https://m.media-amazon.com/images/I/71sjVs-9I4L._SL1500_.jpg"
+    },
+    {
+      "title": "Cien años de soledad",
+      "author": "Gabriel García Márquez",
+      "description": "Una obra maestra del realismo mágico",
+      "gender": "Novela",
+      "id": 129,
+      "year": 2022,
+      "img": "https://m.media-amazon.com/images/I/71sjVs-9I4L._SL1500_.jpg"
+    },
+    {
+      "title": "Don Quijote de la Mancha",
+      "author": "Miguel de Cervantes",
+      "description": "La obra cumbre de la literatura española",
+      "gender": "Novela picaresca",
+      "id": 130,
+      "year": 2022,
+      "img": "https://m.media-amazon.com/images/I/71sjVs-9I4L._SL1500_.jpg"
+    },
+    {
+      "title": "Moby Dick",
+      "author": "Herman Melville",
+      "description": "Una epopeya marina",
+      "gender": "Aventura",
+      "id": 131,
+      "year": 2022,
+      "img": "https://m.media-amazon.com/images/I/71sjVs-9I4L._SL1500_.jpg"
+    },
+    {
+      "title": "El Gran Gatsby",
+      "author": "F. Scott Fitzgerald",
+      "description": "La crítica social en la Era del Jazz",
+      "gender": "Novela",
+      "id": 132,
+      "year": 2022,
+      "img": "https://m.media-amazon.com/images/I/71sjVs-9I4L._SL1500_.jpg"
+    },
+    {
+      "title": "Crimen en el orient express",
+      "author": "Agatha Christie",
+      "description": "Un misterio clásico de Hercule Poirot",
+      "gender": "Misterio",
+      "id": 133,
+      "year": 2022,
+      "img": "https://m.media-amazon.com/images/I/71sjVs-9I4L._SL1500_.jpg"
+    }
+  ]
+}

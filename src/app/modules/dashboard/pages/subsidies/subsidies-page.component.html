@@ -1,0 +1,98 @@
+<div>
+  <app-dashboard-header
+    [icon]="'uil uil-calculator'"
+    [title]="''"
+    [number]="number"
+    [type]="'Subvenciones'"
+  />
+</div>
+<div class="flex flex-col py-8 px-4" [class.sticky-toolbar]="isStickyToolbar">
+  <app-filters
+    [filters]="filtersYears"
+    (filterClicked)="filterYearSelected($event)"
+  ></app-filters>
+</div>
+<ng-container *ngIf="showAllSubsidies; else showSubsidiesByYear">
+  <div class="px-8 flex add">
+    <app-button-add
+      [buttonText]="'Añadir subveción'"
+      [iconClass]="'uil-plus'"
+      (addClicked)="addNewSubsidyModal()"
+    />
+    <app-input-search (onDebounce)="applyFilter($event)" class="flex-1" />
+  </div>
+  <!-- Spinner Loading -->
+  <app-spinner-loading *ngIf="!dataLoaded; else results" />
+  <!-- Tabla -->
+  <ng-template #results>
+    <app-table-subsidy
+      [data]="filteredAllSubsidies"
+      [type]="typeList.Subsidies"
+      (openModal)="onOpenModal($event)"
+      class="flex p-8"
+    />
+  </ng-template>
+</ng-container>
+<ng-template #showSubsidiesByYear>
+  <mat-tab-group
+    (selectedTabChange)="tabActive($event)"
+    [selectedIndex]="selectedIndex"
+    ><mat-tab
+      label="Sub. Ministerio"
+      *ngIf="filteredSubsidiesByType['MINISTERIO'].length > 0"
+    >
+      <app-tab-subsidy
+        [item]="filteredSubsidiesByType['MINISTERIO'][0]"
+        (openModal)="onOpenModal($event)"
+      ></app-tab-subsidy>
+    </mat-tab>
+    <mat-tab
+      label="Sub. Generalitat"
+      *ngIf="filteredSubsidiesByType['GENERALITAT'].length > 0"
+    >
+      <app-tab-subsidy
+        [item]="filteredSubsidiesByType['GENERALITAT'][0]"
+        (openModal)="onOpenModal($event)"
+      ></app-tab-subsidy>
+    </mat-tab>
+    <mat-tab
+      label="Sub. Diputación"
+      *ngIf="filteredSubsidiesByType['DIPUTACION'].length > 0"
+    >
+      <app-tab-subsidy
+        [item]="filteredSubsidiesByType['DIPUTACION'][0]"
+        (openModal)="onOpenModal($event)"
+      ></app-tab-subsidy>
+    </mat-tab>
+
+    <mat-tab
+      label="Sub. Ayuntamiento actividades"
+      *ngIf="filteredSubsidiesByType['AYUNT_ACTIVIDADES'].length > 0"
+    >
+      <app-tab-subsidy
+        [item]="filteredSubsidiesByType['AYUNT_ACTIVIDADES'][0]"
+        (openModal)="onOpenModal($event)"
+      ></app-tab-subsidy>
+    </mat-tab>
+    <mat-tab
+      label="Sub. Ayuntamiento equipamiento"
+      *ngIf="filteredSubsidiesByType['AYUNT_EQUIPAMIENTO'].length > 0"
+    >
+      <app-tab-subsidy
+        [item]="filteredSubsidiesByType['AYUNT_EQUIPAMIENTO'][0]"
+        (openModal)="onOpenModal($event)"
+      ></app-tab-subsidy>
+    </mat-tab>
+  </mat-tab-group>
+</ng-template>
+
+<!-- Modal -->
+<app-modal
+  *ngIf="isModalVisible"
+  [item]="item"
+  [type]="typeListModal"
+  [action]="currentModalAction"
+  (closeModal)="onCloseModal()"
+  (confirmDelete)="confirmDeleteSubsidy(item)"
+  (sendFormSubsidyData)="sendFormSubsidy($event)"
+></app-modal>

@@ -1,0 +1,145 @@
+<table
+  mat-table
+  [dataSource]="dataSource"
+  matSort
+  (matSortChange)="announceSortChange($event)"
+  class="mat-elevation-z8 table"
+>
+  <ng-container matColumnDef="number">
+    <th mat-header-cell *matHeaderCellDef>Num.</th>
+    <td mat-cell *matCellDef="let element; let i = index">
+      {{ i + 1 }}
+    </td>
+  </ng-container>
+  <ng-container
+    *ngFor="let column of headerColumns"
+    [matColumnDef]="column.key"
+  >
+    <th mat-header-cell *matHeaderCellDef mat-sort-header>
+      {{ column.title }}
+    </th>
+    <td
+      mat-cell
+      *matCellDef="let element"
+      [ngClass]="{ 'special-gender-column': column.key === 'gender' }"
+    >
+      <ng-container [ngSwitch]="column.key">
+        <!-- Diseño especial para 'fechas evento' -->
+        <ng-container *ngSwitchCase="'start'">
+          <div class="startColumn">
+            <div>
+              <mat-icon class="calendar-icon">calendar_today</mat-icon>
+            </div>
+            <div>
+              <span class="dateColumn">
+                <span *ngIf="element['end'] === element['start']">
+                  {{ element[column.key] | date : "dd MMM yyyy" }}</span
+                >
+                <span *ngIf="element['end'] !== element['start']">
+                  {{ element[column.key] | date : "dd MMM" }} -
+                  {{ element["end"] | date : "dd MMM yyyy" }}</span
+                >
+              </span>
+            </div>
+          </div>
+        </ng-container>
+        <!-- Diseño especial para 'gender' -->
+        <ng-container *ngSwitchCase="'gender'">
+          <div class="genderColumn">
+            <span>{{ element[column.key] }}</span>
+          </div>
+        </ng-container>
+        <!-- Diseño especial para 'status' -->
+        <ng-container *ngSwitchCase="'status'">
+          <ng-container *ngIf="element[column.key] !== ''">
+            <div class="statusColumn">
+              <span>{{ element[column.key] }}</span>
+            </div>
+          </ng-container>
+        </ng-container>
+        <!-- Diseño especial para 'capacity' -->
+        <ng-container *ngSwitchCase="'capacity'">
+          <ng-container *ngIf="element[column.key] !== 0">
+            <div>
+              {{ element[column.key] }}
+            </div>
+          </ng-container>
+        </ng-container>
+
+        <!-- Diseño especial para 'img' -->
+        <ng-container *ngSwitchCase="'img'">
+          <app-circle-indicator
+            [item]="element[column.key]"
+          ></app-circle-indicator>
+        </ng-container>
+        <!-- Diseño especial para 'img' -->
+        <ng-container *ngSwitchCase="'inscription'">
+          <app-circle-indicator
+            [item]="element[column.key]"
+          ></app-circle-indicator>
+        </ng-container>
+        <!-- Diseño especial para 'descripción' -->
+        <ng-container *ngSwitchCase="'description'">
+          <div class="tableTextEditor" [title]="element[column.key]">
+            <span [innerHTML]="element[column.key]"></span>
+            <span *ngIf="element.description">...</span>
+          </div>
+        </ng-container>
+        <!-- Diseño especial para 'ingredientes' -->
+        <ng-container *ngSwitchCase="'ingredients'">
+          <div class="tableTextEditor" [title]="element[column.key]">
+            <span [innerHTML]="element[column.key]"></span>
+            <span *ngIf="element.ingredients">...</span>
+          </div>
+        </ng-container>
+        <!-- Diseño especial para 'receta' -->
+        <ng-container *ngSwitchCase="'recipe'">
+          <div class="tableTextEditor" [title]="element[column.key]">
+            <span [innerHTML]="element[column.key]"></span>
+            <span *ngIf="element.recipe">...</span>
+          </div>
+        </ng-container>
+        <!-- Diseño especial para 'cuota' -->
+        <ng-container *ngSwitchCase="'cuotas'">
+          <app-circle-indicator
+            [item]="element[column.key]?.includes(2024)"
+          ></app-circle-indicator>
+        </ng-container>
+
+        <!-- Diseño por defecto para otras columnas -->
+        <ng-container *ngSwitchDefault>
+          {{ element[column.key] }}
+        </ng-container>
+      </ng-container>
+    </td>
+  </ng-container>
+
+  <!-- Buttons Column -->
+  <ng-container matColumnDef="actions">
+    <th mat-header-cell *matHeaderCellDef></th>
+    <td mat-cell *matCellDef="let element">
+      <app-icon-action
+        [icon]="'uil-eye'"
+        (click)="onOpenModal(typeActionModal.Show, element)"
+      ></app-icon-action>
+      <app-icon-action
+        [icon]="'uil-edit'"
+        (click)="onOpenModal(typeActionModal.Edit, element)"
+      ></app-icon-action>
+      <app-icon-action
+        [icon]="'uil-trash-alt'"
+        (click)="onOpenModal(typeActionModal.Delete, element)"
+      ></app-icon-action>
+    </td>
+  </ng-container>
+  <tr
+    mat-header-row
+    *matHeaderRowDef="displayedColumns"
+    class="custom-header-row"
+  ></tr>
+  <tr
+    mat-row
+    *matRowDef="let row; columns: displayedColumns"
+    class="custom-list-row"
+  ></tr>
+</table>

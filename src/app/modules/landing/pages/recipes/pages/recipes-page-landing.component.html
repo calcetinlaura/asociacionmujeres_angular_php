@@ -1,0 +1,22 @@
+<div class="flex flex-col mx-8 sm:m8 mt-4">
+  <app-filters
+    [filters]="filterCategoryRecipes"
+    (filterClicked)="filterSelected($event)"
+  />
+  <app-input-search (onDebounce)="applyFilter($event)" class="my-8" />
+  <!-- Spinner Loading -->
+  <app-spinner-loading *ngIf="isLoading; else results" />
+  <!-- Sección cards -->
+  <ng-template #results>
+    <app-section-generic
+      *ngIf="areThereResults; else notResults"
+      [type]="typeList.Recipes"
+      [data]="filteredRecipes"
+      [total]="number"
+    />
+    <!-- Sección no hay resultados -->
+    <ng-template #notResults
+      ><app-no-results [text]="'recetas' | lowercase"
+    /></ng-template>
+  </ng-template>
+</div>

@@ -1,0 +1,21 @@
+.text-background {
+  border-radius: 4px;
+  font-weight: 500;
+  padding: 4px 6px 3px 6px;
+  width: max-content;
+  text-transform: uppercase;
+}
+
+/* Media Queries para dispositivos más pequeños */
+/* Ordenador pequeño */
+@media (max-width: 1200px) {
+}
+/* Tablet */
+@media (max-width: 1024px) {
+}
+/* Móvil */
+@media (max-width: 768px) {
+}
+/* Móvil pequeño */
+@media (max-width: 480px) {
+}

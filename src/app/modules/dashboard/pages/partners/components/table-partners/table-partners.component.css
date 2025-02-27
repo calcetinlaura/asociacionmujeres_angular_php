@@ -1,0 +1,123 @@
+.table-container {
+  padding-top: 260px; /* Crea el espacio inicial para las primeras 8 filas */
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed; /* Fija el ancho de las columnas */
+  border: none !important;
+  box-shadow: none !important;
+  z-index: 900;
+}
+
+th {
+  text-transform: uppercase;
+  font-size: 12px;
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+}
+
+td {
+  padding: 5px;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap; /* Evita que el contenido de las celdas se desborde */
+}
+.mat-mdc-row .mat-mdc-cell {
+  border-bottom: 1px solid transparent;
+  border-top: 1px solid transparent;
+  cursor: default;
+}
+/* Rows body */
+.mat-mdc-row {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.mat-mdc-row:hover {
+  background-color: rgb(245, 235, 246);
+  font-weight: 500;
+}
+
+th.mat-sort-header-sorted {
+  color: rgb(232, 148, 243);
+}
+
+.startColumn {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+.startColumn > div {
+  display: flex;
+  align-items: center;
+}
+.startColumn > div > .calendar-icon {
+  color: gray;
+  font-size: 18px;
+}
+
+.startColumn > div > span {
+  text-transform: capitalize;
+  font-weight: 11px;
+  padding-bottom: 2px;
+  font-size: 11;
+}
+
+.mat-column-phone {
+  word-wrap: break-word !important;
+  white-space: unset !important;
+  flex: 0 0 150px !important;
+  width: 120px;
+}
+.mat-column-surname,
+.mat-column-birthday,
+.mat-column-email {
+  text-align: left;
+  word-wrap: break-word !important;
+  white-space: unset !important;
+  flex: 0 0 200px !important;
+  width: 200px;
+}
+.mat-column-name {
+  text-align: left;
+  word-wrap: break-word !important;
+  white-space: unset !important;
+  flex: 0 0 150px !important;
+  width: 150px;
+}
+.mat-column-actions {
+  text-align: right;
+  flex: 0 0 150px !important;
+  width: 130px;
+}
+
+.mat-column-cuotas {
+  text-align: center;
+  word-wrap: break-word !important;
+  white-space: unset !important;
+  flex: 0 0 80px !important;
+  width: 85px !important;
+}
+
+.mat-column-number {
+  text-align: left;
+  flex: 0 0 60px !important;
+  width: 60px !important;
+}
+
+.mat-column-cuotas > div {
+  display: flex;
+  justify-content: center;
+}
+
+.custom-header-row {
+  position: sticky;
+  top: 300px;
+  padding-top: 300px;
+  z-index: 999;
+}
+.custom-list-row {
+  top: 800px;
+}

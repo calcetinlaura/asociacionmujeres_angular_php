@@ -1,0 +1,12 @@
+<div class="flex flex-col mx-8 sm:m8 mt-4">
+  <!-- Spinner Loading -->
+  <app-spinner-loading *ngIf="isLoading; else results" />
+  <!-- Sección cards -->
+  <ng-template #results>
+    <app-section-generic
+      [type]="typeList.Piteras"
+      [data]="piteras"
+      [total]="number"
+    />
+  </ng-template>
+</div>

@@ -1,0 +1,77 @@
+/* You can add global styles to this file, and also import other style files */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-1: #cb8dd952;
+  --color-2: #323232;
+  --color-3: #000000;
+  --color-4: #ffffff;
+  --color-5: #181818;
+  --font-size-1: 12px;
+  --font-size-2: 16px;
+  --font-size-3: 20px;
+  --shadow-1: rgba(0 0 0 /35%) 0px 8px 24px;
+  --shadow-2: rgba(100, 100, 111, 0, 2) 0px 7px 29px 0px;
+  --border-radius-1: 0.25rem;
+  --border-radius-2: 0.5rem;
+  --font-family-1: "Poppins";
+  --animation-1: 200ms;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-family-1);
+  color: var(--color-3);
+  list-style: decimal;
+}
+p {
+  color: var(--color-3);
+  font-size: 12px;
+}
+
+/*EDITOR DE TEXTO*/
+.box-modal-show ol {
+  list-style: decimal !important;
+}
+.box-modal-show ul {
+  list-style: square !important;
+}
+.box-modal-show .text-description > p {
+  margin-bottom: 8px !important;
+}
+.tableTextEditor {
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 14px !important;
+}
+.tableTextEditor > span {
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 14px !important;
+}
+.tableTextEditor > span:first-child {
+  max-width: 95%;
+}
+.tableTextEditor > span > p {
+  font-size: 14px !important;
+}
+.tableTextEditor > span > ol,
+.tableTextEditor > span > ul {
+  display: flex;
+  flex-direction: row;
+}
+.tableTextEditor > span > ol > li,
+.tableTextEditor > span > ul > li {
+  font-size: 14px !important;
+  padding-right: 2px;
+}

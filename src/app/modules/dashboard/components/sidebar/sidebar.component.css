@@ -1,0 +1,54 @@
+.side-bar {
+  width: 16.5rem;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  padding: 2rem 1rem;
+  background-color: #46324b;
+  color: var(--color-4);
+}
+
+.side-bar__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  opacity: 0.8;
+}
+
+.side-bar__list .list-label {
+  font-size: 90%;
+  font-weight: 500;
+}
+
+.side-bar__list .list-wrapper-item {
+  font-size: var(--font-size-2);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  align-content: center;
+  text-transform: uppercase;
+  font-family: "poppins";
+  padding-bottom: 2rem;
+}
+
+.side-bar__list .list-wrapper-item .uil {
+  font-size: var(--font-size-3);
+  padding-right: 0.5rem;
+}
+
+.side-bar__separator {
+  margin: 1rem 0;
+}
+
+.side-bar__separator.line-separator {
+  border-bottom: solid 1px var(--color-4);
+}
+
+.side-bar__list.list-three .list-wrapper-item {
+  padding: 0.25rem 0;
+}
+
+.side-bar__list li {
+  cursor: pointer;
+}

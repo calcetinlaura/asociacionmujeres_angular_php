@@ -1,0 +1,156 @@
+<div class="flex flex-col">
+  <div class="text-center pb-5 uppercase">
+    <p class="text-2xl">{{ titleForm }}</p>
+  </div>
+  <form
+    (ngSubmit)="onSendFormEvent()"
+    [formGroup]="formEvent"
+    class="login-auth-form"
+  >
+    <div class="flex flex-col gap-y-4">
+      <div class="box-input gap-x-4">
+        <label for="email">Título</label>
+        <div class="flex flex-col flex-1">
+          <input
+            formControlName="title"
+            type="text"
+            [ngClass]="{
+              'is-invalid': submitted && formEvent.get('title')?.invalid
+            }"
+          />
+          <div
+            *ngIf="submitted && formEvent.get('title')?.invalid"
+            class="is-invalid-text"
+          >
+            Campo requerido
+          </div>
+        </div>
+      </div>
+      <div class="box-input gap-x-4">
+        <label for="description">Descripción</label>
+        <mat-card-content>
+          <editor
+            apiKey="c8uxjgc7f76nt677zqdn22a8a97bjhc7fyph9y4oxuj7nrx3"
+            [init]="{
+              height: 300,
+              plugins: ['advlist', 'lists', 'wordcount'],
+              toolbar:
+                'undo redo | bold italic  underline strikethrough | fontfamily fontsize forecolor  backcolor| \
+               alignleft aligncenter alignright alignjustify | \
+               bullist numlist  | removeformat '
+            }"
+            formControlName="description"
+          ></editor>
+        </mat-card-content>
+      </div>
+      <hr />
+      <div class="flex justify-between gap-x-4">
+        <div class="flex flex-col flex-1 gap-y-4">
+          <div class="box-input gap-x-4 flex-1">
+            <label for="town">Municipio</label>
+            <input formControlName="town" type="text" />
+          </div>
+          <div class="box-input gap-x-4 flex-1">
+            <label for="place">Espacio</label>
+            <input formControlName="place" type="text" />
+          </div>
+          <div class="box-input gap-y-2 gap-x-4">
+            <label for="status">Aforo</label>
+            <input formControlName="capacity" type="number" />
+          </div>
+          <div class="box-input gap-y-2 gap-x-4">
+            <label for="price">Precio</label>
+            <input formControlName="price" type="text" />
+          </div>
+        </div>
+        <div class="flex flex-col gap-y-4 bg-lilaMuyClaro p-4">
+          <div class="flex box-input gap-x-4">
+            <label for="start">Inicio</label>
+            <div class="flex flex-col flex-1">
+              <input
+                formControlName="start"
+                type="date"
+                [ngClass]="{
+                  'is-invalid': submitted && formEvent.get('start')?.invalid
+                }"
+              />
+              <div
+                *ngIf="submitted && formEvent.get('start')?.invalid"
+                class="is-invalid-text"
+              >
+                Campo requerido
+              </div>
+            </div>
+          </div>
+          <div class="flex box-input gap-x-4">
+            <label for="end">Fin</label>
+            <div class="flex flex-col flex-1">
+              <input
+                formControlName="end"
+                type="date"
+                [ngClass]="{
+                  'is-invalid': (submitted && formEvent.errors?.['invalidDateRange'])
+                }"
+              />
+              <div
+                *ngIf="submitted && formEvent.errors?.['invalidDateRange']"
+                class="is-invalid-text"
+              >
+                Fecha fin no puede ser anterior a fecha inicio.
+              </div>
+            </div>
+          </div>
+          <div class="flex box-input gap-x-4">
+            <label for="time">Hora</label>
+            <input formControlName="time" type="time" placeholder="00:00" />
+          </div>
+        </div>
+      </div>
+      <hr />
+      <div class="box-input gap-y-2 gap-x-4">
+        <label for="img">Cartel</label>
+        <!-- <input formControlName="img" type="image"  /> -->
+      </div>
+
+      <div class="flex gap-x-4">
+        <label for="inscription">¿Requiere de incripción previa?</label>
+        <input formControlName="inscription" type="checkbox" />
+      </div>
+      <div class="box-input gap-y-2 gap-x-4">
+        <label for="status">Estado del evento</label>
+        <select formControlName="status">
+          <option value="" selected>En marcha</option>
+          <option value="Cancelado">Cancelado</option>
+          <option value="Aplazado">Aplazado</option>
+          <option value="Agotadas">Plazas agotadas</option>
+        </select>
+      </div>
+      <div
+        class="box-input gap-x-4"
+        *ngIf="formEvent.get('status')?.value !== ''"
+      >
+        <label for="description">Motivos cambio <br />estado del evento</label>
+        <mat-card-content>
+          <editor
+            apiKey="c8uxjgc7f76nt677zqdn22a8a97bjhc7fyph9y4oxuj7nrx3"
+            [init]="{
+              height: 250,
+              plugins: ['advlist', 'lists', 'wordcount'],
+              toolbar:
+                'undo redo | bold italic  underline strikethrough | fontfamily fontsize forecolor  backcolor| \
+               alignleft aligncenter alignright alignjustify | \
+               bullist numlist  | removeformat '
+            }"
+            formControlName="statusReason"
+          ></editor>
+        </mat-card-content>
+      </div>
+      <div *ngIf="errorSession">Hay algún campo incorrecto</div>
+      <div class="flex justify-center">
+        <button class="bg-black p-4 text-white" type="submit">
+          {{ buttonAction }}
+        </button>
+      </div>
+    </div>
+  </form>
+</div>

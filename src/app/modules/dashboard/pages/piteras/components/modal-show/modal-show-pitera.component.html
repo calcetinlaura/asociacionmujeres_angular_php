@@ -1,0 +1,5 @@
+<div class="flex flex-col">
+  <app-text-title [text]="item.title + ' | ' + item.year" />
+  <app-text-subtitle *ngIf="item.theme" [text]="item.theme" />
+  <app-text-link *ngIf="item.theme" [text]="'Ver PDF'" [url]="item.url" />
+</div>

@@ -1,0 +1,44 @@
+<div>
+  <app-dashboard-header
+    [icon]="'uil-plus-square'"
+    [title]="''"
+    [number]="number"
+    [type]="'acreedores'"
+  />
+  <div
+    class="pt-8 px-8 flex add"
+    [class.sticky-toolbar]="isStickyToolbar"
+    #toolbar
+  >
+    <app-button-add
+      [buttonText]="'Nuevo acreedor/a'"
+      [iconClass]="'uil-plus'"
+      (addClicked)="addNewCreditorModal()"
+    />
+    <app-input-search (onDebounce)="applyFilter($event)" class="flex-1" />
+  </div>
+  <!-- Spinner Loading -->
+  <app-spinner-loading *ngIf="!dataLoaded; else results" />
+  <!-- Tabla -->
+  <ng-template #results>
+    <div class="pb-4 px-8 flex" [class.sticky-table]="isStickyToolbar">
+      <app-table
+        [data]="filteredCreditors"
+        [type]="typeList"
+        [headerColumns]="headerListCreditors"
+        (openModal)="onOpenModal($event)"
+      />
+    </div>
+  </ng-template>
+</div>
+
+<!-- Modal -->
+<app-modal
+  *ngIf="isModalVisible"
+  [item]="item"
+  [type]="typeList"
+  [action]="currentModalAction"
+  (closeModal)="onCloseModal()"
+  (confirmDelete)="confirmDeleteCreditor(item)"
+  (sendFormCreditorData)="sendFormCreditor($event)"
+></app-modal>

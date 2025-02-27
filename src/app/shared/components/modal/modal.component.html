@@ -1,0 +1,96 @@
+<div class="modal" (click)="onCloseModalFromOutside($event)">
+  <div class="modal_body relative">
+    <div
+      class="absolute top-3 right-3 block text-gray-500 cursor-pointer hover:text-black"
+      (click)="onCloseModal()"
+    >
+      <i class="uil uil-multiply iconClose"></i>
+    </div>
+    <ng-container [ngSwitch]="action">
+      <ng-container *ngSwitchCase="TypeActionModal.Show">
+        <ng-container
+          *ngTemplateOutlet="templateView; context: { item: item }"
+        ></ng-container>
+      </ng-container>
+
+      <ng-container *ngSwitchCase="TypeActionModal.Edit">
+        <ng-container
+          *ngTemplateOutlet="templateForm; context: { item: item }"
+        ></ng-container>
+      </ng-container>
+
+      <ng-container *ngSwitchCase="TypeActionModal.Delete">
+        <ng-container
+          *ngTemplateOutlet="templateDelete; context: { item: item }"
+        ></ng-container>
+      </ng-container>
+
+      <ng-container *ngSwitchCase="TypeActionModal.Create">
+        <ng-container *ngTemplateOutlet="templateForm"></ng-container>
+      </ng-container>
+    </ng-container>
+  </div>
+</div>
+
+<!-- Template de vista de un ítem (ej. libro, película) -->
+<ng-template #templateView let-item="item">
+  <app-modal-show [type]="type" [item]="item" />
+</ng-template>
+
+<!-- Template para eliminar un ítem -->
+<ng-template #templateDelete let-item="item">
+  <app-modal-delete
+    [type]="type"
+    [item]="item"
+    (closeModal)="onCloseModal()"
+    (confirmDelete)="onConfirmDeleteBook($event)"
+  />
+</ng-template>
+
+<ng-template #templateForm let-item="item">
+  <app-form-book
+    *ngIf="type === TypeList.Books"
+    [itemId]="item?.id"
+    (sendFormBook)="onSendFormBook($event)"
+  />
+  <app-form-movie
+    *ngIf="type === TypeList.Movies"
+    [itemId]="item?.id"
+    (sendFormMovie)="onSendFormMovie($event)"
+  />
+  <app-form-event
+    *ngIf="type === TypeList.Events"
+    [itemId]="item?.id"
+    (sendFormEvent)="onSendFormEvent($event)"
+  />
+  <app-form-recipe
+    *ngIf="type === TypeList.Recipes"
+    [itemId]="item?.id"
+    (sendFormRecipe)="onSendFormRecipe($event)"
+  />
+  <app-form-pitera
+    *ngIf="type === TypeList.Piteras"
+    [itemId]="item?.id"
+    (sendFormPitera)="onSendFormPitera($event)"
+  />
+  <app-form-partner
+    *ngIf="type === TypeList.Partners"
+    [itemId]="item?.id"
+    (sendFormPartner)="onSendFormPartner($event)"
+  />
+  <app-form-invoice
+    *ngIf="type === TypeList.Invoices"
+    [itemId]="item?.id"
+    (sendFormInvoice)="onSendFormInvoice($event)"
+  />
+  <app-form-subsidy
+    *ngIf="type === TypeList.Subsidies"
+    [itemId]="item?.id"
+    (sendFormSubsidy)="onSendFormSubsidy($event)"
+  />
+  <app-form-creditor
+    *ngIf="type === TypeList.Creditors"
+    [itemId]="item?.id"
+    (sendFormCreditor)="onSendFormCreditor($event)"
+  />
+</ng-template>

@@ -1,0 +1,28 @@
+{
+  "data": [
+    {
+      "id": 1,
+      "name": "Antonia Martínez",
+      "birthday": "23/05/2023",
+      "address": "Avd. Constitución 40 3A",
+      "town": "Callosa de Segura",
+      "phone": "999 999 999",
+      "email": "email@email.com",
+      "years": "3",
+      "img": "https://cdn.oldskull.net/wp-content/uploads/2019/02/5-petra-braun-oldskull-.jpg",
+      "cuota": "[]"
+    },
+    {
+      "id": 2,
+      "name": "Encarna Martínez",
+      "birthday": "23/05/2023",
+      "address": "Avd. Constitución 40 3A",
+      "town": "Callosa de Segura",
+      "phone": "999 999 999",
+      "email": "email@email.com",
+      "years": "4",
+      "img": "https://cdn.oldskull.net/wp-content/uploads/2019/02/5-petra-braun-oldskull-.jpg",
+      "cuota": "[]"
+    }
+  ]
+}

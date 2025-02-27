@@ -1,0 +1,7 @@
+{
+  "/php": {
+    "target": "https://asociaciondemujerescallosadesegura.com",
+    "secure": false,
+    "changeOrigin": true
+  }
+}

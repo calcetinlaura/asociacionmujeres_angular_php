@@ -1,0 +1,10 @@
+.uil {
+  color: rgba(70, 50, 75, 0.681);
+  font-size: 20px;
+  padding-left: 10px;
+  padding-right: 10px;
+  cursor: pointer;
+}
+.uil:hover {
+  color: rgb(232, 148, 243);
+}

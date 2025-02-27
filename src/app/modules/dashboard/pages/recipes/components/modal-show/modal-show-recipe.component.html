@@ -1,0 +1,16 @@
+<div class="flex flex-col">
+  <app-text-title [text]="item.title" />
+  <app-text-subtitle *ngIf="item.owner" [text]="item.owner" />
+  <div class="my-4">
+    <app-text-background
+      *ngIf="item.category"
+      [text]="item.category"
+    ></app-text-background>
+  </div>
+  <app-text-border [text]="'INGREDIENTES'"></app-text-border>
+  <div class="ml-8 py-3">
+    <app-text-editor [text]="item.ingredients" />
+  </div>
+  <app-text-border [text]="'PASO A PASO'"></app-text-border>
+  <div class="ml-8 py-3"><app-text-editor [text]="item.ingredients" /></div>
+</div>
