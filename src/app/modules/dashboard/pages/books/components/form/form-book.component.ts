@@ -18,7 +18,10 @@ import { MatCardModule } from '@angular/material/card';
 import { EditorModule } from '@tinymce/tinymce-angular';
 import { filter, tap } from 'rxjs';
 import { BooksFacade } from 'src/app/application';
-import { BookModel } from 'src/app/core/interfaces/book.interface';
+import {
+  BookModel,
+  FormBookData,
+} from 'src/app/core/interfaces/book.interface';
 import { filterBooks, TypeList } from 'src/app/core/models/general.model';
 import { ImageControlComponent } from '../../../../components/image-control/image-control.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
@@ -42,7 +45,7 @@ export class FormBookComponent {
   private destroyRef = inject(DestroyRef);
 
   @Input() itemId!: number;
-  @Output() sendFormBook = new EventEmitter<BookModel>();
+  @Output() sendFormBook = new EventEmitter<FormBookData>();
   selectedImageFile: File | null = null;
 
   bookData: any;
@@ -60,7 +63,7 @@ export class FormBookComponent {
     description: new FormControl('', [Validators.maxLength(2000)]),
     gender: new FormControl('', [Validators.required]),
     img: new FormControl(''),
-    imgFile: new FormControl<File | null>(null),
+    // imgFile: new FormControl<File | null>(null),
     year: new FormControl(0, [Validators.required]),
   });
 
@@ -110,15 +113,29 @@ export class FormBookComponent {
     }
 
     // Crea un nuevo objeto FormData
-    const formValue: BookModel = {
-      title: this.formBook.get('title')?.value || '',
-      author: this.formBook.get('author')?.value || '',
-      description: this.formBook.get('description')?.value || '',
-      gender: this.formBook.get('gender')?.value || '',
-      year: this.formBook.get('year')?.value || 0,
-      img: this.selectedImageFile?.name || 'null',
-      // imgFile: this.selectedImageFile || 'null',
+    // const formValue: BookModel = {
+    //   title: this.formBook.get('title')?.value || '',
+    //   author: this.formBook.get('author')?.value || '',
+    //   description: this.formBook.get('description')?.value || '',
+    //   gender: this.formBook.get('gender')?.value || '',
+    //   year: this.formBook.get('year')?.value || 0,
+    //   img: this.selectedImageFile?.name || 'null',
+    //   // imgFile: this.selectedImageFile || 'null',
+    // };
+    // this.sendFormBook.emit(formValue);
+    //}
+    const formValue = {
+      book: {
+        title: this.formBook.get('title')?.value || '',
+        author: this.formBook.get('author')?.value || '',
+        description: this.formBook.get('description')?.value || '',
+        gender: this.formBook.get('gender')?.value || '',
+        year: this.formBook.get('year')?.value || 0,
+        img: this.selectedImageFile?.name || 'null',
+      },
+      imgFile: this.selectedImageFile || null, // Aquí se puede usar el archivo seleccionado
     };
+    // Emitir el objeto con el formulario y el archivo
     this.sendFormBook.emit(formValue);
   }
   onFileSelected(file: File) {

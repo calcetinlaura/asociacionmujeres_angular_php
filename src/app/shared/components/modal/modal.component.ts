@@ -17,7 +17,10 @@ import { FormMovieComponent } from '../../../modules/dashboard/pages/movies/comp
 import { FormPiteraComponent } from '../../../modules/dashboard/pages/piteras/components/form/form-pitera.component';
 import { FormInvoiceComponent } from 'src/app/modules/dashboard/pages/invoices/components/form/form-invoice.component';
 import { FormCreditorComponent } from 'src/app/modules/dashboard/pages/creditors/components/form/form-creditor.component';
-import { BookModel } from 'src/app/core/interfaces/book.interface';
+import {
+  BookModel,
+  FormBookData,
+} from 'src/app/core/interfaces/book.interface';
 import { EventModel } from 'src/app/core/interfaces/event.interface';
 import { MovieModel } from 'src/app/core/interfaces/movie.interface';
 import { RecipeModel } from 'src/app/core/interfaces/recipe.interface';
@@ -58,7 +61,7 @@ export class ModalComponent implements OnInit {
   @Output() confirmDelete = new EventEmitter<number>();
   @Output() sendFormBookData = new EventEmitter<{
     itemId: number;
-    newBookData: BookModel;
+    newBookData: FormBookData;
   }>();
 
   @Output() sendFormEventData = new EventEmitter<{
@@ -126,7 +129,7 @@ export class ModalComponent implements OnInit {
     }
   }
 
-  onSendFormBook(formValue: BookModel) {
+  onSendFormBook(formValue: FormBookData) {
     this.sendFormBookData.emit({
       itemId: this.item?.id || 0,
       newBookData: formValue,

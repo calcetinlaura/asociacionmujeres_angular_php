@@ -3,7 +3,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { catchError } from 'rxjs/operators';
 import { Observable, throwError } from 'rxjs';
 import { environments } from 'src/environments/environments';
-import { BookModel } from '../interfaces/book.interface';
+import { BookModel, FormBookData } from '../interfaces/book.interface';
 
 @Injectable({
   providedIn: 'root',
@@ -40,12 +40,15 @@ export class BooksService {
       .pipe(catchError(this.handleError));
   }
 
-  add(book: BookModel): Observable<any> {
+  add(book: FormBookData): Observable<any> {
+    console.log('Dentro de bookService add');
+    console.log('FormBookData', book);
     return this.http.post(this.apiUrl, book).pipe(catchError(this.handleError));
   }
 
-  edit(id: number, book: BookModel): Observable<any> {
-    console.log('Dentro de edit');
+  edit(id: number, book: FormBookData): Observable<any> {
+    console.log('Dentro de bookService edit');
+    console.log('FormBookData', book);
     return (
       this.http
         // .patch(`${this.apiUrl}/books/${id}`, book)

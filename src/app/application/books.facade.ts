@@ -2,7 +2,7 @@ import { DestroyRef, inject, Injectable } from '@angular/core';
 import { BehaviorSubject, catchError, Observable, tap, throwError } from 'rxjs';
 import { BooksService } from '../core/services/books.services';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BookModel } from '../core/interfaces/book.interface';
+import { BookModel, FormBookData } from '../core/interfaces/book.interface';
 import { HttpErrorResponse } from '@angular/common/http';
 
 @Injectable({
@@ -74,14 +74,14 @@ export class BooksFacade {
       .subscribe();
   }
 
-  addBook(book: BookModel): Observable<BookModel> {
+  addBook(book: FormBookData): Observable<FormBookData> {
     return this.booksService.add(book).pipe(
       tap(() => this.loadAllBooks()), // Cargar todos los libros después de agregar uno
       catchError(this.handleError)
     );
   }
 
-  editBook(id: number, book: BookModel): Observable<BookModel> {
+  editBook(id: number, book: FormBookData): Observable<BookModel> {
     console.log('DENTRO EDIT BOOK');
     return this.booksService.edit(id, book).pipe(
       takeUntilDestroyed(this.destroyRef),

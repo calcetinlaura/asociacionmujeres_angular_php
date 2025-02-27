@@ -19,7 +19,10 @@ import { ModalService } from 'src/app/shared/components/modal/services/modal.ser
 import { tap } from 'rxjs';
 import { AddButtonComponent } from 'src/app/shared/components/buttons/button-add/button-add.component';
 import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
-import { BookModel } from 'src/app/core/interfaces/book.interface';
+import {
+  BookModel,
+  FormBookData,
+} from 'src/app/core/interfaces/book.interface';
 import { ColumnModel } from 'src/app/core/interfaces/column.interface';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SpinnerLoadingComponent } from '../../../landing/components/spinner-loading/spinner-loading.component';
@@ -143,7 +146,7 @@ export class BooksPageComponent implements OnInit {
     this.modalService.closeModal();
   }
 
-  sendFormBook(event: { itemId: number; newBookData: BookModel }): void {
+  sendFormBook(event: { itemId: number; newBookData: FormBookData }): void {
     console.log('DATOS', event.itemId, event.newBookData);
     if (event.itemId) {
       console.log('EDIT');
