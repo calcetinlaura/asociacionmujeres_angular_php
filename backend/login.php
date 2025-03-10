@@ -14,12 +14,6 @@ if ($method === 'OPTIONS') {
 
 $result = $connection->query("SELECT id, password FROM users");
 
-while ($row = $result->fetch_assoc()) {
-    $hashed_password = password_hash($row['password'], PASSWORD_DEFAULT);
-    $connection->query("UPDATE users SET password = '$hashed_password' WHERE id = " . $row['id']);
-}
-
-echo "Contraseñas actualizadas correctamente.";
 // Leer el JSON de la petición
 $data = json_decode(file_get_contents("php://input"), true);
 file_put_contents("debug.txt", print_r($data, true));
@@ -44,21 +38,24 @@ $result = $stmt->get_result();
 
 if ($result->num_rows === 1) {
     $user = $result->fetch_assoc();
+    error_log("Password en BD: " . $user['password']);
+    error_log("Password ingresada: " . $password);
 
     // Verificar la contraseña
-    if (password_verify($password, $user['password'])) {
-        echo json_encode([
-            "success" => true,
-            "message" => "Login exitoso",
-            "user" => [
-                "id" => $user['id'],
-                "name" => $user['name']
-            ]
-        ]);
-    } else {
-        http_response_code(401); // Unauthorized
-        echo json_encode(["error" => "Credenciales incorrectas"]);
-    }
+    if ($password === $user['password']) {
+      echo json_encode([
+          "success" => true,
+          "message" => "Login exitoso",
+          "user" => [
+              "id" => $user['id'],
+              "name" => $user['name']
+          ]
+      ]);
+  } else {
+      http_response_code(401);
+      echo json_encode(["error" => "Credenciales incorrectas"]);
+  }
+
 } else {
     http_response_code(401);
     echo json_encode(["error" => "Usuario no encontrado"]);

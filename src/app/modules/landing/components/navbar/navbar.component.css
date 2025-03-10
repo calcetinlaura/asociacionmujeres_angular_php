@@ -91,10 +91,10 @@
 /* Móvil pequeño */
 @media (max-width: 480px) {
   .nav-bar {
-    height: 9vh;
+    height: 11vh;
   }
   .nav-bar_list {
-    margin-top: 6px;
+    margin-top: 15px;
   }
   .nav-bar h1 {
     font-size: 0.8rem;
@@ -102,7 +102,7 @@
     padding-right: 5%;
   }
   .nav-bar_list {
-    padding: 0 10px;
+    padding: 0 2px;
   }
   .nav-bar_list > li > a {
     padding: 2px;

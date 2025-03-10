@@ -42,13 +42,14 @@
 @media (max-width: 768px) {
   .section--generic--list .list {
     grid-template-columns: repeat(2, minmax(150px, 1fr));
+    gap: 1rem;
   }
   .section--generic--total {
     font-size: 14px; /* Tamaño de fuente más pequeño en móviles */
   }
 }
 /* Móvil pequeño */
-@media (max-width: 480px) {
+@media (max-width: 300px) {
   .section--generic--list .list {
     grid-template-columns: 1fr;
   }

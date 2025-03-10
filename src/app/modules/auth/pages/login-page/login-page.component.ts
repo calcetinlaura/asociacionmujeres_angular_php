@@ -17,7 +17,11 @@ import { tap } from 'rxjs';
   standalone: true,
   templateUrl: './login-page.component.html',
   styleUrls: ['./login-page.component.css'],
-  imports: [CommonModule, ReactiveFormsModule, RouterOutlet],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    // RouterOutlet
+  ],
 })
 export class LoginPageComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
@@ -26,7 +30,7 @@ export class LoginPageComponent implements OnInit {
 
   constructor(
     private authService: AuthService,
-    private cookie: CookieService,
+    // private cookie: CookieService,
     private router: Router
   ) {}
   formLogin = new FormGroup({

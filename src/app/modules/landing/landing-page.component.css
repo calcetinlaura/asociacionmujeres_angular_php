@@ -22,8 +22,8 @@
 /* Móvil pequeño */
 @media (max-width: 480px) {
   .home-wrapper {
-    margin-top: 9vh;
-    min-height: 91vh;
+    margin-top: 11vh;
+    min-height: 89vh;
   }
 }
 @media (max-width: 380px) {
