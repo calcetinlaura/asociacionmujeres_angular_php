@@ -8,7 +8,7 @@ import { environments } from 'src/environments/environments';
   providedIn: 'root',
 })
 export class InvoicesService {
-  private apiUrl: string = `${environments.api}/api/invoices`;
+  private apiUrl: string = `${environments.api}/backend/invoices`;
   constructor(private http: HttpClient) {}
 
   getAll(): Observable<any> {

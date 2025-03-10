@@ -6,34 +6,34 @@
       class="login-auth-form"
     >
       <div class="form-group">
-        <label for="user_name">Usuario/a</label>
+        <label for="name">Usuario/a</label>
         <input
-          formControlName="user_name"
+          formControlName="name"
           type="text"
           class="form-input"
           [ngClass]="{
-            'is-invalid': submitted && formLogin.get('user_name')?.invalid
+            'is-invalid': submitted && formLogin.get('name')?.invalid
           }"
         />
         <div
-          *ngIf="submitted && formLogin.get('user_name')?.invalid"
+          *ngIf="submitted && formLogin.get('name')?.invalid"
           class="is-invalid-text"
         >
           Campo requerido
         </div>
       </div>
       <div class="form-group">
-        <label for="user_password">Contraseña</label>
+        <label for="password">Contraseña</label>
         <input
-          formControlName="user_password"
+          formControlName="password"
           type="password"
           class="form-input"
           [ngClass]="{
-            'is-invalid': submitted && formLogin.get('user_password')?.invalid
+            'is-invalid': submitted && formLogin.get('password')?.invalid
           }"
         />
         <div
-          *ngIf="submitted && formLogin.get('user_password')?.invalid"
+          *ngIf="submitted && formLogin.get('password')?.invalid"
           class="is-invalid-text"
         >
           Campo requerido

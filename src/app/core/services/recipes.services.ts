@@ -8,7 +8,7 @@ import { environments } from 'src/environments/environments';
   providedIn: 'root',
 })
 export class RecipesService {
-  private apiUrl: string = `${environments.api}/api/recipes.php`;
+  private apiUrl: string = `${environments.api}/backend/recipes.php`;
   constructor(private http: HttpClient) {}
 
   getRecipes(): Observable<any> {

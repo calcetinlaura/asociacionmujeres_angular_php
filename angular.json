@@ -35,6 +35,7 @@
           },
           "configurations": {
             "production": {
+              "baseHref": "/frontend/",
               "fileReplacements": [
                 {
                   "replace": "src/environments/environments.ts",

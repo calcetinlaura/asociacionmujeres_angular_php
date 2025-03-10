@@ -9,7 +9,7 @@ import { CreditorModel } from '../interfaces/creditor.interface';
   providedIn: 'root',
 })
 export class CreditorsService {
-  private apiUrl: string = `${environments.api}/api/creditors.php`;
+  private apiUrl: string = `${environments.api}/backend/creditors.php`;
   constructor(private http: HttpClient) {}
 
   getCreditors(): Observable<any> {

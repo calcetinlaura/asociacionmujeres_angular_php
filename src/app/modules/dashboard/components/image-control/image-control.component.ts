@@ -117,7 +117,7 @@ export class ImageControlComponent implements OnInit {
       try {
         // Cambiar la URL a la de tu API para subir la imagen
         const response = await this.http
-          .post('http://localhost/ASOC/api/books.php/upload', formData)
+          .post('http://localhost/ASOC/books.php/upload', formData)
           .toPromise();
         console.log('Upload successful:', response);
       } catch (error) {

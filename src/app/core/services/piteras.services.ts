@@ -8,7 +8,7 @@ import { environments } from 'src/environments/environments';
   providedIn: 'root',
 })
 export class PiterasService {
-  private apiUrl: string = `${environments.api}/api/piteras.php`;
+  private apiUrl: string = `${environments.api}/backend/piteras.php`;
   constructor(private http: HttpClient) {}
 
   getPiteras(): Observable<any> {

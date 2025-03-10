@@ -30,8 +30,8 @@ export class LoginPageComponent implements OnInit {
     private router: Router
   ) {}
   formLogin = new FormGroup({
-    user_name: new FormControl('', Validators.required),
-    user_password: new FormControl('', [
+    name: new FormControl('', Validators.required),
+    password: new FormControl('', [
       Validators.required,
       Validators.minLength(3),
       Validators.maxLength(12),
@@ -40,9 +40,9 @@ export class LoginPageComponent implements OnInit {
   ngOnInit(): void {}
 
   sendLogin(): void {
-    this.router.navigate(['dashboard', '']);
+    // this.router.navigate(['dashboard', '']);
 
-    const { user_name, user_password } = this.formLogin.value;
+    const { name, password } = this.formLogin.value;
 
     if (this.formLogin.invalid) {
       this.submitted = true;
@@ -50,7 +50,7 @@ export class LoginPageComponent implements OnInit {
     }
 
     this.authService
-      .sendCredentials(user_name!, user_password!)
+      .sendCredentials(name!, password!)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((response) => {

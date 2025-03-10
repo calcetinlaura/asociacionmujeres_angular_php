@@ -8,7 +8,7 @@ import { environments } from 'src/environments/environments';
   providedIn: 'root',
 })
 export class SubsidiesService {
-  private apiUrl: string = `${environments.api}/api/subsidies`;
+  private apiUrl: string = `${environments.api}/backend/subsidies`;
   constructor(private http: HttpClient) {}
 
   public subsidiesMap = {

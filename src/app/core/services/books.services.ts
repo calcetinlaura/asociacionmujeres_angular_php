@@ -8,7 +8,7 @@ import { environments } from 'src/environments/environments';
   providedIn: 'root',
 })
 export class BooksService {
-  private apiUrl: string = `${environments.api}/api/books.php`;
+  private apiUrl: string = `${environments.api}/backend/books.php`;
   constructor(private http: HttpClient) {}
 
   getBooks(): Observable<any> {

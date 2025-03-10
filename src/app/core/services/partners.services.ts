@@ -9,7 +9,7 @@ import { PartnerModel } from '../interfaces/partner.interface';
   providedIn: 'root',
 })
 export class PartnersService {
-  private apiUrl: string = `${environments.api}/api/partners.php`;
+  private apiUrl: string = `${environments.api}/backend/partners.php`;
   constructor(private http: HttpClient) {}
 
   getPartners(): Observable<any> {

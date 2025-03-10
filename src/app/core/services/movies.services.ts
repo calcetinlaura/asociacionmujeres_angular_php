@@ -8,7 +8,7 @@ import { environments } from 'src/environments/environments';
   providedIn: 'root',
 })
 export class MoviesService {
-  private apiUrl: string = `${environments.api}/api/movies.php`;
+  private apiUrl: string = `${environments.api}/backend/movies.php`;
   constructor(private http: HttpClient) {}
 
   getMovies(): Observable<any> {

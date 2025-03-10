@@ -8,7 +8,7 @@ import { environments } from 'src/environments/environments';
   providedIn: 'root',
 })
 export class EventsService {
-  private apiUrl: string = `${environments.api}/api/events.php`;
+  private apiUrl: string = `${environments.api}/backend/events.php`;
   constructor(private http: HttpClient) {}
 
   getEvents(): Observable<any> {
