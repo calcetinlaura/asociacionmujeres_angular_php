@@ -42,27 +42,22 @@ export class PiterasFacade {
       .subscribe();
   }
 
-  // Add a new piteras
-  addPitera(piteras: PiteraModel): Observable<PiteraModel> {
-    return this.piterasService.add(piteras).pipe(
+  addPitera(pitera: FormData): Observable<FormData> {
+    return this.piterasService.add(pitera).pipe(
+      takeUntilDestroyed(this.destroyRef),
       tap(() => this.loadAllPiteras()),
       catchError(this.handleError)
     );
   }
 
-  // Edit a piteras
-  editPitera(itemId: number, piteras: PiteraModel): void {
-    this.piterasService
-      .edit(itemId, piteras)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap(() => this.loadAllPiteras()),
-        catchError(this.handleError)
-      )
-      .subscribe();
+  editPitera(itemId: number, pitera: FormData): Observable<FormData> {
+    return this.piterasService.edit(itemId, pitera).pipe(
+      takeUntilDestroyed(this.destroyRef),
+      tap(() => this.loadAllPiteras()),
+      catchError(this.handleError)
+    );
   }
 
-  // Delete a piteras
   deletePitera(id: number): void {
     this.piterasService
       .delete(id)
@@ -74,7 +69,6 @@ export class PiterasFacade {
       .subscribe();
   }
 
-  // Clear selected piteras
   clearSelectedPitera(): void {
     this.selectedPiterasSubject.next(null);
   }

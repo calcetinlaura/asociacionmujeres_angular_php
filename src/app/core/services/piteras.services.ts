@@ -14,29 +14,31 @@ export class PiterasService {
   getPiteras(): Observable<any> {
     return this.http.get(this.apiUrl).pipe(catchError(this.handleError));
   }
-  add(pitera: any): Observable<any> {
-    return this.http
-      .post(`${this.apiUrl}/add`, pitera)
-      .pipe(catchError(this.handleError));
-  }
-
-  edit(id: number, pitera: any): Observable<any> {
-    return this.http
-      .patch(`${this.apiUrl}/edit/${id}`, pitera)
-      .pipe(catchError(this.handleError));
-  }
-
-  delete(id: number): Observable<any> {
-    return this.http
-      .delete(`${this.apiUrl}/delete/${id}`)
-      .pipe(catchError(this.handleError));
-  }
 
   getPiteraById(id: number): Observable<any> {
     return this.http
       .get(`${this.apiUrl}/${id}`)
       .pipe(catchError(this.handleError));
   }
+
+  add(pitera: FormData): Observable<any> {
+    return this.http
+      .post(this.apiUrl, pitera)
+      .pipe(catchError(this.handleError));
+  }
+
+  edit(id: number, pitera: FormData): Observable<any> {
+    return this.http
+      .post(this.apiUrl, pitera)
+      .pipe(catchError(this.handleError));
+  }
+
+  delete(id: number): Observable<any> {
+    return this.http
+      .delete(this.apiUrl, { params: { id: id } })
+      .pipe(catchError(this.handleError));
+  }
+
   // Método para manejar errores
   handleError(error: HttpErrorResponse) {
     let errorMessage = '';

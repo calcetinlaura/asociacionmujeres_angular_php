@@ -9,7 +9,6 @@ import {
 } from '@angular/core';
 import { DashboardHeaderComponent } from '../../components/dashboard-header/dashboard-header.component';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
-import { PiterasService } from 'src/app/core/services/piteras.services';
 import { TableComponent } from '../../components/table/table.component';
 import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
 import { CommonModule } from '@angular/common';
@@ -37,7 +36,6 @@ import { SpinnerLoadingComponent } from '../../../landing/components/spinner-loa
     InputSearchComponent,
     SpinnerLoadingComponent,
   ],
-  providers: [PiterasService],
   templateUrl: './piteras-page.component.html',
   styleUrl: './piteras-page.component.css',
 })
@@ -69,7 +67,6 @@ export class PiterasPageComponent implements OnInit {
       document.body.scrollTop ||
       0;
 
-    // Hacer sticky la toolbar al hacer scroll más de 300px (justo después de la cabecera)
     if (scrollPosition > 50) {
       this.isStickyToolbar = true;
     } else {
@@ -80,7 +77,6 @@ export class PiterasPageComponent implements OnInit {
   ngOnInit(): void {
     this.loadAllPiteras();
 
-    // Suscripción a los cambios de visibilidad del modal
     this.modalService.modalVisibility$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
@@ -91,10 +87,10 @@ export class PiterasPageComponent implements OnInit {
       .subscribe();
 
     this.headerListPiteras = [
+      { title: 'Portada', key: 'img' },
       { title: 'Título', key: 'title' },
       { title: 'Año', key: 'year' },
       { title: 'Tema', key: 'theme' },
-      { title: 'Portada', key: 'img' },
       { title: 'Url', key: 'url' },
     ];
   }
@@ -105,20 +101,12 @@ export class PiterasPageComponent implements OnInit {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((piteras) => {
-          if (piteras === null) {
-            return;
-          }
-          this.piteras = piteras.sort((a, b) =>
-            a.title.toLowerCase().localeCompare(b.title.toLowerCase())
-          );
-          // this.piteras = piteras;
-          this.filteredPiteras = piteras;
-          this.number = this.piteras.length;
-          this.dataLoaded = true;
+          this.updatePiteraState(piteras);
         })
       )
       .subscribe();
   }
+
   applyFilterWord(keyword: string): void {
     if (!keyword) {
       // Si no hay palabra clave, mostrar todos las piteras
@@ -153,9 +141,17 @@ export class PiterasPageComponent implements OnInit {
     this.modalService.closeModal();
   }
 
-  sendFormPitera(pitera: { itemId: number; newPiteraData: PiteraModel }): void {
+  sendFormPitera(pitera: { itemId: number; newPiteraData: FormData }): void {
     if (pitera.itemId) {
-      this.piterasFacade.editPitera(pitera.itemId, pitera.newPiteraData);
+      this.piterasFacade
+        .editPitera(pitera.itemId, pitera.newPiteraData)
+        .pipe(
+          takeUntilDestroyed(this.destroyRef),
+          tap(() => {
+            this.onCloseModal();
+          })
+        )
+        .subscribe();
     } else {
       this.piterasFacade
         .addPitera(pitera.newPiteraData)
@@ -167,6 +163,17 @@ export class PiterasPageComponent implements OnInit {
         )
         .subscribe();
     }
-    this.onCloseModal();
+  }
+
+  private updatePiteraState(piteras: PiteraModel[] | null): void {
+    if (piteras === null) {
+      return;
+    }
+
+    this.piteras = piteras.sort((a, b) => b.year - a.year); // 🔹 Ordenar de mayor a menor (descendente)
+
+    this.filteredPiteras = [...this.piteras];
+    this.number = this.piteras.length;
+    this.dataLoaded = true;
   }
 }

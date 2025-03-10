@@ -29,8 +29,10 @@
       <app-text-link
         *ngIf="type === typeList.Piteras && item.url"
         [text]="'Ver pdf'"
-        [url]="item.url"
-      ></app-text-link>
+        [url]="'/uploads/pdf/PITERAS/' + item.url"
+      >
+        Ver Documento ></app-text-link
+      >
     </div>
     <div
       *ngIf="type === typeList.Events && item.start !== ''"

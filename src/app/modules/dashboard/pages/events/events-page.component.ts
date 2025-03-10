@@ -37,7 +37,6 @@ import { SpinnerLoadingComponent } from '../../../landing/components/spinner-loa
     InputSearchComponent,
     SpinnerLoadingComponent,
   ],
-  providers: [EventsService],
   templateUrl: './events-page.component.html',
   styleUrl: './events-page.component.css',
 })
@@ -69,7 +68,6 @@ export class EventsPageComponent implements OnInit {
       document.body.scrollTop ||
       0;
 
-    // Hacer sticky la toolbar al hacer scroll más de 300px (justo después de la cabecera)
     if (scrollPosition > 50) {
       this.isStickyToolbar = true;
     } else {
@@ -78,9 +76,8 @@ export class EventsPageComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadEvents();
+    this.loadAllEvents();
 
-    // Suscripción a los cambios de visibilidad del modal
     this.modalService.modalVisibility$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
@@ -91,43 +88,38 @@ export class EventsPageComponent implements OnInit {
       .subscribe();
 
     this.headerListEvents = [
+      { title: 'Cartel', key: 'img' },
       { title: 'Título', key: 'title' },
       { title: 'Fecha', key: 'start' },
-      { title: 'Description', key: 'description' },
-      // { title: 'Municipio', key: 'town' },
+      { title: 'Descripción', key: 'description' },
       { title: 'Espacio', key: 'place' },
       { title: 'Aforo', key: 'capacity' },
-      { title: 'Portada', key: 'img' },
       { title: 'Precio', key: 'price' },
       { title: 'Estado', key: 'status' },
-      { title: 'Inscripción', key: 'inscription' },
+      { title: 'Requiere inscripción', key: 'inscription' },
     ];
   }
 
-  loadEvents(): void {
+  loadAllEvents(): void {
     this.eventsFacade.loadAllEvents();
     this.eventsFacade.events$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((events) => {
-          if (events === null) {
-            return;
-          }
-          this.events = events;
-          this.filteredEvents = events; // Inicializamos filteredEvents
-          this.number = this.events.length;
-          this.dataLoaded = true;
+          this.updateEventState(events);
         })
       )
       .subscribe();
   }
+
   applyFilter(keyword: string): void {
     if (!keyword) {
       this.filteredEvents = this.events; // Si no hay palabra clave, mostrar todos los libros
     } else {
       keyword = keyword.toLowerCase();
       this.filteredEvents = this.events.filter(
-        (book) => Object.values(book).join(' ').toLowerCase().includes(keyword) // Filtrar libros por la palabra clave
+        (event) =>
+          Object.values(event).join(' ').toLowerCase().includes(keyword) // Filtrar libros por la palabra clave
       );
     }
     this.number = this.filteredEvents.length; // Actualizar el conteo de libros filtrados
@@ -154,9 +146,17 @@ export class EventsPageComponent implements OnInit {
     this.modalService.closeModal();
   }
 
-  sendFormEvent(event: { itemId: number; newEventData: EventModel }): void {
+  sendFormEvent(event: { itemId: number; newEventData: FormData }): void {
     if (event.itemId) {
-      this.eventsFacade.editEvent(event.itemId, event.newEventData);
+      this.eventsFacade
+        .editEvent(event.itemId, event.newEventData)
+        .pipe(
+          takeUntilDestroyed(this.destroyRef),
+          tap(() => {
+            this.onCloseModal();
+          })
+        )
+        .subscribe();
     } else {
       this.eventsFacade
         .addEvent(event.newEventData)
@@ -168,6 +168,14 @@ export class EventsPageComponent implements OnInit {
         )
         .subscribe();
     }
-    this.onCloseModal();
+  }
+  private updateEventState(events: EventModel[] | null): void {
+    if (events === null) {
+      return;
+    }
+    this.events = events.sort((a, b) => b.id - a.id);
+    this.filteredEvents = [...this.events];
+    this.number = this.events.length;
+    this.dataLoaded = true;
   }
 }

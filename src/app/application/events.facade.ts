@@ -24,7 +24,7 @@ export class EventsFacade {
       .getEvents()
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((events: EventModel[]) => this.eventsSubject.next(events)),
+        tap((events: EventModel[]) => this.updateBookState(events)),
         catchError(this.handleError)
       )
       .subscribe();
@@ -41,22 +41,20 @@ export class EventsFacade {
       .subscribe();
   }
 
-  addEvent(event: EventModel): Observable<EventModel> {
+  addEvent(event: FormData): Observable<FormData> {
     return this.eventsService.add(event).pipe(
+      takeUntilDestroyed(this.destroyRef),
       tap(() => this.loadAllEvents()),
       catchError(this.handleError)
     );
   }
 
-  editEvent(itemId: number, event: EventModel): void {
-    this.eventsService
-      .edit(itemId, event)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap(() => this.loadAllEvents()),
-        catchError(this.handleError)
-      )
-      .subscribe();
+  editEvent(itemId: number, event: FormData): Observable<FormData> {
+    return this.eventsService.edit(itemId, event).pipe(
+      takeUntilDestroyed(this.destroyRef),
+      tap(() => this.loadAllEvents()),
+      catchError(this.handleError)
+    );
   }
 
   deleteEvent(id: number): void {
@@ -70,11 +68,12 @@ export class EventsFacade {
       .subscribe();
   }
 
-  // Clear selected event
   clearSelectedEvent(): void {
     this.selectedEventSubject.next(null);
   }
-
+  updateBookState(books: EventModel[]): void {
+    this.eventsSubject.next(books);
+  }
   // Método para manejar errores
   handleError(error: HttpErrorResponse) {
     let errorMessage = '';

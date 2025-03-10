@@ -1,37 +1,43 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, inject, Input, Output } from '@angular/core';
 import {
-  AbstractControl,
   FormControl,
   FormGroup,
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
+import { MatCardModule } from '@angular/material/card';
+import { EditorModule } from '@tinymce/tinymce-angular';
 import { filter, tap } from 'rxjs';
 import { RecipesFacade } from 'src/app/application';
 import { RecipeModel } from 'src/app/core/interfaces/recipe.interface';
-import { filterRecipes } from 'src/app/core/models/general.model';
-import { RecipesService } from 'src/app/core/services/recipes.services';
-
-import { EditorModule } from '@tinymce/tinymce-angular';
-import { MatCardModule } from '@angular/material/card';
+import { filterRecipes, TypeList } from 'src/app/core/models/general.model';
+import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
   selector: 'app-form-recipe',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, EditorModule, MatCardModule],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    EditorModule,
+    MatCardModule,
+    ImageControlComponent,
+  ],
   templateUrl: './form-recipe.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],
-  providers: [RecipesService],
 })
 export class FormRecipeComponent {
   private recipesFacade = inject(RecipesFacade);
   private generalService = inject(GeneralService);
 
   @Input() itemId!: number;
-  @Output() sendFormRecipe = new EventEmitter<RecipeModel>();
-
+  @Output() sendFormRecipe = new EventEmitter<{
+    itemId: number;
+    newRecipeData: FormData;
+  }>();
+  selectedImageFile: File | null = null;
   recipeData: any;
   imageSrc: string = '';
   errorSession: boolean = false;
@@ -40,7 +46,7 @@ export class FormRecipeComponent {
   buttonAction: string = 'Guardar';
   years: number[] = [];
   FilterRecipes = filterRecipes;
-
+  typeList = TypeList.Recipes;
   formRecipe = new FormGroup({
     title: new FormControl('', [Validators.required]),
     category: new FormControl('', [Validators.required]),
@@ -67,8 +73,21 @@ export class FormRecipeComponent {
           tap((recipe: RecipeModel | null) => {
             if (recipe) {
               this.formRecipe.patchValue(recipe);
+              // {
+              //   title: recipe.title || null,
+              //   category: recipe.category || null,
+              //   ingredients: recipe.ingredients || null,
+              //   owner: recipe.owner || null,
+              //   recipe: recipe.recipe || null,
+              //   img: recipe.img || null,
+              //   year: recipe.year || 0,
+              // }
               this.titleForm = 'Editar Receta';
               this.buttonAction = 'Guardar cambios';
+              if (recipe.img) {
+                this.imageSrc = recipe.img;
+                this.selectedImageFile = null;
+              }
             }
           })
         )
@@ -76,22 +95,25 @@ export class FormRecipeComponent {
     }
   }
 
+  async onImageSelected(file: File) {
+    const result = await this.generalService.handleFileSelection(file);
+    this.selectedImageFile = result.file;
+    this.imageSrc = result.imageSrc;
+  }
+
   onSendFormRecipe(): void {
     if (this.formRecipe.invalid) {
       this.submitted = true;
+      console.log('Formulario inválido', this.formRecipe.errors);
       return;
     }
 
-    const formValue: RecipeModel = {
-      title: this.formRecipe.get('title')?.value || '',
-      category: this.formRecipe.get('category')?.value || '',
-      owner: this.formRecipe.get('owner')?.value || '',
-      recipe: this.formRecipe.get('recipe')?.value || '',
-      ingredients: this.formRecipe.get('ingredients')?.value || '',
-      img: this.formRecipe.get('img')?.value || '',
-      year: this.formRecipe.get('year')?.value || 0,
-    };
+    const formData = this.generalService.createFormData(
+      this.formRecipe.value,
+      this.selectedImageFile,
+      this.itemId
+    );
 
-    this.sendFormRecipe.emit(formValue);
+    this.sendFormRecipe.emit({ itemId: this.itemId, newRecipeData: formData });
   }
 }

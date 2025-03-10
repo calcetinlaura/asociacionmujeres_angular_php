@@ -1,0 +1,18 @@
+.container_filters {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  row-gap: 16px;
+  column-gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+/* Móvil pequeño */
+@media (max-width: 480px) {
+  .container_filters {
+    row-gap: 10px;
+    column-gap: 4px;
+    margin-bottom: 3px;
+  }
+}

@@ -1,32 +1,42 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, inject, Input, Output } from '@angular/core';
 import {
-  AbstractControl,
   FormControl,
   FormGroup,
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
+import { MatCardModule } from '@angular/material/card';
+import { EditorModule } from '@tinymce/tinymce-angular';
 import { filter, tap } from 'rxjs';
 import { PiterasFacade } from 'src/app/application';
 import { PiteraModel } from 'src/app/core/interfaces/pitera.interface';
-import { PiterasService } from 'src/app/core/services/piteras.services';
+import { TypeList } from 'src/app/core/models/general.model';
+import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
   selector: 'app-form-pitera',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    EditorModule,
+    MatCardModule,
+    ImageControlComponent,
+  ],
   templateUrl: './form-pitera.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],
-  providers: [PiterasService],
 })
 export class FormPiteraComponent {
+  private piterasFacade = inject(PiterasFacade);
   private generalService = inject(GeneralService);
-
   @Input() itemId!: number;
-  @Output() sendFormPitera = new EventEmitter<PiteraModel>();
-
+  @Output() sendFormPitera = new EventEmitter<{
+    itemId: number;
+    newPiteraData: FormData;
+  }>();
+  selectedImageFile: File | null = null;
   piteraData: any;
   imageSrc: string = '';
   errorSession: boolean = false;
@@ -34,22 +44,18 @@ export class FormPiteraComponent {
   titleForm: string = 'Registrar Pitera';
   buttonAction: string = 'Guardar';
   years: number[] = [];
-
+  typeList = TypeList.Piteras;
   formPitera = new FormGroup({
     title: new FormControl('', [Validators.required]),
     theme: new FormControl(''),
-    url: new FormControl(''),
+    url: new FormControl<string | File | null>(null), // 🔹 Acepta string, File o null
     img: new FormControl(''),
     year: new FormControl(0, [
       Validators.required,
       Validators.min(1995),
       Validators.max(new Date().getFullYear()),
     ]),
-    // file: new FormControl(''),
-    // fileSource: new FormControl(''),
   });
-
-  private piterasFacade = inject(PiterasFacade);
 
   ngOnInit(): void {
     const currentYear = this.generalService.currentYear;
@@ -62,9 +68,20 @@ export class FormPiteraComponent {
           filter((pitera: PiteraModel | null) => pitera !== null),
           tap((pitera: PiteraModel | null) => {
             if (pitera) {
-              this.formPitera.patchValue(pitera);
+              this.formPitera.patchValue({
+                theme: pitera.theme || '',
+                title: pitera.title || '',
+                url: pitera.url || '',
+                img: pitera.img || '',
+                year: Number(pitera.year) || 0,
+              });
+
               this.titleForm = 'Editar Pitera';
               this.buttonAction = 'Guardar cambios';
+              if (pitera.img) {
+                this.imageSrc = pitera.img;
+                this.selectedImageFile = null;
+              }
             }
           })
         )
@@ -72,19 +89,61 @@ export class FormPiteraComponent {
     }
   }
 
+  async onImageSelected(file: File) {
+    const result = await this.generalService.handleFileSelection(file);
+    this.selectedImageFile = result.file;
+    this.imageSrc = result.imageSrc;
+  }
+
+  onPdfSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+
+      if (file.type === 'application/pdf') {
+        this.formPitera.patchValue({ url: file });
+      } else {
+        console.warn('⚠️ Formato incorrecto. Selecciona un archivo PDF.');
+      }
+    } else {
+      console.warn('⚠️ No se seleccionó ningún archivo.');
+    }
+  }
+
   onSendFormPitera(): void {
     if (this.formPitera.invalid) {
-      this.submitted = true; // Marcar como enviado
+      this.submitted = true;
+      console.log('⚠️ Formulario inválido', this.formPitera.errors);
       return;
     }
 
-    const formValue: PiteraModel = {
-      title: this.formPitera.get('title')?.value || '',
-      theme: this.formPitera.get('theme')?.value || '',
-      url: this.formPitera.get('url')?.value || '',
-      img: this.formPitera.get('img')?.value || '',
-      year: this.formPitera.get('year')?.value || 0,
-    };
-    this.sendFormPitera.emit(formValue);
+    const formData = new FormData();
+    formData.append('title', this.formPitera.value.title!);
+    formData.append('theme', this.formPitera.value.theme || '');
+    formData.append('year', this.formPitera.value.year!.toString());
+
+    // 🔹 Si `url` es un archivo, añadirlo al `FormData`
+    if (this.formPitera.value.url instanceof File) {
+      formData.append('url', this.formPitera.value.url);
+    } else if (typeof this.formPitera.value.url === 'string') {
+      formData.append('existingUrl', this.formPitera.value.url); // 🔹 Enviar URL como string si ya existe
+    }
+
+    // 🔹 Si hay imagen seleccionada, agregarla
+    if (this.selectedImageFile) {
+      formData.append('img', this.selectedImageFile);
+    }
+
+    if (this.itemId) {
+      formData.append('_method', 'PATCH');
+      formData.append('id', this.itemId.toString());
+    }
+
+    console.log(
+      '📤 Enviando FormData:',
+      Object.fromEntries((formData as any).entries())
+    );
+
+    this.sendFormPitera.emit({ itemId: this.itemId, newPiteraData: formData });
   }
 }

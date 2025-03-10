@@ -1,7 +1,7 @@
 .button-filter {
   color: white;
   padding: 4px 8px;
-  font-size: 16px;
+  font-size: 1.2rem;
   background-color: #2a202b;
   text-transform: capitalize;
   border-radius: 4px;
@@ -15,4 +15,34 @@
   background-color: rgb(222, 199, 231);
   color: #2a202b;
   cursor: pointer;
+}
+@media (max-width: 1200px) {
+  .button-filter {
+    padding: 4px 8px;
+    font-size: 1rem;
+  }
+}
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .button-filter {
+    padding: 4px 8px;
+    font-size: 0.9rem;
+  }
+}
+/* Móvil */
+@media (max-width: 768px) {
+  .button-filter {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+  }
+}
+/* Móvil pequeño */
+@media (max-width: 480px) {
+  .button-filter {
+    padding: 4px 4px;
+    font-size: 0.6rem;
+  }
+}
+@media (max-width: 380px) {
 }

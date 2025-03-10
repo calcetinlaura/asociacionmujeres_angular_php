@@ -153,7 +153,7 @@ th.mat-sort-header-sorted {
   flex: 0 0 80px !important;
   width: 85px !important;
 }
-.mat-column-postCode {
+.mat-column-post_code {
   text-align: center;
   word-wrap: break-word !important;
   white-space: unset !important;
@@ -177,14 +177,20 @@ th.mat-sort-header-sorted {
 }
 
 .positive {
-  background-color: rgb(245, 235, 246);
+  color: rgb(134, 168, 130);
 }
 .mat-mdc-row:hover .positive {
   background-color: rgb(245, 205, 250);
 }
 
-.negative {
+/* .negative {
   background-color: rgb(246, 71, 71);
+} */
+.positive {
+  color: rgb(134, 168, 130);
+}
+.negative {
+  color: rgb(233, 158, 158);
 }
 .custom-header-row {
   position: sticky;

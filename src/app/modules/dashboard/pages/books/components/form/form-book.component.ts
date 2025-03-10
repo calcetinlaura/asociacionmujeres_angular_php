@@ -1,13 +1,5 @@
 import { CommonModule } from '@angular/common';
-import {
-  Component,
-  DestroyRef,
-  EventEmitter,
-  inject,
-  Input,
-  Output,
-} from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, EventEmitter, inject, Input, Output } from '@angular/core';
 import {
   FormControl,
   FormGroup,
@@ -20,10 +12,11 @@ import { filter, tap } from 'rxjs';
 import { BooksFacade } from 'src/app/application';
 import {
   BookModel,
-  FormBookData,
+  GenderBooks,
+  GenderFilterBooks,
 } from 'src/app/core/interfaces/book.interface';
 import { filterBooks, TypeList } from 'src/app/core/models/general.model';
-import { ImageControlComponent } from '../../../../components/image-control/image-control.component';
+import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
@@ -42,12 +35,13 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
 export class FormBookComponent {
   private booksFacade = inject(BooksFacade);
   private generalService = inject(GeneralService);
-  private destroyRef = inject(DestroyRef);
 
   @Input() itemId!: number;
-  @Output() sendFormBook = new EventEmitter<FormBookData>();
+  @Output() sendFormBook = new EventEmitter<{
+    itemId: number;
+    newBookData: FormData;
+  }>();
   selectedImageFile: File | null = null;
-
   bookData: any;
   imageSrc: string = '';
   errorSession: boolean = false;
@@ -55,16 +49,15 @@ export class FormBookComponent {
   titleForm: string = 'Registrar libro';
   buttonAction: string = 'Guardar';
   years: number[] = [];
-  FilterBooks = filterBooks;
+  genderBooks = GenderFilterBooks;
   typeList = TypeList.Books;
   formBook = new FormGroup({
     title: new FormControl('', [Validators.required]),
-    author: new FormControl('', [Validators.required]),
+    author: new FormControl(''),
     description: new FormControl('', [Validators.maxLength(2000)]),
     gender: new FormControl('', [Validators.required]),
     img: new FormControl(''),
-    // imgFile: new FormControl<File | null>(null),
-    year: new FormControl(0, [Validators.required]),
+    year: new FormControl(0, [Validators.required, Validators.min(2000)]),
   });
 
   ngOnInit(): void {
@@ -75,7 +68,6 @@ export class FormBookComponent {
       this.booksFacade.loadBookById(this.itemId);
       this.booksFacade.selectedBook$
         .pipe(
-          takeUntilDestroyed(this.destroyRef),
           filter((book: BookModel | null) => book !== null),
           tap((book: BookModel | null) => {
             if (book) {
@@ -85,16 +77,13 @@ export class FormBookComponent {
                 description: book.description || null,
                 gender: book.gender || null,
                 img: book.img || null,
-                // imgFile: book.imgFil || null,
                 year: book.year || 0,
               });
 
               this.titleForm = 'Editar Libro';
               this.buttonAction = 'Guardar cambios';
-              console.log('IMAGEN ONINIT', book, this.imageSrc);
               if (book.img) {
                 this.imageSrc = book.img;
-                console.log('IMAGEN ONINIT', this.imageSrc);
                 this.selectedImageFile = null;
               }
             }
@@ -104,52 +93,25 @@ export class FormBookComponent {
     }
   }
 
+  async onImageSelected(file: File) {
+    const result = await this.generalService.handleFileSelection(file);
+    this.selectedImageFile = result.file;
+    this.imageSrc = result.imageSrc;
+  }
+
   onSendFormBook(): void {
-    // Verifica si el formulario es inválido
     if (this.formBook.invalid) {
       this.submitted = true;
-      console.log('Formulario invalido');
+      console.log('Formulario inválido', this.formBook.errors);
       return;
     }
 
-    // Crea un nuevo objeto FormData
-    // const formValue: BookModel = {
-    //   title: this.formBook.get('title')?.value || '',
-    //   author: this.formBook.get('author')?.value || '',
-    //   description: this.formBook.get('description')?.value || '',
-    //   gender: this.formBook.get('gender')?.value || '',
-    //   year: this.formBook.get('year')?.value || 0,
-    //   img: this.selectedImageFile?.name || 'null',
-    //   // imgFile: this.selectedImageFile || 'null',
-    // };
-    // this.sendFormBook.emit(formValue);
-    //}
-    const formValue = {
-      book: {
-        title: this.formBook.get('title')?.value || '',
-        author: this.formBook.get('author')?.value || '',
-        description: this.formBook.get('description')?.value || '',
-        gender: this.formBook.get('gender')?.value || '',
-        year: this.formBook.get('year')?.value || 0,
-        img: this.selectedImageFile?.name || 'null',
-      },
-      imgFile: this.selectedImageFile || null, // Aquí se puede usar el archivo seleccionado
-    };
-    // Emitir el objeto con el formulario y el archivo
-    this.sendFormBook.emit(formValue);
-  }
-  onFileSelected(file: File) {
-    this.selectedImageFile = file; // Guarda el archivo seleccionado
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        this.imageSrc = e.target?.result as string; // Set the imageSrc to a base64 URL
-      };
-      reader.readAsDataURL(file); // Reading the file as a Data URL
-    } else {
-      this.imageSrc = ''; // Reset if no file
-    }
+    const formData = this.generalService.createFormData(
+      this.formBook.value,
+      this.selectedImageFile,
+      this.itemId
+    );
 
-    console.log('Selected file:', file);
+    this.sendFormBook.emit({ itemId: this.itemId, newBookData: formData });
   }
 }

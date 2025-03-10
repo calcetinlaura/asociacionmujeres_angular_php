@@ -60,8 +60,8 @@
           <input formControlName="town" type="text" />
         </div>
         <div class="box-input gap-x-4">
-          <label for="postCode">C.Postal</label>
-          <input formControlName="postCode" type="text" />
+          <label for="post_code">C.Postal</label>
+          <input formControlName="post_code" type="text" />
         </div>
       </div>
       <!-- Dirección -->
@@ -73,10 +73,13 @@
         <h3 class="titleCuotas">Cuotas</h3>
         <!-- Cuota -->
         <div class="flex flex-col flex-wrap h-96">
-          <div *ngFor="let year of years" class="flex flex-col flex-wrap w-40">
-            <mat-checkbox [formControlName]="'cuota_' + year" color="secondary"
-              >Cuota {{ year }}</mat-checkbox
-            >
+          <div
+            *ngFor="let year of years; let i = index"
+            class="flex flex-col flex-wrap w-40"
+          >
+            <mat-checkbox [formControl]="getCuotaControl(i)" color="primary">
+              Cuota {{ year }}
+            </mat-checkbox>
           </div>
         </div>
       </div>

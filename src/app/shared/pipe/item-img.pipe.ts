@@ -6,21 +6,28 @@ import { TypeList } from 'src/app/core/models/general.model';
   standalone: true,
 })
 export class ItemImagePipe implements PipeTransform {
-  private basePath = 'assets/img';
+  private basePath = '/uploads/img';
 
   transform(value: string, type?: TypeList): string {
     if (!value || typeof value !== 'string') {
-      if (type === TypeList.Recipes) {
-        return `${this.basePath}/receta.jpg`;
-      } else {
-        return `${this.basePath}/error.jpg`;
-      }
-    } else {
-      if (type) {
-        return `${this.basePath}/${type}/${value}`;
-      } else {
-        return `${this.basePath}/${value}`;
-      }
+      return type === TypeList.Recipes
+        ? `${this.basePath}/receta.jpg`
+        : `${this.basePath}/error.jpg`;
     }
+
+    if (type === TypeList.Events) {
+      // Extrae el año del nombre del archivo (ejemplo: 2024_evento.jpg)
+      const match = value.match(/^(\d{4})_/);
+      const yearFolder = match ? match[1] : '';
+
+      return yearFolder
+        ? `${this.basePath}/${type}/${yearFolder}/${value}`
+        : `${this.basePath}/${type}/${value}`;
+    }
+
+    // Si no es un evento, usa la estructura normal
+    return type
+      ? `${this.basePath}/${type}/${value}`
+      : `${this.basePath}/${value}`;
   }
 }

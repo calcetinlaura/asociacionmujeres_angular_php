@@ -27,6 +27,7 @@ import { FormControl } from '@angular/forms';
 import { CalculateAgePipe } from '../../../../shared/pipe/caculate_age.pipe';
 import { FormPartnerComponent } from 'src/app/modules/dashboard/pages/partners/components/form/form-partner.component';
 import { CircleIndicatorComponent } from '../circle-indicator/circle-indicator.component';
+import { ItemImagePipe } from '../../../../shared/pipe/item-img.pipe';
 
 @Component({
   standalone: true,
@@ -38,6 +39,7 @@ import { CircleIndicatorComponent } from '../circle-indicator/circle-indicator.c
     MatSortModule,
     MatIconModule,
     CircleIndicatorComponent,
+    ItemImagePipe,
   ],
   selector: 'app-table',
   templateUrl: './table.component.html',

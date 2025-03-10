@@ -218,7 +218,7 @@ export class FormInvoiceComponent {
     if (id === null) {
       return throwError(() => new Error('ID del acreedor no puede ser null'));
     }
-    return this.creditorsService.getById(id).pipe(
+    return this.creditorsService.getCreditorById(id).pipe(
       map((creditor) => ({
         id: creditor.id,
         company: creditor.company,

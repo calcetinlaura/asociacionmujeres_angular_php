@@ -89,12 +89,12 @@ export class RecipesPageComponent implements OnInit {
       .subscribe();
 
     this.headerListRecipes = [
+      { title: 'Portada', key: 'img' },
       { title: 'Titulo', key: 'title' },
       { title: 'Categoria', key: 'category' },
       { title: 'Autor/a', key: 'owner' },
       { title: 'Ingredientes', key: 'ingredients' },
       { title: 'Receta', key: 'recipe' },
-      { title: 'Portada', key: 'img' },
       { title: 'Año', key: 'year' },
     ];
   }
@@ -144,9 +144,17 @@ export class RecipesPageComponent implements OnInit {
     this.modalService.closeModal();
   }
 
-  sendFormRecipe(event: { itemId: number; newRecipeData: RecipeModel }): void {
+  sendFormRecipe(event: { itemId: number; newRecipeData: FormData }): void {
     if (event.itemId) {
-      this.recipesFacade.editRecipe(event.itemId, event.newRecipeData);
+      this.recipesFacade
+        .editRecipe(event.itemId, event.newRecipeData)
+        .pipe(
+          takeUntilDestroyed(this.destroyRef),
+          tap(() => {
+            this.onCloseModal();
+          })
+        )
+        .subscribe();
     } else {
       this.recipesFacade
         .addRecipe(event.newRecipeData)
@@ -158,14 +166,15 @@ export class RecipesPageComponent implements OnInit {
         )
         .subscribe();
     }
-    this.onCloseModal();
   }
 
   private updateRecipeState(recipes: RecipeModel[] | null): void {
     if (recipes === null) {
       return;
     }
-    this.recipes = recipes;
+    this.recipes = recipes.sort((a, b) =>
+      a.title.localeCompare(b.title, undefined, { sensitivity: 'base' })
+    );
     this.filteredRecipes = [...this.recipes];
     this.number = this.recipes.length;
     this.dataLoaded = true;

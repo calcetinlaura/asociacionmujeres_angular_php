@@ -15,24 +15,17 @@ export class RecipesService {
     return this.http.get(this.apiUrl).pipe(catchError(this.handleError));
   }
 
-  getRecipeById(id: number): Observable<any> {
-    return this.http
-      .get(`${this.apiUrl}/${id}`)
-      .pipe(catchError(this.handleError));
-  }
   getRecipesByCategory(category: string): Observable<any> {
-    const urlWithParams = `${this.apiUrl}/category`;
     return this.http
-      .get(urlWithParams, {
+      .get(this.apiUrl, {
         params: { category: category },
       })
       .pipe(catchError(this.handleError));
   }
 
   getRecipesByYear(year: number): Observable<any> {
-    const urlWithParams = `${this.apiUrl}/year`;
     return this.http
-      .get(urlWithParams, {
+      .get(this.apiUrl, {
         params: { year: year },
       })
       .pipe(catchError(this.handleError));
@@ -44,32 +37,30 @@ export class RecipesService {
       .pipe(catchError(this.handleError));
   }
 
-  add(recipe: any): Observable<any> {
+  getRecipeById(id: number): Observable<any> {
     return this.http
-      .post(`${this.apiUrl}/add`, recipe)
+      .get(`${this.apiUrl}/${id}`)
       .pipe(catchError(this.handleError));
   }
 
-  edit(id: number, recipe: any): Observable<any> {
+  add(recipe: FormData): Observable<any> {
     return this.http
-      .patch(`${this.apiUrl}/edit/${id}`, recipe)
+      .post(this.apiUrl, recipe)
+      .pipe(catchError(this.handleError));
+  }
+
+  edit(id: number, recipe: FormData): Observable<any> {
+    return this.http
+      .post(this.apiUrl, recipe)
       .pipe(catchError(this.handleError));
   }
 
   delete(id: number): Observable<any> {
     return this.http
-      .delete(`${this.apiUrl}/delete/${id}`)
+      .delete(this.apiUrl, { params: { id: id } })
       .pipe(catchError(this.handleError));
   }
 
-  uploadImage(formData: FormData): Observable<any> {
-    return this.http.post(`${this.apiUrl}/upload`, formData).pipe(
-      catchError((error: any) => {
-        console.error('Error al subir la imagen:', error);
-        throw error;
-      })
-    );
-  }
   // Método para manejar errores
   handleError(error: HttpErrorResponse) {
     let errorMessage = '';

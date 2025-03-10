@@ -15,29 +15,8 @@ export class EventsService {
     return this.http.get(this.apiUrl).pipe(catchError(this.handleError));
   }
   getEventsByYear(year: number): Observable<any> {
-    const urlWithParams = `${this.apiUrl}/year`;
     return this.http
-      .get(urlWithParams, {
-        params: { year: year },
-      })
-      .pipe(catchError(this.handleError));
-  }
-
-  add(event: any): Observable<any> {
-    return this.http
-      .post(`${this.apiUrl}/add`, event)
-      .pipe(catchError(this.handleError));
-  }
-
-  edit(id: number, event: any): Observable<any> {
-    return this.http
-      .patch(`${this.apiUrl}/edit/${id}`, event)
-      .pipe(catchError(this.handleError));
-  }
-
-  delete(id: number): Observable<any> {
-    return this.http
-      .delete(`${this.apiUrl}/delete/${id}`)
+      .get(this.apiUrl, { params: { year: year } })
       .pipe(catchError(this.handleError));
   }
 
@@ -47,8 +26,26 @@ export class EventsService {
       .pipe(catchError(this.handleError));
   }
 
+  add(event: FormData): Observable<any> {
+    return this.http
+      .post(this.apiUrl, event)
+      .pipe(catchError(this.handleError));
+  }
+
+  edit(id: number, event: FormData): Observable<any> {
+    return this.http
+      .post(this.apiUrl, event)
+      .pipe(catchError(this.handleError));
+  }
+
+  delete(id: number): Observable<any> {
+    return this.http
+      .delete(this.apiUrl, { params: { id: id } })
+      .pipe(catchError(this.handleError));
+  }
+
   // Método para manejar errores
-  private handleError(error: HttpErrorResponse) {
+  handleError(error: HttpErrorResponse) {
     let errorMessage = '';
 
     if (error.error instanceof ErrorEvent) {

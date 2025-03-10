@@ -51,6 +51,7 @@ export class RecipesFacade {
       )
       .subscribe();
   }
+
   loadRecipesByLatest(): void {
     this.recipesService
       .getRecipesByLatest()
@@ -61,6 +62,7 @@ export class RecipesFacade {
       )
       .subscribe();
   }
+
   loadRecipesByCategory(gender: string): void {
     this.recipesService
       .getRecipesByCategory(gender)
@@ -83,22 +85,20 @@ export class RecipesFacade {
       .subscribe();
   }
 
-  addRecipe(recipe: RecipeModel): Observable<RecipeModel> {
+  addRecipe(recipe: FormData): Observable<FormData> {
     return this.recipesService.add(recipe).pipe(
+      takeUntilDestroyed(this.destroyRef),
       tap(() => this.loadAllRecipes()),
       catchError(this.handleError)
     );
   }
 
-  editRecipe(itemId: number, recipe: RecipeModel): void {
-    this.recipesService
-      .edit(itemId, recipe)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap(() => this.loadAllRecipes()),
-        catchError(this.handleError)
-      )
-      .subscribe();
+  editRecipe(itemId: number, recipe: FormData): Observable<FormData> {
+    return this.recipesService.edit(itemId, recipe).pipe(
+      takeUntilDestroyed(this.destroyRef),
+      tap(() => this.loadAllRecipes()),
+      catchError(this.handleError)
+    );
   }
 
   deleteRecipe(id: number): void {
@@ -133,19 +133,6 @@ export class RecipesFacade {
 
       this.filteredRecipesSubject.next(filteredRecipes);
     }
-  }
-  // Método para subir imágenes
-  uploadImage(formData: FormData): Observable<any> {
-    return this.recipesService.uploadImage(formData).pipe(
-      tap((response) => {
-        console.log('Imagen subida correctamente', response);
-        // Aquí puedes manejar lo que haga falta después de subir la imagen.
-      }),
-      catchError((error) => {
-        console.error('Error al subir la imagen:', error);
-        return of(null); // Retorna null en caso de error
-      })
-    );
   }
 
   updateRecipeState(recipes: RecipeModel[]): void {

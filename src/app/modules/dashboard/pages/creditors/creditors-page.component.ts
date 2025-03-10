@@ -10,7 +10,6 @@ import {
 import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { ColumnModel } from 'src/app/core/interfaces/column.interface';
-import { CreditorsService } from 'src/app/core/services/creditors.services';
 import { TableComponent } from 'src/app/modules/dashboard/components/table/table.component';
 import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
 import { CommonModule } from '@angular/common';
@@ -37,7 +36,6 @@ import { SpinnerLoadingComponent } from '../../../landing/components/spinner-loa
     InputSearchComponent,
     SpinnerLoadingComponent,
   ],
-  providers: [CreditorsService],
   templateUrl: './creditors-page.component.html',
   styleUrl: './creditors-page.component.css',
 })
@@ -69,7 +67,6 @@ export class CreditorsPageComponent implements OnInit {
       document.body.scrollTop ||
       0;
 
-    // Hacer sticky la toolbar al hacer scroll más de 300px (justo después de la cabecera)
     if (scrollPosition > 50) {
       this.isStickyToolbar = true;
     } else {
@@ -80,7 +77,6 @@ export class CreditorsPageComponent implements OnInit {
   ngOnInit(): void {
     this.loadAllCreditors();
 
-    // Suscripción a los cambios de visibilidad del modal
     this.modalService.modalVisibility$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
@@ -97,35 +93,31 @@ export class CreditorsPageComponent implements OnInit {
       { title: 'Teléfono', key: 'phone' },
       { title: 'Email', key: 'email' },
       { title: 'Municipio', key: 'town' },
-      { title: 'Dirección', key: 'address' },
-      { title: 'C. Postal', key: 'postCode' },
+      { title: 'Categoría', key: 'category' },
+      { title: 'Palabras clave', key: 'key_words' },
     ];
   }
 
   loadAllCreditors(): void {
-    this.creditorsFacade.loadCreditors();
+    this.creditorsFacade.loadAllCreditors();
     this.creditorsFacade.creditors$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((creditors) => {
-          if (creditors === null) {
-            return;
-          }
-          this.creditors = creditors;
-          this.filteredCreditors = creditors;
-          this.number = this.creditors.length;
-          this.dataLoaded = true;
+          this.updateCreditorState(creditors);
         })
       )
       .subscribe();
   }
+
   applyFilter(keyword: string): void {
     if (!keyword) {
       this.filteredCreditors = this.creditors; // Si no hay palabra clave, mostrar todos los libros
     } else {
       keyword = keyword.toLowerCase();
       this.filteredCreditors = this.creditors.filter(
-        (book) => Object.values(book).join(' ').toLowerCase().includes(keyword) // Filtrar libros por la palabra clave
+        (creditor) =>
+          Object.values(creditor).join(' ').toLowerCase().includes(keyword) // Filtrar libros por la palabra clave
       );
     }
     this.number = this.filteredCreditors.length; // Actualizar el conteo de libros filtrados
@@ -138,7 +130,7 @@ export class CreditorsPageComponent implements OnInit {
 
   addNewCreditorModal(): void {
     this.currentModalAction = TypeActionModal.Create;
-    this.item = null; // Reseteamos el item para un nuevo libro
+    this.item = null;
     this.modalService.openModal();
   }
 
@@ -157,7 +149,15 @@ export class CreditorsPageComponent implements OnInit {
     newCreditorData: CreditorModel;
   }): void {
     if (event.itemId) {
-      this.creditorsFacade.editCreditor(event.itemId, event.newCreditorData);
+      this.creditorsFacade
+        .editCreditor(event.itemId, event.newCreditorData)
+        .pipe(
+          takeUntilDestroyed(this.destroyRef),
+          tap(() => {
+            this.onCloseModal();
+          })
+        )
+        .subscribe();
     } else {
       this.creditorsFacade
         .addCreditor(event.newCreditorData)
@@ -169,6 +169,17 @@ export class CreditorsPageComponent implements OnInit {
         )
         .subscribe();
     }
-    this.onCloseModal();
+  }
+
+  private updateCreditorState(creditors: CreditorModel[] | null): void {
+    if (creditors === null) {
+      return;
+    }
+    this.creditors = creditors.sort((a, b) =>
+      a.company.localeCompare(b.company, undefined, { sensitivity: 'base' })
+    );
+    this.filteredCreditors = [...this.creditors];
+    this.number = this.creditors.length;
+    this.dataLoaded = true;
   }
 }

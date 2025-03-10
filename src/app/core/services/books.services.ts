@@ -3,7 +3,6 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { catchError } from 'rxjs/operators';
 import { Observable, throwError } from 'rxjs';
 import { environments } from 'src/environments/environments';
-import { BookModel, FormBookData } from '../interfaces/book.interface';
 
 @Injectable({
   providedIn: 'root',
@@ -40,21 +39,12 @@ export class BooksService {
       .pipe(catchError(this.handleError));
   }
 
-  add(book: FormBookData): Observable<any> {
-    console.log('Dentro de bookService add');
-    console.log('FormBookData', book);
+  add(book: FormData): Observable<any> {
     return this.http.post(this.apiUrl, book).pipe(catchError(this.handleError));
   }
 
-  edit(id: number, book: FormBookData): Observable<any> {
-    console.log('Dentro de bookService edit');
-    console.log('FormBookData', book);
-    return (
-      this.http
-        // .patch(`${this.apiUrl}/books/${id}`, book)
-        .patch(this.apiUrl, book, { params: { id: id } })
-        .pipe(catchError(this.handleError))
-    );
+  edit(id: number, book: FormData): Observable<any> {
+    return this.http.post(this.apiUrl, book).pipe(catchError(this.handleError));
   }
 
   delete(id: number): Observable<any> {
@@ -63,7 +53,6 @@ export class BooksService {
       .pipe(catchError(this.handleError));
   }
 
-  // Método para manejar errores
   handleError(error: HttpErrorResponse) {
     let errorMessage = '';
 

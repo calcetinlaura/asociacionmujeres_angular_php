@@ -10,7 +10,6 @@ import {
 import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { ColumnModel } from 'src/app/core/interfaces/column.interface';
-import { MoviesService } from 'src/app/core/services/movies.services';
 import { TableComponent } from 'src/app/modules/dashboard/components/table/table.component';
 import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
 import { CommonModule } from '@angular/common';
@@ -37,7 +36,6 @@ import { SpinnerLoadingComponent } from '../../../landing/components/spinner-loa
     InputSearchComponent,
     SpinnerLoadingComponent,
   ],
-  providers: [MoviesService],
   templateUrl: './movies-page.component.html',
   styleUrl: './movies-page.component.css',
 })
@@ -69,7 +67,6 @@ export class MoviesPageComponent implements OnInit {
       document.body.scrollTop ||
       0;
 
-    // Hacer sticky la toolbar al hacer scroll más de 300px (justo después de la cabecera)
     if (scrollPosition > 50) {
       this.isStickyToolbar = true;
     } else {
@@ -80,7 +77,6 @@ export class MoviesPageComponent implements OnInit {
   ngOnInit(): void {
     this.loadAllMovies();
 
-    // Suscripción a los cambios de visibilidad del modal
     this.modalService.modalVisibility$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
@@ -91,11 +87,11 @@ export class MoviesPageComponent implements OnInit {
       .subscribe();
 
     this.headerListMovies = [
+      { title: 'Portada', key: 'img' },
       { title: 'Título', key: 'title' },
       { title: 'Director/a', key: 'director' },
       { title: 'Descripción', key: 'description' },
       { title: 'Género', key: 'gender' },
-      { title: 'Portada', key: 'img' },
       { title: 'Año compra', key: 'year' },
     ];
   }
@@ -106,13 +102,7 @@ export class MoviesPageComponent implements OnInit {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((movies) => {
-          if (movies === null) {
-            return;
-          }
-          this.movies = movies;
-          this.filteredMovies = movies;
-          this.number = this.movies.length;
-          this.dataLoaded = true;
+          this.updateMovieState(movies);
         })
       )
       .subscribe();
@@ -137,7 +127,7 @@ export class MoviesPageComponent implements OnInit {
 
   addNewMovieModal(): void {
     this.currentModalAction = TypeActionModal.Create;
-    this.item = null; // Reseteamos el item para un nuevo libro
+    this.item = null;
     this.modalService.openModal();
   }
 
@@ -151,9 +141,17 @@ export class MoviesPageComponent implements OnInit {
     this.modalService.closeModal();
   }
 
-  sendFormMovie(event: { itemId: number; newMovieData: MovieModel }): void {
+  sendFormMovie(event: { itemId: number; newMovieData: FormData }): void {
     if (event.itemId) {
-      this.moviesFacade.editMovie(event.itemId, event.newMovieData);
+      this.moviesFacade
+        .editMovie(event.itemId, event.newMovieData)
+        .pipe(
+          takeUntilDestroyed(this.destroyRef),
+          tap(() => {
+            this.onCloseModal();
+          })
+        )
+        .subscribe();
     } else {
       this.moviesFacade
         .addMovie(event.newMovieData)
@@ -165,17 +163,13 @@ export class MoviesPageComponent implements OnInit {
         )
         .subscribe();
     }
-    this.onCloseModal();
   }
 
   private updateMovieState(movies: MovieModel[] | null): void {
     if (movies === null) {
       return;
     }
-    // this.movies = movies.sort((a, b) =>
-    //   a.title.toLowerCase().localeCompare(b.title.toLowerCase())
-    // );
-    this.movies = movies;
+    this.movies = movies.sort((a, b) => b.id - a.id);
     this.filteredMovies = [...this.movies];
     this.number = this.movies.length;
     this.dataLoaded = true;

@@ -1,7 +1,7 @@
 export interface PiteraModel {
   title: string;
   year: number;
-  url?: string;
+  url?: File;
   theme: string;
   img?: string;
 }

@@ -3,3 +3,28 @@
   min-height: 80vh;
   overflow-y: auto;
 }
+@media (max-width: 1200px) {
+}
+/* Tablet */
+@media (max-width: 1024px) {
+  .home-wrapper {
+    margin-top: 15vh;
+    min-height: 85vh;
+  }
+}
+/* Móvil */
+@media (max-width: 768px) {
+  .home-wrapper {
+    margin-top: 10vh;
+    min-height: 90vh;
+  }
+}
+/* Móvil pequeño */
+@media (max-width: 480px) {
+  .home-wrapper {
+    margin-top: 9vh;
+    min-height: 91vh;
+  }
+}
+@media (max-width: 380px) {
+}

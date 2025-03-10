@@ -2,6 +2,15 @@
   <div>
     <app-text-title [text]="item.company" />
     <app-text-subtitle *ngIf="item.cif" [text]="item.cif" />
+    <app-text-icon
+      [icon]="'uil uil-building icon'"
+      [text]="
+        (item.address ? item.address : '') +
+        (item.town ? ', ' + item.town : '') +
+        (item.post_code ? ' - ' + item.post_code : '')
+      "
+    ></app-text-icon>
+
     <div class="mt-4">
       <app-text-background [text]="'Contacto'"></app-text-background>
     </div>
@@ -10,10 +19,7 @@
         [icon]="'uil uil-user icon'"
         [text]="item.contact"
       ></app-text-icon>
-      <app-text-icon
-        [icon]="'uil uil-building icon'"
-        [text]="item.address + ', ' + item.town + ' - ' + item.postCode"
-      ></app-text-icon>
+
       <app-text-icon
         [icon]="'uil uil-phone-alt icon'"
         [text]="item.phone"
@@ -22,6 +28,14 @@
         [icon]="'uil uil-postcard icon'"
         [text]="item.email"
       ></app-text-icon>
+    </div>
+    <div class="mt-4">
+      <app-text-background [text]="'Área de trabajo'"></app-text-background>
+    </div>
+    <div class="flex flex-col gap-y-2 ml-4 pt-3">
+      <app-text-subtitle *ngIf="item.category" [text]="item.category" />
+      <app-text-subtitle *ngIf="item.key_words" [text]="item.key_words" />
+      <app-text-editor *ngIf="item.observations" [text]="item.observations" />
     </div>
   </div>
 </div>

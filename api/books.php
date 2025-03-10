@@ -88,101 +88,81 @@ switch ($method) {
     case 'POST':
       error_reporting(E_ALL);
       ini_set('display_errors', 1);
-     // Verifica si se ha enviado un archivo
-     if (isset($_FILES['img']) && $_FILES['img']['error'] == 0) {
-      // Ruta para almacenar la imagen
-      $ruta = "../src/assets/img/BOOKS/";
-      // Mueve el archivo subido a la carpeta deseada
-      move_uploaded_file($_FILES['img']['tmp_name'], $ruta . $_FILES['img']['name']);
-      // Capturamos el nombre del archivo
-      $imgName = $_FILES['img']['name'];
-  } else {
-      $imgName = ''; // En caso que no se suba una imagen
-  }
 
-  // Lee los datos del cuerpo en formato JSON
-  $data = json_decode(file_get_contents('php://input'), true);
+      // Procesar la imagen
+      if (isset($_FILES['img']) && $_FILES['img']['error'] == 0) {
+        $ruta = "../uploads/img/BOOKS/";
+        move_uploaded_file($_FILES['img']['tmp_name'], $ruta . $_FILES['img']['name']);
+        $imgName = $_FILES['img']['name'];
+      } else {
+        $imgName = '';
+      }
 
-  // Aquí asignamos el nombre de la imagen en caso de que se haya subido
-  $data['img'] = $imgName;
+      // Leer los datos del formulario
+      $data = $_POST;
+      $data['img'] = $imgName;
 
-  // Preparar la declaración de inserción
-  $stmt = $connection->prepare("INSERT INTO books (title, author, gender, year, description, img) VALUES (?, ?, ?, ?, ?, ?)");
-  $stmt->bind_param("sssiss", $data['title'], $data['author'], $data['gender'], $data['year'], $data['description'], $data['img']);
+      // Verificar si se indica que se trata de una actualización (override a PATCH)
+      if (isset($data['_method']) && strtoupper($data['_method']) == 'PATCH') {
+          // Obtener el ID enviado en el formulario
+          $id = isset($data['id']) ? $data['id'] : null;
+          if (!is_numeric($id)) {
+              http_response_code(400);
+              echo json_encode(["message" => "ID no válido."]);
+              exit();
+          }
 
-  // Ejecutar la declaración
-  if ($stmt->execute()) {
-      echo json_encode(["message" => "Libro añadido con éxito."]);
-  } else {
-      http_response_code(500);
-      echo json_encode(["message" => "Error al añadir el libro: " . $stmt->error]);
-  }
-  break;
+          // Recuperar datos
+          $title = isset($data['title']) ? $data['title'] : null;
+          $author = isset($data['author']) ? $data['author'] : null;
+          $gender = isset($data['gender']) ? $data['gender'] : null;
+          $year = isset($data['year']) ? $data['year'] : null;
+          $description = isset($data['description']) ? $data['description'] : '';
+// Si no se envió una nueva imagen, recuperar la actual de la base de datos
+if ($imgName == '') {
+  $stmtCurrent = $connection->prepare("SELECT img FROM books WHERE id = ?");
+  $stmtCurrent->bind_param("i", $id);
+  $stmtCurrent->execute();
+  $result = $stmtCurrent->get_result();
+  $currentBook = $result->fetch_assoc();
+  $imgName = $currentBook['img'];
+}
+          // Validar que se hayan recibido los datos obligatorios
+          if ($title && $gender && $year !== null) {
+               $stmt = $connection->prepare("UPDATE books SET title = ?, author = ?, gender = ?, year = ?, description = ?, img = ? WHERE id = ?");
+               if (!$stmt) {
+                   http_response_code(500);
+                   echo json_encode(["message" => "Error al preparar la consulta: " . $connection->error]);
+                   exit();
+               }
 
-  case 'PATCH':
-    // Obtener el ID de los parámetros de consulta
-    $id = isset($_GET['id']) ? $_GET['id'] : null;
-    if (!is_numeric($id)) {
-        http_response_code(400);
-        echo json_encode(["message" => "ID no válido."]);
-        exit();
-    }else{
-      echo("ID VALIDO");
-    }
-    // // Lee los datos de la solicitud ANTES de cualquier otra cosa
-     $data = json_decode(file_get_contents('php://input'), true);
-     if (json_last_error() !== JSON_ERROR_NONE) {
-         http_response_code(400);
-         echo json_encode(["message" => "Error al decodificar JSON: " . json_last_error_msg()]);
-         exit();
-     }
+               // Convertir el año a número
+               $year = (int)$year;
 
-    // // Verifica si se ha enviado un archivo de imagen
-    // $ruta = "assets/img/BOOKS/";
+               $stmt->bind_param("sssissi", $title, $author, $gender, $year, $description, $imgName, $id);
+               if ($stmt->execute()) {
+                   echo json_encode(["message" => "Libro actualizado con éxito."]);
+               } else {
+                   http_response_code(500);
+                   echo json_encode(["message" => "Error al actualizar el libro: " . $stmt->error]);
+               }
+          } else {
+               http_response_code(400);
+               echo json_encode(["message" => "Datos incompletos para actualizar el libro."]);
+          }
+      } else {
+          // Si no es una actualización, se inserta un nuevo libro
+          $stmt = $connection->prepare("INSERT INTO books (title, author, gender, year, description, img) VALUES (?, ?, ?, ?, ?, ?)");
+          $stmt->bind_param("sssiss", $data['title'], $data['author'], $data['gender'], $data['year'], $data['description'], $data['img']);
 
-    // if (isset($_FILES['img']) && $_FILES['img']['error'] == 0) {
-    //      $task_img = uniqid() . '_' . basename($_FILES['img']['name']); // Define $task_img HERE
-    //      if (!move_uploaded_file($_FILES['img']['tmp_name'], $ruta . $task_img)) {
-    //          http_response_code(500);
-    //          echo json_encode(["message" => "Error al subir la imagen: " . error_get_last()['message']]);
-    //          exit();
-    //      }
-    //  } else {
-    //      // Obtener el libro actual para mantener la imagen anterior
-    //      $currentBook = $connection->query("SELECT img FROM books WHERE id = $id");
-    //      if ($currentBook === false) {
-    //          http_response_code(500);
-    //          echo json_encode(["message" => "Error al obtener la imagen actual: " . $connection->error]);
-    //          exit();
-    //      }
-    //      $currentBookData = $currentBook->fetch_assoc();
-    //      $task_img = $currentBookData['img']; // Define $task_img HERE
-    //  }
-
-    //  error_log("Data before UPDATE: " . json_encode($data));
-    //  error_log("Image path: " . $ruta . $task_img);
-    // // La preparación de la consulta debe ir DESPUÉS de definir todas las variables que se usan.
-     if ($data && isset($data['title'], $data['author'], $data['gender'], $data['year'])) {
-         $stmt = $connection->prepare("UPDATE books SET title = ?, author = ?, gender = ?, year = ?, description = ?, img = ? WHERE id = ?"); // Define $stmt HERE
-         if (!$stmt) {
-             http_response_code(500);
-             echo json_encode(["message" => "Error al preparar la consulta: " . $connection->error]);
-             exit();
-         }
-
-         $stmt->bind_param("sssiisi", $data['title'], $data['author'], $data['gender'], $data['year'], $data['description'],$data['img'], $id);
-        if ($stmt->execute()) {
-             echo json_encode(["message" => "Libro actualizado con éxito."]);
-         } else {
+          if ($stmt->execute()) {
+            echo json_encode(["message" => "Libro añadido con éxito."]);
+          } else {
             http_response_code(500);
-           error_log("Error al ejecutar la consulta: " . $stmt->error);
-            echo json_encode(["message" => "Error al actualizar el libro: " . $stmt->error]);
-         }
-     } else {
-         http_response_code(400);
-         echo json_encode(["message" => "Datos incompletos para actualizar el libro."]);
-     }
-    break;
+            echo json_encode(["message" => "Error al añadir el libro: " . $stmt->error]);
+          }
+      }
+      break;
 
     case 'DELETE':
           // Extraer el ID de la URI

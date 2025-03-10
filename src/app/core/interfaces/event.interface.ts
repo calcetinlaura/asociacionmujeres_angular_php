@@ -1,4 +1,5 @@
 export interface EventModel {
+  id: number;
   title: string;
   start: string;
   end: string;
@@ -10,7 +11,7 @@ export interface EventModel {
   price?: string;
   img?: string;
   status?: string;
-  statusReason?: string;
+  status_reason?: string;
   inscription?: boolean;
 }
 export interface EventModelDate {
@@ -25,6 +26,6 @@ export interface EventModelDate {
   price?: string;
   img?: string;
   status?: string;
-  statusReason?: string;
+  status_reason?: string;
   inscription?: boolean;
 }

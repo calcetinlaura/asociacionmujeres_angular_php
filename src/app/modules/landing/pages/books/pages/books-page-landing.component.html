@@ -1,10 +1,10 @@
-<div class="flex flex-col mx-8 sm:m8 mt-4">
+<div class="flex flex-col mx-2 md:mx-8 mt-2 md:mt-4">
   <app-filters
     [filters]="filterGenderBooks"
     (filterClicked)="filterSelected($event)"
     [loadFirstFilter]="'NOVEDADES'"
   />
-  <app-input-search (onDebounce)="applyFilter($event)" class="my-8" />
+  <app-input-search (onDebounce)="applyFilter($event)" class="my-4 md:my-6" />
   <!-- Spinner Loading -->
   <app-spinner-loading *ngIf="isLoading; else results" />
   <!-- Sección cards -->

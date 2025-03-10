@@ -26,26 +26,8 @@
           </div>
         </div>
       </div>
-      <div class="box-input gap-x-4">
-        <label for="description">Descripción</label>
-        <mat-card-content>
-          <editor
-            apiKey="c8uxjgc7f76nt677zqdn22a8a97bjhc7fyph9y4oxuj7nrx3"
-            [init]="{
-              height: 300,
-              plugins: ['advlist', 'lists', 'wordcount'],
-              toolbar:
-                'undo redo | bold italic  underline strikethrough | fontfamily fontsize forecolor  backcolor| \
-               alignleft aligncenter alignright alignjustify | \
-               bullist numlist  | removeformat '
-            }"
-            formControlName="description"
-          ></editor>
-        </mat-card-content>
-      </div>
-      <hr />
       <div class="flex justify-between gap-x-4">
-        <div class="flex flex-col flex-1 gap-y-4">
+        <div class="flex flex-col w-3/4 gap-y-4">
           <div class="box-input gap-x-4 flex-1">
             <label for="town">Municipio</label>
             <input formControlName="town" type="text" />
@@ -63,7 +45,7 @@
             <input formControlName="price" type="text" />
           </div>
         </div>
-        <div class="flex flex-col gap-y-4 bg-lilaMuyClaro p-4">
+        <div class="flex flex-col gap-y-4 w-1/4 bg-lilaMuyClaro p-4">
           <div class="flex box-input gap-x-4">
             <label for="start">Inicio</label>
             <div class="flex flex-col flex-1">
@@ -89,9 +71,19 @@
                 formControlName="end"
                 type="date"
                 [ngClass]="{
-                  'is-invalid': (submitted && formEvent.errors?.['invalidDateRange'])
+                  'is-invalid': submitted && (formEvent.get('end')?.invalid || formEvent.errors?.['invalidDateRange'])
                 }"
               />
+
+              <!-- Mensaje de CAMPO REQUERIDO -->
+              <div
+                *ngIf="submitted && formEvent.get('end')?.hasError('required')"
+                class="is-invalid-text"
+              >
+                Campo requerido.
+              </div>
+
+              <!-- Mensaje de FECHA INCORRECTA -->
               <div
                 *ngIf="submitted && formEvent.errors?.['invalidDateRange']"
                 class="is-invalid-text"
@@ -106,44 +98,69 @@
           </div>
         </div>
       </div>
-      <hr />
-      <div class="box-input gap-y-2 gap-x-4">
-        <label for="img">Cartel</label>
-        <!-- <input formControlName="img" type="image"  /> -->
-      </div>
-
       <div class="flex gap-x-4">
-        <label for="inscription">¿Requiere de incripción previa?</label>
-        <input formControlName="inscription" type="checkbox" />
-      </div>
-      <div class="box-input gap-y-2 gap-x-4">
-        <label for="status">Estado del evento</label>
-        <select formControlName="status">
-          <option value="" selected>En marcha</option>
-          <option value="Cancelado">Cancelado</option>
-          <option value="Aplazado">Aplazado</option>
-          <option value="Agotadas">Plazas agotadas</option>
-        </select>
-      </div>
-      <div
-        class="box-input gap-x-4"
-        *ngIf="formEvent.get('status')?.value !== ''"
-      >
-        <label for="description">Motivos cambio <br />estado del evento</label>
-        <mat-card-content>
-          <editor
-            apiKey="c8uxjgc7f76nt677zqdn22a8a97bjhc7fyph9y4oxuj7nrx3"
-            [init]="{
-              height: 250,
-              plugins: ['advlist', 'lists', 'wordcount'],
-              toolbar:
-                'undo redo | bold italic  underline strikethrough | fontfamily fontsize forecolor  backcolor| \
+        <div class="flex-col gap-y-4 w-3/4">
+          <div class="box-input gap-x-4">
+            <label for="description">Descripción</label>
+            <mat-card-content>
+              <editor
+                apiKey="c8uxjgc7f76nt677zqdn22a8a97bjhc7fyph9y4oxuj7nrx3"
+                [init]="{
+                  height: 250,
+                  plugins: ['advlist', 'lists', 'wordcount'],
+                  toolbar:
+                    'undo redo | bold italic  underline strikethrough | fontfamily fontsize forecolor  backcolor| \
                alignleft aligncenter alignright alignjustify | \
                bullist numlist  | removeformat '
-            }"
-            formControlName="statusReason"
-          ></editor>
-        </mat-card-content>
+                }"
+                formControlName="description"
+              ></editor>
+            </mat-card-content>
+          </div>
+          <div class="flex gap-x-4 py-4">
+            <label for="inscription">¿Requiere de incripción previa?</label>
+            <input formControlName="inscription" type="checkbox" />
+          </div>
+          <div class="box-input gap-y-2 gap-x-4">
+            <label for="status">Estado</label>
+            <select formControlName="status">
+              <option value="" selected>En marcha</option>
+              <option value="Cancelado">Cancelado</option>
+              <option value="Aplazado">Aplazado</option>
+              <option value="Agotadas">Plazas agotadas</option>
+            </select>
+          </div>
+          <div
+            class="box-input gap-x-4 pt-4"
+            *ngIf="formEvent.get('status')?.value !== ''"
+          >
+            <label for="description">Motivos <br />cambio</label>
+            <mat-card-content>
+              <editor
+                apiKey="c8uxjgc7f76nt677zqdn22a8a97bjhc7fyph9y4oxuj7nrx3"
+                [init]="{
+                  height: 250,
+                  plugins: ['advlist', 'lists', 'wordcount'],
+                  toolbar:
+                    'undo redo | bold italic  underline strikethrough | fontfamily fontsize forecolor  backcolor| \
+                   alignleft aligncenter alignright alignjustify | \
+                   bullist numlist  | removeformat '
+                }"
+                formControlName="status_reason"
+              ></editor>
+            </mat-card-content>
+          </div>
+        </div>
+        <div class="box-input gap-y-2 w-1/4">
+          <app-image-control
+            [previewImg]="
+              formEvent.get('img')?.value ? formEvent.get('img')?.value! : null
+            "
+            [type]="typeList"
+            (imgSelected)="onImageSelected($event)"
+            [imageWidthValue]="'full'"
+          ></app-image-control>
+        </div>
       </div>
       <div *ngIf="errorSession">Hay algún campo incorrecto</div>
       <div class="flex justify-center">

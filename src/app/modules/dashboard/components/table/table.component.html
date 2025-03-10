@@ -49,9 +49,10 @@
             <span>{{ element[column.key] }}</span>
           </div>
         </ng-container>
+
         <!-- Diseño especial para 'status' -->
         <ng-container *ngSwitchCase="'status'">
-          <ng-container *ngIf="element[column.key] !== ''">
+          <ng-container *ngIf="element[column.key]">
             <div class="statusColumn">
               <span>{{ element[column.key] }}</span>
             </div>
@@ -68,11 +69,17 @@
 
         <!-- Diseño especial para 'img' -->
         <ng-container *ngSwitchCase="'img'">
-          <app-circle-indicator
+          <!-- <app-circle-indicator
             [item]="element[column.key]"
-          ></app-circle-indicator>
+          ></app-circle-indicator> -->
+          <img
+            appImgBroken
+            [src]="element[column.key] | itemImage : type"
+            alt=""
+            class="cover"
+          />
         </ng-container>
-        <!-- Diseño especial para 'img' -->
+        <!-- Diseño especial para 'inscripción' -->
         <ng-container *ngSwitchCase="'inscription'">
           <app-circle-indicator
             [item]="element[column.key]"
@@ -105,7 +112,12 @@
             [item]="element[column.key]?.includes(2024)"
           ></app-circle-indicator>
         </ng-container>
-
+        <!-- Diseño especial para 'categoría acreedores' -->
+        <ng-container *ngSwitchCase="'category'">
+          <div *ngIf="element.category" class="genderColumn">
+            <span>{{ element[column.key] }}</span>
+          </div>
+        </ng-container>
         <!-- Diseño por defecto para otras columnas -->
         <ng-container *ngSwitchDefault>
           {{ element[column.key] }}

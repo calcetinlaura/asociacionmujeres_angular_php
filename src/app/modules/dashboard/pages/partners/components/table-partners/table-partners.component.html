@@ -61,6 +61,23 @@
     <th mat-header-cell *matHeaderCellDef>Email</th>
     <td mat-cell *matCellDef="let element">{{ element.email }}</td>
   </ng-container>
+  <!-- ÚLTIMAS CUOTA -->
+  <ng-container matColumnDef="cuotas">
+    <th mat-header-cell *matHeaderCellDef>Última cuota</th>
+    <td mat-cell *matCellDef="let element">
+      <app-circle-indicator
+        [item]="element.hasPaidLastYear ?? false"
+      ></app-circle-indicator>
+    </td>
+  </ng-container>
+  <!-- AÑOS SOCIAS -->
+  <ng-container matColumnDef="years">
+    <th mat-header-cell *matHeaderCellDef>Tiempo socia</th>
+    <td mat-cell *matCellDef="let element">
+      {{ element.totalYearsPaid || 0 }} años
+    </td>
+  </ng-container>
+
   <!-- ACCIONES -->
   <ng-container matColumnDef="actions">
     <th mat-header-cell *matHeaderCellDef></th>

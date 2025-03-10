@@ -44,6 +44,7 @@ export class MoviesFacade {
       )
       .subscribe();
   }
+
   loadMoviesByLatest(): void {
     this.moviesService
       .getMoviesByLatest()
@@ -77,22 +78,19 @@ export class MoviesFacade {
       .subscribe();
   }
 
-  addMovie(movie: MovieModel): Observable<MovieModel> {
+  addMovie(movie: FormData): Observable<FormData> {
     return this.moviesService.add(movie).pipe(
       tap(() => this.loadAllMovies()),
       catchError(this.handleError)
     );
   }
 
-  editMovie(itemId: number, movie: MovieModel): void {
-    this.moviesService
-      .edit(itemId, movie)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap(() => this.loadAllMovies()),
-        catchError(this.handleError)
-      )
-      .subscribe();
+  editMovie(itemId: number, movie: FormData): Observable<FormData> {
+    return this.moviesService.edit(itemId, movie).pipe(
+      takeUntilDestroyed(this.destroyRef),
+      tap(() => this.loadAllMovies()),
+      catchError(this.handleError)
+    );
   }
 
   deleteMovie(id: number): void {
@@ -132,7 +130,7 @@ export class MoviesFacade {
 
   private updateMovieState(movies: MovieModel[]): void {
     this.moviesSubject.next(movies);
-    this.filteredMoviesSubject.next(movies); // Actualiza también los libros filtrados
+    this.filteredMoviesSubject.next(movies); // Actualiza también las peliculas filtradas
   }
 
   // Método para manejar errores

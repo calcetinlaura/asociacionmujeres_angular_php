@@ -1,90 +1,121 @@
 <?php
-header("Access-Control-Allow-Origin: *"); // Permite todas las orígenes, puedes restringirlo a tu dominio específico si es necesario
-header("Access-Control-Allow-Methods: GET, POST, PATCH, DELETE"); // Métodos permitidos
-header("Access-Control-Allow-Headers: Content-Type"); // Cabeceras permitidas
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: GET, POST, PATCH, DELETE");
+header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json; charset=UTF-8");
 
-include '../config/conexion.php'; // Incluye aquí la conexión a la base de datos
+include '../config/conexion.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
+if ($method === 'OPTIONS') {
+    http_response_code(204);
+    exit();
+}
+
+$uriParts = explode('/', trim($_SERVER['REQUEST_URI'], '/'));
+$resource = array_pop($uriParts);
 
 switch ($method) {
     case 'GET':
-      if (isset($_GET['latest'])) {
-        // Obtener el año más reciente
-        $stmt = $connection->prepare("SELECT MAX(year) AS latestYear FROM piteras");
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $data = $result->fetch_assoc();
-        $latestYear = $data['latestYear']; // Este es el año más reciente
-
-        if ($latestYear) {
-            // Obtener libros filtrando por el último año
-            $stmt->prepare("SELECT * FROM piteras WHERE year = ?");
-            $stmt->bind_param("i", $latestYear);
+        if (is_numeric($resource)) {
+            $stmt = $connection->prepare("SELECT * FROM piteras WHERE id = ?");
+            $stmt->bind_param("i", $resource);
             $stmt->execute();
+            $result = $stmt->get_result();
+            $pitera = $result->fetch_assoc();
+            echo json_encode($pitera ? $pitera : []);
         } else {
-            echo json_encode([]);
-            exit();
-        }
-      } elseif (isset($_GET['year'])) {
-            // Obtener libros filtrando por año
-            $year = $_GET['year'];
-
-            // Preparar la declaración
-            $stmt = $connection->prepare("SELECT * FROM piteras WHERE year = ?");
-            $stmt->bind_param("i", $year); // "i" indica que es un entero
-            $stmt->execute();
-        } elseif (isset($_GET['gender'])) {
-            // Obtener libros filtrando por género
-            $gender = $_GET['gender'];
-
-            // Preparar la declaración
-            $stmt = $connection->prepare("SELECT * FROM piteras WHERE gender = ?");
-            $stmt->bind_param("s", $gender); // "s" indica que es una cadena
-            $stmt->execute();
-        } else {
-            // Obtener todos los libros
             $stmt = $connection->prepare("SELECT * FROM piteras");
             $stmt->execute();
+            $result = $stmt->get_result();
+            $piteras = [];
+            while ($row = $result->fetch_assoc()) {
+                $piteras[] = $row;
+            }
+            echo json_encode($piteras);
         }
-
-        // Obtener los resultados
-        $result = $stmt->get_result();
-        $piteras = [];
-
-        // Acumular resultados en un array
-        while ($row = $result->fetch_assoc()) {
-            $piteras[] = $row;
-        }
-
-        // Devolver los resultados en formato JSON
-        echo json_encode($piteras);
         break;
 
     case 'POST':
-        $data = json_decode(file_get_contents('php://input'), true);
-        $stmt = $connection->prepare("INSERT INTO piteras (title, author, gender, year) VALUES (?, ?, ?, ?)");
-        $stmt->bind_param("sssi", $data['title'], $data['author'], $data['gender'], $data['year']);
-        $stmt->execute();
-        echo json_encode(["message" => "Libro añadido con éxito."]);
-        break;
+        error_reporting(E_ALL);
+        ini_set('display_errors', 1);
 
-    case 'PATCH':
-        $data = json_decode(file_get_contents('php://input'), true);
-        $id = $_GET['id'];
-        $stmt = $connection->prepare("UPDATE piteras SET title = ?, author = ?, gender = ?, year = ? WHERE id = ?");
-        $stmt->bind_param("sssii", $data['title'], $data['author'], $data['gender'], $data['year'], $id);
-        $stmt->execute();
-        echo json_encode(["message" => "Libro actualizado con éxito."]);
+        // Procesar imagen si se sube
+        $imgName = '';
+        if (isset($_FILES['img']) && $_FILES['img']['error'] == 0) {
+            $imgPath = "../uploads/img/PITERAS/";
+            move_uploaded_file($_FILES['img']['tmp_name'], $imgPath . $_FILES['img']['name']);
+            $imgName = $_FILES['img']['name'];
+        }
+
+        // Procesar archivo PDF si se sube
+        $pdfName = '';
+        if (isset($_FILES['url']) && $_FILES['url']['error'] == 0) {
+            $pdfPath = "../uploads/pdf/PITERAS/";
+            move_uploaded_file($_FILES['url']['tmp_name'], $pdfPath . $_FILES['url']['name']);
+            $pdfName = $_FILES['url']['name'];
+        }
+
+        $data = $_POST;
+        $data['img'] = $imgName;
+        $data['url'] = $pdfName; // Guardamos el PDF
+
+        // Verificar si es una actualización
+        if (isset($data['_method']) && strtoupper($data['_method']) == 'PATCH') {
+            $id = isset($data['id']) ? $data['id'] : null;
+            if (!is_numeric($id)) {
+                http_response_code(400);
+                echo json_encode(["message" => "ID no válido."]);
+                exit();
+            }
+
+            // Recuperar datos actuales si no se sube un nuevo archivo
+            $stmtCurrent = $connection->prepare("SELECT img, url FROM piteras WHERE id = ?");
+            $stmtCurrent->bind_param("i", $id);
+            $stmtCurrent->execute();
+            $result = $stmtCurrent->get_result();
+            $currentData = $result->fetch_assoc();
+            if (!$imgName) $imgName = $currentData['img'];
+            if (!$pdfName) $pdfName = $currentData['url'];
+
+            // Actualizar Pitera
+            $stmt = $connection->prepare("UPDATE piteras SET title = ?, theme = ?, url = ?, year = ?, img = ? WHERE id = ?");
+            $stmt->bind_param("sssisi", $data['title'], $data['theme'], $pdfName, $data['year'], $imgName, $id);
+            if ($stmt->execute()) {
+                echo json_encode(["message" => "Pitera actualizada con éxito."]);
+            } else {
+                http_response_code(500);
+                echo json_encode(["message" => "Error al actualizar la pitera: " . $stmt->error]);
+            }
+        } else {
+            // Insertar nueva Pitera
+            $stmt = $connection->prepare("INSERT INTO piteras (title, theme, url, year, img) VALUES (?, ?, ?, ?, ?)");
+            $stmt->bind_param("sssis", $data['title'], $data['theme'], $pdfName, $data['year'], $imgName);
+            if ($stmt->execute()) {
+                echo json_encode(["message" => "Pitera añadida con éxito."]);
+            } else {
+                http_response_code(500);
+                echo json_encode(["message" => "Error al añadir la pitera: " . $stmt->error]);
+            }
+        }
         break;
 
     case 'DELETE':
-        $id = $_GET['id'];
+        $id = isset($_GET['id']) ? $_GET['id'] : null;
+        if (!is_numeric($id)) {
+            http_response_code(400);
+            echo json_encode(["message" => "ID no válido."]);
+            exit();
+        }
+
         $stmt = $connection->prepare("DELETE FROM piteras WHERE id = ?");
         $stmt->bind_param("i", $id);
-        $stmt->execute();
-        echo json_encode(["message" => "Libro eliminado con éxito."]);
+        if ($stmt->execute()) {
+            echo json_encode(["message" => "Pitera eliminada con éxito."]);
+        } else {
+            http_response_code(500);
+            echo json_encode(["message" => "Error al eliminar la pitera: " . $stmt->error]);
+        }
         break;
 
     default:
@@ -93,3 +124,4 @@ switch ($method) {
         break;
 }
 ?>
+

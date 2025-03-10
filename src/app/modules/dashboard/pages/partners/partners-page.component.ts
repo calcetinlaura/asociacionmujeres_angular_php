@@ -14,7 +14,6 @@ import {
   TypeList,
 } from 'src/app/core/models/general.model';
 import { ColumnModel } from 'src/app/core/interfaces/column.interface';
-import { PartnersService } from 'src/app/core/services/partners.services';
 import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
 import { CommonModule } from '@angular/common';
 import { PartnersFacade } from 'src/app/application';
@@ -44,7 +43,6 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
     TablePartnersComponent,
     SpinnerLoadingComponent,
   ],
-  providers: [PartnersService],
   templateUrl: './partners-page.component.html',
   styleUrl: './partners-page.component.css',
 })
@@ -79,7 +77,6 @@ export class PartnersPageComponent implements OnInit {
       document.body.scrollTop ||
       0;
 
-    // Hacer sticky la toolbar al hacer scroll más de 300px (justo después de la cabecera)
     if (scrollPosition > 50) {
       this.isStickyToolbar = true;
     } else {
@@ -122,13 +119,7 @@ export class PartnersPageComponent implements OnInit {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((partners) => {
-          if (partners === null) {
-            return;
-          }
-          this.partners = partners;
-          this.filteredPartners = partners;
-          this.number = this.partners.length;
-          this.dataLoaded = true;
+          this.updatePartnerState(partners);
         })
       )
       .subscribe();
@@ -186,7 +177,7 @@ export class PartnersPageComponent implements OnInit {
 
   addNewPartnerModal(): void {
     this.currentModalAction = TypeActionModal.Create;
-    this.item = null; // Reseteamos el item para un nuevo libro
+    this.item = null;
     this.modalService.openModal();
   }
 
@@ -205,7 +196,15 @@ export class PartnersPageComponent implements OnInit {
     newPartnerData: PartnerModel;
   }): void {
     if (event.itemId) {
-      this.partnersFacade.editPartner(event.itemId, event.newPartnerData);
+      this.partnersFacade
+        .editPartner(event.itemId, event.newPartnerData)
+        .pipe(
+          takeUntilDestroyed(this.destroyRef),
+          tap(() => {
+            this.onCloseModal();
+          })
+        )
+        .subscribe();
     } else {
       this.partnersFacade
         .addPartner(event.newPartnerData)
@@ -217,6 +216,15 @@ export class PartnersPageComponent implements OnInit {
         )
         .subscribe();
     }
-    this.onCloseModal();
+  }
+
+  private updatePartnerState(partners: PartnerModel[] | null): void {
+    if (partners === null) {
+      return;
+    }
+    this.partners = partners.sort((a, b) => b.id - a.id);
+    this.filteredPartners = [...this.partners];
+    this.number = this.partners.length;
+    this.dataLoaded = true;
   }
 }

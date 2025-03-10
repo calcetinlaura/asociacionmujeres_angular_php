@@ -2,7 +2,7 @@ import { DestroyRef, inject, Injectable } from '@angular/core';
 import { BehaviorSubject, catchError, Observable, tap, throwError } from 'rxjs';
 import { BooksService } from '../core/services/books.services';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BookModel, FormBookData } from '../core/interfaces/book.interface';
+import { BookModel } from '../core/interfaces/book.interface';
 import { HttpErrorResponse } from '@angular/common/http';
 
 @Injectable({
@@ -42,6 +42,7 @@ export class BooksFacade {
       )
       .subscribe();
   }
+
   loadBooksByLatest(): void {
     this.booksService
       .getBooksByLatest()
@@ -52,6 +53,7 @@ export class BooksFacade {
       )
       .subscribe();
   }
+
   loadBooksByGender(gender: string): void {
     this.booksService
       .getBooksByGender(gender)
@@ -74,15 +76,15 @@ export class BooksFacade {
       .subscribe();
   }
 
-  addBook(book: FormBookData): Observable<FormBookData> {
+  addBook(book: FormData): Observable<FormData> {
     return this.booksService.add(book).pipe(
-      tap(() => this.loadAllBooks()), // Cargar todos los libros después de agregar uno
+      takeUntilDestroyed(this.destroyRef),
+      tap(() => this.loadAllBooks()),
       catchError(this.handleError)
     );
   }
 
-  editBook(id: number, book: FormBookData): Observable<BookModel> {
-    console.log('DENTRO EDIT BOOK');
+  editBook(id: number, book: FormData): Observable<FormData> {
     return this.booksService.edit(id, book).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.loadAllBooks()),

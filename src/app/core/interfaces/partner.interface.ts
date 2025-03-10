@@ -1,14 +1,13 @@
 export interface PartnerModel {
-  id?: number;
+  id: number;
   name: string;
-  surname: string;
+  surname?: string;
   birthday?: string;
-  postCode?: string;
+  post_code?: string;
   address?: string;
   phone?: string;
   email?: string;
   town?: string;
-  img?: string;
   cuotas: number[];
   [key: string]: any;
 }

@@ -14,34 +14,37 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
+import { EditorModule } from '@tinymce/tinymce-angular';
 import { filter, tap } from 'rxjs';
 import { CreditorsFacade } from 'src/app/application';
-import { CreditorModel } from 'src/app/core/interfaces/creditor.interface';
-import { CreditorsService } from 'src/app/core/services/creditors.services';
+import {
+  CreditorModel,
+  FilterCreditors,
+} from 'src/app/core/interfaces/creditor.interface';
 
 @Component({
   selector: 'app-form-creditor',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, EditorModule],
   templateUrl: './form-creditor.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],
-  providers: [CreditorsService],
 })
 export class FormCreditorComponent {
   private creditorsFacade = inject(CreditorsFacade);
   private destroyRef = inject(DestroyRef);
 
   @Input() itemId!: number;
-  @Output() sendFormCreditor = new EventEmitter<CreditorModel>();
+  @Output() sendFormCreditor = new EventEmitter<{
+    itemId: number;
+    newCreditorData: CreditorModel;
+  }>();
 
   creditorData: any;
-  imageSrc: string = '';
   errorSession: boolean = false;
   submitted: boolean = false;
-  titleForm: string = 'Registrar acredor/a';
+  titleForm: string = 'Registrar acreedor/a';
   buttonAction: string = 'Guardar';
-  years: number[] = [];
-
+  filterCreditors = FilterCreditors;
   formCreditor = new FormGroup({
     company: new FormControl('', [Validators.required]),
     cif: new FormControl(''),
@@ -50,7 +53,10 @@ export class FormCreditorComponent {
     email: new FormControl(''),
     town: new FormControl(''),
     address: new FormControl(''),
-    postCode: new FormControl(''),
+    post_code: new FormControl(''),
+    category: new FormControl(''),
+    key_words: new FormControl(''),
+    observations: new FormControl(''),
   });
 
   private creditorId!: number;
@@ -77,22 +83,30 @@ export class FormCreditorComponent {
 
   onSendFormCreditor(): void {
     if (this.formCreditor.invalid) {
-      this.submitted = true; // Marcar como enviado
+      this.submitted = true;
+      console.log('Formulario inválido', this.formCreditor.errors);
       return;
     }
 
-    const formValue: CreditorModel = {
-      id: this.creditorId,
-      company: this.formCreditor.get('company')?.value || '',
-      cif: this.formCreditor.get('cif')?.value || '',
-      contact: this.formCreditor.get('contact')?.value || '',
-      phone: this.formCreditor.get('phone')?.value || '',
-      email: this.formCreditor.get('email')?.value || '',
-      town: this.formCreditor.get('town')?.value || '',
-      address: this.formCreditor.get('address')?.value || '',
-      postCode: this.formCreditor.get('postCode')?.value || '',
+    // Convertimos el formulario a un objeto JSON (CreditorModel)
+    const newCreditorData: CreditorModel = {
+      id: this.creditorId || 0, // Si es nuevo, se envía 0 o se omite
+      company: this.formCreditor.value.company!,
+      cif: this.formCreditor.value.cif || '',
+      contact: this.formCreditor.value.contact || '',
+      phone: this.formCreditor.value.phone!,
+      email: this.formCreditor.value.email || '',
+      town: this.formCreditor.value.town || '',
+      address: this.formCreditor.value.address || '',
+      post_code: this.formCreditor.value.post_code || '',
+      category: this.formCreditor.value.category || '',
+      key_words: this.formCreditor.value.key_words || '',
+      observations: this.formCreditor.value.observations || '',
     };
 
-    this.sendFormCreditor.emit(formValue);
+    this.sendFormCreditor.emit({
+      itemId: this.itemId,
+      newCreditorData: newCreditorData,
+    });
   }
 }

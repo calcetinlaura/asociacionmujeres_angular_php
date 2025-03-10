@@ -10,26 +10,36 @@ import { MatCardModule } from '@angular/material/card';
 import { EditorModule } from '@tinymce/tinymce-angular';
 import { filter, tap } from 'rxjs';
 import { MoviesFacade } from 'src/app/application';
-import { MovieModel } from 'src/app/core/interfaces/movie.interface';
-import { filterMovies } from 'src/app/core/models/general.model';
-import { MoviesService } from 'src/app/core/services/movies.services';
+import {
+  GenderFilterMovies,
+  MovieModel,
+} from 'src/app/core/interfaces/movie.interface';
+import { filterMovies, TypeList } from 'src/app/core/models/general.model';
+import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
   selector: 'app-form-movie',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, EditorModule, MatCardModule],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    EditorModule,
+    MatCardModule,
+    ImageControlComponent,
+  ],
   templateUrl: './form-movie.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],
-  providers: [MoviesService],
 })
 export class FormMovieComponent {
   private moviesFacade = inject(MoviesFacade);
   private generalService = inject(GeneralService);
-
   @Input() itemId!: number;
-  @Output() sendFormMovie = new EventEmitter<MovieModel>();
-
+  @Output() sendFormMovie = new EventEmitter<{
+    itemId: number;
+    newMovieData: FormData;
+  }>();
+  selectedImageFile: File | null = null;
   movieData: any;
   imageSrc: string = '';
   errorSession: boolean = false;
@@ -37,15 +47,15 @@ export class FormMovieComponent {
   titleForm: string = 'Registrar película';
   buttonAction: string = 'Guardar';
   years: number[] = [];
-  FilterMovies = filterMovies;
-
+  genderMovies = GenderFilterMovies;
+  typeList = TypeList.Movies;
   formMovie = new FormGroup({
     title: new FormControl('', [Validators.required]),
-    director: new FormControl('', [Validators.required]),
+    director: new FormControl(''),
     description: new FormControl('', [Validators.maxLength(2000)]),
     gender: new FormControl('', [Validators.required]),
     img: new FormControl(''),
-    year: new FormControl(0, [Validators.required]),
+    year: new FormControl(0, [Validators.required, Validators.min(2000)]),
   });
 
   ngOnInit(): void {
@@ -59,9 +69,21 @@ export class FormMovieComponent {
           filter((movie: MovieModel | null) => movie !== null),
           tap((movie: MovieModel | null) => {
             if (movie) {
-              this.formMovie.patchValue(movie);
+              this.formMovie.patchValue({
+                title: movie.title || null,
+                director: movie.director || null,
+                description: movie.description || null,
+                gender: movie.gender || null,
+                img: movie.img || null,
+                year: movie.year || 0,
+              });
+
               this.titleForm = 'Editar Película';
               this.buttonAction = 'Guardar cambios';
+              if (movie.img) {
+                this.imageSrc = movie.img;
+                this.selectedImageFile = null;
+              }
             }
           })
         )
@@ -69,20 +91,25 @@ export class FormMovieComponent {
     }
   }
 
+  async onImageSelected(file: File) {
+    const result = await this.generalService.handleFileSelection(file);
+    this.selectedImageFile = result.file;
+    this.imageSrc = result.imageSrc;
+  }
+
   onSendFormMovie(): void {
     if (this.formMovie.invalid) {
       this.submitted = true;
+      console.log('Formulario inválido', this.formMovie.errors);
       return;
     }
 
-    const formValue: MovieModel = {
-      title: this.formMovie.get('title')?.value || '',
-      director: this.formMovie.get('director')?.value || '',
-      description: this.formMovie.get('description')?.value || '',
-      gender: this.formMovie.get('gender')?.value || '',
-      img: this.formMovie.get('img')?.value || '',
-      year: this.formMovie.get('year')?.value || 0,
-    };
-    this.sendFormMovie.emit(formValue);
+    const formData = this.generalService.createFormData(
+      this.formMovie.value,
+      this.selectedImageFile,
+      this.itemId
+    );
+
+    this.sendFormMovie.emit({ itemId: this.itemId, newMovieData: formData });
   }
 }

@@ -45,7 +45,7 @@ export class InputSearchComponent implements OnInit {
 
   loadCreditors(): void {
     this.creditorsService
-      .getAll()
+      .getCreditors()
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((creditors: CreditorModel[]) => {

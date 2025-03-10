@@ -123,20 +123,13 @@
       <!-- Portada (Imagen) -->
       <div class="box-input gap-x-4 px-4">
         <label for="img">Portada</label>
-        <!-- <input
-          formControlName="img"
-          type="file"
-          (change)="onFileSelected($event)"
-        /> -->
-        <div *ngIf="formRecipe.get('img')?.value">
-          Archivo seleccionado: {{ formRecipe.get("img")?.value }}
-        </div>
-        <div
-          *ngIf="submitted && formRecipe.get('img')?.invalid"
-          class="is-invalid-text"
-        >
-          Debes subir una imagen
-        </div>
+        <app-image-control
+          [previewImg]="
+            formRecipe.get('img')?.value ? formRecipe.get('img')?.value! : null
+          "
+          [type]="typeList"
+          (imgSelected)="onImageSelected($event)"
+        ></app-image-control>
       </div>
 
       <!-- Mensaje de error global -->

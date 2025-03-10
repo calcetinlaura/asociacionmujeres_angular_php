@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { DashboardHeaderComponent } from '../../components/dashboard-header/dashboard-header.component';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
-import { BooksService } from 'src/app/core/services/books.services';
+import { ColumnModel } from 'src/app/core/interfaces/column.interface';
 import { TableComponent } from '../../components/table/table.component';
 import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
 import { CommonModule } from '@angular/common';
@@ -19,11 +19,7 @@ import { ModalService } from 'src/app/shared/components/modal/services/modal.ser
 import { tap } from 'rxjs';
 import { AddButtonComponent } from 'src/app/shared/components/buttons/button-add/button-add.component';
 import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
-import {
-  BookModel,
-  FormBookData,
-} from 'src/app/core/interfaces/book.interface';
-import { ColumnModel } from 'src/app/core/interfaces/column.interface';
+import { BookModel } from 'src/app/core/interfaces/book.interface';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SpinnerLoadingComponent } from '../../../landing/components/spinner-loading/spinner-loading.component';
 
@@ -40,7 +36,6 @@ import { SpinnerLoadingComponent } from '../../../landing/components/spinner-loa
     InputSearchComponent,
     SpinnerLoadingComponent,
   ],
-  providers: [BooksService],
   templateUrl: './books-page.component.html',
   styleUrl: './books-page.component.css',
 })
@@ -92,11 +87,11 @@ export class BooksPageComponent implements OnInit {
       .subscribe();
 
     this.headerListBooks = [
+      { title: 'Portada', key: 'img' },
       { title: 'Título', key: 'title' },
       { title: 'Autor/a', key: 'author' },
       { title: 'Descripción', key: 'description' },
       { title: 'Género', key: 'gender' },
-      { title: 'Portada', key: 'img' },
       { title: 'Año compra', key: 'year' },
     ];
   }
@@ -146,11 +141,17 @@ export class BooksPageComponent implements OnInit {
     this.modalService.closeModal();
   }
 
-  sendFormBook(event: { itemId: number; newBookData: FormBookData }): void {
-    console.log('DATOS', event.itemId, event.newBookData);
+  sendFormBook(event: { itemId: number; newBookData: FormData }): void {
     if (event.itemId) {
-      console.log('EDIT');
-      this.booksFacade.editBook(event.itemId, event.newBookData);
+      this.booksFacade
+        .editBook(event.itemId, event.newBookData)
+        .pipe(
+          takeUntilDestroyed(this.destroyRef),
+          tap(() => {
+            this.onCloseModal();
+          })
+        )
+        .subscribe();
     } else {
       this.booksFacade
         .addBook(event.newBookData)
@@ -162,17 +163,13 @@ export class BooksPageComponent implements OnInit {
         )
         .subscribe();
     }
-    this.onCloseModal();
   }
 
   private updateBookState(books: BookModel[] | null): void {
     if (books === null) {
       return;
     }
-    this.books = books.sort((a, b) =>
-      a.title.toLowerCase().localeCompare(b.title.toLowerCase())
-    );
-    this.books = books;
+    this.books = books.sort((a, b) => b.id - a.id);
     this.filteredBooks = [...this.books];
     this.number = this.books.length;
     this.dataLoaded = true;

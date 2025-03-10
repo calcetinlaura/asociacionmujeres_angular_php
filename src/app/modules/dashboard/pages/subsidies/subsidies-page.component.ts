@@ -228,7 +228,6 @@ export class SubsidiesPageComponent implements OnInit {
         this.filteredSubsidiesByType['MINISTERIO'].push(subsidy);
       }
     });
-    console.log(this.filteredSubsidiesByType['AYUNT_EQUIPAMIENTO'].length);
   }
 
   tabActive(event: MatTabChangeEvent): void {
@@ -287,7 +286,6 @@ export class SubsidiesPageComponent implements OnInit {
     action: TypeActionModal;
     item: any;
   }): void {
-    console.log('DATOS MODAL2', event);
     this.typeListModal = event.type;
     this.currentModalAction = event.action;
     this.item = event.item;

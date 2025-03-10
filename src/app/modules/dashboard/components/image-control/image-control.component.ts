@@ -32,17 +32,21 @@ export class ImageControlComponent implements OnInit {
   @Input() previewImg: string | null = null;
   @Input() type: TypeList | null = null;
   @Output() imgSelected = new EventEmitter<File>();
-  imageWidthValue: number = 200;
+  @Input() imageWidthValue: number | string | null = 200;
   imageHeightValue: number = 150;
   previewUrl: string = '';
 
-  private basePath = 'assets/img';
+  private basePath = '/uploads/img';
   private placeholder = 'assets/img/error.jpg';
   constructor(private http: HttpClient) {}
 
   ngOnInit(): void {
-    console.log('Componente inicializado');
     this.setPreviewUrl();
+
+    // Si la imagen debe ocupar el ancho máximo, usa null para manejarlo en CSS
+    if (this.imageWidthValue === 'full') {
+      this.imageWidthValue = null;
+    }
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -51,11 +55,29 @@ export class ImageControlComponent implements OnInit {
     }
   }
 
+  // private setPreviewUrl() {
+  //   this.previewUrl = this.previewImg
+  //     ? `${this.basePath}/${this.type}/${this.previewImg}`
+  //     : this.placeholder; // Si no hay imagen, usa el placeholder
+  // }
   private setPreviewUrl() {
-    this.previewUrl = this.previewImg
-      ? `${this.basePath}/${this.type}/${this.previewImg}`
-      : this.placeholder; // Si no hay imagen, usa el placeholder
+    if (this.previewImg) {
+      // Si el tipo es 'event', extraer el año del nombre del archivo
+      let yearFolder = '';
+      if (this.type === TypeList.Events) {
+        const match = this.previewImg.match(/^(\d{4})_/); // Extrae el año del nombre del archivo (ej: 2024_evento.jpg)
+        yearFolder = match ? match[1] : ''; // Si encuentra el año, lo asigna
+      }
+
+      // Construir la URL correctamente
+      this.previewUrl = yearFolder
+        ? `${this.basePath}/${this.type}/${yearFolder}/${this.previewImg}` // Si es evento, agregar carpeta del año
+        : `${this.basePath}/${this.type}/${this.previewImg}`; // Si no es evento, solo usar el tipo
+    } else {
+      this.previewUrl = this.placeholder; // Si no hay imagen, usa el placeholder
+    }
   }
+
   imageWidth() {
     return this.imageWidthValue;
   }
@@ -67,19 +89,6 @@ export class ImageControlComponent implements OnInit {
   imageSource() {
     return this.previewUrl;
   }
-
-  // Cuando el usuario selecciona un archivo
-  // imgSelected(event: any) {
-  //   const img: File = event.target.imgs[0];
-  //   this.selectedFile = img;
-
-  //   // Usar FileReader para previsualizar la imagen
-  //   const reader = new FileReader();
-  //   reader.onload = (e) => {
-  //     this.previewUrl = e.target?.result as string;
-  //   };
-  //   reader.readAsDataURL(img);
-  // }
 
   imageSelected(event: Event) {
     const imgInput = event.target as HTMLInputElement;
@@ -106,7 +115,6 @@ export class ImageControlComponent implements OnInit {
       formData.append('img', this.selectedFile);
 
       try {
-        console.log('DATOS FORMULARIO', formData);
         // Cambiar la URL a la de tu API para subir la imagen
         const response = await this.http
           .post('http://localhost/ASOC/api/books.php/upload', formData)

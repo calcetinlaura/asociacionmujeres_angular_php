@@ -1,8 +1,8 @@
 <div class="flex justify-center">
   <ng-container *ngIf="item; else noInfo">
-    <div class="circle positive"></div>
+    <mat-icon class="positive">check_circle </mat-icon>
   </ng-container>
   <ng-template #noInfo>
-    <div class="circle negative"></div>
+    <mat-icon class="negative">cancel</mat-icon>
   </ng-template>
 </div>

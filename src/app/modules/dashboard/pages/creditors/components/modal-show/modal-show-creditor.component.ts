@@ -6,6 +6,7 @@ import { TextBackgroundComponent } from 'src/app/shared/components/text/text-bac
 import { TextSubTitleComponent } from 'src/app/shared/components/text/text-subTitle/text-subtitle.component';
 import { TextTitleComponent } from 'src/app/shared/components/text/text-title/text-title.component';
 import { TextIconComponent } from '../../../../../../shared/components/text/text-icon/text-icon.component';
+import { TextEditorComponent } from '../../../../../../shared/components/text/text-editor/text-editor.component';
 
 @Component({
   selector: 'app-modal-show-creditor',
@@ -16,6 +17,7 @@ import { TextIconComponent } from '../../../../../../shared/components/text/text
     TextTitleComponent,
     TextSubTitleComponent,
     TextIconComponent,
+    TextEditorComponent,
   ],
   templateUrl: './modal-show-creditor.component.html',
 })

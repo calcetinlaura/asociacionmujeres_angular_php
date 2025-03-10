@@ -12,13 +12,14 @@ import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatSort, Sort, MatSortModule } from '@angular/material/sort';
 import { LiveAnnouncer } from '@angular/cdk/a11y';
-import { CommonModule, DatePipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { FormControl } from '@angular/forms';
 import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
-import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
 import { PartnerModel } from 'src/app/core/interfaces/partner.interface';
 import { CalculateAgePipe } from '../../../../../../shared/pipe/caculate_age.pipe';
+import { CircleIndicatorComponent } from '../../../../components/circle-indicator/circle-indicator.component';
+import { ChangeDetectorRef } from '@angular/core';
 
 @Component({
   standalone: true,
@@ -29,6 +30,7 @@ import { CalculateAgePipe } from '../../../../../../shared/pipe/caculate_age.pip
     MatSortModule,
     MatIconModule,
     CalculateAgePipe,
+    CircleIndicatorComponent,
   ],
   selector: 'app-table-partners',
   templateUrl: './table-partners.component.html',
@@ -36,6 +38,8 @@ import { CalculateAgePipe } from '../../../../../../shared/pipe/caculate_age.pip
 })
 export class TablePartnersComponent {
   private _liveAnnouncer = inject(LiveAnnouncer);
+  private cdr = inject(ChangeDetectorRef);
+
   @Input() type: TypeList = TypeList.Partners;
   @Input() data: PartnerModel[] = [];
   @Output() openModal = new EventEmitter<{
@@ -51,6 +55,8 @@ export class TablePartnersComponent {
     'address',
     'phone',
     'email',
+    'cuotas',
+    'years',
     'actions',
   ];
 
@@ -60,6 +66,8 @@ export class TablePartnersComponent {
   searchKeywordFilter = new FormControl();
   totalAmount: number = 0;
   private columnSortOrder: { [key: string]: 'asc' | 'desc' } = {};
+  currentYear = 0;
+  processedData: PartnerModel[] = [];
 
   @ViewChild(MatSort) sort!: MatSort;
 
@@ -84,9 +92,26 @@ export class TablePartnersComponent {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['data']) {
-      this.dataSource.data = changes['data'].currentValue || [];
-      // Forzar la actualización de la suscripción a los datos
-      this.dataSource._updateChangeSubscription();
+      this.currentYear = new Date().getFullYear();
+
+      setTimeout(() => {
+        this.dataSource.data = (
+          changes['data'].currentValue as PartnerModel[]
+        ).map((partner: PartnerModel) => {
+          return {
+            ...partner,
+            hasPaidLastYear: partner.cuotas
+              .map(Number)
+              .includes(this.currentYear),
+            totalYearsPaid: partner.cuotas.length,
+          };
+        });
+
+        this.dataSource._updateChangeSubscription();
+
+        // 🔹 Forzar la actualización de la vista después de que Angular haya terminado su ciclo de cambios
+        this.cdr.detectChanges();
+      });
     }
   }
 

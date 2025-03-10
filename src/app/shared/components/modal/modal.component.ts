@@ -17,14 +17,6 @@ import { FormMovieComponent } from '../../../modules/dashboard/pages/movies/comp
 import { FormPiteraComponent } from '../../../modules/dashboard/pages/piteras/components/form/form-pitera.component';
 import { FormInvoiceComponent } from 'src/app/modules/dashboard/pages/invoices/components/form/form-invoice.component';
 import { FormCreditorComponent } from 'src/app/modules/dashboard/pages/creditors/components/form/form-creditor.component';
-import {
-  BookModel,
-  FormBookData,
-} from 'src/app/core/interfaces/book.interface';
-import { EventModel } from 'src/app/core/interfaces/event.interface';
-import { MovieModel } from 'src/app/core/interfaces/movie.interface';
-import { RecipeModel } from 'src/app/core/interfaces/recipe.interface';
-import { PiteraModel } from 'src/app/core/interfaces/pitera.interface';
 import { PartnerModel } from 'src/app/core/interfaces/partner.interface';
 import { InvoiceModel } from 'src/app/core/interfaces/invoice.interface';
 import { CreditorModel } from 'src/app/core/interfaces/creditor.interface';
@@ -61,24 +53,24 @@ export class ModalComponent implements OnInit {
   @Output() confirmDelete = new EventEmitter<number>();
   @Output() sendFormBookData = new EventEmitter<{
     itemId: number;
-    newBookData: FormBookData;
+    newBookData: FormData;
   }>();
 
   @Output() sendFormEventData = new EventEmitter<{
     itemId: number;
-    newEventData: EventModel;
+    newEventData: FormData;
   }>();
   @Output() sendFormMovieData = new EventEmitter<{
     itemId: number;
-    newMovieData: MovieModel;
+    newMovieData: FormData;
   }>();
   @Output() sendFormRecipeData = new EventEmitter<{
     itemId: number;
-    newRecipeData: RecipeModel;
+    newRecipeData: FormData;
   }>();
   @Output() sendFormPiteraData = new EventEmitter<{
     itemId: number;
-    newPiteraData: PiteraModel;
+    newPiteraData: FormData;
   }>();
   @Output() sendFormPartnerData = new EventEmitter<{
     itemId: number;
@@ -129,45 +121,45 @@ export class ModalComponent implements OnInit {
     }
   }
 
-  onSendFormBook(formValue: FormBookData) {
+  onSendFormBook(event: { itemId: number; newBookData: FormData }) {
     this.sendFormBookData.emit({
-      itemId: this.item?.id || 0,
-      newBookData: formValue,
+      itemId: event.itemId,
+      newBookData: event.newBookData,
     });
   }
 
-  onSendFormEvent(formValue: EventModel) {
+  onSendFormEvent(event: { itemId: number; newEventData: FormData }) {
     this.sendFormEventData.emit({
-      itemId: this.item?.id || 0,
-      newEventData: formValue,
+      itemId: event.itemId,
+      newEventData: event.newEventData,
     });
   }
 
-  onSendFormRecipe(formValue: RecipeModel) {
+  onSendFormRecipe(event: { itemId: number; newRecipeData: FormData }) {
     this.sendFormRecipeData.emit({
-      itemId: this.item?.id || 0,
-      newRecipeData: formValue,
+      itemId: event.itemId,
+      newRecipeData: event.newRecipeData,
     });
   }
 
-  onSendFormMovie(formValue: MovieModel) {
+  onSendFormMovie(event: { itemId: number; newMovieData: FormData }) {
     this.sendFormMovieData.emit({
-      itemId: this.item?.id || 0,
-      newMovieData: formValue,
+      itemId: event.itemId,
+      newMovieData: event.newMovieData,
     });
   }
 
-  onSendFormPitera(formValue: PiteraModel) {
+  onSendFormPitera(event: { itemId: number; newPiteraData: FormData }) {
     this.sendFormPiteraData.emit({
-      itemId: this.item?.id || 0,
-      newPiteraData: formValue,
+      itemId: event.itemId,
+      newPiteraData: event.newPiteraData,
     });
   }
 
-  onSendFormPartner(formValue: PartnerModel) {
+  onSendFormPartner(event: { itemId: number; newPartnerData: PartnerModel }) {
     this.sendFormPartnerData.emit({
-      itemId: this.item?.id || 0,
-      newPartnerData: formValue,
+      itemId: event.itemId,
+      newPartnerData: event.newPartnerData,
     });
   }
 
@@ -184,10 +176,13 @@ export class ModalComponent implements OnInit {
       newSubsidyData: formValue,
     });
   }
-  onSendFormCreditor(formValue: CreditorModel) {
+  onSendFormCreditor(event: {
+    itemId: number;
+    newCreditorData: CreditorModel;
+  }) {
     this.sendFormCreditorData.emit({
-      itemId: this.item?.id || 0,
-      newCreditorData: formValue,
+      itemId: event.itemId,
+      newCreditorData: event.newCreditorData,
     });
   }
 }

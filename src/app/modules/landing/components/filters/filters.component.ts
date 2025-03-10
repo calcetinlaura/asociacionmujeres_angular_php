@@ -8,6 +8,7 @@ import { ButtonFilterComponent } from '../../../../shared/components/buttons/but
   standalone: true,
   imports: [CommonModule, ButtonFilterComponent],
   templateUrl: './filters.component.html',
+  styleUrl: './filters.component.css',
 })
 export class FiltersComponent implements OnInit {
   @Output() filterClicked: EventEmitter<string> = new EventEmitter<string>();

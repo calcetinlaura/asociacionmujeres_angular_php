@@ -1,9 +1,9 @@
-<div class="nav-bar flex flex-col gap-y-8 justify-center">
-  <div class="text-center">
-    <h2 class="uppercase">Asociación de Mujeres de Callosa de Segura</h2>
+<div class="nav-bar">
+  <div>
+    <h1>Asociación de Mujeres de Callosa de Segura</h1>
   </div>
   <div>
-    <ul class="nav-bar__list list-one">
+    <ul class="nav-bar_list">
       <li *ngFor="let item of mainMenu.defaultOptions">
         <a
           [routerLink]="item.router"
@@ -11,7 +11,6 @@
           [routerLinkActive]="['active-link']"
           (click)="setSelectedMenuItem(item.title)"
           [routerLinkActiveOptions]="{ exact: true }"
-          class="cursor-pointer p-4 mt-2"
         >
           {{ item.title }}
         </a>

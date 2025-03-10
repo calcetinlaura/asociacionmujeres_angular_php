@@ -60,7 +60,7 @@
                 }"
               >
                 <option
-                  *ngFor="let gender of FilterMovies"
+                  *ngFor="let gender of genderMovies"
                   [value]="gender.code"
                 >
                   {{ gender.name }}
@@ -98,49 +98,37 @@
           </div>
         </div>
       </div>
-      <!-- Descripción -->
-      <div class="box-input gap-x-4 px-4">
-        <label for="description">Descripción</label>
-        <mat-card-content>
-          <editor
-            apiKey="c8uxjgc7f76nt677zqdn22a8a97bjhc7fyph9y4oxuj7nrx3"
-            [init]="{
-              height: 300,
-              plugins: ['advlist', 'lists', 'wordcount'],
-              toolbar:
-                'undo redo | bold italic  underline strikethrough | fontfamily fontsize forecolor  backcolor| \
+      <div class="flex gap-4">
+        <!-- Descripción -->
+        <div class="box-input gap-x-4 px-4 w-3/4">
+          <label for="description">Descripción</label>
+          <mat-card-content>
+            <editor
+              apiKey="c8uxjgc7f76nt677zqdn22a8a97bjhc7fyph9y4oxuj7nrx3"
+              [init]="{
+                height: 250,
+                plugins: ['advlist', 'lists', 'wordcount'],
+                toolbar:
+                  'undo redo | bold italic  underline strikethrough | fontfamily fontsize forecolor  backcolor| \
                alignleft aligncenter alignright alignjustify | \
                bullist numlist  | removeformat '
-            }"
-            formControlName="description"
-          ></editor>
-        </mat-card-content>
-      </div>
-
-      <!-- Portada (Imagen) -->
-      <div class="box-input gap-x-4">
-        <label for="img">Portada</label>
-        <!-- <input
-          formControlName="img"
-          type="file"
-          accept="image/*"
-          (change)="onFileChange($event)"
-
-          [ngClass]="{
-            'is-invalid': submitted && formMovie.get('img')?.invalid
-          }"
-        /> -->
-        <div *ngIf="formMovie.get('img')?.value">
-          Archivo seleccionado: {{ formMovie.get("img")?.value }}
+              }"
+              formControlName="description"
+            ></editor>
+          </mat-card-content>
         </div>
-        <div
-          *ngIf="submitted && formMovie.get('img')?.invalid"
-          class="is-invalid-text"
-        >
-          Debes subir una imagen
+        <!-- Portada (Imagen) -->
+        <div class="box-input gap-x-4 px-4 w-1/4">
+          <app-image-control
+            [previewImg]="
+              formMovie.get('img')?.value ? formMovie.get('img')?.value! : null
+            "
+            [type]="typeList"
+            (imgSelected)="onImageSelected($event)"
+            [imageWidthValue]="'full'"
+          ></app-image-control>
         </div>
       </div>
-
       <!-- Mensaje de error global -->
       <div *ngIf="errorSession" class="is-invalid-text">
         Ocurrió un error con el envío del formulario

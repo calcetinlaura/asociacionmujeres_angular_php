@@ -20,32 +20,44 @@ import { EditorModule } from '@tinymce/tinymce-angular';
 import { filter, tap } from 'rxjs';
 import { EventsFacade } from 'src/app/application';
 import { EventModel } from 'src/app/core/interfaces/event.interface';
-import { EventsService } from 'src/app/core/services/events.services';
+import { TypeList } from 'src/app/core/models/general.model';
+import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
+import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
   selector: 'app-form-event',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, EditorModule, MatCardModule],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    EditorModule,
+    MatCardModule,
+    ImageControlComponent,
+  ],
   templateUrl: './form-event.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],
-  providers: [EventsService],
 })
 export class FormEventComponent {
+  private eventsFacade = inject(EventsFacade);
+  private generalService = inject(GeneralService);
   @Input() itemId!: number;
-  @Output() sendFormEvent = new EventEmitter<EventModel>();
-
+  @Output() sendFormEvent = new EventEmitter<{
+    itemId: number;
+    newEventData: FormData;
+  }>();
+  selectedImageFile: File | null = null;
   eventData: any;
   imageSrc: string = '';
   errorSession: boolean = false;
   submitted: boolean = false;
   titleForm: string = 'Registrar evento';
   buttonAction: string = 'Guardar';
-
+  typeList = TypeList.Events;
   formEvent = new FormGroup(
     {
       title: new FormControl('', [Validators.required]),
-      start: new FormControl(''),
-      end: new FormControl(''),
+      start: new FormControl('', [Validators.required]),
+      end: new FormControl('', [Validators.required]),
       time: new FormControl(''),
       description: new FormControl('', [Validators.maxLength(2000)]),
       town: new FormControl(''),
@@ -54,14 +66,11 @@ export class FormEventComponent {
       price: new FormControl(''),
       img: new FormControl(''),
       status: new FormControl(''),
-      statusReason: new FormControl(''),
+      status_reason: new FormControl(''),
       inscription: new FormControl(false),
     },
     { validators: this.dateRangeValidator }
   );
-
-  private eventsFacade = inject(EventsFacade);
-  private destroyRef = inject(DestroyRef);
 
   private dateRangeValidator(control: AbstractControl) {
     const start = control.get('start')?.value;
@@ -79,7 +88,6 @@ export class FormEventComponent {
       this.eventsFacade.loadEventById(this.itemId);
       this.eventsFacade.selectedEvent$
         .pipe(
-          takeUntilDestroyed(this.destroyRef),
           filter((event: EventModel | null) => event !== null),
           tap((event: EventModel | null) => {
             if (event) {
@@ -95,11 +103,15 @@ export class FormEventComponent {
                 price: event.price || '',
                 img: event.img || '',
                 status: event.status || '',
-                statusReason: event.statusReason || '',
+                status_reason: event.status_reason || '',
                 inscription: event.inscription || false,
               });
               this.titleForm = 'Editar Evento';
               this.buttonAction = 'Guardar cambios';
+              if (event.img) {
+                this.imageSrc = event.img;
+                this.selectedImageFile = null;
+              }
             }
           })
         )
@@ -108,7 +120,6 @@ export class FormEventComponent {
     this.formEvent
       .get('status')
       ?.valueChanges.pipe(
-        takeUntilDestroyed(this.destroyRef),
         tap((value) => {
           if (value !== '') {
           }
@@ -117,38 +128,25 @@ export class FormEventComponent {
       .subscribe();
   }
 
+  async onImageSelected(file: File) {
+    const result = await this.generalService.handleFileSelection(file);
+    this.selectedImageFile = result.file;
+    this.imageSrc = result.imageSrc;
+  }
+
   onSendFormEvent(): void {
-    this.submitted = true;
-
     if (this.formEvent.invalid) {
-      Object.keys(this.formEvent.controls).forEach((key) => {
-        const control = this.formEvent.get(key);
-        if (control && control.invalid) {
-          console.log(`Control ${key} tiene errores:`, control.errors);
-        }
-      });
-
+      this.submitted = true;
+      console.log('Formulario inválido', this.formEvent.errors);
       return;
     }
 
-    const formValue: EventModel = {
-      title: this.formEvent.get('title')?.value || '',
-      start: this.formEvent.get('start')?.value || '',
-      end:
-        this.formEvent.get('end')?.value ||
-        this.formEvent.get('start')?.value ||
-        '',
-      time: this.formEvent.get('time')?.value?.toString() || '',
-      description: this.formEvent.get('description')?.value || '',
-      town: this.formEvent.get('town')?.value || '',
-      place: this.formEvent.get('place')?.value || '',
-      capacity: this.formEvent.get('capacity')?.value || undefined,
-      price: this.formEvent.get('price')?.value || '',
-      img: this.formEvent.get('img')?.value || '',
-      status: this.formEvent.get('status')?.value || '',
-      statusReason: this.formEvent.get('statusReason')?.value || '',
-      inscription: this.formEvent.get('inscription')?.value || false,
-    };
-    this.sendFormEvent.emit(formValue);
+    const formData = this.generalService.createFormData(
+      this.formEvent.value,
+      this.selectedImageFile,
+      this.itemId
+    );
+
+    this.sendFormEvent.emit({ itemId: this.itemId, newEventData: formData });
   }
 }
