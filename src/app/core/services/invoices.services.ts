@@ -1,108 +1,87 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { catchError } from 'rxjs/operators';
-import { Observable } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 import { environments } from 'src/environments/environments';
 
 @Injectable({
   providedIn: 'root',
 })
 export class InvoicesService {
-  private apiUrl: string = `${environments.api}/backend/invoices`;
+  private apiUrl: string = `${environments.api}/backend/invoices.php`;
   constructor(private http: HttpClient) {}
 
-  getAll(): Observable<any> {
-    return this.http.get(this.apiUrl).pipe(
-      catchError((error: any) => {
-        console.error('Error en la solicitud de FACTURAS:', error);
-        throw error;
-      })
-    );
+  getInvoices(): Observable<any> {
+    return this.http.get(this.apiUrl).pipe(catchError(this.handleError));
   }
 
-  getAllBySubsidy(subsidy: string, year: number): Observable<any> {
-    const urlWithParams = `${this.apiUrl}/subsidy`;
+  getInvoicesBySubsidy(subsidy: string, year: number): Observable<any> {
     return this.http
-      .get(urlWithParams, {
-        params: { subsidy: subsidy, subsidyYear: year },
+      .get(this.apiUrl, {
+        params: { subsidy: subsidy, subsidy_year: year },
       })
-      .pipe(
-        catchError((error: any) => {
-          console.error(
-            `Error en la solicitud de FACTURAS filtrando por años ${year}:`,
-            error
-          );
-          throw error;
-        })
-      );
+      .pipe(catchError(this.handleError));
   }
 
-  getAllByCategroy(category: string): Observable<any> {
-    const urlWithParams = `${this.apiUrl}/category`;
+  getInvoicesByYear(year: number): Observable<any> {
     return this.http
-      .get(urlWithParams, {
-        params: { category: category },
-      })
-      .pipe(
-        catchError((error: any) => {
-          console.error(
-            `Error en la solicitud de FACTURAS filtrando por categorías ${category}:`,
-            error
-          );
-          throw error;
-        })
-      );
-  }
-  getAllByYear(year: number): Observable<any> {
-    const urlWithParams = `${this.apiUrl}/year`;
-    return this.http
-      .get(urlWithParams, {
+      .get(this.apiUrl, {
         params: { year: year },
       })
-      .pipe(
-        catchError((error: any) => {
-          console.error(
-            `Error en la solicitud de FACTURAS filtrando por años ${year}:`,
-            error
-          );
-          throw error;
-        })
-      );
+      .pipe(catchError(this.handleError));
   }
 
-  add(invoice: any): Observable<any> {
-    return this.http.post(`${this.apiUrl}/add`, invoice).pipe(
-      catchError((error: any) => {
-        console.error('Error en la solicitud de FACTURAS:', error);
-        throw error;
+  getInvoicesByCategroy(category: string): Observable<any> {
+    return this.http
+      .get(this.apiUrl, {
+        params: { category: category },
       })
-    );
+      .pipe(catchError(this.handleError));
   }
 
-  edit(id: number, invoice: any): Observable<any> {
-    return this.http.patch(`${this.apiUrl}/edit/${id}`, invoice).pipe(
-      catchError((error: any) => {
-        console.error('Error en la solicitud de FACTURAS:', error);
-        throw error;
-      })
-    );
+  getInvoiceById(id: number): Observable<any> {
+    return this.http
+      .get(`${this.apiUrl}/${id}`)
+      .pipe(catchError(this.handleError));
+  }
+
+  add(invoice: FormData): Observable<any> {
+    return this.http
+      .post(this.apiUrl, invoice)
+      .pipe(catchError(this.handleError));
+  }
+
+  edit(id: number, invoice: FormData): Observable<any> {
+    return this.http
+      .post(this.apiUrl, invoice)
+      .pipe(catchError(this.handleError));
   }
 
   delete(id: number): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/delete/${id}`).pipe(
-      catchError((error: any) => {
-        console.error(`Error eliminando la FACTURA con ID ${id}:`, error);
-        throw error;
-      })
-    );
+    return this.http
+      .delete(this.apiUrl, { params: { id: id } })
+      .pipe(catchError(this.handleError));
   }
 
-  getById(id: number): Observable<any> {
-    return this.http.get(`${this.apiUrl}/${id}`).pipe(
-      catchError((error: any) => {
-        console.error('Error en la solicitud de FACTURAS:', error);
-        throw error;
-      })
+  handleError(error: HttpErrorResponse) {
+    let errorMessage = '';
+
+    if (error.error instanceof ErrorEvent) {
+      // Error del lado del cliente o red
+      errorMessage = `Error del cliente o red: ${error.error.message}`;
+    } else {
+      // El backend retornó un código de error no exitoso
+      errorMessage = `Código de error del servidor: ${error.status}\nMensaje: ${error.message}`;
+    }
+
+    console.error(errorMessage); // Para depuración
+
+    // Aquí podrías devolver un mensaje amigable para el usuario, o simplemente retornar el error
+    return throwError(
+      () =>
+        new Error(
+          'Hubo un problema con la solicitud, inténtelo de nuevo más tarde.'
+        )
     );
   }
 }

@@ -41,7 +41,7 @@ th.mat-sort-header-sorted {
   color: rgb(232, 148, 243);
 }
 
-.mat-column-numberInvoice {
+.mat-column-number_invoice {
   text-align: left;
   width: 100px;
 }
@@ -50,8 +50,8 @@ th.mat-sort-header-sorted {
   width: 60px;
 }
 
-.mat-column-datePresentation,
-.mat-column-dateJustification {
+.mat-column-date_presentation,
+.mat-column-date_justification {
   text-align: center;
   width: 110px;
 }
@@ -67,19 +67,19 @@ th.mat-sort-header-sorted {
   text-align: center;
   width: 80px;
 }
-.mat-column-urlPresentation {
+.mat-column-url_presentation {
   width: 80px;
   text-align: center;
 }
-.mat-column-urlJustification {
+.mat-column-url_justification {
   width: 100px;
   text-align: center;
 }
 /* Cantidades */
-.mat-column-amountRequested,
-.mat-column-amountGranted,
-.mat-column-amountJustified,
-.mat-column-amountAssociation {
+.mat-column-amount_requested,
+.mat-column-amount_granted,
+.mat-column-amount_justified,
+.mat-column-amount_association {
   text-align: right;
   width: 100px;
 }
@@ -89,8 +89,8 @@ th.mat-sort-header-sorted {
   width: 120px;
 }
 .mat-column-activities > div,
-.mat-column-urlPresentation > div,
-.mat-column-urlJustification > div,
+.mat-column-url_presentation > div,
+.mat-column-url_justification > div,
 .mat-column-observations > div {
   display: flex;
   justify-content: center;

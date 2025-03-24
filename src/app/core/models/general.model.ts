@@ -1,14 +1,3 @@
-// export type TypeList =
-//   | 'EVENTS'
-//   | 'BOOKS'
-//   | 'MOVIES'
-//   | 'RECIPES'
-//   | 'PITERAS'
-//   | 'PARTNERS'
-//   | 'INVOICES'
-//   | 'CREDITORS'
-//   | 'SUBSIDIES';
-
 // export type TypeActionModal = 'EDIT' | 'DELETE' | 'SHOW' | 'CREATE';
 export enum TypeList {
   Events = 'EVENTS',
@@ -65,4 +54,16 @@ export const filterSubsidies: Filter[] = [
   { code: 'DIPUTACION', name: 'Diputación' },
   { code: 'GENERALITAT', name: 'Generalitat' },
   { code: 'MINISTERIO', name: 'Ministerio' },
+];
+export const filterPhotos: Filter[] = [
+  { code: 'CONCENTRACIONES', name: 'Concentraciones violencia de género' },
+  { code: 'COCINA', name: 'Jornadas de cocina' },
+  { code: 'PITERA', name: 'Presentación revista La Pitera (2025)' },
+  { code: 'COSTURA', name: 'Taller de costura' },
+  { code: 'LECTURA', name: 'Club de lectura' },
+  { code: 'GANCHILLO', name: 'Taller de ganchillo' },
+  { code: 'GIMNASIA', name: 'Gimnasia funcional' },
+  { code: 'BAILE', name: 'Baile' },
+  { code: 'RETRATOS', name: 'Socias' },
+  { code: 'CHARLAS', name: 'Charlas' },
 ];

@@ -3,22 +3,22 @@
   <app-text-background [text]="'Fechas'"></app-text-background>
   <app-text-editor *ngIf="item.observations" [text]="item.observations" />
   <div class="ml-4 pt-2 gap-y-2">
-    <!-- <p *ngIf="item.dateInvoice">
+    <!-- <p *ngIf="item.date_invoice">
       Fecha factura:
       <span class="body-border">{{
-        item.dateInvoice | date : "dd MMM yyyy"
+        item.date_invoice | date : "dd MMM yyyy"
       }}</span>
     </p>
-    <p *ngIf="item.dateAccounting">
+    <p *ngIf="item.date_accounting">
       Feche contabilidad:
       <span class="body-border">{{
-        item.dateAccounting | date : "dd MMM yyyy"
+        item.date_accounting | date : "dd MMM yyyy"
       }}</span>
     </p>
-    <p *ngIf="item.datePayment">
+    <p *ngIf="item.date_payment">
       Fecha pago:
       <span class="body-border">{{
-        item.datePayment | date : "dd MMM yyyy"
+        item.date_payment | date : "dd MMM yyyy"
       }}</span>
     </p> -->
   </div>
@@ -39,18 +39,18 @@
       ></app-text-border>
       =
       <app-text-border
-        *ngIf="item.totalAmount"
-        [text]="'(IRPF) ' + item.totalAmount + ' €'"
+        *ngIf="item.total_amount"
+        [text]="'(IRPF) ' + item.total_amount + ' €'"
       ></app-text-border> -->
     </div>
     <!-- <app-text-border
-      *ngIf="item.totalAmountIrpf"
-      [text]="'Total + IRPF = ' + item.totalAmountIrpf + ' €'"
+      *ngIf="item.total_amount_irpf"
+      [text]="'Total + IRPF = ' + item.total_amount_irpf + ' €'"
     ></app-text-border> -->
   </div>
   <app-text-background [text]="'Subvención'"></app-text-background>
   <!-- <app-text-icon
     [icon]="'uil uil-building icon'"
-    [text]="item.subsidy + ' - ' + item.subsidyYear"
+    [text]="item.subsidy + ' - ' + item.subsidy_year"
   ></app-text-icon> -->
 </div>

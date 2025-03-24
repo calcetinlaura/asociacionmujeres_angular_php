@@ -38,6 +38,7 @@ export class ImageControlComponent implements OnInit {
 
   private basePath = '/uploads/img';
   private placeholder = 'assets/img/error.jpg';
+  private placeholderPartner = 'assets/img/mujer.jpg';
   constructor(private http: HttpClient) {}
 
   ngOnInit(): void {
@@ -62,6 +63,7 @@ export class ImageControlComponent implements OnInit {
   // }
   private setPreviewUrl() {
     if (this.previewImg) {
+      console.log(this.previewImg, 'foto que carga');
       // Si el tipo es 'event', extraer el año del nombre del archivo
       let yearFolder = '';
       if (this.type === TypeList.Events) {
@@ -74,7 +76,11 @@ export class ImageControlComponent implements OnInit {
         ? `${this.basePath}/${this.type}/${yearFolder}/${this.previewImg}` // Si es evento, agregar carpeta del año
         : `${this.basePath}/${this.type}/${this.previewImg}`; // Si no es evento, solo usar el tipo
     } else {
-      this.previewUrl = this.placeholder; // Si no hay imagen, usa el placeholder
+      if (this.type !== 'PARTNERS') {
+        this.previewUrl = this.placeholder; // Si no hay imagen, usa el placeholder
+      } else {
+        this.previewUrl = this.placeholderPartner;
+      }
     }
   }
 
@@ -116,9 +122,10 @@ export class ImageControlComponent implements OnInit {
 
       try {
         // Cambiar la URL a la de tu API para subir la imagen
-        const response = await this.http
-          .post('http://localhost/ASOC/books.php/upload', formData)
-          .toPromise();
+        const response = await this.http.post(
+          'http://localhost/ASOC/books.php/upload',
+          formData
+        );
         console.log('Upload successful:', response);
       } catch (error) {
         console.error('Upload failed:', error);

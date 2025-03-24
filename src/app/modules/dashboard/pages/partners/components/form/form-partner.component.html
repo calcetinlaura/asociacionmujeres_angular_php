@@ -9,11 +9,12 @@
   >
     <div class="flex flex-col gap-y-4">
       <div class="flex flex-col bg-lilaMuyClaro p-4 gap-y-4">
-        <div class="flex justify-between gap-x-4">
-          <!-- Nombre -->
-          <div class="box-input gap-x-4 flex-1">
-            <label for="name">Nombre</label>
-            <div class="flex flex-col">
+        <div class="flex gap-x-4">
+          <div class="flex flex-col gap-y-4 w-3/4">
+            <!-- Nombre -->
+            <div class="box-input gap-x-4">
+              <label for="name">Nombre</label>
+
               <input
                 formControlName="name"
                 type="text"
@@ -28,46 +29,56 @@
                 Campo requerido
               </div>
             </div>
+            <!-- Apellidos -->
+            <div class="box-input gap-x-4">
+              <label for="surname">Apellidos</label>
+              <input formControlName="surname" type="text" />
+            </div>
+            <div class="flex gap-x-4">
+              <!-- Fecha de nacimiento -->
+              <div class="box-input gap-x-4">
+                <label for="birthday">Fecha Nac.</label>
+                <input formControlName="birthday" type="date" />
+              </div>
+              <!-- Teléfono -->
+              <div class="box-input flex-1 gap-x-4">
+                <label for="address">Teléfono</label>
+                <input formControlName="phone" type="text" />
+              </div>
+            </div>
+            <!-- Email -->
+            <div class="box-input gap-x-4 flex-1">
+              <label for="address">Email</label>
+              <input formControlName="email" type="text" />
+            </div>
+            <div class="flex gap-x-4">
+              <div class="box-input gap-x-4 flex-1">
+                <label for="town">Municipio</label>
+                <input formControlName="town" type="text" />
+              </div>
+              <div class="box-input gap-x-4">
+                <label for="post_code">C.Postal</label>
+                <input formControlName="post_code" type="text" />
+              </div>
+            </div>
+            <div class="box-input gap-x-4">
+              <label for="post_code">C.Postal</label>
+              <input formControlName="post_code" type="text" />
+            </div>
           </div>
-          <!-- Fecha de nacimiento -->
-          <div class="box-input gap-x-4 w-auto">
-            <label for="birthday">Fecha Nac.</label>
-            <input formControlName="birthday" type="date" />
+          <div class="box-input gap-x-4 px-4 w-1/4">
+            <app-image-control
+              [previewImg]="
+                formPartner.get('img')?.value
+                  ? formPartner.get('img')?.value!
+                  : null
+              "
+              [type]="typeList"
+              (imgSelected)="onImageSelected($event)"
+              [imageWidthValue]="'full'"
+            ></app-image-control>
           </div>
         </div>
-        <!-- Apellidos -->
-        <div class="box-input gap-x-4">
-          <label for="surname">Apellidos</label>
-          <input formControlName="surname" type="text" />
-        </div>
-        <div class="flex justify-between gap-x-4">
-          <!-- Teléfono -->
-          <div class="box-input gap-x-4">
-            <label for="address">Teléfono</label>
-            <input formControlName="phone" type="text" />
-          </div>
-          <!-- Email -->
-          <div class="box-input gap-x-4 flex-1">
-            <label for="address">Email</label>
-            <input formControlName="email" type="text" />
-          </div>
-        </div>
-      </div>
-      <div class="flex justify-between gap-x-4 px-4">
-        <!-- Municipio -->
-        <div class="box-input gap-x-4 flex-1">
-          <label for="town">Municipio</label>
-          <input formControlName="town" type="text" />
-        </div>
-        <div class="box-input gap-x-4">
-          <label for="post_code">C.Postal</label>
-          <input formControlName="post_code" type="text" />
-        </div>
-      </div>
-      <!-- Dirección -->
-      <div class="box-input gap-x-4 px-4">
-        <label for="address">Dirección</label>
-        <input formControlName="address" type="text" />
       </div>
       <div class="boxCuotas p-4">
         <h3 class="titleCuotas">Cuotas</h3>
@@ -82,6 +93,18 @@
             </mat-checkbox>
           </div>
         </div>
+      </div>
+      <div class="box-input gap-x-4 flex-1">
+        <label for="observations">Observaciones</label>
+        <input formControlName="observations" type="text" />
+      </div>
+      <div class="flex gap-4">
+        <mat-checkbox color="primary" formControlName="death"
+          >Ha fallecido
+        </mat-checkbox>
+        <mat-checkbox color="primary" formControlName="unsubscribe"
+          >Se ha dado de baja
+        </mat-checkbox>
       </div>
       <!-- Mensaje de error global -->
       <div *ngIf="errorSession" class="is-invalid-text">

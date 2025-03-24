@@ -8,7 +8,7 @@ import { environments } from 'src/environments/environments';
   providedIn: 'root',
 })
 export class SubsidiesService {
-  private apiUrl: string = `${environments.api}/backend/subsidies`;
+  private apiUrl: string = `${environments.api}/backend/subsidies.php`;
   constructor(private http: HttpClient) {}
 
   public subsidiesMap = {
@@ -19,52 +19,57 @@ export class SubsidiesService {
     MINISTERIO: 'Ministerio',
   };
 
-  getAll(): Observable<any> {
+  getSubisidies(): Observable<any> {
     return this.http.get(this.apiUrl).pipe(catchError(this.handleError));
   }
-  getAllByType(type: string): Observable<any> {
-    const urlWithParams = `${this.apiUrl}/type`;
+
+  getSubsidiesByType(type: string): Observable<any> {
     return this.http
-      .get(urlWithParams, {
+      .get(this.apiUrl, {
         params: { name: type },
       })
       .pipe(catchError(this.handleError));
   }
-  getAllByYear(year: number): Observable<any> {
-    const urlWithParams = `${this.apiUrl}/year`;
+
+  getSubsidiesByYear(year: number): Observable<any> {
     return this.http
-      .get(urlWithParams, {
+      .get(this.apiUrl, {
         params: { year: year },
       })
       .pipe(catchError(this.handleError));
   }
 
-  add(subsidy: any): Observable<any> {
+  getSubsidiesByLatest(): Observable<any> {
     return this.http
-      .post(`${this.apiUrl}/add`, subsidy)
+      .get(this.apiUrl, { params: { latest: true } })
       .pipe(catchError(this.handleError));
   }
 
-  edit(id: number, subsidy: any): Observable<any> {
-    return this.http
-      .patch(`${this.apiUrl}/edit/${id}`, subsidy)
-      .pipe(catchError(this.handleError));
-  }
-
-  delete(id: number): Observable<any> {
-    return this.http
-      .delete(`${this.apiUrl}/delete/${id}`)
-      .pipe(catchError(this.handleError));
-  }
-
-  getById(id: number): Observable<any> {
+  getSubsidieById(id: number): Observable<any> {
     return this.http
       .get(`${this.apiUrl}/${id}`)
       .pipe(catchError(this.handleError));
   }
 
-  // Método para manejar errores
-  private handleError(error: HttpErrorResponse) {
+  add(subsidy: any): Observable<any> {
+    return this.http
+      .post(this.apiUrl, subsidy)
+      .pipe(catchError(this.handleError));
+  }
+
+  edit(id: number, subsidy: any): Observable<any> {
+    return this.http
+      .post(this.apiUrl, subsidy)
+      .pipe(catchError(this.handleError));
+  }
+
+  delete(id: number): Observable<any> {
+    return this.http
+      .delete(this.apiUrl, { params: { id: id } })
+      .pipe(catchError(this.handleError));
+  }
+
+  handleError(error: HttpErrorResponse) {
     let errorMessage = '';
 
     if (error.error instanceof ErrorEvent) {

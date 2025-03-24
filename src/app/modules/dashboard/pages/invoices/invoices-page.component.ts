@@ -19,16 +19,20 @@ import { CommonModule } from '@angular/common';
 import { InvoicesFacade } from 'src/app/application';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
-import { tap } from 'rxjs';
+import { combineLatest, tap } from 'rxjs';
 import { AddButtonComponent } from 'src/app/shared/components/buttons/button-add/button-add.component';
 import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
 import { TableInvoicesComponent } from './components/table-invoices/table-invoices.component';
 import { FiltersComponent } from 'src/app/modules/landing/components/filters/filters.component';
 import { MatTabChangeEvent, MatTabsModule } from '@angular/material/tabs';
-import { InvoiceModel } from 'src/app/core/interfaces/invoice.interface';
+import {
+  InvoiceModel,
+  InvoiceWithCreditorModel,
+} from 'src/app/core/interfaces/invoice.interface';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SpinnerLoadingComponent } from '../../../landing/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
+
 @Component({
   selector: 'app-invoices-page',
   standalone: true,
@@ -57,9 +61,9 @@ export class InvoicesPageComponent implements OnInit {
   selectedIndex: number = 0;
   selectedTypeFilter: string | null = null;
   typeList = TypeList.Invoices;
-  invoices: InvoiceModel[] = [];
+  invoices: InvoiceWithCreditorModel[] = [];
   filtersYears: Filter[] = [];
-  filteredInvoices: InvoiceModel[] = [];
+  filteredInvoices: InvoiceWithCreditorModel[] = [];
   currentFilterType: string | null = null;
   currentTab: string | null = null;
   searchForm!: FormGroup;
@@ -70,7 +74,7 @@ export class InvoicesPageComponent implements OnInit {
   item: any;
   searchKeywordFilter = new FormControl();
   isStickyToolbar: boolean = false;
-  selectedFilterYear: string = new Date().getFullYear().toString();
+  selectedFilterYear: number | null = null;
 
   @ViewChild('toolbar') toolbar!: ElementRef;
 
@@ -88,6 +92,7 @@ export class InvoicesPageComponent implements OnInit {
       this.isStickyToolbar = false;
     }
   }
+
   ngOnInit(): void {
     const currentYear = this.generalService.currentYear;
     const startYear = 2018;
@@ -102,22 +107,28 @@ export class InvoicesPageComponent implements OnInit {
         });
       }
     }
-
     // Invertir el array para que el último año esté primero
     this.filtersYears.reverse();
-    this.loadInvoicesByYears(this.selectedFilterYear);
-    //this.loadInvoices();
+    this.loadInvoicesByYears(
+      this.selectedFilterYear ?? this.generalService.currentYear
+    );
 
-    // Suscribirse a los cambios en las facturas filtradas
-    this.invoicesFacade.filteredInvoices$
+    // combinar ambos para simplificar y evitar doble carga innecesaria. Suscribirse a los cambios en las facturas filtradas
+    combineLatest([
+      this.invoicesFacade.filteredInvoices$,
+      this.invoicesFacade.invoices$,
+    ])
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((invoices) => {
-          if (invoices === null) {
-            return;
+        tap(([filtered, all]) => {
+          if (filtered) {
+            this.filteredInvoices = filtered;
+            this.number = filtered.length;
+          } else if (all) {
+            this.filteredInvoices = all;
+            this.number = all.length;
           }
-          this.filteredInvoices = invoices;
-          this.number = invoices.length; // Actualiza el número de facturas
+          this.dataLoaded = true;
         })
       )
       .subscribe();
@@ -132,25 +143,42 @@ export class InvoicesPageComponent implements OnInit {
       )
       .subscribe();
   }
-  loadInvoicesByYears(filter: string): void {
+
+  loadInvoicesByYears(filter: number): void {
     this.invoicesFacade.loadInvoicesByYears(filter);
     this.invoicesFacade.invoices$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((invoices) => {
-          this.invoices = invoices;
-          this.filteredInvoices = invoices;
-          this.number = this.invoices.length;
-          this.dataLoaded = true;
+          this.update_invoiceState(invoices);
         })
       )
       .subscribe();
   }
 
   filterYearSelected(filter: string): void {
-    this.selectedFilterYear = filter;
-    this.loadInvoicesByYears(filter);
+    const year = parseInt(filter, 10); // convertir a número
+    this.selectedFilterYear = year;
+    this.invoicesFacade.loadInvoicesByYears(year);
+    this.invoicesFacade.invoices$
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap((invoices) => {
+          if (invoices === null) {
+            this.invoices = [];
+            this.filteredInvoices = [];
+            this.number = 0;
+          } else {
+            this.invoices = invoices;
+            this.filteredInvoices = invoices;
+            this.number = invoices.length;
+          }
+          this.dataLoaded = true;
+        })
+      )
+      .subscribe();
   }
+
   tabActive(event: MatTabChangeEvent): void {
     this.currentTab = event.tab.textLabel;
 
@@ -209,14 +237,13 @@ export class InvoicesPageComponent implements OnInit {
     this.modalService.closeModal();
   }
 
-  sendFormInvoice(event: {
-    itemId: number;
-    newInvoiceData: InvoiceModel;
-  }): void {
+  sendFormInvoice(event: { itemId: number; newInvoiceData: FormData }): void {
     if (event.itemId) {
       this.invoicesFacade.editInvoice(event.itemId, event.newInvoiceData);
       // Después de editar, recarga las facturas y aplica el filtro
-      this.loadInvoicesByYears(this.selectedFilterYear);
+      this.loadInvoicesByYears(
+        this.selectedFilterYear ?? this.generalService.currentYear
+      );
       this.invoicesFacade.applyFilterTab(this.currentFilterType); // Aplicar el filtro actual
     } else {
       this.invoicesFacade
@@ -224,13 +251,24 @@ export class InvoicesPageComponent implements OnInit {
         .pipe(
           takeUntilDestroyed(this.destroyRef),
           tap(() => {
-            this.loadInvoicesByYears(this.selectedFilterYear);
+            this.loadInvoicesByYears(
+              this.selectedFilterYear ?? this.generalService.currentYear
+            );
             this.invoicesFacade.applyFilterTab(this.currentFilterType);
             this.onCloseModal();
           })
         )
         .subscribe();
     }
-    this.onCloseModal();
+  }
+
+  private update_invoiceState(invoices: InvoiceModel[] | null): void {
+    if (invoices === null) {
+      return;
+    }
+    this.invoices = invoices.sort((a, b) => b.id - a.id);
+    this.filteredInvoices = [...this.invoices];
+    this.number = this.invoices.length;
+    this.dataLoaded = true;
   }
 }

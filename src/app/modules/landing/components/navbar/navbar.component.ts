@@ -58,6 +58,11 @@ export class NavbarComponent implements OnInit {
         router: ['/', 'recipes'],
         title: 'Recetario',
       },
+      {
+        name: 'Fotos',
+        router: ['/', 'photos'],
+        title: 'Fotografías',
+      },
     ];
   }
 }

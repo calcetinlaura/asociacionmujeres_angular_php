@@ -9,6 +9,8 @@ import { PartnersPageComponent } from './pages/partners/partners-page.component'
 import { InvoicesPageComponent } from './pages/invoices/invoices-page.component';
 import { SubsidiesPageComponent } from './pages/subsidies/subsidies-page.component';
 import { CreditorsPageComponent } from './pages/creditors/creditors-page.component';
+import { SettingsPageComponent } from './pages/settings/settings-page.component';
+import { PlacesPageComponent } from './pages/places/places-page.component';
 
 export const dashboardRoutes: Routes = [
   {
@@ -21,9 +23,11 @@ export const dashboardRoutes: Routes = [
       { path: 'recipes', component: RecipesPageComponent },
       { path: 'piteras', component: PiterasPageComponent },
       { path: 'partners', component: PartnersPageComponent },
+      { path: 'places', component: PlacesPageComponent },
       { path: 'invoices', component: InvoicesPageComponent },
       { path: 'subsidies', component: SubsidiesPageComponent },
       { path: 'creditors', component: CreditorsPageComponent },
+      { path: 'settings', component: SettingsPageComponent },
       { path: '**', redirectTo: 'events' },
     ],
   },

@@ -78,18 +78,18 @@ export class FormSubsidyComponent {
       Validators.min(1995),
       Validators.max(new Date().getFullYear()),
     ]),
-    datePresentation: new FormControl<Date | null>(null),
-    dateJustification: new FormControl<Date | null>(null),
-    periodStart: new FormControl<Date | null>(null),
-    periodEnd: new FormControl<Date | null>(null),
+    date_presentation: new FormControl<Date | null>(null),
+    date_justification: new FormControl<Date | null>(null),
+    period_start: new FormControl<Date | null>(null),
+    period_end: new FormControl<Date | null>(null),
     activities: new FormControl(''),
     invoices: new FormControl(''),
-    urlPresentation: new FormControl(''),
-    urlJustification: new FormControl(''),
-    amountRequested: new FormControl(),
-    amountGranted: new FormControl(),
-    amountJustified: new FormControl(),
-    amountAssociation: new FormControl(),
+    url_presentation: new FormControl(''),
+    url_justification: new FormControl(''),
+    amount_requested: new FormControl(),
+    amount_granted: new FormControl(),
+    amount_justified: new FormControl(),
+    amount_association: new FormControl(),
     observations: new FormControl(''),
   });
 
@@ -141,20 +141,21 @@ export class FormSubsidyComponent {
     const formValue: SubsidyModel = {
       name: this.formSubsidy.get('name')?.value || '',
       year: this.formSubsidy.get('year')?.value || 0,
-      dateJustification:
-        this.formSubsidy.get('dateJustification')?.value || null,
-      datePresentation: this.formSubsidy.get('datePresentation')?.value || null,
-      periodStart: this.formSubsidy.get('periodStart')?.value || null,
-      periodEnd: this.formSubsidy.get('periodEnd')?.value || null,
+      date_justification:
+        this.formSubsidy.get('date_justification')?.value || null,
+      date_presentation:
+        this.formSubsidy.get('date_presentation')?.value || null,
+      period_start: this.formSubsidy.get('period_start')?.value || null,
+      period_end: this.formSubsidy.get('period_end')?.value || null,
       activities: this.formSubsidy.get('activities')?.value || '',
       invoices: this.formSubsidy.get('invoices')?.value || '',
-      urlPresentation: this.formSubsidy.get('urlPresentation')?.value || '',
-      urlJustification: this.formSubsidy.get('urlJustification')?.value || '',
-      amountRequested: this.formSubsidy.get('amountRequested')?.value || null,
-      amountGranted: this.formSubsidy.get('amountGranted')?.value || null,
-      amountJustified: this.formSubsidy.get('amountJustified')?.value || null,
-      amountAssociation:
-        this.formSubsidy.get('amountAssociation')?.value || null,
+      url_presentation: this.formSubsidy.get('url_presentation')?.value || '',
+      url_justification: this.formSubsidy.get('url_justification')?.value || '',
+      amount_requested: this.formSubsidy.get('amount_requested')?.value || null,
+      amount_granted: this.formSubsidy.get('amount_granted')?.value || null,
+      amount_justified: this.formSubsidy.get('amount_justified')?.value || null,
+      amount_association:
+        this.formSubsidy.get('amount_association')?.value || null,
       observations: this.formSubsidy.get('observations')?.value || '',
     };
     this.sendFormSubsidy.emit(formValue);

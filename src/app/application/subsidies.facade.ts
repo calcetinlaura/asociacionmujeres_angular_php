@@ -1,14 +1,23 @@
 import { DestroyRef, inject, Injectable } from '@angular/core';
-import { BehaviorSubject, map, Observable, tap } from 'rxjs';
+import {
+  BehaviorSubject,
+  catchError,
+  map,
+  Observable,
+  tap,
+  throwError,
+} from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SubsidyModel } from '../core/interfaces/subsidy.interface';
 import { SubsidiesService } from '../core/services/subsidies.services';
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root',
 })
 export class SubsidiesFacade {
   private destroyRef = inject(DestroyRef);
+  private subsidiesService = inject(SubsidiesService);
   private subsidiesSubject = new BehaviorSubject<SubsidyModel[]>([]);
   private selectedSubsidySubject = new BehaviorSubject<SubsidyModel | null>(
     null
@@ -23,7 +32,7 @@ export class SubsidiesFacade {
   selectedSubsidy$ = this.selectedSubsidySubject.asObservable();
   currentFilterType$ = this.currentFilterTypeSubject.asObservable();
 
-  constructor(private subsidiesService: SubsidiesService) {}
+  constructor() {}
 
   // Método para aplicar filtros
   applyFilterTab(filterType: string | null): void {
@@ -38,19 +47,20 @@ export class SubsidiesFacade {
 
   loadAllSubsidies(): void {
     this.subsidiesService
-      .getAll()
+      .getSubisidies()
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((subsidies: SubsidyModel[]) =>
           this.subsidiesSubject.next(subsidies)
-        )
+        ),
+        catchError(this.handleError)
       )
       .subscribe();
   }
 
   loadSubsidyById(id: number): void {
     this.subsidiesService
-      .getById(id)
+      .getSubsidieById(id)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((subsidy: SubsidyModel) =>
@@ -62,7 +72,7 @@ export class SubsidiesFacade {
 
   loadSubsidiesByType(type: string): void {
     this.subsidiesService
-      .getAllByType(type)
+      .getSubsidiesByType(type)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((subsidies: SubsidyModel[]) =>
@@ -72,9 +82,20 @@ export class SubsidiesFacade {
       .subscribe();
   }
 
+  loadSubsidiesByLatest(): void {
+    this.subsidiesService
+      .getSubsidiesByLatest()
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap((subsidies: SubsidyModel[]) => this.updateSubsidyState(subsidies)),
+        catchError(this.handleError)
+      )
+      .subscribe();
+  }
+
   loadSubsidiesByYear(year: number): void {
     this.subsidiesService
-      .getAllByYear(year)
+      .getSubsidiesByYear(year)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((subsidies: SubsidyModel[]) => {
@@ -82,19 +103,6 @@ export class SubsidiesFacade {
         })
       )
       .subscribe();
-  }
-  getYearNews(): Observable<number> {
-    return this.subsidiesService.getAll().pipe(
-      takeUntilDestroyed(this.destroyRef),
-      map((subsidies: SubsidyModel[]) => {
-        if (subsidies.length > 0) {
-          const maxYear = Math.max(...subsidies.map((subsidy) => subsidy.year)); // Cambié this.subsidies a subsidies
-          return maxYear; // Devuelve el año máximo
-        } else {
-          return new Date().getFullYear(); // Devuelve el año actual si no hay películas
-        }
-      })
-    );
   }
 
   addSubsidy(subsidy: SubsidyModel): Observable<SubsidyModel> {
@@ -126,5 +134,32 @@ export class SubsidiesFacade {
   // Clear selected subsidy
   clearSelectedSubsidy(): void {
     this.selectedSubsidySubject.next(null);
+  }
+
+  updateSubsidyState(subsidies: SubsidyModel[]): void {
+    this.subsidiesSubject.next(subsidies);
+    this.filteredSubsidiesSubject.next(subsidies); // Actualiza también los libros filtrados
+  }
+  // Método para manejar errores
+  handleError(error: HttpErrorResponse) {
+    let errorMessage = '';
+
+    if (error.error instanceof ErrorEvent) {
+      // Error del lado del cliente o red
+      errorMessage = `Error del cliente o red: ${error.error.message}`;
+    } else {
+      // El backend retornó un código de error no exitoso
+      errorMessage = `Código de error del servidor: ${error.status}\nMensaje: ${error.message}`;
+    }
+
+    console.error(errorMessage); // Para depuración
+
+    // Aquí podrías devolver un mensaje amigable para el usuario, o simplemente retornar el error
+    return throwError(
+      () =>
+        new Error(
+          'Hubo un problema con la solicitud, inténtelo de nuevo más tarde.'
+        )
+    );
   }
 }

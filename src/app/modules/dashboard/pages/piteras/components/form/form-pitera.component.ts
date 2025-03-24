@@ -31,6 +31,7 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
 export class FormPiteraComponent {
   private piterasFacade = inject(PiterasFacade);
   private generalService = inject(GeneralService);
+
   @Input() itemId!: number;
   @Output() sendFormPitera = new EventEmitter<{
     itemId: number;
@@ -45,6 +46,7 @@ export class FormPiteraComponent {
   buttonAction: string = 'Guardar';
   years: number[] = [];
   typeList = TypeList.Piteras;
+
   formPitera = new FormGroup({
     title: new FormControl('', [Validators.required]),
     theme: new FormControl(''),
@@ -132,6 +134,8 @@ export class FormPiteraComponent {
     // 🔹 Si hay imagen seleccionada, agregarla
     if (this.selectedImageFile) {
       formData.append('img', this.selectedImageFile);
+    } else if (this.imageSrc) {
+      formData.append('existingImg', this.imageSrc);
     }
 
     if (this.itemId) {

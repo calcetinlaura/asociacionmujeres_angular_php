@@ -28,15 +28,15 @@ export class PartnersService {
       .pipe(catchError(this.handleError));
   }
 
-  add(partner: PartnerModel): Observable<any> {
+  add(partner: FormData): Observable<any> {
     return this.http
       .post(this.apiUrl, partner)
       .pipe(catchError(this.handleError));
   }
 
-  edit(id: number, partner: PartnerModel): Observable<any> {
+  edit(id: number, partner: FormData): Observable<any> {
     return this.http
-      .patch(`${this.apiUrl}/${id}`, partner)
+      .post(this.apiUrl, partner)
       .pipe(catchError(this.handleError));
   }
 

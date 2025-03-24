@@ -1,0 +1,10 @@
+.sticky-toolbar {
+  position: fixed;
+  top: 100px; /* Justo debajo de la cabecera */
+  width: 100%;
+  background-color: #fff;
+  padding: 1rem 2rem;
+  transition: all 0.3s ease;
+  z-index: 1000;
+  height: 70px;
+}

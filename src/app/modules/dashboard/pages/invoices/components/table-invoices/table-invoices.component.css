@@ -43,14 +43,14 @@ th.mat-sort-header-sorted {
   color: rgb(232, 148, 243);
 }
 
-.mat-column-numberInvoice {
+.mat-column-number_invoice {
   text-align: left;
   width: 100px;
 }
 
-.mat-column-dateInvoice,
-.mat-column-dateAccounting,
-.mat-column-datePayment {
+.mat-column-date_invoice,
+.mat-column-date_accounting,
+.mat-column-date_payment {
   text-align: left;
   width: 100px;
 }
@@ -65,12 +65,12 @@ th.mat-sort-header-sorted {
 .mat-column-amount,
 .mat-column-iva,
 .mat-column-irpf,
-.mat-column-totalAmount,
-.mat-column-totalAmountIrpf {
+.mat-column-total_amount,
+.mat-column-total_amount_irpf {
   text-align: right;
   width: 80px;
 }
-.mat-column-totalAmountIrpf {
+.mat-column-total_amount_irpf {
   text-align: right;
   width: 120px;
 }
@@ -79,12 +79,12 @@ th.mat-sort-header-sorted {
   width: 140px;
 }
 
-.mat-column-typeInvoice {
+.mat-column-type_invoice {
   text-align: left;
   width: 70px;
 }
 .mat-column-subsidy > div > span,
-.mat-column-typeInvoice > div > span {
+.mat-column-type_invoice > div > span {
   border-radius: 5px;
   padding: 4px;
   font-size: 10px;
@@ -116,13 +116,13 @@ th.mat-sort-header-sorted {
 .mat-column-subsidy > div > .subsidy-ayunt-activ {
   background-color: rgb(174, 179, 213);
 }
-.mat-column-typeInvoice > div > .type-ticket {
+.mat-column-type_invoice > div > .type-ticket {
   background-color: rgba(245, 178, 178, 0.91);
 }
-.mat-column-typeInvoice > div > .type-ingreso {
+.mat-column-type_invoice > div > .type-ingreso {
   background-color: rgba(149, 218, 202, 0.908);
 }
-.mat-column-typeInvoice > div > .type-factura {
+.mat-column-type_invoice > div > .type-factura {
   background-color: rgba(210, 218, 149, 0.941);
 }
 .mat-column-actions {

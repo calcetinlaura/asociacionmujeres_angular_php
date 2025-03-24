@@ -26,7 +26,7 @@
               </div>
               <!-- AÑO -->
               <div class="flex box-input gap-x-4 w-1/3">
-                <label for="subsidyYear">Año solicitud</label>
+                <label for="subsidy_year">Año solicitud</label>
                 <div class="flex flex-col flex-1">
                   <select
                     formControlName="year"
@@ -52,28 +52,30 @@
           <!-- PERIODO -->
           <div class="flex box-input gap-x-4">
             <label for="period" class="flex-1">Periodo actividades </label>
-            <input formControlName="periodStart" type="date" class="w-54" />
+            <input formControlName="period_start" type="date" class="w-54" />
             <span> a </span>
-            <input formControlName="periodEnd" type="date" class="w-54" />
+            <input formControlName="period_end" type="date" class="w-54" />
           </div>
         </div>
         <div class="flex flex-col gap-y-4 w-1/3 bg-lilaMuyClaro p-4">
           <!-- Fecha PRESENTACIÓN -->
           <div class="flex box-input gap-x-4">
-            <label for="datePresentation" class="flex-1">F. Presentación</label>
+            <label for="date_presentation" class="flex-1"
+              >F. Presentación</label
+            >
             <input
-              formControlName="datePresentation"
+              formControlName="date_presentation"
               type="date"
               class="w-54"
             />
           </div>
           <!-- Fecha JUSTIFICACIÓN -->
           <div class="flex box-input gap-x-4">
-            <label for="dateJustification" class="flex-1"
+            <label for="date_justification" class="flex-1"
               >F. Justificación</label
             >
             <input
-              formControlName="dateJustification"
+              formControlName="date_justification"
               type="date"
               class="w-54"
             />
@@ -82,12 +84,12 @@
       </div>
       <!-- URL -->
       <div class="box-input gap-x-4">
-        <label for="urlPresentation">Url subvención</label>
-        <input type="text" formControlName="urlPresentation" />
+        <label for="url_presentation">Url subvención</label>
+        <input type="text" formControlName="url_presentation" />
       </div>
       <div class="box-input gap-x-4">
-        <label for="urlJustification">Url resolución</label>
-        <input type="text" formControlName="urlJustification" />
+        <label for="url_justification">Url resolución</label>
+        <input type="text" formControlName="url_justification" />
       </div>
       <!-- ACTIVIDADES -->
       <div class="box-input gap-x-4 flex-1">
@@ -111,25 +113,25 @@
       >
         <!-- CANTIDAD SOLICITADA -->
         <div class="flex flex-col flex-1 box-input gap-y-2">
-          <label for="amountRequested">Cantidad solicitada</label>
-          <input formControlName="amountRequested" type="number" />
+          <label for="amount_requested">Cantidad solicitada</label>
+          <input formControlName="amount_requested" type="number" />
         </div>
         <!-- CANTIDAD ADJUDICADA -->
         <div class="flex flex-col flex-1 box-input gap-y-2">
-          <label for="amountGranted" class="font-medium"
+          <label for="amount_granted" class="font-medium"
             >Cantidad adjudicada</label
           >
-          <input formControlName="amountGranted" type="number" />
+          <input formControlName="amount_granted" type="number" />
         </div>
         <!-- CANTIDAD JUSTIFICADA -->
         <div class="flex flex-col flex-1 box-input gap-y-2">
-          <label for="amountJustified">Cantidad necesaria justificar</label>
-          <input formControlName="amountJustified" type="number" />
+          <label for="amount_justified">Cantidad necesaria justificar</label>
+          <input formControlName="amount_justified" type="number" />
         </div>
         <!-- CANTIDAD JUSTIFICADA -->
         <!-- <div class="flex flex-col box-input gap-x-4">
-          <label for="amountAssociation">Cantidad aporta asociaión</label>
-          <input formControlName="amountAssociation" type="number" />
+          <label for="amount_association">Cantidad aporta asociaión</label>
+          <input formControlName="amount_association" type="number" />
         </div> -->
       </div>
 

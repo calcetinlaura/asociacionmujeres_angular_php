@@ -13,7 +13,7 @@
           <!-- Ingreso o gasto -->
           <div>
             <mat-radio-group
-              formControlName="typeInvoice"
+              formControlName="type_invoice"
               class="-ml-3 custom-radio-button"
             >
               <mat-radio-button value="Factura">Gasto Factura</mat-radio-button>
@@ -21,7 +21,7 @@
               <mat-radio-button value="Ingreso">Ingreso</mat-radio-button>
             </mat-radio-group>
             <div
-              *ngIf="submitted && formInvoice.get('typeInvoice')?.invalid"
+              *ngIf="submitted && formInvoice.get('type_invoice')?.invalid"
               class="is-invalid-text"
             >
               Debes seleccionar un tipo de factura.
@@ -29,63 +29,91 @@
           </div>
           <!-- Número factura -->
           <div class="flex box-input gap-x-4 flex-1">
-            <label for="numberInvoice">Num. Factura</label>
-            <input formControlName="numberInvoice" type="text" />
+            <label for="number_invoice">Num. Factura</label>
+            <input formControlName="number_invoice" type="text" />
           </div>
           <!-- Acreedor -->
           <div class="flex box-input gap-x-4">
             <label for="creditor">Acreedor</label>
-            <input
-              type="text"
-              matInput
-              [formControl]="searchInput"
-              (input)="searchCreditor()"
-              [matAutocomplete]="auto"
-              style="z-index: 1200"
-            />
-            <mat-autocomplete
-              autoActiveFirstOption
-              #auto="matAutocomplete"
-              style="z-index: 1200; position: fixed"
-              (optionSelected)="onSelectedOption($event)"
-            >
-              <mat-option
-                *ngFor="let creditor of creditors"
-                [value]="creditor"
-                (onSelectionChange)="creditorSelected(creditor)"
+            <div class="flex flex-col flex-1">
+              <input
+                type="text"
+                matInput
+                [formControl]="searchInput"
+                (input)="searchCreditor()"
+                [matAutocomplete]="auto"
+                style="z-index: 1200"
+                [ngClass]="{
+                  'is-invalid': formInvoice
+                    .get('creditor_id')
+                    ?.hasError('notRegistered')
+                }"
+              />
+              <mat-autocomplete
+                autoActiveFirstOption
+                #auto="matAutocomplete"
+                style="z-index: 1200; position: fixed"
+                (optionSelected)="onSelectedOption($event)"
               >
-                {{ creditor.company }}
-              </mat-option>
-              <mat-option
+                <mat-option
+                  *ngFor="let creditor of creditors"
+                  [value]="creditor"
+                  (onSelectionChange)="creditorSelected(creditor)"
+                >
+                  {{ creditor.company }}
+                  <span
+                    *ngIf="
+                      creditor.contact && creditor.contact !== creditor.company
+                    "
+                    >- {{ creditor.contact }}</span
+                  >
+                </mat-option>
+                <mat-option
+                  *ngIf="
+                    creditors.length === 0 &&
+                    searchInput.value &&
+                    searchInput.value.length > 0
+                  "
+                  value=""
+                  >No se encontró ningún acreedor con el término
+                  {{ searchInput.value }}
+                </mat-option>
+              </mat-autocomplete>
+
+              <div
                 *ngIf="
-                  creditors.length === 0 &&
-                  searchInput.value &&
-                  searchInput.value.length > 0
+                  formInvoice.get('creditor_id')?.hasError('notRegistered')
                 "
-                value=""
-                >No se encontró ningún acreedor con el término
-                {{ searchInput.value }}
-              </mat-option>
-            </mat-autocomplete>
+                class="is-invalid-text"
+              >
+                Acreedor NO registrado. Necesita registrar NUEVO ACREEDOR
+                previamente en la sección ACREEDORES
+              </div>
+            </div>
           </div>
         </div>
+        <!-- <div
+          class="error-message"
+          *ngIf="formInvoice.get('creditor_id')?.hasError('notRegistered')"
+        > -->
+
         <div class="flex flex-col gap-y-4 w-1/3 bg-lilaMuyClaro p-4">
           <!-- Fecha Factura -->
           <div class="flex box-input gap-x-4">
-            <label for="dateInvoice" class="flex-1">F. Compra</label>
+            <label for="date_invoice" class="flex-1">F. Compra</label>
             <div class="flex flex-col flex-1">
               <input
-                formControlName="dateInvoice"
+                formControlName="date_invoice"
                 type="date"
                 class="w-54"
                 [ngClass]="{
-                  'strong-border': !formInvoice.get('dateInvoice')?.invalid,
+                  'strong-border': !formInvoice.get('date_invoice')?.invalid,
                   'is-invalid':
-                    submitted && formInvoice.get('dateInvoice')?.invalid
+                    submitted && formInvoice.get('date_invoice')?.invalid
                 }"
               />
               <div
-                *ngIf="submitted && formInvoice.get('dateInvoice')?.invalid"
+                *ngIf="submitted && formInvoice.get('date_invoice')?.invalid"
                 class="is-invalid-text"
               >
                 Campo requerido
@@ -94,13 +122,13 @@
           </div>
           <!-- Fecha libreta contabilidad -->
           <div class="flex box-input gap-x-4">
-            <label for="dateAccounting" class="flex-1">F. Libro cont</label>
-            <input formControlName="dateAccounting" type="date" class="w-54" />
+            <label for="date_accounting" class="flex-1">F. Libro cont</label>
+            <input formControlName="date_accounting" type="date" class="w-54" />
           </div>
           <!-- Fecha pago -->
           <div class="flex box-input gap-x-4">
-            <label for="datePayment" class="flex-1">F. Pago</label>
-            <input formControlName="datePayment" type="date" class="w-54" />
+            <label for="date_payment" class="flex-1">F. Pago</label>
+            <input formControlName="date_payment" type="date" class="w-54" />
           </div>
         </div>
       </div>
@@ -155,20 +183,20 @@
         </div>
         <!-- TOTAL -->
         <div class="flex flex-col box-input gap-x-4">
-          <label for="totalAmount" class="font-medium">Total</label>
+          <label for="total_amount" class="font-medium">Total</label>
           <div class="flex flex-col flex-1">
             <input
-              formControlName="totalAmount"
+              formControlName="total_amount"
               type="number"
               [ngClass]="{
-                'strong-border': !formInvoice.get('totalAmount')?.invalid,
+                'strong-border': !formInvoice.get('total_amount')?.invalid,
                 'is-invalid':
-                  submitted && formInvoice.get('totalAmount')?.invalid
+                  submitted && formInvoice.get('total_amount')?.invalid
               }"
             />
 
             <div
-              *ngIf="submitted && formInvoice.get('totalAmount')?.invalid"
+              *ngIf="submitted && formInvoice.get('total_amount')?.invalid"
               class="is-invalid-text"
             >
               Campo requerido
@@ -176,8 +204,8 @@
           </div>
         </div>
         <!-- <div class="box-input flex flex-col">
-          <label for="totalAmountIrpf">Total + IRPF</label>
-          <input formControlName="totalAmountIrpf" type="number" />
+          <label for="total_amount_irpf">Total + IRPF</label>
+          <input formControlName="total_amount_irpf" type="number" />
         </div> -->
       </div>
 
@@ -196,13 +224,13 @@
         </div>
         <!-- Año -->
         <div class="flex box-input gap-x-4 w-1/3">
-          <label for="subsidyYear">Año solicitud</label>
+          <label for="subsidy_year">Año solicitud</label>
           <div class="flex flex-col flex-1">
             <select
-              formControlName="subsidyYear"
+              formControlName="subsidy_year"
               [ngClass]="{
                 'is-invalid':
-                  submitted && formInvoice.get('subsidyYear')?.invalid
+                  submitted && formInvoice.get('subsidy_year')?.invalid
               }"
             >
               <option *ngFor="let year of years" [value]="year">
@@ -210,7 +238,7 @@
               </option>
             </select>
             <div
-              *ngIf="submitted && formInvoice.get('subsidyYear')?.invalid"
+              *ngIf="submitted && formInvoice.get('subsidy_year')?.invalid"
               class="is-invalid-text"
             >
               Campo requerido si hay subvención

@@ -231,6 +231,12 @@ export class SubsidiesPageComponent implements OnInit {
   }
 
   tabActive(event: MatTabChangeEvent): void {
+    console.log('🧪 MatTabChangeEvent:', event);
+    if (!event.tab || !event.tab.textLabel) {
+      console.warn('Tab o textLabel no están disponibles aún', event);
+      return;
+    }
+
     this.currentTab = event.tab.textLabel;
 
     switch (this.currentTab) {
@@ -241,13 +247,11 @@ export class SubsidiesPageComponent implements OnInit {
         this.currentFilterSubsidyType = 'Ticket';
         break;
       case 'AYUNT_ACTIVIDADES':
-        this.currentFilterSubsidyType = 'Ingreso';
-        break;
       case 'AYUNT_EQUIPAMIENTO':
         this.currentFilterSubsidyType = 'Ingreso';
         break;
       case 'MINISTERIO':
-        this.currentFilterSubsidyType = null; // Deja el tipo de filtro en null
+        this.currentFilterSubsidyType = null;
         break;
       default:
         this.currentFilterSubsidyType = null;
@@ -326,7 +330,8 @@ export class SubsidiesPageComponent implements OnInit {
     } else {
       keyword = keyword.toLowerCase();
       this.filteredSubsidies = this.subsidies.filter(
-        (book) => Object.values(book).join(' ').toLowerCase().includes(keyword) // Filtrar libros por la palabra clave
+        (invoice) =>
+          Object.values(invoice).join(' ').toLowerCase().includes(keyword) // Filtrar libros por la palabra clave
       );
     }
     this.number = this.filteredSubsidies.length; // Actualizar el conteo de libros filtrados

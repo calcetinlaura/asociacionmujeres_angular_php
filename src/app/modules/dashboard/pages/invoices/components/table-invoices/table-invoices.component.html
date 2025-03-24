@@ -13,7 +13,7 @@
   </ng-container>
 
   <!-- TIPO -->
-  <ng-container matColumnDef="typeInvoice">
+  <ng-container matColumnDef="type_invoice">
     <th
       mat-header-cell
       *matHeaderCellDef
@@ -26,11 +26,11 @@
       <div>
         <span
           [ngClass]="{
-            'type-ticket': element.typeInvoice === 'Ticket',
-            'type-factura': element.typeInvoice === 'Factura',
-            'type-ingreso': element.typeInvoice === 'Ingreso',
+            'type-ticket': element.type_invoice === 'Ticket',
+            'type-factura': element.type_invoice === 'Factura',
+            'type-ingreso': element.type_invoice === 'Ingreso',
           }"
-          >{{ element.typeInvoice }}</span
+          >{{ element.type_invoice }}</span
         >
       </div>
     </td>
@@ -38,14 +38,14 @@
   </ng-container>
 
   <!-- NUM FACTURA -->
-  <ng-container matColumnDef="numberInvoice">
+  <ng-container matColumnDef="number_invoice">
     <th mat-header-cell *matHeaderCellDef>Num. Factura</th>
-    <td mat-cell *matCellDef="let element">{{ element.numberInvoice }}</td>
+    <td mat-cell *matCellDef="let element">{{ element.number_invoice }}</td>
     <td mat-footer-cell *matFooterCellDef></td>
   </ng-container>
 
   <!-- FECHA FACTURA -->
-  <ng-container matColumnDef="dateInvoice">
+  <ng-container matColumnDef="date_invoice">
     <th
       mat-header-cell
       *matHeaderCellDef
@@ -55,13 +55,13 @@
       Fecha factura
     </th>
     <td mat-cell *matCellDef="let element">
-      {{ element.dateInvoice | date : "dd MMM yyyy" : "Europe/Madrid" }}
+      {{ element.date_invoice | date : "dd MMM yyyy" : "Europe/Madrid" }}
     </td>
     <td mat-footer-cell *matFooterCellDef></td>
   </ng-container>
 
   <!-- FECHA CUENTAS -->
-  <ng-container matColumnDef="dateAccounting">
+  <ng-container matColumnDef="date_accounting">
     <th
       mat-header-cell
       *matHeaderCellDef
@@ -71,13 +71,13 @@
       Fecha cuentas
     </th>
     <td mat-cell *matCellDef="let element">
-      {{ element.dateAccounting | date : "dd MMM yyyy" : "Europe/Madrid" }}
+      {{ element.date_accounting | date : "dd MMM yyyy" : "Europe/Madrid" }}
     </td>
     <td mat-footer-cell *matFooterCellDef></td>
   </ng-container>
 
   <!-- FECHA PAGO -->
-  <ng-container matColumnDef="datePayment">
+  <ng-container matColumnDef="date_payment">
     <th
       mat-header-cell
       *matHeaderCellDef
@@ -87,14 +87,14 @@
       Fecha pago
     </th>
     <td mat-cell *matCellDef="let element">
-      <div *ngIf="element.datePayment !== null; else noPayment">
+      <div *ngIf="element.date_payment !== null; else noPayment">
         <span class="dateColumn">
-          {{ element.datePayment | date : "dd MMM yyyy" : "Europe/Madrid" }}
+          {{ element.date_payment | date : "dd MMM yyyy" : "Europe/Madrid" }}
         </span>
       </div>
       <ng-template #noPayment>
         <div class="flex justify-center">
-          <div class="circle negative"></div>
+          <app-circle-indicator [item]="false"></app-circle-indicator>
         </div>
       </ng-template>
     </td>
@@ -111,7 +111,13 @@
     >
       Acreedor
     </th>
-    <td mat-cell *matCellDef="let element">{{ element.creditor }}</td>
+    <td mat-cell *matCellDef="let element">
+      <ng-container *ngIf="element.creditor_company; else noCreditor">
+        {{ element.creditor_company }}<br />
+        <small>{{ element.creditor_contact }}</small>
+      </ng-container>
+      <ng-template #noCreditor>-</ng-template>
+    </td>
     <td mat-footer-cell *matFooterCellDef></td>
   </ng-container>
 
@@ -168,37 +174,17 @@
   </ng-container>
 
   <!-- TOTAL -->
-  <ng-container matColumnDef="totalAmount">
+  <ng-container matColumnDef="total_amount">
     <th mat-header-cell *matHeaderCellDef>TOTAL</th>
     <td mat-cell *matCellDef="let element">
-      <span *ngIf="element.totalAmount !== null">{{
-        element.totalAmount | eurosFormat
+      <span *ngIf="element.total_amount !== null">{{
+        element.total_amount | eurosFormat
       }}</span>
     </td>
     <td mat-footer-cell *matFooterCellDef>
       {{ getTotalAmount() | eurosFormat }}
     </td>
   </ng-container>
-
-  <!-- TOTAL + IRPF -->
-  <!-- <ng-container matColumnDef="totalAmountIrpf">
-    <th
-      mat-header-cell
-      *matHeaderCellDef
-      mat-sort-header
-      sortActionDescription="Sort by IRPF"
-    >
-      TOTAL + IRPF
-    </th>
-    <td mat-cell *matCellDef="let element">
-      <span *ngIf="element.totalAmountIrpf !== null">
-        {{ element.totalAmountIrpf | eurosFormat }}
-      </span>
-    </td>
-    <td mat-footer-cell *matFooterCellDef>
-      {{ getTotalAmountIrpf() | eurosFormat }}
-    </td>
-  </ng-container> -->
 
   <!-- SUBVENCIÓN -->
   <ng-container matColumnDef="subsidy">
@@ -221,7 +207,7 @@
             'subsidy-minis': element.subsidy === 'MINISTERIO'
           }"
           >{{ element.subsidy | i18nSelect : nameSubsidy }} -
-          {{ element.subsidyYear }}</span
+          {{ element.subsidy_year }}</span
         >
       </div>
     </td>
@@ -271,9 +257,9 @@
     *matRowDef="let row; columns: displayedColumns"
     class="custom-list-row"
     [ngClass]="{
-      'bg-red': row.typeInvoice === 'Ticket',
-      'bg-green': row.typeInvoice === 'Ingreso',
-      'bg-yellow': row.typeInvoice === 'Factura'
+      'bg-red': row.type_invoice === 'Ticket',
+      'bg-green': row.type_invoice === 'Ingreso',
+      'bg-yellow': row.type_invoice === 'Factura'
     }"
   ></tr>
   <tr mat-footer-row *matFooterRowDef="displayedColumns" class="footer"></tr>

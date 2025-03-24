@@ -9,5 +9,9 @@ export interface PartnerModel {
   email?: string;
   town?: string;
   cuotas: number[];
+  img?: string;
+  observations?: string;
+  death: boolean;
+  unsubscribe: boolean;
   [key: string]: any;
 }

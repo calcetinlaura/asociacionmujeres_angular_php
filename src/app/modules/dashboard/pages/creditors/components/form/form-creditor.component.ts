@@ -59,7 +59,7 @@ export class FormCreditorComponent {
     observations: new FormControl(''),
   });
 
-  private creditorId!: number;
+  private creditor_id!: number;
 
   ngOnInit(): void {
     if (this.itemId) {
@@ -71,7 +71,7 @@ export class FormCreditorComponent {
           tap((creditor: CreditorModel | null) => {
             if (creditor) {
               this.formCreditor.patchValue(creditor);
-              this.creditorId = creditor.id;
+              this.creditor_id = creditor.id;
               this.titleForm = 'Editar Acreedor/a';
               this.buttonAction = 'Guardar cambios';
             }
@@ -90,7 +90,7 @@ export class FormCreditorComponent {
 
     // Convertimos el formulario a un objeto JSON (CreditorModel)
     const newCreditorData: CreditorModel = {
-      id: this.creditorId || 0, // Si es nuevo, se envía 0 o se omite
+      id: this.creditor_id || 0, // Si es nuevo, se envía 0 o se omite
       company: this.formCreditor.value.company!,
       cif: this.formCreditor.value.cif || '',
       contact: this.formCreditor.value.contact || '',

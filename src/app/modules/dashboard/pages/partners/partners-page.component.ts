@@ -98,8 +98,9 @@ export class PartnersPageComponent implements OnInit {
         });
       }
     }
+    // Invertir el array para que el último año esté primero
     this.filtersYears.reverse();
-    this.filtersYears.unshift({ code: '', name: 'Listado socias' });
+    this.filtersYears.unshift({ code: '', name: 'Histórico socias' });
     this.loadAllPartners();
 
     // Suscripción a los cambios de visibilidad del modal
@@ -191,10 +192,7 @@ export class PartnersPageComponent implements OnInit {
     this.modalService.closeModal();
   }
 
-  sendFormPartner(event: {
-    itemId: number;
-    newPartnerData: PartnerModel;
-  }): void {
+  sendFormPartner(event: { itemId: number; newPartnerData: FormData }): void {
     if (event.itemId) {
       this.partnersFacade
         .editPartner(event.itemId, event.newPartnerData)

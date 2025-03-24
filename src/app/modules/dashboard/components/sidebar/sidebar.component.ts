@@ -2,77 +2,72 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+interface MenuOption {
+  name: string;
+  icon: string;
+  router: string[];
+  query?: any;
+}
+
 @Component({
   selector: 'app-sidebar',
-  templateUrl: './sidebar.component.html',
-  styleUrl: './sidebar.component.css',
   standalone: true,
   imports: [CommonModule, RouterLink],
+  templateUrl: './sidebar.component.html',
+  styleUrl: './sidebar.component.css',
 })
 export class SideBarComponent implements OnInit {
-  mainMenu: {
-    defaultOptions: Array<any>;
-    accessLink: Array<any>;
-  } = { defaultOptions: [], accessLink: [] };
-
-  customOptions: Array<any> = [];
-
-  constructor() {}
+  mainMenu: MenuOption[] = [];
+  customOptions: MenuOption[] = [];
+  accountingOptions: MenuOption[] = [];
+  footerOptions: MenuOption[] = [];
 
   ngOnInit(): void {
-    this.mainMenu.defaultOptions = [
-      {
-        name: 'Eventos',
-        icon: 'uil uil-ticket',
-        router: ['/dashboard/', 'events'],
-      },
-
-      {
-        name: 'Biblioteca',
-        icon: 'uil uil-book',
-        router: ['/dashboard/', 'books'],
-      },
-
-      {
-        name: 'Filmoteca',
-        icon: 'uil uil-video',
-        router: ['/dashboard/', 'movies'],
-      },
-
-      {
-        name: 'Recetas',
-        icon: 'uil uil-utensils',
-        router: ['/dashboard/', 'recipes'],
-      },
-
+    this.mainMenu = [
+      { name: 'Eventos', icon: 'uil-ticket', router: ['/dashboard/events'] },
+      { name: 'Biblioteca', icon: 'uil-book', router: ['/dashboard/books'] },
+      { name: 'Filmoteca', icon: 'uil-video', router: ['/dashboard/movies'] },
+      { name: 'Recetas', icon: 'uil-utensils', router: ['/dashboard/recipes'] },
       {
         name: 'Piteras',
-        icon: 'uil uil-newspaper',
-        router: ['/dashboard/', 'piteras'],
+        icon: 'uil-newspaper',
+        router: ['/dashboard/piteras'],
       },
     ];
 
     this.customOptions = [
       {
         name: 'Socias',
-        icon: 'uil uil-users-alt',
-        router: ['/dashboard/', 'partners'],
+        icon: 'uil-users-alt',
+        router: ['/dashboard/partners'],
       },
       {
+        name: 'Espacios',
+        icon: 'uil-building',
+        router: ['/dashboard/places'],
+      },
+    ];
+    this.accountingOptions = [
+      {
         name: 'Contabilidad',
-        icon: 'uil uil-calculator',
-        router: ['/dashboard/', 'invoices'],
+        icon: 'uil-calculator',
+        router: ['/dashboard/invoices'],
       },
       {
         name: 'Subvenciones',
-        icon: 'uil uil-euro-circle',
-        router: ['/dashboard/', 'subsidies'],
+        icon: 'uil-euro-circle',
+        router: ['/dashboard/subsidies'],
       },
       {
         name: 'Acreedores/as',
         icon: 'uil-plus-square',
-        router: ['/dashboard/', 'creditors'],
+        router: ['/dashboard/creditors'],
       },
+    ];
+
+    this.footerOptions = [
+      { name: 'Ajustes', icon: 'uil-cog', router: ['/dashboard/settings'] },
+      { name: 'Cerrar sesión', icon: 'uil-signout', router: ['/logout'] },
     ];
   }
 }

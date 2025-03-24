@@ -53,7 +53,7 @@ export class PartnersFacade {
       .subscribe();
   }
 
-  addPartner(partner: PartnerModel): Observable<PartnerModel> {
+  addPartner(partner: FormData): Observable<any> {
     return this.partnersService.add(partner).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.loadAllPartners()),
@@ -61,7 +61,7 @@ export class PartnersFacade {
     );
   }
 
-  editPartner(itemId: number, partner: PartnerModel): Observable<PartnerModel> {
+  editPartner(itemId: number, partner: FormData): Observable<any> {
     return this.partnersService.edit(itemId, partner).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.loadAllPartners()),

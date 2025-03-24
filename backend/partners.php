@@ -1,6 +1,6 @@
 <?php
 header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET, POST, PATCH, DELETE");
+header("Access-Control-Allow-Methods: GET, POST, PATCH, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json; charset=UTF-8");
 
@@ -16,187 +16,140 @@ $uriParts = explode('/', trim($_SERVER['REQUEST_URI'], '/'));
 $resource = array_pop($uriParts);
 
 switch ($method) {
-  case 'GET':
-    if (isset($_GET['id']) && is_numeric($_GET['id'])) {
-        // Obtener un socio por ID
-        $stmt = $connection->prepare("SELECT * FROM partners WHERE id = ?");
-        $stmt->bind_param("i", $_GET['id']);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $partner = $result->fetch_assoc();
-
-        $partner['cuotas'] = isset($partner['cuotas']) ? json_decode($partner['cuotas'], true) : [];
-
-        echo json_encode($partner ? $partner : []);
-    } elseif (isset($_GET['year']) && is_numeric($_GET['year'])) {
-        // Filtrar socios por el año de cuota
-        $year = (int)$_GET['year'];
-        $stmt = $connection->prepare("SELECT * FROM partners WHERE JSON_CONTAINS(cuotas, ?)");
-        $yearJson = json_encode($year);
-        $stmt->bind_param("s", $yearJson);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $partners = [];
-
-        while ($row = $result->fetch_assoc()) {
-            $row['cuotas'] = isset($row['cuotas']) ? json_decode($row['cuotas'], true) : [];
-            $partners[] = $row;
+    case 'GET':
+        if (isset($_GET['id']) && is_numeric($_GET['id'])) {
+            $stmt = $connection->prepare("SELECT * FROM partners WHERE id = ?");
+            $stmt->bind_param("i", $_GET['id']);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $partner = $result->fetch_assoc();
+            $partner['cuotas'] = isset($partner['cuotas']) ? json_decode($partner['cuotas'], true) : [];
+            echo json_encode($partner ?: []);
+        } elseif (isset($_GET['year']) && is_numeric($_GET['year'])) {
+            $year = (int)$_GET['year'];
+            $yearJson = json_encode($year);
+            $stmt = $connection->prepare("SELECT * FROM partners WHERE JSON_CONTAINS(cuotas, ?)");
+            $stmt->bind_param("s", $yearJson);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $partners = [];
+            while ($row = $result->fetch_assoc()) {
+                $row['cuotas'] = json_decode($row['cuotas'], true) ?? [];
+                $partners[] = $row;
+            }
+            echo json_encode($partners);
+        } else {
+            $stmt = $connection->prepare("SELECT * FROM partners");
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $partners = [];
+            while ($row = $result->fetch_assoc()) {
+                $row['cuotas'] = json_decode($row['cuotas'], true) ?? [];
+                $partners[] = $row;
+            }
+            echo json_encode($partners);
         }
-        echo json_encode($partners);
-    } else {
-        // Obtener todos los socios
-        $stmt = $connection->prepare("SELECT * FROM partners");
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $partners = [];
-
-        while ($row = $result->fetch_assoc()) {
-            $row['cuotas'] = isset($row['cuotas']) ? json_decode($row['cuotas'], true) : [];
-            $partners[] = $row;
-        }
-        echo json_encode($partners);
-    }
-    break;
-
-
+        break;
 
     case 'POST':
-      error_reporting(E_ALL);
-      ini_set('display_errors', 1);
-
-      $data = json_decode(file_get_contents("php://input"), true);
-
-      if (!$data || !isset($data['name'], $data['surname'])) {
-          http_response_code(400);
-          echo json_encode(["message" => "Nombre y apellido son obligatorios"]);
-          exit();
-      }
-
-      // Convertir cuotas a JSON antes de insertar
-      $cuotasJson = json_encode($data['cuotas'] ?? []);
-
-      // **Asignar valores a variables antes de bind_param()**
-      $name = $data['name'];
-      $surname = $data['surname'] ? $data['surname'] : null;
-      $birthday = !empty($data['birthday']) ? $data['birthday'] : null;
-      $post_code = !empty($data['post_code']) ? $data['post_code'] : null;
-      $address = !empty($data['address']) ? $data['address'] : null;
-      $phone = !empty($data['phone']) ? $data['phone'] : null;
-      $email = !empty($data['email']) ? $data['email'] : null;
-      $town = !empty($data['town']) ? $data['town'] : null;
-
-
-      $stmt = $connection->prepare("INSERT INTO partners
-          (name, surname, birthday, post_code, address, phone, email, town, cuotas)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-
-      if (!$stmt) {
-          http_response_code(500);
-          echo json_encode(["message" => "Error en la preparación de la consulta: " . $connection->error]);
-          exit();
-      }
-
-      // **Ahora bind_param() recibe solo valores válidos, evitando '' en fechas**
-      $stmt->bind_param("sssssssss",
-          $name,
-          $surname,
-          $birthday,
-          $post_code,
-          $address,
-          $phone,
-          $email,
-          $town,
-          $cuotasJson
-      );
-
-      if ($stmt->execute()) {
-          echo json_encode(["message" => "Socio añadido con éxito.", "id" => $stmt->insert_id]);
-      } else {
-          http_response_code(500);
-          echo json_encode(["message" => "Error al añadir el socio: " . $stmt->error]);
-      }
-      break;
-
-
-
-      case 'PATCH':
         error_reporting(E_ALL);
         ini_set('display_errors', 1);
 
-        $data = json_decode(file_get_contents("php://input"), true);
+        $data = $_POST;
+        $imgName = '';
 
-        if (!isset($data['id']) || !is_numeric($data['id'])) {
+        // Procesar imagen si se subió
+        if (isset($_FILES['img']) && $_FILES['img']['error'] === 0) {
+            $ruta = "../uploads/img/PARTNERS/";
+            move_uploaded_file($_FILES['img']['tmp_name'], $ruta . $_FILES['img']['name']);
+            $imgName = $_FILES['img']['name'];
+        } elseif (isset($data['existingImg'])) {
+            $imgName = $data['existingImg'];
+        }
+
+        // Convertir cuotas
+        $cuotasJson = isset($data['cuotas']) ? json_encode(json_decode($data['cuotas'])) : json_encode([]);
+        $birthday = !empty($data['birthday']) ? $data['birthday'] : null;
+        $death = isset($data['death']) ? (int)filter_var($data['death'], FILTER_VALIDATE_BOOLEAN) : 0;
+        $unsubscribe = isset($data['unsubscribe']) ? (int)filter_var($data['unsubscribe'], FILTER_VALIDATE_BOOLEAN) : 0;
+        // Si es actualización (_method PATCH)
+        if (isset($data['_method']) && strtoupper($data['_method']) === 'PATCH') {
+            $id = (int)($data['id'] ?? 0);
+            if (!$id) {
+                http_response_code(400);
+                echo json_encode(["message" => "ID no válido."]);
+                exit();
+            }
+
+
+            $stmt = $connection->prepare("UPDATE partners SET name=?, surname=?, birthday=?, post_code=?, address=?, phone=?, email=?, town=?, cuotas=?, img=?, observations=?, death=?, unsubscribe=? WHERE id=?");
+            $stmt->bind_param(
+                "sssssssssssiii",
+                $data['name'],
+                $data['surname'],
+                $birthday,
+                $data['post_code'],
+                $data['address'],
+                $data['phone'],
+                $data['email'],
+                $data['town'],
+                $cuotasJson,
+                $imgName,
+                $data['observations'],
+                $death,
+                $unsubscribe,
+                $id
+            );
+
+            if ($stmt->execute()) {
+                echo json_encode(["message" => "Socia actualizada correctamente."]);
+            } else {
+                http_response_code(500);
+                echo json_encode(["message" => "Error al actualizar: " . $stmt->error]);
+            }
+        } else {
+            // Nuevo registro
+            $stmt = $connection->prepare("INSERT INTO partners (name, surname, birthday, post_code, address, phone, email, town, cuotas, img, observations, death, unsubscribe) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->bind_param(
+                "sssssssssssii",
+                $data['name'],
+                $data['surname'],
+                $birthday,
+                $data['post_code'],
+                $data['address'],
+                $data['phone'],
+                $data['email'],
+                $data['town'],
+                $cuotasJson,
+                $imgName,
+                $data['observations'], $death,
+                $unsubscribe,
+            );
+
+            if ($stmt->execute()) {
+                echo json_encode(["message" => "Socia registrada con éxito."]);
+            } else {
+                http_response_code(500);
+                echo json_encode(["message" => "Error al registrar: " . $stmt->error]);
+            }
+        }
+        break;
+
+    case 'DELETE':
+        $id = isset($_GET['id']) ? $_GET['id'] : null;
+        if (!is_numeric($id)) {
             http_response_code(400);
             echo json_encode(["message" => "ID no válido."]);
             exit();
         }
 
-        $id = (int)$data['id'];
-
-        // Convertir cuotas a JSON
-        $cuotasJson = json_encode($data['cuotas'] ?? []);
-
-        // **Asignar valores a variables antes de bind_param()**
-        $name = $data['name'];
-        $surname = $data['surname'] ? $data['surname'] : null;
-        $birthday = !empty($data['birthday']) ? $data['birthday'] : null;
-        $post_code = !empty($data['post_code']) ? $data['post_code'] : null;
-        $address = !empty($data['address']) ? $data['address'] : null;
-        $phone = !empty($data['phone']) ? $data['phone'] : null;
-        $email = !empty($data['email']) ? $data['email'] : null;
-        $town = !empty($data['town']) ? $data['town'] : null;
-
-        $stmt = $connection->prepare("UPDATE partners
-            SET name = ?, surname = ?, birthday = ?, post_code = ?, address = ?, phone = ?,
-                email = ?, town = ?, cuotas = ?
-            WHERE id = ?");
-
-        if (!$stmt) {
-            http_response_code(500);
-            echo json_encode(["message" => "Error en la preparación de la consulta: " . $connection->error]);
-            exit();
-        }
-
-        // **Ahora bind_param() recibe solo valores válidos, evitando '' en fechas**
-        $stmt->bind_param("sssssssssi",
-            $name,
-            $surname,
-            $birthday,
-            $post_code,
-            $address,
-            $phone,
-            $email,
-            $town,
-            $cuotasJson,
-            $id
-        );
-
-        if ($stmt->execute()) {
-            echo json_encode(["message" => "Socio actualizado con éxito."]);
-        } else {
-            http_response_code(500);
-            echo json_encode(["message" => "Error al actualizar el socio: " . $stmt->error]);
-        }
-        break;
-
-
-    case 'DELETE':
-        $id = isset($_GET['id']) ? $_GET['id'] : null;
-
-        if (!is_numeric($id)) {
-            http_response_code(400);
-            echo json_encode(["message" => "ID para eliminar no válido."]);
-            exit();
-        }
-
         $stmt = $connection->prepare("DELETE FROM partners WHERE id = ?");
         $stmt->bind_param("i", $id);
-
         if ($stmt->execute()) {
-            echo json_encode(["message" => "Socio eliminado con éxito."]);
+            echo json_encode(["message" => "Socia eliminada correctamente."]);
         } else {
             http_response_code(500);
-            echo json_encode(["message" => "Error al eliminar el socio: " . $stmt->error]);
+            echo json_encode(["message" => "Error al eliminar: " . $stmt->error]);
         }
         break;
 
@@ -206,4 +159,3 @@ switch ($method) {
         break;
 }
 ?>
-

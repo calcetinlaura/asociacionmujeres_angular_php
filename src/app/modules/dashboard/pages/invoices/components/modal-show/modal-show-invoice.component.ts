@@ -1,6 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
-import { InvoiceModel } from 'src/app/core/interfaces/invoice.interface';
+import {
+  InvoiceModel,
+  InvoiceWithCreditorModel,
+} from 'src/app/core/interfaces/invoice.interface';
 import { TypeList } from 'src/app/core/models/general.model';
 import { TextBackgroundComponent } from 'src/app/shared/components/text/text-background/text-background.component';
 import { TextBorderComponent } from 'src/app/shared/components/text/text-border/text-border.component';
@@ -24,6 +27,6 @@ import { EurosFormatPipe } from '../../../../../../shared/pipe/eurosFormat.pipe'
   templateUrl: './modal-show-invoice.component.html',
 })
 export class ModalShowInvoiceComponent {
-  @Input() item!: InvoiceModel;
+  @Input() item!: InvoiceWithCreditorModel;
   type: TypeList = TypeList.Invoices;
 }

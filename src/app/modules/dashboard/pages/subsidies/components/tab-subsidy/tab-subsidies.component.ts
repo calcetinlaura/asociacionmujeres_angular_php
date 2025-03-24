@@ -52,12 +52,12 @@ export class ModalShowSubsidyComponent {
   typeList = TypeList;
   type: TypeList = TypeList.Subsidies;
   filteredInvoices: InvoiceModel[] = [];
-  numberInvoices: number = 0;
+  number_invoices: number = 0;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
   loading: boolean = true;
-  amountJustified = 0;
+  amount_justified = 0;
   amountIrpf = 0;
-  amountAssociation = 0;
+  amount_association = 0;
   nameSubsidy = this.subsidiesService.subsidiesMap;
   typeActionModal = TypeActionModal;
   isModalVisible: boolean = false;
@@ -65,27 +65,28 @@ export class ModalShowSubsidyComponent {
   ngOnInit(): void {
     this.loading = true;
     const year = this.item.year;
+    console.log('🧪 Subsidy input YEAR:', this.item.year);
     const subsidy = this.item.name;
 
     if (year && subsidy) {
       this.invoicesService
-        .getAllBySubsidy(subsidy, year)
+        .getInvoicesBySubsidy(subsidy, year)
         .pipe(
           takeUntilDestroyed(this.destroyRef),
           tap((invoices: InvoiceModel[]) => {
             this.filteredInvoices = invoices;
-            this.numberInvoices = invoices.length;
-            this.amountJustified = invoices.reduce(
-              (acc, invoice) => acc + (invoice.totalAmount || 0),
+            this.number_invoices = invoices.length;
+            this.amount_justified = invoices.reduce(
+              (acc, invoice) => acc + (invoice.total_amount || 0),
               0
             );
             this.amountIrpf = invoices.reduce(
               (acc, invoice) => acc + (invoice.irpf || 0),
               0
             );
-            this.amountAssociation =
-              this.amountJustified -
-              (this.item.amountGranted ? this.item.amountGranted : 0);
+            this.amount_association =
+              this.amount_justified -
+              (this.item.amount_granted ? this.item.amount_granted : 0);
             this.loading = false;
           }),
           catchError((error) => {

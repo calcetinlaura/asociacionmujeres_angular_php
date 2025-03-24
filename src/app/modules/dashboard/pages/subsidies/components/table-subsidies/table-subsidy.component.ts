@@ -51,17 +51,17 @@ export class TableSubsidyComponent {
   displayedColumns: string[] = [
     'name',
     'year',
-    'datePresentation',
-    'dateJustification',
+    'date_presentation',
+    'date_justification',
     'period',
     'activities',
     'invoices',
-    'urlPresentation',
-    'urlJustification',
-    'amountRequested',
-    'amountGranted',
-    'amountJustified',
-    'amountAssociation',
+    'url_presentation',
+    'url_justification',
+    'amount_requested',
+    'amount_granted',
+    'amount_justified',
+    'amount_association',
     'actions',
   ];
 
@@ -69,7 +69,7 @@ export class TableSubsidyComponent {
 
   typeActionModal = TypeActionModal;
   searchKeywordFilter = new FormControl();
-  totalAmount: number = 0;
+  total_amount: number = 0;
   nameSubsidy = this.subsidiesService.subsidiesMap;
 
   @ViewChild(MatSort) sort!: MatSort;
@@ -95,12 +95,12 @@ export class TableSubsidyComponent {
   }
   getTotalAmountGranted(): number {
     return this.dataSource.data
-      .map((item) => item.amountGranted || 0)
+      .map((item) => Number(item.amount_granted) || 0)
       .reduce((acc, value) => acc + value, 0);
   }
   getTotalAmountAssociation(): number {
     return this.dataSource.data
-      .map((item) => item.amountAssociation || 0)
+      .map((item) => Number(item.amount_association) || 0)
       .reduce((acc, value) => acc + value, 0);
   }
   announceSortChange(sortState: Sort): void {

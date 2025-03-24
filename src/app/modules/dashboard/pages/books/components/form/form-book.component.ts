@@ -12,10 +12,9 @@ import { filter, tap } from 'rxjs';
 import { BooksFacade } from 'src/app/application';
 import {
   BookModel,
-  GenderBooks,
   GenderFilterBooks,
 } from 'src/app/core/interfaces/book.interface';
-import { filterBooks, TypeList } from 'src/app/core/models/general.model';
+import { TypeList } from 'src/app/core/models/general.model';
 import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
@@ -82,6 +81,7 @@ export class FormBookComponent {
 
               this.titleForm = 'Editar Libro';
               this.buttonAction = 'Guardar cambios';
+
               if (book.img) {
                 this.imageSrc = book.img;
                 this.selectedImageFile = null;

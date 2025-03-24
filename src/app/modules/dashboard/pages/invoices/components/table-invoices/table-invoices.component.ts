@@ -18,6 +18,7 @@ import { IconActionComponent } from 'src/app/shared/components/buttons/icon-acti
 import { InvoiceModel } from 'src/app/core/interfaces/invoice.interface';
 import { SubsidiesService } from 'src/app/core/services/subsidies.services';
 import { EurosFormatPipe } from '../../../../../../shared/pipe/eurosFormat.pipe';
+import { CircleIndicatorComponent } from '../../../../components/circle-indicator/circle-indicator.component';
 
 @Component({
   standalone: true,
@@ -29,6 +30,7 @@ import { EurosFormatPipe } from '../../../../../../shared/pipe/eurosFormat.pipe'
     MatSortModule,
     MatIconModule,
     EurosFormatPipe,
+    CircleIndicatorComponent,
   ],
   selector: 'app-table-invoices',
   templateUrl: './table-invoices.component.html',
@@ -53,7 +55,7 @@ export class TableInvoicesComponent {
   subsidies: any;
   typeActionModal = TypeActionModal;
   searchKeywordFilter = new FormControl();
-  totalAmount: number = 0;
+  total_amount: number = 0;
   nameSubsidy = this.subsidiesService.subsidiesMap;
 
   @ViewChild(MatSort) sort!: MatSort;
@@ -64,19 +66,18 @@ export class TableInvoicesComponent {
 
     this.displayedColumns = [
       'number',
-      'typeInvoice',
-      'numberInvoice',
-      'dateInvoice',
-      // Solo incluir 'dateAccounting' si tableInsideSubsidy es true
-      ...(!this.tableInsideSubsidy ? ['dateAccounting'] : []),
-      'datePayment',
+      'type_invoice',
+      'number_invoice',
+      'date_invoice',
+      // Solo incluir 'date_accounting' si tableInsideSubsidy es true
+      ...(!this.tableInsideSubsidy ? ['date_accounting'] : []),
+      'date_payment',
       'creditor',
       'description',
       'amount',
       'iva',
       'irpf',
-      'totalAmount',
-      // 'totalAmountIrpf',
+      'total_amount',
       'subsidy',
       'actions',
     ];
@@ -92,18 +93,20 @@ export class TableInvoicesComponent {
   }
 
   ngAfterViewInit(): void {
-    // this.sort.sort({ id: 'dateInvoice', start: 'asc', disableClear: false });
+    // this.sort.sort({ id: 'date_invoice', start: 'asc', disableClear: false });
   }
   getTotalIrpf(): number {
     return this.dataSource.data
-      .map((item) => item.irpf || 0)
+      .map((item) => Number(item.irpf) || 0) // 🔹 Convertir a número
       .reduce((acc, value) => acc + value, 0);
   }
+
   getTotalAmount(): number {
     return this.dataSource.data
-      .map((item) => item.totalAmount || 0)
+      .map((item) => Number(item.total_amount) || 0) // 🔹 Convertir a número
       .reduce((acc, value) => acc + value, 0);
   }
+
   announceSortChange(sortState: Sort): void {
     if (sortState.direction) {
       this._liveAnnouncer.announce(`Sorted ${sortState.direction}ending`);

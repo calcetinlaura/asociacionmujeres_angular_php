@@ -1,0 +1,14 @@
+<div class="m-4">
+  <h1>Ajustes</h1>
+  <h2 class="mt-4 mb-2">Bloquear edición de facturas del año:</h2>
+
+  <section class="example-section grid grid-cols-2 md:grid-cols-4 gap-y-2">
+    <mat-checkbox
+      class="example-margin"
+      *ngFor="let year of years"
+      [(ngModel)]="editableYears[year]"
+    >
+      Bloquear año {{ year }}
+    </mat-checkbox>
+  </section>
+</div>

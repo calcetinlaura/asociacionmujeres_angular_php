@@ -23,7 +23,22 @@ switch ($method) {
             $creditor = $result->fetch_assoc();
 
             echo json_encode($creditor ? $creditor : []);
-        } else {
+        } elseif  (isset($_GET['q'])) {
+          $query = '%' . $connection->real_escape_string($_GET['q']) . '%';
+
+          $stmt = $connection->prepare("SELECT * FROM creditors WHERE company LIKE ? OR contact LIKE ? LIMIT 6");
+          $stmt->bind_param("ss", $query, $query);
+          $stmt->execute();
+          $result = $stmt->get_result();
+          $creditors = [];
+
+          while ($row = $result->fetch_assoc()) {
+              $creditors[] = $row;
+          }
+
+          echo json_encode($creditors);
+      }
+        else {
             // Obtener todos los acreedores
             $stmt = $connection->prepare("SELECT * FROM creditors");
             $stmt->execute();

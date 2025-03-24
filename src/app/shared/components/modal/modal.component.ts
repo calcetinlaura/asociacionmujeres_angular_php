@@ -1,14 +1,5 @@
-import {
-  Component,
-  Input,
-  Output,
-  EventEmitter,
-  OnInit,
-  Inject,
-  inject,
-} from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
-import { GeneralService } from '../../services/generalService.service';
 import { CommonModule } from '@angular/common';
 import { FormEventComponent } from '../../../modules/dashboard/pages/events/components/form/form-event.component';
 import { FormRecipeComponent } from '../../../modules/dashboard/pages/recipes/components/form/form-recipe.component';
@@ -18,13 +9,13 @@ import { FormPiteraComponent } from '../../../modules/dashboard/pages/piteras/co
 import { FormInvoiceComponent } from 'src/app/modules/dashboard/pages/invoices/components/form/form-invoice.component';
 import { FormCreditorComponent } from 'src/app/modules/dashboard/pages/creditors/components/form/form-creditor.component';
 import { PartnerModel } from 'src/app/core/interfaces/partner.interface';
-import { InvoiceModel } from 'src/app/core/interfaces/invoice.interface';
 import { CreditorModel } from 'src/app/core/interfaces/creditor.interface';
 import { ModalShowComponent } from './pages/modal-show/modal-show.component';
 import { ModalDeleteComponent } from './pages/modal-delete/modal-delete.component';
 import { FormPartnerComponent } from 'src/app/modules/dashboard/pages/partners/components/form/form-partner.component';
 import { SubsidyModel } from 'src/app/core/interfaces/subsidy.interface';
 import { FormSubsidyComponent } from 'src/app/modules/dashboard/pages/subsidies/components/form/form-subsidy.component';
+import { InvoiceModel } from 'src/app/core/interfaces/invoice.interface';
 
 @Component({
   standalone: true,
@@ -47,8 +38,6 @@ import { FormSubsidyComponent } from 'src/app/modules/dashboard/pages/subsidies/
   styleUrls: ['./modal.component.css'],
 })
 export class ModalComponent implements OnInit {
-  private generalService = inject(GeneralService);
-
   @Output() closeModal = new EventEmitter<boolean>();
   @Output() confirmDelete = new EventEmitter<number>();
   @Output() sendFormBookData = new EventEmitter<{
@@ -74,11 +63,11 @@ export class ModalComponent implements OnInit {
   }>();
   @Output() sendFormPartnerData = new EventEmitter<{
     itemId: number;
-    newPartnerData: PartnerModel;
+    newPartnerData: FormData;
   }>();
   @Output() sendFormInvoiceData = new EventEmitter<{
     itemId: number;
-    newInvoiceData: InvoiceModel;
+    newInvoiceData: FormData;
   }>();
   @Output() sendFormSubsidyData = new EventEmitter<{
     itemId: number;
@@ -156,17 +145,17 @@ export class ModalComponent implements OnInit {
     });
   }
 
-  onSendFormPartner(event: { itemId: number; newPartnerData: PartnerModel }) {
+  onSendFormPartner(event: { itemId: number; newPartnerData: FormData }) {
     this.sendFormPartnerData.emit({
       itemId: event.itemId,
       newPartnerData: event.newPartnerData,
     });
   }
 
-  onSendFormInvoice(formValue: InvoiceModel) {
+  onSendFormInvoice(event: { itemId: number; newInvoiceData: FormData }) {
     this.sendFormInvoiceData.emit({
-      itemId: this.item?.id || 0,
-      newInvoiceData: formValue,
+      itemId: event.itemId,
+      newInvoiceData: event.newInvoiceData,
     });
   }
 

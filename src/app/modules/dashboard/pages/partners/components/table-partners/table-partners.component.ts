@@ -20,6 +20,7 @@ import { PartnerModel } from 'src/app/core/interfaces/partner.interface';
 import { CalculateAgePipe } from '../../../../../../shared/pipe/caculate_age.pipe';
 import { CircleIndicatorComponent } from '../../../../components/circle-indicator/circle-indicator.component';
 import { ChangeDetectorRef } from '@angular/core';
+import { ItemImagePipe } from '../../../../../../shared/pipe/item-img.pipe';
 
 @Component({
   standalone: true,
@@ -31,6 +32,7 @@ import { ChangeDetectorRef } from '@angular/core';
     MatIconModule,
     CalculateAgePipe,
     CircleIndicatorComponent,
+    ItemImagePipe,
   ],
   selector: 'app-table-partners',
   templateUrl: './table-partners.component.html',
@@ -49,6 +51,7 @@ export class TablePartnersComponent {
 
   displayedColumns: string[] = [
     'number',
+    'img',
     'name',
     'surname',
     'birthday',
@@ -64,7 +67,7 @@ export class TablePartnersComponent {
 
   typeActionModal = TypeActionModal;
   searchKeywordFilter = new FormControl();
-  totalAmount: number = 0;
+  total_amount: number = 0;
   private columnSortOrder: { [key: string]: 'asc' | 'desc' } = {};
   currentYear = 0;
   processedData: PartnerModel[] = [];
