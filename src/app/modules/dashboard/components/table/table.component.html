@@ -118,6 +118,29 @@
             <span>{{ element[column.key] }}</span>
           </div>
         </ng-container>
+        <!-- Diseño especial para 'salas' -->
+        <ng-container *ngSwitchCase="'subspacesCount'">
+          <div>
+            <ng-container *ngIf="element[column.key] > 0; else noSubspaces">
+              {{ element[column.key] }}
+            </ng-container>
+            <ng-template #noSubspaces>
+              <app-circle-indicator [item]="false"></app-circle-indicator>
+            </ng-template>
+          </div>
+        </ng-container>
+        <!-- Diseño especial para 'latitud' -->
+        <ng-container *ngSwitchCase="'lat'">
+          <app-circle-indicator
+            [item]="element[column.key]"
+          ></app-circle-indicator>
+        </ng-container>
+        <!-- Diseño especial para 'latitud' -->
+        <ng-container *ngSwitchCase="'lon'">
+          <app-circle-indicator
+            [item]="element[column.key]"
+          ></app-circle-indicator>
+        </ng-container>
         <!-- Diseño por defecto para otras columnas -->
         <ng-container *ngSwitchDefault>
           {{ element[column.key] }}

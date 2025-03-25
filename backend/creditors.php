@@ -26,7 +26,7 @@ switch ($method) {
         } elseif  (isset($_GET['q'])) {
           $query = '%' . $connection->real_escape_string($_GET['q']) . '%';
 
-          $stmt = $connection->prepare("SELECT * FROM creditors WHERE company LIKE ? OR contact LIKE ? LIMIT 6");
+          $stmt = $connection->prepare("SELECT * FROM creditors WHERE company LIKE ? OR contact LIKE ? LIMIT 10");
           $stmt->bind_param("ss", $query, $query);
           $stmt->execute();
           $result = $stmt->get_result();

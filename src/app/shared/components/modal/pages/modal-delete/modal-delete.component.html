@@ -38,6 +38,10 @@
       al acreedor/a
       <span class="font-semibold">{{ item?.company }}</span> ?</ng-container
     >
+    <ng-container *ngIf="type === TypeList.Places">
+      el espacio
+      <span class="font-semibold">{{ item?.name }}</span> ?</ng-container
+    >
   </p>
 </div>
 <div class="flex flex-row justify-center buttons">

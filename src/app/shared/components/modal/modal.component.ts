@@ -8,14 +8,14 @@ import { FormMovieComponent } from '../../../modules/dashboard/pages/movies/comp
 import { FormPiteraComponent } from '../../../modules/dashboard/pages/piteras/components/form/form-pitera.component';
 import { FormInvoiceComponent } from 'src/app/modules/dashboard/pages/invoices/components/form/form-invoice.component';
 import { FormCreditorComponent } from 'src/app/modules/dashboard/pages/creditors/components/form/form-creditor.component';
-import { PartnerModel } from 'src/app/core/interfaces/partner.interface';
+import { FormPlaceComponent } from 'src/app/modules/dashboard/pages/places/components/form/form-place.component';
 import { CreditorModel } from 'src/app/core/interfaces/creditor.interface';
 import { ModalShowComponent } from './pages/modal-show/modal-show.component';
 import { ModalDeleteComponent } from './pages/modal-delete/modal-delete.component';
 import { FormPartnerComponent } from 'src/app/modules/dashboard/pages/partners/components/form/form-partner.component';
 import { SubsidyModel } from 'src/app/core/interfaces/subsidy.interface';
 import { FormSubsidyComponent } from 'src/app/modules/dashboard/pages/subsidies/components/form/form-subsidy.component';
-import { InvoiceModel } from 'src/app/core/interfaces/invoice.interface';
+import { PlaceModel } from 'src/app/core/interfaces/place.interface';
 
 @Component({
   standalone: true,
@@ -30,6 +30,7 @@ import { InvoiceModel } from 'src/app/core/interfaces/invoice.interface';
     FormInvoiceComponent,
     FormSubsidyComponent,
     FormCreditorComponent,
+    FormPlaceComponent,
     ModalShowComponent,
     ModalDeleteComponent,
   ],
@@ -77,6 +78,11 @@ export class ModalComponent implements OnInit {
     itemId: number;
     newCreditorData: CreditorModel;
   }>();
+  @Output() sendFormPlaceData = new EventEmitter<{
+    itemId: number;
+    newPlaceData: FormData;
+  }>();
+
   @Input() item?: any;
   @Input() type: TypeList = TypeList.Books;
   @Input() action: TypeActionModal = TypeActionModal.Show;
@@ -172,6 +178,12 @@ export class ModalComponent implements OnInit {
     this.sendFormCreditorData.emit({
       itemId: event.itemId,
       newCreditorData: event.newCreditorData,
+    });
+  }
+  onSendFormPlace(event: { itemId: number; newPlaceData: FormData }) {
+    this.sendFormPlaceData.emit({
+      itemId: event.itemId,
+      newPlaceData: event.newPlaceData,
     });
   }
 }

@@ -13,18 +13,18 @@ import { ColumnModel } from 'src/app/core/interfaces/column.interface';
 import { TableComponent } from 'src/app/modules/dashboard/components/table/table.component';
 import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
 import { CommonModule } from '@angular/common';
-import { CreditorsFacade } from 'src/app/application';
+import { PlacesFacade } from 'src/app/application/places.facade';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
 import { tap } from 'rxjs';
 import { AddButtonComponent } from 'src/app/shared/components/buttons/button-add/button-add.component';
 import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
-import { CreditorModel } from 'src/app/core/interfaces/creditor.interface';
+import { PlaceModel } from 'src/app/core/interfaces/place.interface';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SpinnerLoadingComponent } from '../../../landing/components/spinner-loading/spinner-loading.component';
 
 @Component({
-  selector: 'app-creditors-page',
+  selector: 'app-places-page',
   standalone: true,
   imports: [
     CommonModule,
@@ -40,17 +40,17 @@ import { SpinnerLoadingComponent } from '../../../landing/components/spinner-loa
   styleUrl: './places-page.component.css',
 })
 export class PlacesPageComponent implements OnInit {
-  private creditorsFacade = inject(CreditorsFacade);
+  private placesFacade = inject(PlacesFacade);
   private modalService = inject(ModalService);
   private destroyRef = inject(DestroyRef);
 
-  typeList = TypeList.Creditors;
-  creditors: CreditorModel[] = [];
-  filteredCreditors: CreditorModel[] = [];
+  typeList = TypeList.Places;
+  places: PlaceModel[] = [];
+  filteredPlaces: PlaceModel[] = [];
   searchForm!: FormGroup;
   dataLoaded: boolean = false;
   number: number = 0;
-  headerListCreditors: ColumnModel[] = [];
+  headerListPlaces: ColumnModel[] = [];
   isModalVisible: boolean = false;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
   item: any;
@@ -75,7 +75,7 @@ export class PlacesPageComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadAllCreditors();
+    this.loadAllPlaces();
 
     this.modalService.modalVisibility$
       .pipe(
@@ -86,49 +86,48 @@ export class PlacesPageComponent implements OnInit {
       )
       .subscribe();
 
-    this.headerListCreditors = [
-      { title: 'Compañía', key: 'company' },
-      { title: 'Cif', key: 'cif' },
-      { title: 'Contacto', key: 'contact' },
-      { title: 'Teléfono', key: 'phone' },
-      { title: 'Email', key: 'email' },
+    this.headerListPlaces = [
+      { title: 'Imagen', key: 'img' },
+      { title: 'Nombre', key: 'name' },
       { title: 'Municipio', key: 'town' },
-      { title: 'Categoría', key: 'category' },
-      { title: 'Palabras clave', key: 'key_words' },
+      { title: 'Dirección', key: 'address' },
+      { title: 'Salas', key: 'subspacesCount' }, // 🔹 Mostrar cantidad de subespacios
+      { title: 'Latitud', key: 'lat' },
+      { title: 'Longitud', key: 'lon' },
+      { title: 'Gestión', key: 'management' },
     ];
   }
 
-  loadAllCreditors(): void {
-    this.creditorsFacade.loadAllCreditors();
-    this.creditorsFacade.creditors$
+  loadAllPlaces(): void {
+    this.placesFacade.loadAllPlaces();
+    this.placesFacade.places$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((creditors) => {
-          this.updateCreditorState(creditors);
+        tap((places) => {
+          this.updatePlaceState(places);
         })
       )
       .subscribe();
   }
 
   applyFilter(keyword: string): void {
-    if (!keyword) {
-      this.filteredCreditors = this.creditors; // Si no hay palabra clave, mostrar todos los libros
-    } else {
-      keyword = keyword.toLowerCase();
-      this.filteredCreditors = this.creditors.filter(
-        (creditor) =>
-          Object.values(creditor).join(' ').toLowerCase().includes(keyword) // Filtrar libros por la palabra clave
-      );
-    }
-    this.number = this.filteredCreditors.length; // Actualizar el conteo de libros filtrados
+    this.placesFacade.applyFilter(keyword);
+    this.placesFacade.filteredPlaces$
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap((places) => {
+          this.updatePlaceState(places);
+        })
+      )
+      .subscribe();
   }
 
-  confirmDeleteCreditor(item: any): void {
-    this.creditorsFacade.deleteCreditor(item.id);
+  confirmDeletePlace(item: any): void {
+    this.placesFacade.deletePlace(item.id);
     this.modalService.closeModal();
   }
 
-  addNewCreditorModal(): void {
+  addNewPlaceModal(): void {
     this.currentModalAction = TypeActionModal.Create;
     this.item = null;
     this.modalService.openModal();
@@ -144,13 +143,10 @@ export class PlacesPageComponent implements OnInit {
     this.modalService.closeModal();
   }
 
-  sendFormCreditor(event: {
-    itemId: number;
-    newCreditorData: CreditorModel;
-  }): void {
+  sendFormPlace(event: { itemId: number; newPlaceData: FormData }): void {
     if (event.itemId) {
-      this.creditorsFacade
-        .editCreditor(event.itemId, event.newCreditorData)
+      this.placesFacade
+        .editPlace(event.itemId, event.newPlaceData)
         .pipe(
           takeUntilDestroyed(this.destroyRef),
           tap(() => {
@@ -159,8 +155,8 @@ export class PlacesPageComponent implements OnInit {
         )
         .subscribe();
     } else {
-      this.creditorsFacade
-        .addCreditor(event.newCreditorData)
+      this.placesFacade
+        .addPlace(event.newPlaceData)
         .pipe(
           takeUntilDestroyed(this.destroyRef),
           tap(() => {
@@ -171,15 +167,34 @@ export class PlacesPageComponent implements OnInit {
     }
   }
 
-  private updateCreditorState(creditors: CreditorModel[] | null): void {
-    if (creditors === null) {
+  private updatePlaceState(places: PlaceModel[] | null): void {
+    if (places === null) {
       return;
     }
-    this.creditors = creditors.sort((a, b) =>
-      a.company.localeCompare(b.company, undefined, { sensitivity: 'base' })
-    );
-    this.filteredCreditors = [...this.creditors];
-    this.number = this.creditors.length;
+
+    this.places = places.map((place) => {
+      let subspacesArray = [];
+
+      // 🔹 Verifica si `subspaces` es un string (probablemente en JSON) y conviértelo a array
+      if (typeof place.subspaces === 'string') {
+        try {
+          subspacesArray = JSON.parse(place.subspaces);
+        } catch (error) {
+          console.error('Error al parsear subspaces:', error);
+          subspacesArray = []; // Evita fallos si el JSON es inválido
+        }
+      } else if (Array.isArray(place.subspaces)) {
+        subspacesArray = place.subspaces;
+      }
+
+      return {
+        ...place,
+        subspacesCount: subspacesArray.length, // ✅ Ahora cuenta correctamente
+      };
+    });
+
+    this.filteredPlaces = [...this.places];
+    this.number = this.places.length;
     this.dataLoaded = true;
   }
 }

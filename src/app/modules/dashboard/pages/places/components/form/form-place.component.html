@@ -3,45 +3,76 @@
     <p class="text-2xl">{{ titleForm }}</p>
   </div>
   <form
-    (ngSubmit)="onSendFormCreditor()"
-    [formGroup]="formCreditor"
+    (ngSubmit)="onSendFormPlace()"
+    [formGroup]="formPlace"
     class="login-auth-form"
   >
     <div class="flex flex-col gap-y-4">
       <div class="flex flex-col bg-lilaMuyClaro p-4 gap-y-4">
         <!-- Nombre -->
         <div class="box-input">
-          <label for="company">Compañía</label>
+          <label for="name">Nombre</label>
           <div class="flex flex-col flex-1">
             <input
-              formControlName="company"
+              formControlName="name"
               type="text"
               [ngClass]="{
-                'is-invalid': submitted && formCreditor.get('name')?.invalid
+                'is-invalid': submitted && formPlace.get('name')?.invalid
               }"
             />
 
             <div
-              *ngIf="submitted && formCreditor.get('name')?.invalid"
+              *ngIf="submitted && formPlace.get('name')?.invalid"
               class="is-invalid-text"
             >
               Campo requerido
             </div>
           </div>
         </div>
-        <!-- Cif -->
+        <!-- Provincia -->
         <div class="box-input">
-          <label for="cif">Cif</label>
-          <input formControlName="cif" type="text" />
+          <label for="province">Provincia</label>
+          <div class="flex flex-col flex-1">
+            <input
+              formControlName="province"
+              type="text"
+              [ngClass]="{
+                'is-invalid': submitted && formPlace.get('province')?.invalid
+              }"
+            />
+
+            <div
+              *ngIf="submitted && formPlace.get('province')?.invalid"
+              class="is-invalid-text"
+            >
+              Campo requerido
+            </div>
+          </div>
         </div>
         <div class="flex justify-between gap-x-4">
           <!-- Municipio -->
-          <div class="box-input">
+          <div class="box-input flex flex-1">
             <label for="town">Municipio</label>
-            <input formControlName="town" type="text" />
+            <div class="flex flex-col flex-1">
+              <input
+                formControlName="town"
+                type="text"
+                [ngClass]="{
+                  'is-invalid': submitted && formPlace.get('town')?.invalid
+                }"
+              />
+
+              <div
+                *ngIf="submitted && formPlace.get('town')?.invalid"
+                class="is-invalid-text"
+              >
+                Campo requerido
+              </div>
+            </div>
           </div>
+          <!-- Código postal -->
           <div class="box-input">
-            <label for="post_code">C.Postal</label>
+            <label for="post_code">C. Postal</label>
             <input formControlName="post_code" type="text" />
           </div>
         </div>
@@ -50,51 +81,177 @@
           <label for="address">Dirección</label>
           <input formControlName="address" type="text" />
         </div>
-      </div>
-      <hr />
-      <div class="box-input gap-x-4 px-4">
-        <label for="contact">Contacto</label>
-        <input formControlName="contact" type="text" />
-      </div>
-      <div class="flex justify-between gap-x-4 px-4">
-        <!-- Teléfono -->
-        <div class="box-input gap-x-4">
-          <label for="address">Teléfono</label>
-          <input formControlName="phone" type="text" />
-        </div>
-        <!-- Email -->
-        <div class="box-input gap-x-4 flex-1">
-          <label for="address">Email</label>
-          <input formControlName="email" type="text" />
+        <div class="flex justify-between gap-x-4">
+          <!-- Lat -->
+          <div class="box-input flex flex-1">
+            <label for="lat">Latitud</label>
+            <input formControlName="lat" type="number" />
+          </div>
+          <div class="box-input flex flex-1">
+            <label for="lon">Longitud</label>
+            <input formControlName="lon" type="number" />
+          </div>
         </div>
       </div>
       <hr />
       <div class="box-input gap-x-4 px-4">
-        <label for="category">Categoría </label>
-        <select formControlName="category">
-          <option *ngFor="let type of filterCreditors" [value]="type.code">
-            {{ type.name }}
-          </option>
-        </select>
+        <label for="gender">Gestión</label>
+        <div class="flex flex-col flex-1">
+          <select
+            formControlName="management"
+            [ngClass]="{
+              'is-invalid': submitted && formPlace.get('management')?.invalid
+            }"
+          >
+            <option
+              *ngFor="let management of managementPlaces"
+              [value]="management.code"
+            >
+              {{ management.name }}
+            </option>
+          </select>
+          <div
+            *ngIf="submitted && formPlace.get('management')?.invalid"
+            class="is-invalid-text"
+          >
+            Selecciona un género
+          </div>
+        </div>
       </div>
-      <div class="box-input gap-x-4 px-4">
-        <label for="key_words">Palabras clave</label>
-        <input formControlName="key_words" type="text" />
+      <div class="flex gap-4">
+        <!-- Descripción -->
+        <div class="box-input gap-x-4 px-4 w-3/4">
+          <label for="description">Descripción</label>
+          <mat-card-content>
+            <editor
+              apiKey="c8uxjgc7f76nt677zqdn22a8a97bjhc7fyph9y4oxuj7nrx3"
+              [init]="{
+                height: 300,
+                plugins: ['advlist', 'lists', 'wordcount'],
+                toolbar:
+                  'undo redo | bold italic  underline strikethrough | fontfamily fontsize forecolor  backcolor| \
+               alignleft aligncenter alignright alignjustify | \
+               bullist numlist  | removeformat '
+              }"
+              formControlName="description"
+            ></editor>
+          </mat-card-content>
+        </div>
+        <!-- Imagen -->
+        <div class="box-input gap-x-4 px-4 w-1/4">
+          <app-image-control
+            [previewImg]="
+              formPlace.get('img')?.value ? formPlace.get('img')?.value! : null
+            "
+            [type]="typeList"
+            (imgSelected)="onImageSelected($event)"
+            [imageWidthValue]="'full'"
+          ></app-image-control>
+        </div>
       </div>
       <div class="box-input gap-x-4 px-4">
         <label for="observations">Observaciones</label>
-        <editor
-          apiKey="c8uxjgc7f76nt677zqdn22a8a97bjhc7fyph9y4oxuj7nrx3"
-          [init]="{
-            height: 300,
-            plugins: ['advlist', 'lists', 'wordcount'],
-            toolbar:
-              'undo redo | bold italic  underline strikethrough | fontfamily fontsize forecolor  backcolor| \
-             alignleft aligncenter alignright alignjustify | \
-             bullist numlist  | removeformat '
-          }"
-          formControlName="observations"
-        ></editor>
+        <input formControlName="observations" type="text" />
+      </div>
+      <div class="flex justify-start gap-x-4 px-4">
+        <input
+          type="checkbox"
+          formControlName="hasSubspaces"
+          (change)="onHasSubspacesChange($event)"
+        />
+        <label for="hasSubspaces">¿El espacio dispone de más salas?</label>
+      </div>
+      <div *ngIf="formPlace.get('hasSubspaces')?.value === true">
+        <div formArrayName="subspaces" class="flex flex-col gap-y-4">
+          <div
+            *ngFor="let subspace of subspaces.controls; let i = index"
+            [formGroupName]="i"
+            class="flex gap-x-4 px-8"
+          >
+            <div class="subSpace_box flex justify-center items-center pr-4">
+              Sala {{ i + 1 }}
+            </div>
+            <div class="flex flex-col flex-1 gap-y-4 bg-lilaMuyClaro p-4">
+              <div class="box-input gap-x-4">
+                <label for="name">Nombre</label>
+                <input
+                  formControlName="name"
+                  placeholder="Salón de actos"
+                  required
+                />
+              </div>
+              <div class="box-input gap-x-4">
+                <label for="location">Localización</label>
+                <input
+                  formControlName="location"
+                  placeholder="1ª planta"
+                  required
+                />
+              </div>
+              <div class="flex gap-x-4">
+                <div class="box-input gap-x-4 flex flex-1">
+                  <label for="name">Situación</label>
+                  <select formControlName="type">
+                    <option *ngFor="let type of typePlaces" [value]="type.code">
+                      {{ type.name }}
+                    </option>
+                  </select>
+                </div>
+                <div class="box-input gap-x-4">
+                  <label for="capacity">Aforo</label>
+                  <input
+                    formControlName="capacity"
+                    type="number"
+                    placeholder="Capacidad"
+                  />
+                </div>
+              </div>
+            </div>
+            <div class="flex justify-center items-center">
+              <button
+                type="button"
+                (click)="removeSubspace(i)"
+                class="btn-danger"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="mt-4 ml-28">
+          <app-button-add
+            [buttonText]="'Añadir sala'"
+            [iconClass]="'uil-plus'"
+            (addClicked)="addSubspace()"
+          />
+        </div>
+      </div>
+      <div *ngIf="!formPlace.get('hasSubspaces')?.value" class="flex gap-x-4">
+        <div class="box-input gap-x-4 px-4 flex flex-1">
+          <label for="gender">Espacio</label>
+          <div class="flex flex-col flex-1">
+            <select
+              formControlName="type"
+              [ngClass]="{
+                'is-invalid': submitted && formPlace.get('type')?.invalid
+              }"
+            >
+              <option *ngFor="let type of typePlaces" [value]="type.code">
+                {{ type.name }}
+              </option>
+            </select>
+            <div
+              *ngIf="submitted && formPlace.get('type')?.invalid"
+              class="is-invalid-text"
+            >
+              Selecciona un género
+            </div>
+          </div>
+        </div>
+        <div class="box-input gap-x-4 px-4">
+          <label for="capacity">Aforo</label>
+          <input formControlName="capacity" type="number" />
+        </div>
       </div>
       <!-- Mensaje de error global -->
       <div *ngIf="errorSession" class="is-invalid-text">

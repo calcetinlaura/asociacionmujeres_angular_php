@@ -1,8 +1,8 @@
 <div class="flex flex-1 flex-col justify-between">
   <div>
-    <app-text-title [text]="item.company" />
-    <app-text-subtitle *ngIf="item.cif" [text]="item.cif" />
-    <app-text-icon
+    <app-text-title [text]="item.name" />
+    <app-text-subtitle *ngIf="item.town" [text]="item.town" />
+    <!-- <app-text-icon
       [icon]="'uil uil-building icon'"
       [text]="
         (item.address ? item.address : '') +
@@ -36,6 +36,6 @@
       <app-text-subtitle *ngIf="item.category" [text]="item.category" />
       <app-text-subtitle *ngIf="item.key_words" [text]="item.key_words" />
       <app-text-editor *ngIf="item.observations" [text]="item.observations" />
-    </div>
+    </div> -->
   </div>
 </div>

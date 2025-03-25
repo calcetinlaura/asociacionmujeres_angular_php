@@ -13,7 +13,7 @@
     <app-button-add
       [buttonText]="'Nuevo espacio'"
       [iconClass]="'uil-plus'"
-      (addClicked)="addNewCreditorModal()"
+      (addClicked)="addNewPlaceModal()"
     />
     <app-input-search (onDebounce)="applyFilter($event)" class="flex-1" />
   </div>
@@ -23,9 +23,9 @@
   <ng-template #results>
     <div class="pb-4 px-8 flex" [class.sticky-table]="isStickyToolbar">
       <app-table
-        [data]="filteredCreditors"
+        [data]="filteredPlaces"
         [type]="typeList"
-        [headerColumns]="headerListCreditors"
+        [headerColumns]="headerListPlaces"
         (openModal)="onOpenModal($event)"
       />
     </div>
@@ -39,6 +39,6 @@
   [type]="typeList"
   [action]="currentModalAction"
   (closeModal)="onCloseModal()"
-  (confirmDelete)="confirmDeleteCreditor(item)"
-  (sendFormCreditorData)="sendFormCreditor($event)"
+  (confirmDelete)="confirmDeletePlace(item)"
+  (sendFormPlaceData)="sendFormPlace($event)"
 ></app-modal>

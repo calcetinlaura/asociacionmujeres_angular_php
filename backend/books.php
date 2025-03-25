@@ -19,7 +19,6 @@ $resource = array_pop($uriParts); // Obtener el último segmento como el recurso
 switch ($method) {
   case 'GET':
     if (is_numeric($resource)) {
-        // Obtener libro por ID
         $stmt = $connection->prepare("SELECT * FROM books WHERE id = ?");
         $stmt->bind_param("i", $resource);
         $stmt->execute();

@@ -15,6 +15,7 @@ th {
   font-size: 12px;
   padding: 10px;
   border-bottom: 1px solid #ddd;
+  background-color: red;
 }
 
 td {
@@ -43,6 +44,7 @@ td {
 th.mat-sort-header-sorted {
   color: rgb(232, 148, 243);
 }
+
 .genderColumn,
 .statusColumn {
   text-align: center;
@@ -166,9 +168,13 @@ th.mat-sort-header-sorted {
 }
 .mat-column-img > div,
 .mat-column-cuotas > div,
-.mat-column-inscription > div {
+.mat-column-inscription > div,
+.mat-column-subspacesCount > div {
   display: flex;
   justify-content: center;
+}
+.mat-column-management {
+  text-align: center;
 }
 .circle {
   width: 20px;
@@ -200,4 +206,9 @@ th.mat-sort-header-sorted {
 }
 .custom-list-row {
   top: 800px;
+}
+
+:host ::ng-deep .mat-sort-header-container {
+  display: flex;
+  justify-content: center;
 }

@@ -93,4 +93,9 @@
     [itemId]="item?.id"
     (sendFormCreditor)="onSendFormCreditor($event)"
   />
+  <app-form-place
+    *ngIf="type === TypeList.Places"
+    [itemId]="item?.id"
+    (sendFormPlace)="onSendFormPlace($event)"
+  />
 </ng-template>

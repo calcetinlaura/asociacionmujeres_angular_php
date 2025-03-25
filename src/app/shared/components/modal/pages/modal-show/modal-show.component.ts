@@ -12,6 +12,7 @@ import { ModalShowPiteraComponent } from 'src/app/modules/dashboard/pages/pitera
 import { ModalShowRecipeComponent } from 'src/app/modules/dashboard/pages/recipes/components/modal-show/modal-show-recipe.component';
 import { ImagenModal } from '../../components/img-modal/img-modal.components';
 import { ModalShowSubsidyComponent } from '../../../../../modules/dashboard/pages/subsidies/components/modal-show/modal-show-subsidy.component';
+import { ModalShowPlaceComponent } from '../../../../../modules/dashboard/pages/places/components/modal-show/modal-show-place.component';
 
 @Component({
   standalone: true,
@@ -27,6 +28,7 @@ import { ModalShowSubsidyComponent } from '../../../../../modules/dashboard/page
     ModalShowCreditorComponent,
     ImagenModal,
     ModalShowSubsidyComponent,
+    ModalShowPlaceComponent,
   ],
   selector: 'app-modal-show',
   templateUrl: './modal-show.component.html',

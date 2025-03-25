@@ -15,5 +15,6 @@
       *ngIf="type === TypeList.Creditors"
       [item]="item"
     />
+    <app-modal-show-place *ngIf="type === TypeList.Places" [item]="item" />
   </div>
 </div>

@@ -1,112 +1,231 @@
 import { CommonModule } from '@angular/common';
+import { Component, EventEmitter, inject, Input, Output } from '@angular/core';
 import {
-  Component,
-  DestroyRef,
-  EventEmitter,
-  inject,
-  Input,
-  Output,
-} from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import {
+  FormArray,
   FormControl,
   FormGroup,
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
+import { MatCardModule } from '@angular/material/card';
 import { EditorModule } from '@tinymce/tinymce-angular';
 import { filter, tap } from 'rxjs';
-import { CreditorsFacade } from 'src/app/application';
+import { PlacesFacade } from 'src/app/application/places.facade';
 import {
-  CreditorModel,
-  FilterCreditors,
-} from 'src/app/core/interfaces/creditor.interface';
+  ManagementFilterPlaces,
+  PlaceModel,
+  TypeFilterPlaces,
+} from 'src/app/core/interfaces/place.interface';
+import { TypeList } from 'src/app/core/models/general.model';
+import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
+import { GeneralService } from 'src/app/shared/services/generalService.service';
+import { AddButtonComponent } from '../../../../../../shared/components/buttons/button-add/button-add.component';
 
 @Component({
-  selector: 'app-form-creditor',
+  selector: 'app-form-place',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, EditorModule],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    EditorModule,
+    MatCardModule,
+    ImageControlComponent,
+    AddButtonComponent,
+  ],
   templateUrl: './form-place.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],
 })
-export class FormCreditorComponent {
-  private creditorsFacade = inject(CreditorsFacade);
-  private destroyRef = inject(DestroyRef);
+export class FormPlaceComponent {
+  private placesFacade = inject(PlacesFacade);
+  private generalService = inject(GeneralService);
 
   @Input() itemId!: number;
-  @Output() sendFormCreditor = new EventEmitter<{
+  @Output() sendFormPlace = new EventEmitter<{
     itemId: number;
-    newCreditorData: CreditorModel;
+    newPlaceData: FormData;
   }>();
 
-  creditorData: any;
+  selectedImageFile: File | null = null;
+  imageSrc: string = '';
   errorSession: boolean = false;
   submitted: boolean = false;
-  titleForm: string = 'Registrar acreedor/a';
+  titleForm: string = 'Registrar espacio';
   buttonAction: string = 'Guardar';
-  filterCreditors = FilterCreditors;
-  formCreditor = new FormGroup({
-    company: new FormControl('', [Validators.required]),
-    cif: new FormControl(''),
-    contact: new FormControl(''),
-    phone: new FormControl(''),
-    email: new FormControl(''),
-    town: new FormControl(''),
+  managementPlaces = ManagementFilterPlaces;
+  typePlaces = TypeFilterPlaces;
+  typeList = TypeList.Places;
+
+  // Definir formulario
+  formPlace = new FormGroup({
+    name: new FormControl('', [Validators.required]),
+    province: new FormControl('', [Validators.required]),
+    town: new FormControl('', [Validators.required]),
     address: new FormControl(''),
     post_code: new FormControl(''),
-    category: new FormControl(''),
-    key_words: new FormControl(''),
-    observations: new FormControl(''),
+    lat: new FormControl(0),
+    lon: new FormControl(0),
+    description: new FormControl('', [Validators.maxLength(2000)]),
+    img: new FormControl(''),
+    observations: new FormControl('', [Validators.maxLength(2000)]),
+    management: new FormControl(''),
+    hasSubspaces: new FormControl(false),
+    subspaces: new FormArray([]),
+    type: new FormControl(''),
+    capacity: new FormControl(0),
   });
-
-  private creditor_id!: number;
 
   ngOnInit(): void {
     if (this.itemId) {
-      this.creditorsFacade.loadCreditorById(this.itemId);
-      this.creditorsFacade.selectedCreditor$
+      this.placesFacade.loadPlaceById(this.itemId);
+      this.placesFacade.selectedPlace$
         .pipe(
-          takeUntilDestroyed(this.destroyRef),
-          filter((creditor: CreditorModel | null) => creditor !== null),
-          tap((creditor: CreditorModel | null) => {
-            if (creditor) {
-              this.formCreditor.patchValue(creditor);
-              this.creditor_id = creditor.id;
-              this.titleForm = 'Editar Acreedor/a';
+          filter((place: PlaceModel | null) => place !== null),
+          tap((place: PlaceModel | null) => {
+            if (place) {
+              // Cargar los valores del formulario
+              this.formPlace.patchValue({
+                name: place.name || '',
+                province: place.province || '',
+                town: place.town || '',
+                address: place.address || '',
+                post_code: place.post_code || '',
+                lat: place.lat || 0,
+                lon: place.lon || 0,
+                capacity: place.capacity || 0,
+                description: place.description || '',
+                observations: place.observations || '',
+                management: place.management || '',
+                type: place.type || '',
+                img: place.img || '',
+              });
+
+              // Manejo de subspaces
+              this.setSubspaces(place.subspaces || []);
+              this.titleForm = 'Editar espacio';
               this.buttonAction = 'Guardar cambios';
+
+              if (place.img) {
+                this.imageSrc = place.img;
+                this.selectedImageFile = null;
+              }
             }
           })
         )
         .subscribe();
     }
   }
+  onHasSubspacesChange(event: Event): void {
+    const inputElement = event.target as HTMLInputElement;
+    const isChecked = inputElement.checked;
 
-  onSendFormCreditor(): void {
-    if (this.formCreditor.invalid) {
-      this.submitted = true;
-      console.log('Formulario inválido', this.formCreditor.errors);
+    if (isChecked && this.subspaces.length === 0) {
+      this.addSubspace();
+      this.formPlace.patchValue({
+        type: '',
+        capacity: 0,
+      });
+      // 🔹 Agrega una sala automáticamente si no hay ninguna
+    } else if (!isChecked) {
+      this.subspaces.clear(); // 🔹 Si el usuario desmarca, elimina todas las salas
+    }
+  }
+
+  setSubspaces(subspaces: any): void {
+    if (!subspaces || (Array.isArray(subspaces) && subspaces.length === 0)) {
+      this.subspaces.clear(); // ✅ Si no hay subespacios, vaciamos el FormArray
+      this.formPlace.patchValue({ hasSubspaces: false }); // ❌ Desactivar checkbox
       return;
     }
 
-    // Convertimos el formulario a un objeto JSON (CreditorModel)
-    const newCreditorData: CreditorModel = {
-      id: this.creditor_id || 0, // Si es nuevo, se envía 0 o se omite
-      company: this.formCreditor.value.company!,
-      cif: this.formCreditor.value.cif || '',
-      contact: this.formCreditor.value.contact || '',
-      phone: this.formCreditor.value.phone!,
-      email: this.formCreditor.value.email || '',
-      town: this.formCreditor.value.town || '',
-      address: this.formCreditor.value.address || '',
-      post_code: this.formCreditor.value.post_code || '',
-      category: this.formCreditor.value.category || '',
-      key_words: this.formCreditor.value.key_words || '',
-      observations: this.formCreditor.value.observations || '',
-    };
+    // 🔹 Si `subspaces` es un string JSON, conviértelo a un array
+    let subspacesArray: any[] = [];
+    if (typeof subspaces === 'string') {
+      try {
+        subspacesArray = JSON.parse(subspaces);
+      } catch (error) {
+        console.error('Error al parsear subspaces:', error);
+        subspacesArray = []; // Evita fallos si el JSON es inválido
+      }
+    } else if (Array.isArray(subspaces)) {
+      subspacesArray = subspaces; // ✅ Si ya es un array, úsalo directamente
+    }
 
-    this.sendFormCreditor.emit({
+    this.subspaces.clear(); // Limpiamos los subespacios actuales
+
+    // 🔹 Ahora, `subspacesArray` es un array seguro y podemos usar `.forEach()`
+    subspacesArray.forEach((subspace) => {
+      this.addSubspace(subspace);
+    });
+
+    // ✅ Marcar el checkbox como `true` si hay subespacios
+    this.formPlace.patchValue({ hasSubspaces: true });
+  }
+
+  get subspaces(): FormArray {
+    return this.formPlace.get('subspaces') as FormArray;
+  }
+
+  addSubspace(subspaceData: any = {}): void {
+    const newSubspace = new FormGroup({
+      name: new FormControl(subspaceData.name || '', Validators.required),
+      location: new FormControl(
+        subspaceData.location || '',
+        Validators.required
+      ),
+      type: new FormControl(subspaceData.type || '', Validators.required),
+      capacity: new FormControl(subspaceData.capacity || null),
+    });
+    this.subspaces.push(newSubspace);
+  }
+
+  removeSubspace(index: number) {
+    this.subspaces.removeAt(index);
+  }
+
+  async onImageSelected(file: File) {
+    const result = await this.generalService.handleFileSelection(file);
+    this.selectedImageFile = result.file;
+    this.imageSrc = result.imageSrc;
+  }
+
+  onSendFormPlace(): void {
+    if (this.formPlace.invalid) {
+      this.submitted = true;
+      console.log('Formulario inválido', this.formPlace.errors);
+      return;
+    }
+
+    const formData = new FormData();
+    const formValue = this.formPlace.value;
+
+    formData.append('name', formValue.name ?? '');
+    formData.append('province', formValue.province ?? '');
+    formData.append('lat', String(formValue.lat ?? ''));
+    formData.append('lon', String(formValue.lon ?? ''));
+    formData.append('capacity', String(formValue.capacity ?? ''));
+    formData.append('address', formValue.address ?? '');
+    formData.append('town', formValue.town ?? '');
+    formData.append('post_code', formValue.post_code ?? '');
+    formData.append('description', formValue.description ?? '');
+    formData.append('observations', formValue.observations ?? '');
+    formData.append('management', formValue.management ?? '');
+    formData.append('type', formValue.type ?? '');
+    formData.append('subspaces', JSON.stringify(formValue.subspaces));
+
+    if (this.selectedImageFile) {
+      formData.append('img', this.selectedImageFile);
+    } else if (this.imageSrc) {
+      formData.append('existingImg', this.imageSrc);
+    }
+
+    if (this.itemId) {
+      formData.append('_method', 'PATCH');
+      formData.append('id', this.itemId.toString());
+    }
+
+    this.sendFormPlace.emit({
       itemId: this.itemId,
-      newCreditorData: newCreditorData,
+      newPlaceData: formData,
     });
   }
 }

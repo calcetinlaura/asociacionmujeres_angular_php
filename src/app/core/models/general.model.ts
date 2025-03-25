@@ -9,6 +9,7 @@ export enum TypeList {
   Invoices = 'INVOICES',
   Creditors = 'CREDITORS',
   Subsidies = 'SUBSIDIES',
+  Places = 'PLACES',
 }
 
 export enum TypeActionModal {
