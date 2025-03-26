@@ -109,4 +109,17 @@ export class TableComponent {
     const d2 = new Date(date2);
     return d1.getTime() === d2.getTime();
   }
+  formatearTelefono(numero: string | null | undefined): string {
+    if (!numero) return ''; // Retorna una cadena vacía si el valor es null o undefined
+
+    let valor = numero.replace(/\D/g, ''); // Elimina caracteres no numéricos
+    if (valor.length > 10) valor = valor.slice(0, 10); // Limita a 10 caracteres
+
+    return valor.replace(
+      /(\d{3})(\d{2})?(\d{2})?(\d{2})?/,
+      (_, g1, g2, g3, g4) => {
+        return [g1, g2, g3, g4].filter(Boolean).join(' '); // Une con espacios
+      }
+    );
+  }
 }

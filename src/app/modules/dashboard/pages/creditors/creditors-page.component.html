@@ -5,17 +5,20 @@
     [number]="number"
     [type]="'acreedores'"
   />
-  <div
-    class="pt-8 px-8 flex add"
-    [class.sticky-toolbar]="isStickyToolbar"
-    #toolbar
-  >
-    <app-button-add
-      [buttonText]="'Nuevo acreedor/a'"
-      [iconClass]="'uil-plus'"
-      (addClicked)="addNewCreditorModal()"
-    />
-    <app-input-search (onDebounce)="applyFilter($event)" class="flex-1" />
+  <div class="flex flex-col py-8 px-4" [class.sticky-toolbar]="isStickyToolbar">
+    <app-filters
+      [filters]="filtersCategory"
+      (filterClicked)="filterCategorySelected($event)"
+      class="mb-6"
+    ></app-filters>
+    <div class="px-4 flex add mb-4">
+      <app-button-add
+        [buttonText]="'Nuevo acreedor/a'"
+        [iconClass]="'uil-plus'"
+        (addClicked)="addNewCreditorModal()"
+      />
+      <app-input-search (onDebounce)="applyFilter($event)" class="flex-1" />
+    </div>
   </div>
   <!-- Spinner Loading -->
   <app-spinner-loading *ngIf="!dataLoaded; else results" />

@@ -1,4 +1,4 @@
-<div class="flex flex-1 flex-col justify-between">
+<div class="flex flex-1 flex-col justify-between w-full">
   <div>
     <app-text-title [text]="item.company" />
     <app-text-subtitle *ngIf="item.cif" [text]="item.cif" />
@@ -36,6 +36,58 @@
       <app-text-subtitle *ngIf="item.category" [text]="item.category" />
       <app-text-subtitle *ngIf="item.key_words" [text]="item.key_words" />
       <app-text-editor *ngIf="item.observations" [text]="item.observations" />
+    </div>
+    <div class="mt-4">
+      <app-text-background
+        [text]="'Facturas -> ' + item.numInvoices"
+      ></app-text-background>
+    </div>
+    <!-- ✅ Tabla para mostrar facturas del acreedor -->
+    <!-- ✅ Contenedor de la tabla de facturas -->
+    <div class="mt-4 w-full">
+      <!-- 🔹 Mostrar si hay facturas -->
+      <table
+        *ngIf="item.invoices && item.invoices.length > 0"
+        class="w-full -collapse tableInvoices"
+      >
+        <thead>
+          <tr>
+            <th class="p-2 text-center">N°</th>
+            <th class="p-2 text-center">Fecha</th>
+            <th class="p-2 text-center">Descripción</th>
+            <th class="p-2 text-center">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let invoice of item.invoices" class="hover:bg-gray-50">
+            <td class="p-2 w-auto">
+              {{ invoice.number_invoice }}
+            </td>
+            <td class="p-2 w-auto">
+              {{ invoice.date_invoice | date : "dd/MM/yyyy" }}
+            </td>
+            <td class="p-2">
+              <span [innerHTML]="invoice.description"></span>
+            </td>
+            <td class="p-2 w-auto text-right">
+              {{ invoice.total_amount | eurosFormat }}
+            </td>
+          </tr>
+          <!-- 🔹 Fila de Totales -->
+          <tr class="total_table">
+            <td class="p-2 text-right" colspan="3">TOTAL GENERAL:</td>
+            <td class="p-2 text-right font-bold">
+              <span>{{ getTotalAmount() | eurosFormat }}</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <p
+        *ngIf="!item.invoices || item.invoices.length === 0"
+        class="text-left text-gray-600 mt-4"
+      >
+        No hay facturas registradas de este acreedor.
+      </p>
     </div>
   </div>
 </div>

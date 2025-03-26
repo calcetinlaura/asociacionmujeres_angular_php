@@ -1,9 +1,14 @@
 <div class="flex flex-col mx-3 md:mx-8">
-  <app-filters
-    [filters]="filterGenderBooks"
-    (filterClicked)="filterSelected($event)"
-    [loadFirstFilter]="'NOVEDADES'"
-  />
+  <div>
+    <button (click)="filterSelected('')" class="btn btn-primary">
+      Todos los Acreedores
+    </button>
+    <app-filters
+      [filters]="filterGenderBooks"
+      (filterClicked)="filterSelected($event)"
+      [loadFirstFilter]="''"
+    />
+  </div>
   <app-input-search (onDebounce)="applyFilter($event)" class="my-4 md:my-6" />
   <!-- Spinner Loading -->
   <app-spinner-loading *ngIf="isLoading; else results" />

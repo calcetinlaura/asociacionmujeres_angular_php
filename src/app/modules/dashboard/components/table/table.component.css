@@ -173,6 +173,9 @@ th.mat-sort-header-sorted {
   display: flex;
   justify-content: center;
 }
+.mat-column-numInvoices {
+  text-align: center;
+}
 .mat-column-management {
   text-align: center;
 }

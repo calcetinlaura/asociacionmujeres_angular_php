@@ -15,7 +15,6 @@ import { ModalDeleteComponent } from './pages/modal-delete/modal-delete.componen
 import { FormPartnerComponent } from 'src/app/modules/dashboard/pages/partners/components/form/form-partner.component';
 import { SubsidyModel } from 'src/app/core/interfaces/subsidy.interface';
 import { FormSubsidyComponent } from 'src/app/modules/dashboard/pages/subsidies/components/form/form-subsidy.component';
-import { PlaceModel } from 'src/app/core/interfaces/place.interface';
 
 @Component({
   standalone: true,

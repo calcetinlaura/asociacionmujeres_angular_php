@@ -118,6 +118,18 @@
             <span>{{ element[column.key] }}</span>
           </div>
         </ng-container>
+        <!-- Diseño especial para 'email' -->
+        <ng-container *ngSwitchCase="'email'">
+          <small>{{ element[column.key] }}</small>
+        </ng-container>
+        <!-- Diseño especial para 'phone' -->
+        <ng-container *ngSwitchCase="'phone'">
+          {{ formatearTelefono(element[column.key]) }}
+        </ng-container>
+        <!-- Diseño especial para 'número total facturas ' -->
+        <ng-container *ngSwitchCase="'numInvoices'">
+          {{ element[column.key] }}
+        </ng-container>
         <!-- Diseño especial para 'salas' -->
         <ng-container *ngSwitchCase="'subspacesCount'">
           <div>
