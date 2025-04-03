@@ -1,27 +1,35 @@
+import { CommonModule } from '@angular/common';
 import {
   Component,
   DestroyRef,
-  ElementRef,
-  HostListener,
   inject,
   OnInit,
   ViewChild,
 } from '@angular/core';
-import { DashboardHeaderComponent } from '../../components/dashboard-header/dashboard-header.component';
-import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
-import { ColumnModel } from 'src/app/core/interfaces/column.interface';
-import { TableComponent } from '../../components/table/table.component';
-import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
-import { CommonModule } from '@angular/common';
-import { BooksFacade } from 'src/app/application';
-import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { tap } from 'rxjs';
+import { BooksFacade } from 'src/app/application/books.facade';
+import {
+  BookModel,
+  genderFilterBooks,
+} from 'src/app/core/interfaces/book.interface';
+import { ColumnModel } from 'src/app/core/interfaces/column.interface';
+import {
+  Filter,
+  TypeActionModal,
+  TypeList,
+} from 'src/app/core/models/general.model';
+import { BooksService } from 'src/app/core/services/books.services';
+import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
+import { TableComponent } from 'src/app/modules/dashboard/components/table/table.component';
+import { FiltersComponent } from 'src/app/modules/landing/components/filters/filters.component';
 import { AddButtonComponent } from 'src/app/shared/components/buttons/button-add/button-add.component';
 import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
-import { BookModel } from 'src/app/core/interfaces/book.interface';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { SpinnerLoadingComponent } from '../../../landing/components/spinner-loading/spinner-loading.component';
+import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
+import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
+import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
+import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
   selector: 'app-books-page',
@@ -29,111 +37,95 @@ import { SpinnerLoadingComponent } from '../../../landing/components/spinner-loa
   imports: [
     CommonModule,
     DashboardHeaderComponent,
-    TableComponent,
     ModalComponent,
     AddButtonComponent,
     ReactiveFormsModule,
     InputSearchComponent,
     SpinnerLoadingComponent,
+    TableComponent,
+    FiltersComponent,
   ],
   templateUrl: './books-page.component.html',
   styleUrl: './books-page.component.css',
 })
 export class BooksPageComponent implements OnInit {
-  private booksFacade = inject(BooksFacade);
-  private modalService = inject(ModalService);
-  private destroyRef = inject(DestroyRef);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly modalService = inject(ModalService);
+  private readonly booksFacade = inject(BooksFacade);
+  private readonly booksService = inject(BooksService);
+  private readonly generalService = inject(GeneralService);
 
-  typeList = TypeList.Books;
   books: BookModel[] = [];
   filteredBooks: BookModel[] = [];
-  searchForm!: FormGroup;
-  dataLoaded: boolean = false;
-  number: number = 0;
-  headerListBooks: ColumnModel[] = [];
-  isModalVisible: boolean = false;
+  filters: Filter[] = [];
+  selectedFilter = 'TODOS';
+
+  isLoading = true;
+  isModalVisible = false;
+  number = 0;
+
+  item: BookModel | null = null;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
-  item: any;
-  searchKeywordFilter = new FormControl();
-  isStickyToolbar: boolean = false;
+  searchForm!: FormGroup;
+  typeList = TypeList.Books;
 
-  @ViewChild('toolbar') toolbar!: ElementRef;
+  headerListBooks: ColumnModel[] = [
+    { title: 'Portada', key: 'img' },
+    { title: 'Título', key: 'title' },
+    { title: 'Autor/a', key: 'author' },
+    { title: 'Descripción', key: 'description' },
+    { title: 'Género', key: 'gender' },
+    { title: 'Año compra', key: 'year' },
+  ];
 
-  @HostListener('window:scroll', [])
-  onWindowScroll() {
-    const scrollPosition =
-      window.scrollY ||
-      document.documentElement.scrollTop ||
-      document.body.scrollTop ||
-      0;
-
-    if (scrollPosition > 50) {
-      this.isStickyToolbar = true;
-    } else {
-      this.isStickyToolbar = false;
-    }
-  }
+  @ViewChild(InputSearchComponent)
+  private inputSearchComponent!: InputSearchComponent;
 
   ngOnInit(): void {
-    this.loadAllBooks();
+    this.filters = [
+      { code: 'NOVEDADES', name: 'Novedades' },
+      { code: 'TODOS', name: 'Todos' },
+      ...genderFilterBooks,
+    ];
 
     this.modalService.modalVisibility$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((isVisible) => {
-          this.isModalVisible = isVisible;
-        })
+        tap((isVisible) => (this.isModalVisible = isVisible))
       )
       .subscribe();
 
-    this.headerListBooks = [
-      { title: 'Portada', key: 'img' },
-      { title: 'Título', key: 'title' },
-      { title: 'Autor/a', key: 'author' },
-      { title: 'Descripción', key: 'description' },
-      { title: 'Género', key: 'gender' },
-      { title: 'Año compra', key: 'year' },
-    ];
-  }
+    this.filterSelected('NOVEDADES');
 
-  loadAllBooks(): void {
-    this.booksFacade.loadAllBooks();
-    this.booksFacade.books$
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((books) => {
-          this.updateBookState(books);
-        })
-      )
-      .subscribe();
-  }
-
-  applyFilter(keyword: string): void {
-    this.booksFacade.applyFilter(keyword);
     this.booksFacade.filteredBooks$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((books) => {
-          this.updateBookState(books);
-        })
+        tap((books) => this.updateBookState(books))
       )
       .subscribe();
   }
 
-  confirmDeleteBook(item: any): void {
-    this.booksFacade.deleteBook(item.id);
-    this.onCloseModal();
+  filterSelected(filter: string): void {
+    this.selectedFilter = filter;
+    this.generalService.clearSearchInput(this.inputSearchComponent);
+    this.booksFacade.setCurrentFilter(filter);
+  }
+
+  applyFilterWord(keyword: string): void {
+    this.booksFacade.applyFilterWord(keyword);
   }
 
   addNewBookModal(): void {
-    this.currentModalAction = TypeActionModal.Create;
-    this.item = null;
-    this.modalService.openModal();
+    this.openModal(TypeActionModal.Create, null);
   }
 
-  onOpenModal(event: { action: TypeActionModal; item?: any }): void {
-    this.currentModalAction = event.action;
-    this.item = event.item;
+  onOpenModal(event: { action: TypeActionModal; item?: BookModel }): void {
+    this.openModal(event.action, event.item ?? null);
+  }
+
+  openModal(action: TypeActionModal, book: BookModel | null): void {
+    this.currentModalAction = action;
+    this.item = book;
     this.modalService.openModal();
   }
 
@@ -141,37 +133,31 @@ export class BooksPageComponent implements OnInit {
     this.modalService.closeModal();
   }
 
+  confirmDeleteBook(book: BookModel | null): void {
+    if (!book) return;
+    this.booksFacade.deleteBook(book.id);
+    this.onCloseModal();
+  }
+
   sendFormBook(event: { itemId: number; newBookData: FormData }): void {
-    if (event.itemId) {
-      this.booksFacade
-        .editBook(event.itemId, event.newBookData)
-        .pipe(
-          takeUntilDestroyed(this.destroyRef),
-          tap(() => {
-            this.onCloseModal();
-          })
-        )
-        .subscribe();
-    } else {
-      this.booksFacade
-        .addBook(event.newBookData)
-        .pipe(
-          takeUntilDestroyed(this.destroyRef),
-          tap(() => {
-            this.onCloseModal();
-          })
-        )
-        .subscribe();
-    }
+    const save$ = event.itemId
+      ? this.booksFacade.editBook(event.itemId, event.newBookData)
+      : this.booksFacade.addBook(event.newBookData);
+
+    save$
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap(() => this.onCloseModal())
+      )
+      .subscribe();
   }
 
   private updateBookState(books: BookModel[] | null): void {
-    if (books === null) {
-      return;
-    }
-    this.books = books.sort((a, b) => b.id - a.id);
+    if (!books) return;
+
+    this.books = this.booksService.sortBooksById(books);
     this.filteredBooks = [...this.books];
-    this.number = this.books.length;
-    this.dataLoaded = true;
+    this.number = this.booksService.countBooks(books);
+    this.isLoading = false;
   }
 }

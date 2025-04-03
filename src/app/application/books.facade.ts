@@ -1,25 +1,48 @@
-import { DestroyRef, inject, Injectable } from '@angular/core';
-import { BehaviorSubject, catchError, Observable, tap, throwError } from 'rxjs';
-import { BooksService } from '../core/services/books.services';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BookModel } from '../core/interfaces/book.interface';
 import { HttpErrorResponse } from '@angular/common/http';
+import { DestroyRef, inject, Injectable } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { BehaviorSubject, catchError, Observable, tap, throwError } from 'rxjs';
+import { BookModel } from 'src/app/core/interfaces/book.interface';
+import { BooksService } from 'src/app/core/services/books.services';
 
 @Injectable({
   providedIn: 'root',
 })
 export class BooksFacade {
-  private destroyRef = inject(DestroyRef);
-  private booksService = inject(BooksService);
-  private booksSubject = new BehaviorSubject<BookModel[] | null>(null);
-  private filteredBooksSubject = new BehaviorSubject<BookModel[] | null>(null);
-  private selectedBookSubject = new BehaviorSubject<BookModel | null>(null);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly booksService = inject(BooksService);
+  private readonly booksSubject = new BehaviorSubject<BookModel[] | null>(null);
+  private readonly filteredBooksSubject = new BehaviorSubject<
+    BookModel[] | null
+  >(null);
+  private readonly selectedBookSubject = new BehaviorSubject<BookModel | null>(
+    null
+  );
 
   books$ = this.booksSubject.asObservable();
   selectedBook$ = this.selectedBookSubject.asObservable();
   filteredBooks$ = this.filteredBooksSubject.asObservable();
+  currentFilter: string = 'TODOS';
 
   constructor() {}
+
+  setCurrentFilter(filter: string): void {
+    this.currentFilter = filter;
+    this.loadBooksByFilter(filter);
+  }
+
+  loadBooksByFilter(filter: string): void {
+    const loaders: Record<string, () => void> = {
+      TODOS: () => this.loadAllBooks(),
+      NOVEDADES: () => this.loadBooksByLatest(),
+    };
+
+    (loaders[filter] || (() => this.loadBooksByGender(filter)))();
+  }
+
+  private reloadCurrentFilter(): void {
+    this.loadBooksByFilter(this.currentFilter);
+  }
 
   loadAllBooks(): void {
     this.booksService
@@ -27,17 +50,6 @@ export class BooksFacade {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((books: BookModel[]) => this.updateBookState(books)),
-        catchError(this.handleError)
-      )
-      .subscribe();
-  }
-
-  loadBookById(id: number): void {
-    this.booksService
-      .getBookById(id)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((book: BookModel) => this.selectedBookSubject.next(book)),
         catchError(this.handleError)
       )
       .subscribe();
@@ -76,10 +88,21 @@ export class BooksFacade {
       .subscribe();
   }
 
+  loadBookById(id: number): void {
+    this.booksService
+      .getBookById(id)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap((book: BookModel) => this.selectedBookSubject.next(book)),
+        catchError(this.handleError)
+      )
+      .subscribe();
+  }
+
   addBook(book: FormData): Observable<FormData> {
     return this.booksService.add(book).pipe(
       takeUntilDestroyed(this.destroyRef),
-      tap(() => this.loadAllBooks()),
+      tap(() => this.reloadCurrentFilter()),
       catchError(this.handleError)
     );
   }
@@ -87,7 +110,7 @@ export class BooksFacade {
   editBook(id: number, book: FormData): Observable<FormData> {
     return this.booksService.edit(id, book).pipe(
       takeUntilDestroyed(this.destroyRef),
-      tap(() => this.loadAllBooks()),
+      tap(() => this.reloadCurrentFilter()),
       catchError(this.handleError)
     );
   }
@@ -97,7 +120,7 @@ export class BooksFacade {
       .delete(id)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap(() => this.loadAllBooks()),
+        tap(() => this.reloadCurrentFilter()),
         catchError(this.handleError)
       )
       .subscribe();
@@ -107,31 +130,28 @@ export class BooksFacade {
     this.selectedBookSubject.next(null);
   }
 
-  applyFilter(keyword: string): void {
-    const searchValue = keyword.toLowerCase();
+  applyFilterWord(keyword: string): void {
     const allBooks = this.booksSubject.getValue();
 
-    if (!searchValue) {
+    if (!keyword.trim() || !allBooks) {
       this.filteredBooksSubject.next(allBooks);
-    } else {
-      const filteredBooks = this.booksSubject
-        .getValue()!
-        .filter(
-          (book) =>
-            book.title.toLowerCase().includes(searchValue) ||
-            (book.author && book.author.toLowerCase().includes(searchValue))
-        );
-
-      this.filteredBooksSubject.next(filteredBooks);
+      return;
     }
+    const search = keyword.trim().toLowerCase();
+    const filteredBooks = allBooks.filter(
+      (book) =>
+        book.title.toLowerCase().includes(search) ||
+        (book.author && book.author.toLowerCase().includes(search))
+    );
+
+    this.filteredBooksSubject.next(filteredBooks);
   }
 
   updateBookState(books: BookModel[]): void {
     this.booksSubject.next(books);
-    this.filteredBooksSubject.next(books); // Actualiza también los libros filtrados
+    this.filteredBooksSubject.next(books);
   }
 
-  // Método para manejar errores
   handleError(error: HttpErrorResponse) {
     let errorMessage = '';
 

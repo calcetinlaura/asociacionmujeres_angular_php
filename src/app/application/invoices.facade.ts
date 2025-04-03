@@ -1,8 +1,8 @@
 import { DestroyRef, inject, Injectable } from '@angular/core';
 import { BehaviorSubject, catchError, Observable, tap, throwError } from 'rxjs';
-import { InvoicesService } from '../core/services/invoices.services';
+import { InvoicesService } from 'src/app/core/services/invoices.services';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { InvoiceModel } from '../core/interfaces/invoice.interface';
+import { InvoiceModel } from 'src/app/core/interfaces/invoice.interface';
 import { HttpErrorResponse } from '@angular/common/http';
 
 @Injectable({
@@ -11,16 +11,14 @@ import { HttpErrorResponse } from '@angular/common/http';
 export class InvoicesFacade {
   private destroyRef = inject(DestroyRef);
   private invoicesService = inject(InvoicesService);
-
-  // Subjects to manage the state of invoices and current selected invoice
   private invoicesSubject = new BehaviorSubject<InvoiceModel[]>([]);
-  private selectedInvoiceSubject = new BehaviorSubject<InvoiceModel | null>(
-    null
-  );
   private filteredInvoicesByYearSubject = new BehaviorSubject<InvoiceModel[]>(
     []
   );
   private filteredInvoicesSubject = new BehaviorSubject<InvoiceModel[] | null>(
+    null
+  );
+  private selectedInvoiceSubject = new BehaviorSubject<InvoiceModel | null>(
     null
   );
   private currentFilterTypeSubject = new BehaviorSubject<string | null>(null);
@@ -33,7 +31,6 @@ export class InvoicesFacade {
 
   constructor() {}
 
-  // Load all invoices
   loadInvoices(): void {
     this.invoicesService
       .getInvoices()
@@ -43,7 +40,7 @@ export class InvoicesFacade {
           this.invoicesSubject.next(invoices);
           // Aplicar el filtro actual después de cargar las facturas
           const currentFilterType = this.currentFilterTypeSubject.getValue();
-          this.applyFilterTab(currentFilterType); // Asegúrate de aplicar el filtro actual
+          this.applyFilterWordTab(currentFilterType); // Asegúrate de aplicar el filtro actual
         })
       )
       .subscribe();
@@ -68,41 +65,11 @@ export class InvoicesFacade {
         takeUntilDestroyed(this.destroyRef),
         tap((invoices: InvoiceModel[]) => {
           this.invoicesSubject.next(invoices);
-          // // Aplicar el filtro actual después de cargar las facturas
-          // const currentFilterType = this.currentFilterTypeSubject.getValue();
-          // this.applyFilterTab(currentFilterType); // Asegúrate de aplicar el filtro actual
         })
       )
-      .subscribe({
-        // next: (data: InvoiceModel[]) => {
-        //   let InvoicesCopy = data.map((invoice) => ({
-        //     ...invoice,
-        //     date_accounting: invoice.date_accounting
-        //       ? new Date(invoice.date_accounting)
-        //       : new Date(),
-        //     date_invoice: invoice.date_invoice
-        //       ? new Date(invoice.date_invoice)
-        //       : new Date(),
-        //   }));
-        //   InvoicesCopy = InvoicesCopy.sort(
-        //     (a, b) => a.date_accounting.getTime() - b.date_accounting.getTime()
-        //   );
-        //   this.filteredInvoicesByYearSubject.next(
-        //     InvoicesCopy.map((invoice) => ({
-        //       ...invoice,
-        //     }))
-        //   );
-        // },
-        // error: (error) => {
-        //   console.error(
-        //     `Error al recuperar facturas filtrando por años ${filter}`,
-        //     error
-        //   );
-        // },
-        // complete: () => {},
-      });
+      .subscribe();
   }
-  // Load a specific invoice by ID
+
   loadInvoiceById(id: number): void {
     this.invoicesService
       .getInvoiceById(id)
@@ -137,8 +104,10 @@ export class InvoicesFacade {
 
   clearSelectedInvoice(): void {
     this.selectedInvoiceSubject.next(null);
-  } // Método para aplicar filtros
-  applyFilterTab(filterType: string | null): void {
+  }
+
+  // Método para aplicar filtros
+  applyFilterWordTab(filterType: string | null): void {
     this.currentFilterTypeSubject.next(filterType);
     const invoices = this.invoicesSubject.getValue();
     const filtered = filterType
@@ -149,7 +118,7 @@ export class InvoicesFacade {
   }
 
   // Método para aplicar filtro por palabras clave
-  applyFiltersWords(keyword: string): void {
+  applyFilterWord(keyword: string): void {
     const invoices = this.invoicesSubject.getValue();
     const filterType = this.currentFilterTypeSubject.getValue();
     let filtered = this.invoicesSubject.getValue();

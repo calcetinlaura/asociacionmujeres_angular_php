@@ -3,6 +3,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { catchError } from 'rxjs/operators';
 import { Observable, throwError } from 'rxjs';
 import { environments } from 'src/environments/environments';
+import { BookModel } from 'src/app/core/interfaces/book.interface';
 
 @Injectable({
   providedIn: 'root',
@@ -53,6 +54,25 @@ export class BooksService {
       .pipe(catchError(this.handleError));
   }
 
+  sortBooksByTitle(books: BookModel[]): BookModel[] {
+    return books.sort((a, b) =>
+      a.title.toLowerCase().localeCompare(b.title.toLowerCase())
+    );
+  }
+
+  sortBooksById(books: BookModel[]): BookModel[] {
+    return books.sort((a, b) => b.id - a.id);
+  }
+
+  hasResults(books: BookModel[] | null): boolean {
+    return !!books && books.length > 0;
+  }
+
+  countBooks(books: BookModel[] | null): number {
+    return books?.length ?? 0;
+  }
+
+  // Método para manejar errores
   handleError(error: HttpErrorResponse) {
     let errorMessage = '';
 

@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { Filter } from 'src/app/core/models/general.model';
-import { ButtonFilterComponent } from '../../../../shared/components/buttons/button-filter/button-filter.component';
+import { ButtonFilterComponent } from 'src/app/shared/components/buttons/button-filter/button-filter.component';
 
 @Component({
   selector: 'app-filters',

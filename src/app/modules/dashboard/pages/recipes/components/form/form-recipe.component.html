@@ -84,28 +84,43 @@
           </div>
         </div>
       </div>
-      <!-- Ingredientes -->
-      <div class="box-input gap-x-4 px-4">
-        <label for="ingredients">Ingredientes</label>
-        <mat-card-content>
-          <editor
-            apiKey="c8uxjgc7f76nt677zqdn22a8a97bjhc7fyph9y4oxuj7nrx3"
-            [init]="{
-              height: 300,
-              plugins: ['advlist', 'lists', 'wordcount'],
-              toolbar:
-                'undo redo | bold italic  underline strikethrough | fontfamily fontsize forecolor  backcolor| \
+      <div class="flex gap-4">
+        <!-- Ingredientes -->
+        <div class="box-input gap-x-4 px-4 w-3/4">
+          <label for="ingredients">Ingredientes</label>
+          <mat-card-content>
+            <editor
+              apiKey="c8uxjgc7f76nt677zqdn22a8a97bjhc7fyph9y4oxuj7nrx3"
+              [init]="{
+                height: 300,
+                plugins: ['advlist', 'lists', 'wordcount'],
+                toolbar:
+                  'undo redo | bold italic  underline strikethrough | fontfamily fontsize forecolor  backcolor| \
                alignleft aligncenter alignright alignjustify | \
                bullist numlist  | removeformat '
-            }"
-            formControlName="ingredients"
-          ></editor>
-        </mat-card-content>
+              }"
+              formControlName="ingredients"
+            ></editor>
+          </mat-card-content>
+        </div>
+        <!-- Portada (Imagen) -->
+        <div class="box-input gap-x-4 px-4 w-1/4">
+          <app-image-control
+            [previewImg]="
+              formRecipe.get('img')?.value
+                ? formRecipe.get('img')?.value!
+                : null
+            "
+            [type]="typeList"
+            (imgSelected)="onImageSelected($event)"
+            [imageWidthValue]="'full'"
+          ></app-image-control>
+        </div>
       </div>
       <!-- Receta -->
       <div class="box-input gap-x-4 px-4">
         <label for="recipe">Receta</label>
-        <mat-card-content>
+        <mat-card-content class="w-full">
           <editor
             apiKey="c8uxjgc7f76nt677zqdn22a8a97bjhc7fyph9y4oxuj7nrx3"
             [init]="{
@@ -119,17 +134,6 @@
             formControlName="recipe"
           ></editor>
         </mat-card-content>
-      </div>
-      <!-- Portada (Imagen) -->
-      <div class="box-input gap-x-4 px-4">
-        <label for="img">Portada</label>
-        <app-image-control
-          [previewImg]="
-            formRecipe.get('img')?.value ? formRecipe.get('img')?.value! : null
-          "
-          [type]="typeList"
-          (imgSelected)="onImageSelected($event)"
-        ></app-image-control>
       </div>
 
       <!-- Mensaje de error global -->

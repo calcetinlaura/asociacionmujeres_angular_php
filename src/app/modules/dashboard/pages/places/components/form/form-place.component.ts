@@ -19,8 +19,8 @@ import {
 import { TypeList } from 'src/app/core/models/general.model';
 import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
-import { AddButtonComponent } from '../../../../../../shared/components/buttons/button-add/button-add.component';
-
+import { AddButtonComponent } from 'src/app/shared/components/buttons/button-add/button-add.component';
+import townsData from 'data/towns.json';
 @Component({
   selector: 'app-form-place',
   standalone: true,
@@ -68,13 +68,22 @@ export class FormPlaceComponent {
     img: new FormControl(''),
     observations: new FormControl('', [Validators.maxLength(2000)]),
     management: new FormControl(''),
-    hasSubspaces: new FormControl(false),
-    subspaces: new FormArray([]),
+    hassalas: new FormControl(false),
+    salas: new FormArray([]),
     type: new FormControl(''),
     capacity: new FormControl(0),
   });
+  provincias: {
+    label: string;
+    code: string;
+    towns: { label: string; code: string }[];
+  }[] = [];
+  municipios: { label: string; code: string }[] = [];
 
   ngOnInit(): void {
+    this.provincias = townsData
+      .flatMap((region) => region.provinces)
+      .sort((a, b) => a.label.localeCompare(b.label));
     if (this.itemId) {
       this.placesFacade.loadPlaceById(this.itemId);
       this.placesFacade.selectedPlace$
@@ -82,6 +91,11 @@ export class FormPlaceComponent {
           filter((place: PlaceModel | null) => place !== null),
           tap((place: PlaceModel | null) => {
             if (place) {
+              // 🔹 Primero actualizamos los municipios basándonos en la provincia recibida
+              const province = this.provincias.find(
+                (p) => p.label === place.province
+              );
+              this.municipios = province?.towns ?? [];
               // Cargar los valores del formulario
               this.formPlace.patchValue({
                 name: place.name || '',
@@ -99,8 +113,8 @@ export class FormPlaceComponent {
                 img: place.img || '',
               });
 
-              // Manejo de subspaces
-              this.setSubspaces(place.subspaces || []);
+              // Manejo de salas
+              this.setsalas(place.salas || []);
               this.titleForm = 'Editar espacio';
               this.buttonAction = 'Guardar cambios';
 
@@ -114,72 +128,76 @@ export class FormPlaceComponent {
         .subscribe();
     }
   }
-  onHasSubspacesChange(event: Event): void {
+  onProvinceChange(): void {
+    const selectedProvince = this.formPlace.value.province;
+    const province = this.provincias.find((p) => p.label === selectedProvince);
+    this.municipios = province?.towns ?? [];
+    this.formPlace.patchValue({ town: '' }); // limpia el municipio
+  }
+
+  onHassalasChange(event: Event): void {
     const inputElement = event.target as HTMLInputElement;
     const isChecked = inputElement.checked;
 
-    if (isChecked && this.subspaces.length === 0) {
-      this.addSubspace();
+    if (isChecked && this.salas.length === 0) {
+      this.addsala();
       this.formPlace.patchValue({
         type: '',
         capacity: 0,
       });
       // 🔹 Agrega una sala automáticamente si no hay ninguna
     } else if (!isChecked) {
-      this.subspaces.clear(); // 🔹 Si el usuario desmarca, elimina todas las salas
+      this.salas.clear(); // 🔹 Si el usuario desmarca, elimina todas las salas
     }
   }
 
-  setSubspaces(subspaces: any): void {
-    if (!subspaces || (Array.isArray(subspaces) && subspaces.length === 0)) {
-      this.subspaces.clear(); // ✅ Si no hay subespacios, vaciamos el FormArray
-      this.formPlace.patchValue({ hasSubspaces: false }); // ❌ Desactivar checkbox
+  setsalas(salas: any): void {
+    if (!salas || (Array.isArray(salas) && salas.length === 0)) {
+      this.salas.clear(); // ✅ Si no hay subespacios, vaciamos el FormArray
+      this.formPlace.patchValue({ hassalas: false }); // ❌ Desactivar checkbox
       return;
     }
 
-    // 🔹 Si `subspaces` es un string JSON, conviértelo a un array
-    let subspacesArray: any[] = [];
-    if (typeof subspaces === 'string') {
+    // 🔹 Si `salas` es un string JSON, conviértelo a un array
+    let salasArray: any[] = [];
+    if (typeof salas === 'string') {
       try {
-        subspacesArray = JSON.parse(subspaces);
+        salasArray = JSON.parse(salas);
       } catch (error) {
-        console.error('Error al parsear subspaces:', error);
-        subspacesArray = []; // Evita fallos si el JSON es inválido
+        console.error('Error al parsear salas:', error);
+        salasArray = []; // Evita fallos si el JSON es inválido
       }
-    } else if (Array.isArray(subspaces)) {
-      subspacesArray = subspaces; // ✅ Si ya es un array, úsalo directamente
+    } else if (Array.isArray(salas)) {
+      salasArray = salas; // ✅ Si ya es un array, úsalo directamente
     }
 
-    this.subspaces.clear(); // Limpiamos los subespacios actuales
+    this.salas.clear(); // Limpiamos los subespacios actuales
 
-    // 🔹 Ahora, `subspacesArray` es un array seguro y podemos usar `.forEach()`
-    subspacesArray.forEach((subspace) => {
-      this.addSubspace(subspace);
+    // 🔹 Ahora, `salasArray` es un array seguro y podemos usar `.forEach()`
+    salasArray.forEach((sala) => {
+      this.addsala(sala);
     });
 
     // ✅ Marcar el checkbox como `true` si hay subespacios
-    this.formPlace.patchValue({ hasSubspaces: true });
+    this.formPlace.patchValue({ hassalas: true });
   }
 
-  get subspaces(): FormArray {
-    return this.formPlace.get('subspaces') as FormArray;
+  get salas(): FormArray {
+    return this.formPlace.get('salas') as FormArray;
   }
 
-  addSubspace(subspaceData: any = {}): void {
-    const newSubspace = new FormGroup({
-      name: new FormControl(subspaceData.name || '', Validators.required),
-      location: new FormControl(
-        subspaceData.location || '',
-        Validators.required
-      ),
-      type: new FormControl(subspaceData.type || '', Validators.required),
-      capacity: new FormControl(subspaceData.capacity || null),
+  addsala(salaData: any = {}): void {
+    const newsala = new FormGroup({
+      name: new FormControl(salaData.name || '', Validators.required),
+      location: new FormControl(salaData.location || '', Validators.required),
+      type: new FormControl(salaData.type || '', Validators.required),
+      capacity: new FormControl(salaData.capacity || null),
     });
-    this.subspaces.push(newSubspace);
+    this.salas.push(newsala);
   }
 
-  removeSubspace(index: number) {
-    this.subspaces.removeAt(index);
+  removesala(index: number) {
+    this.salas.removeAt(index);
   }
 
   async onImageSelected(file: File) {
@@ -210,7 +228,7 @@ export class FormPlaceComponent {
     formData.append('observations', formValue.observations ?? '');
     formData.append('management', formValue.management ?? '');
     formData.append('type', formValue.type ?? '');
-    formData.append('subspaces', JSON.stringify(formValue.subspaces));
+    formData.append('salas', JSON.stringify(formValue.salas));
 
     if (this.selectedImageFile) {
       formData.append('img', this.selectedImageFile);

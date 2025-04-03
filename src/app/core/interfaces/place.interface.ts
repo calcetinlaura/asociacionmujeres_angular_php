@@ -1,4 +1,4 @@
-import { Filter } from '../models/general.model';
+import { Filter } from 'src/app/core/models/general.model';
 
 export interface PlaceModel {
   id: number;
@@ -15,10 +15,10 @@ export interface PlaceModel {
   management?: string;
   type?: string;
   img?: string;
-  subspaces?: SubSpace[];
+  salas?: SalaModel[];
 }
 
-export interface SubSpace {
+export interface SalaModel {
   id: number;
   name: string;
   type?: string;
@@ -31,6 +31,6 @@ export const ManagementFilterPlaces: Filter[] = [
   { code: 'PUBLICA', name: 'Espacio público' },
 ];
 export const TypeFilterPlaces: Filter[] = [
-  { code: 'INTERIOR', name: 'Al aire libre' },
-  { code: 'EXTERIOR', name: 'Interior' },
+  { code: 'EXTERIOR', name: 'Al aire libre' },
+  { code: 'INTERIOR', name: 'Interior' },
 ];

@@ -15,13 +15,13 @@ import {
   Validators,
 } from '@angular/forms';
 import { EditorModule } from '@tinymce/tinymce-angular';
+import townsData from 'data/towns.json';
 import { filter, tap } from 'rxjs';
-import { CreditorsFacade } from 'src/app/application';
+import { CreditorsFacade } from 'src/app/application/creditors.facade';
 import {
+  categoryFilterCreditors,
   CreditorModel,
-  FilterCreditors,
 } from 'src/app/core/interfaces/creditor.interface';
-
 @Component({
   selector: 'app-form-creditor',
   standalone: true,
@@ -44,13 +44,14 @@ export class FormCreditorComponent {
   submitted: boolean = false;
   titleForm: string = 'Registrar acreedor/a';
   buttonAction: string = 'Guardar';
-  filterCreditors = FilterCreditors;
+  categoryFilterCreditors = categoryFilterCreditors;
   formCreditor = new FormGroup({
     company: new FormControl('', [Validators.required]),
     cif: new FormControl(''),
     contact: new FormControl(''),
     phone: new FormControl(''),
     email: new FormControl(''),
+    province: new FormControl(''),
     town: new FormControl(''),
     address: new FormControl(''),
     post_code: new FormControl(''),
@@ -58,10 +59,19 @@ export class FormCreditorComponent {
     key_words: new FormControl(''),
     observations: new FormControl(''),
   });
+  provincias: {
+    label: string;
+    code: string;
+    towns: { label: string; code: string }[];
+  }[] = [];
+  municipios: { label: string; code: string }[] = [];
 
   private creditor_id!: number;
 
   ngOnInit(): void {
+    this.provincias = townsData
+      .flatMap((region) => region.provinces)
+      .sort((a, b) => a.label.localeCompare(b.label));
     if (this.itemId) {
       this.creditorsFacade.loadCreditorById(this.itemId);
       this.creditorsFacade.selectedCreditor$
@@ -70,7 +80,15 @@ export class FormCreditorComponent {
           filter((creditor: CreditorModel | null) => creditor !== null),
           tap((creditor: CreditorModel | null) => {
             if (creditor) {
+              // 🔹 Primero actualizamos los municipios basándonos en la provincia recibida
+              const province = this.provincias.find(
+                (p) => p.label === creditor.province
+              );
+              this.municipios = province?.towns ?? [];
+
+              // 🔹 Luego seteamos los valores del formulario
               this.formCreditor.patchValue(creditor);
+
               this.creditor_id = creditor.id;
               this.titleForm = 'Editar Acreedor/a';
               this.buttonAction = 'Guardar cambios';
@@ -79,6 +97,13 @@ export class FormCreditorComponent {
         )
         .subscribe();
     }
+  }
+
+  onProvinceChange(): void {
+    const selectedProvince = this.formCreditor.value.province;
+    const province = this.provincias.find((p) => p.label === selectedProvince);
+    this.municipios = province?.towns ?? [];
+    this.formCreditor.patchValue({ town: '' }); // limpia el municipio
   }
 
   onSendFormCreditor(): void {
@@ -96,6 +121,7 @@ export class FormCreditorComponent {
       contact: this.formCreditor.value.contact || '',
       phone: this.formCreditor.value.phone!,
       email: this.formCreditor.value.email || '',
+      province: this.formCreditor.value.province || '',
       town: this.formCreditor.value.town || '',
       address: this.formCreditor.value.address || '',
       post_code: this.formCreditor.value.post_code || '',

@@ -58,6 +58,14 @@
             </div>
           </ng-container>
         </ng-container>
+        <!-- Diseño especial para 'espacio en eventos' -->
+        <ng-container *ngSwitchCase="'placeData'">
+          <ng-container *ngIf="element[column.key]?.name">
+            <div>
+              {{ element[column.key].name || "Sin asignar" }}
+            </div>
+          </ng-container>
+        </ng-container>
         <!-- Diseño especial para 'capacity' -->
         <ng-container *ngSwitchCase="'capacity'">
           <ng-container *ngIf="element[column.key] !== 0">
@@ -66,12 +74,14 @@
             </div>
           </ng-container>
         </ng-container>
-
+        <!-- Diseño especial para 'gestión' -->
+        <ng-container *ngSwitchCase="'management'">
+          <ng-container *ngIf="element[column.key]">
+            {{ element[column.key] | filterTransformCode : "PlaceManagement" }}
+          </ng-container>
+        </ng-container>
         <!-- Diseño especial para 'img' -->
         <ng-container *ngSwitchCase="'img'">
-          <!-- <app-circle-indicator
-            [item]="element[column.key]"
-          ></app-circle-indicator> -->
           <img
             appImgBroken
             [src]="element[column.key] | itemImage : type"
@@ -124,19 +134,19 @@
         </ng-container>
         <!-- Diseño especial para 'phone' -->
         <ng-container *ngSwitchCase="'phone'">
-          {{ formatearTelefono(element[column.key]) }}
+          {{ element[column.key] | phoneFormat }}
         </ng-container>
         <!-- Diseño especial para 'número total facturas ' -->
         <ng-container *ngSwitchCase="'numInvoices'">
           {{ element[column.key] }}
         </ng-container>
         <!-- Diseño especial para 'salas' -->
-        <ng-container *ngSwitchCase="'subspacesCount'">
+        <ng-container *ngSwitchCase="'salasCount'">
           <div>
-            <ng-container *ngIf="element[column.key] > 0; else noSubspaces">
+            <ng-container *ngIf="element[column.key] > 0; else nosalas">
               {{ element[column.key] }}
             </ng-container>
-            <ng-template #noSubspaces>
+            <ng-template #nosalas>
               <app-circle-indicator [item]="false"></app-circle-indicator>
             </ng-template>
           </div>
@@ -147,7 +157,7 @@
             [item]="element[column.key]"
           ></app-circle-indicator>
         </ng-container>
-        <!-- Diseño especial para 'latitud' -->
+        <!-- Diseño especial para 'longitud' -->
         <ng-container *ngSwitchCase="'lon'">
           <app-circle-indicator
             [item]="element[column.key]"

@@ -1,5 +1,6 @@
 .box-input {
   display: flex;
+  align-items: center;
 }
 .box-input label {
   min-width: 95px;
@@ -80,7 +81,7 @@ select[disabled] {
   border: 2px solid rgb(225, 110, 110);
   padding: 4px 3px;
 }
-.subSpace_box {
+.sala_box {
   border-right: 2px solid #ecd6f152;
   color: #46324b;
 }

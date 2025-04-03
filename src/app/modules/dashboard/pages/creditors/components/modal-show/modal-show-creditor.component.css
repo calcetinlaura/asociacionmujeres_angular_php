@@ -8,15 +8,22 @@
   color: #844792fd;
   font-weight: normal;
 }
-.tableInvoices td {
+.tableInvoices .fila {
   border-bottom: 1px solid #cb8dd952;
+}
+.tableInvoices td {
   font-size: 10px;
 }
 .tableInvoices .total_table {
   color: #844792fd;
   border-top: 2px solid #cb8dd952;
-  border-bottom: 2px solid #cb8dd952;
+  border-bottom: 1px solid transparent;
 }
 .tableInvoices .total_table span {
   color: black;
+}
+.header_table {
+  color: #844792fd;
+  font-size: 12px;
+  font-weight: normal;
 }

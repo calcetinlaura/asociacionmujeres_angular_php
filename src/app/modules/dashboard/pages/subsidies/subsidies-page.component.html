@@ -1,91 +1,103 @@
-<div>
+<div class="sticky-zone">
   <app-dashboard-header
-    [icon]="'uil uil-calculator'"
+    [icon]="'uil-euro-circle'"
     [title]="''"
     [number]="number"
     [type]="'Subvenciones'"
   />
-</div>
-<div class="flex flex-col py-8 px-4" [class.sticky-toolbar]="isStickyToolbar">
-  <app-filters
-    [filters]="filtersYears"
-    (filterClicked)="filterYearSelected($event)"
-  ></app-filters>
-</div>
-<ng-container *ngIf="showAllSubsidies; else showSubsidiesByYear">
-  <div class="px-8 flex add">
-    <app-button-add
-      [buttonText]="'Añadir subveción'"
-      [iconClass]="'uil-plus'"
-      (addClicked)="addNewSubsidyModal()"
-    />
-    <app-input-search (onDebounce)="applyFilter($event)" class="flex-1" />
+  <div class="flex flex-1 flex-col justify-start p-8 gap-y-8">
+    <app-filters
+      [filters]="filtersYears"
+      (filterClicked)="filterYearSelected($event)"
+    ></app-filters>
+    <ng-container *ngIf="showAllSubsidies">
+      <div class="flex gap-x-4">
+        <app-button-add
+          [buttonText]="'Añadir subveción'"
+          [iconClass]="'uil-plus'"
+          (addClicked)="addNewSubsidyModal()"
+        />
+        <app-input-search
+          (onDebounce)="applyFilterWord($event)"
+          class="flex-1"
+        />
+      </div>
+    </ng-container>
   </div>
+</div>
+<div class="flex flex-col px-8">
   <!-- Spinner Loading -->
-  <app-spinner-loading *ngIf="!dataLoaded; else results" />
+  <app-spinner-loading *ngIf="isLoading" />
   <!-- Tabla -->
-  <ng-template #results>
-    <app-table-subsidy
-      [data]="filteredAllSubsidies"
-      [type]="typeList.Subsidies"
-      (openModal)="onOpenModal($event)"
-      class="flex p-8"
-    />
-  </ng-template>
-</ng-container>
-<ng-template #showSubsidiesByYear>
-  <mat-tab-group
-    (selectedTabChange)="tabActive($event)"
-    [selectedIndex]="selectedIndex"
-    ><mat-tab
-      label="Sub. Ministerio"
-      *ngIf="filteredSubsidiesByType['MINISTERIO'].length > 0"
-    >
-      <app-tab-subsidy
-        [item]="filteredSubsidiesByType['MINISTERIO'][0]"
+  <ng-container *ngIf="!isLoading && showAllSubsidies">
+    <div class="pb-4 flex">
+      <app-table-subsidy
+        [data]="filteredAllSubsidies"
+        [type]="typeList.Subsidies"
         (openModal)="onOpenModal($event)"
-      ></app-tab-subsidy>
-    </mat-tab>
-    <mat-tab
-      label="Sub. Generalitat"
-      *ngIf="filteredSubsidiesByType['GENERALITAT'].length > 0"
-    >
-      <app-tab-subsidy
-        [item]="filteredSubsidiesByType['GENERALITAT'][0]"
-        (openModal)="onOpenModal($event)"
-      ></app-tab-subsidy>
-    </mat-tab>
-    <mat-tab
-      label="Sub. Diputación"
-      *ngIf="filteredSubsidiesByType['DIPUTACION'].length > 0"
-    >
-      <app-tab-subsidy
-        [item]="filteredSubsidiesByType['DIPUTACION'][0]"
-        (openModal)="onOpenModal($event)"
-      ></app-tab-subsidy>
-    </mat-tab>
+      />
+    </div>
+  </ng-container>
+  <ng-container
+    *ngIf="!isLoadingFromFacade && !showAllSubsidies && hasTabsToShow()"
+  >
+    <mat-tab-group
+      (selectedTabChange)="tabActive($event)"
+      [selectedIndex]="selectedIndex"
+      ><mat-tab
+        label="Sub. Ministerio"
+        *ngIf="filteredSubsidiesByType['MINISTERIO'].length > 0"
+      >
+        <app-tab-subsidy
+          [item]="filteredSubsidiesByType['MINISTERIO'][0]"
+          (openModal)="onOpenModal($event)"
+          [loadInvoices]="true"
+        ></app-tab-subsidy>
+      </mat-tab>
+      <mat-tab
+        label="Sub. Generalitat"
+        *ngIf="filteredSubsidiesByType['GENERALITAT'].length > 0"
+      >
+        <app-tab-subsidy
+          [item]="filteredSubsidiesByType['GENERALITAT'][0]"
+          (openModal)="onOpenModal($event)"
+          [loadInvoices]="true"
+        ></app-tab-subsidy>
+      </mat-tab>
+      <mat-tab
+        label="Sub. Diputación"
+        *ngIf="filteredSubsidiesByType['DIPUTACION'].length > 0"
+      >
+        <app-tab-subsidy
+          [item]="filteredSubsidiesByType['DIPUTACION'][0]"
+          (openModal)="onOpenModal($event)"
+          [loadInvoices]="true"
+        ></app-tab-subsidy>
+      </mat-tab>
 
-    <mat-tab
-      label="Sub. Ayuntamiento actividades"
-      *ngIf="filteredSubsidiesByType['AYUNT_ACTIVIDADES'].length > 0"
-    >
-      <app-tab-subsidy
-        [item]="filteredSubsidiesByType['AYUNT_ACTIVIDADES'][0]"
-        (openModal)="onOpenModal($event)"
-      ></app-tab-subsidy>
-    </mat-tab>
-    <mat-tab
-      label="Sub. Ayuntamiento equipamiento"
-      *ngIf="filteredSubsidiesByType['AYUNT_EQUIPAMIENTO'].length > 0"
-    >
-      <app-tab-subsidy
-        [item]="filteredSubsidiesByType['AYUNT_EQUIPAMIENTO'][0]"
-        (openModal)="onOpenModal($event)"
-      ></app-tab-subsidy>
-    </mat-tab>
-  </mat-tab-group>
-</ng-template>
-
+      <mat-tab
+        label="Sub. Ayuntamiento actividades"
+        *ngIf="filteredSubsidiesByType['AYUNT_ACTIVIDADES'].length > 0"
+      >
+        <app-tab-subsidy
+          [item]="filteredSubsidiesByType['AYUNT_ACTIVIDADES'][0]"
+          (openModal)="onOpenModal($event)"
+          [loadInvoices]="true"
+        ></app-tab-subsidy>
+      </mat-tab>
+      <mat-tab
+        label="Sub. Ayuntamiento equipamiento"
+        *ngIf="filteredSubsidiesByType['AYUNT_EQUIPAMIENTO'].length > 0"
+      >
+        <app-tab-subsidy
+          [item]="filteredSubsidiesByType['AYUNT_EQUIPAMIENTO'][0]"
+          (openModal)="onOpenModal($event)"
+          [loadInvoices]="true"
+        ></app-tab-subsidy>
+      </mat-tab>
+    </mat-tab-group>
+  </ng-container>
+</div>
 <!-- Modal -->
 <app-modal
   *ngIf="isModalVisible"

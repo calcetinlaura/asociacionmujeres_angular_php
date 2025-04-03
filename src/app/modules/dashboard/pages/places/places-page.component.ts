@@ -1,27 +1,20 @@
-import {
-  Component,
-  DestroyRef,
-  ElementRef,
-  HostListener,
-  inject,
-  OnInit,
-  ViewChild,
-} from '@angular/core';
+import { Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { ColumnModel } from 'src/app/core/interfaces/column.interface';
 import { TableComponent } from 'src/app/modules/dashboard/components/table/table.component';
 import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
 import { CommonModule } from '@angular/common';
-import { PlacesFacade } from 'src/app/application/places.facade';
-import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
 import { tap } from 'rxjs';
 import { AddButtonComponent } from 'src/app/shared/components/buttons/button-add/button-add.component';
 import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
-import { PlaceModel } from 'src/app/core/interfaces/place.interface';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { SpinnerLoadingComponent } from '../../../landing/components/spinner-loading/spinner-loading.component';
+import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
+import { PlaceModel } from 'src/app/core/interfaces/place.interface';
+import { PlacesFacade } from 'src/app/application/places.facade';
+import { PlacesService } from 'src/app/core/services/places.services';
 
 @Component({
   selector: 'app-places-page',
@@ -29,54 +22,46 @@ import { SpinnerLoadingComponent } from '../../../landing/components/spinner-loa
   imports: [
     CommonModule,
     DashboardHeaderComponent,
-    TableComponent,
     ModalComponent,
     AddButtonComponent,
     ReactiveFormsModule,
     InputSearchComponent,
     SpinnerLoadingComponent,
+    TableComponent,
   ],
   templateUrl: './places-page.component.html',
   styleUrl: './places-page.component.css',
 })
 export class PlacesPageComponent implements OnInit {
-  private placesFacade = inject(PlacesFacade);
-  private modalService = inject(ModalService);
-  private destroyRef = inject(DestroyRef);
+  private readonly placesFacade = inject(PlacesFacade);
+  private readonly modalService = inject(ModalService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly placesService = inject(PlacesService);
 
-  typeList = TypeList.Places;
   places: PlaceModel[] = [];
   filteredPlaces: PlaceModel[] = [];
-  searchForm!: FormGroup;
-  dataLoaded: boolean = false;
-  number: number = 0;
-  headerListPlaces: ColumnModel[] = [];
-  isModalVisible: boolean = false;
+
+  isLoading = true;
+  isModalVisible = false;
+  number = 0;
+
+  item: PlaceModel | null = null;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
-  item: any;
-  searchKeywordFilter = new FormControl();
-  isStickyToolbar: boolean = false;
+  searchForm!: FormGroup;
+  typeList = TypeList.Places;
 
-  @ViewChild('toolbar') toolbar!: ElementRef;
-
-  @HostListener('window:scroll', [])
-  onWindowScroll() {
-    const scrollPosition =
-      window.scrollY ||
-      document.documentElement.scrollTop ||
-      document.body.scrollTop ||
-      0;
-
-    if (scrollPosition > 50) {
-      this.isStickyToolbar = true;
-    } else {
-      this.isStickyToolbar = false;
-    }
-  }
+  headerListPlaces: ColumnModel[] = [
+    { title: 'Imagen', key: 'img' },
+    { title: 'Nombre', key: 'name' },
+    { title: 'Municipio', key: 'town' },
+    { title: 'Dirección', key: 'address' },
+    { title: 'Salas', key: 'salasCount' },
+    { title: 'Latitud', key: 'lat' },
+    { title: 'Longitud', key: 'lon' },
+    { title: 'Gestión', key: 'management' },
+  ];
 
   ngOnInit(): void {
-    this.loadAllPlaces();
-
     this.modalService.modalVisibility$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
@@ -86,56 +71,34 @@ export class PlacesPageComponent implements OnInit {
       )
       .subscribe();
 
-    this.headerListPlaces = [
-      { title: 'Imagen', key: 'img' },
-      { title: 'Nombre', key: 'name' },
-      { title: 'Municipio', key: 'town' },
-      { title: 'Dirección', key: 'address' },
-      { title: 'Salas', key: 'subspacesCount' }, // 🔹 Mostrar cantidad de subespacios
-      { title: 'Latitud', key: 'lat' },
-      { title: 'Longitud', key: 'lon' },
-      { title: 'Gestión', key: 'management' },
-    ];
+    this.loadAllPlaces();
   }
 
   loadAllPlaces(): void {
     this.placesFacade.loadAllPlaces();
-    this.placesFacade.places$
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((places) => {
-          this.updatePlaceState(places);
-        })
-      )
-      .subscribe();
-  }
 
-  applyFilter(keyword: string): void {
-    this.placesFacade.applyFilter(keyword);
     this.placesFacade.filteredPlaces$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((places) => {
-          this.updatePlaceState(places);
-        })
+        tap((places) => this.updatePlaceState(places))
       )
       .subscribe();
   }
 
-  confirmDeletePlace(item: any): void {
-    this.placesFacade.deletePlace(item.id);
-    this.modalService.closeModal();
+  applyFilterWord(keyword: string): void {
+    this.placesFacade.applyFilterWord(keyword);
   }
 
   addNewPlaceModal(): void {
-    this.currentModalAction = TypeActionModal.Create;
-    this.item = null;
-    this.modalService.openModal();
+    this.openModal(TypeActionModal.Create, null);
   }
 
-  onOpenModal(event: { action: TypeActionModal; item: any }): void {
-    this.currentModalAction = event.action;
-    this.item = event.item;
+  onOpenModal(event: { action: TypeActionModal; item?: PlaceModel }): void {
+    this.openModal(event.action, event.item ?? null);
+  }
+  openModal(action: TypeActionModal, place: PlaceModel | null): void {
+    this.currentModalAction = action;
+    this.item = place;
     this.modalService.openModal();
   }
 
@@ -143,58 +106,51 @@ export class PlacesPageComponent implements OnInit {
     this.modalService.closeModal();
   }
 
+  confirmDeletePlace(place: any | null): void {
+    if (!place) return;
+    this.placesFacade.deletePlace(place.id);
+    this.onCloseModal();
+  }
+
   sendFormPlace(event: { itemId: number; newPlaceData: FormData }): void {
-    if (event.itemId) {
-      this.placesFacade
-        .editPlace(event.itemId, event.newPlaceData)
-        .pipe(
-          takeUntilDestroyed(this.destroyRef),
-          tap(() => {
-            this.onCloseModal();
-          })
-        )
-        .subscribe();
-    } else {
-      this.placesFacade
-        .addPlace(event.newPlaceData)
-        .pipe(
-          takeUntilDestroyed(this.destroyRef),
-          tap(() => {
-            this.onCloseModal();
-          })
-        )
-        .subscribe();
-    }
+    const save$ = event.itemId
+      ? this.placesFacade.editPlace(event.itemId, event.newPlaceData)
+      : this.placesFacade.addPlace(event.newPlaceData);
+
+    save$
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap(() => this.onCloseModal())
+      )
+      .subscribe();
   }
 
   private updatePlaceState(places: PlaceModel[] | null): void {
-    if (places === null) {
-      return;
-    }
+    if (!places) return;
 
     this.places = places.map((place) => {
-      let subspacesArray = [];
+      let salasArray = [];
 
-      // 🔹 Verifica si `subspaces` es un string (probablemente en JSON) y conviértelo a array
-      if (typeof place.subspaces === 'string') {
+      // 🔹 Verifica si `salas` es un string (probablemente en JSON) y conviértelo a array
+      if (typeof place.salas === 'string') {
         try {
-          subspacesArray = JSON.parse(place.subspaces);
+          salasArray = JSON.parse(place.salas);
         } catch (error) {
-          console.error('Error al parsear subspaces:', error);
-          subspacesArray = []; // Evita fallos si el JSON es inválido
+          console.error('Error al parsear salas:', error);
+          salasArray = []; // Evita fallos si el JSON es inválido
         }
-      } else if (Array.isArray(place.subspaces)) {
-        subspacesArray = place.subspaces;
+      } else if (Array.isArray(place.salas)) {
+        salasArray = place.salas;
       }
 
       return {
         ...place,
-        subspacesCount: subspacesArray.length, // ✅ Ahora cuenta correctamente
+        salasCount: salasArray.length, // ✅ Ahora cuenta correctamente
       };
     });
 
     this.filteredPlaces = [...this.places];
-    this.number = this.places.length;
-    this.dataLoaded = true;
+    this.number = this.placesService.countPlaces(places);
+    this.isLoading = false;
   }
 }

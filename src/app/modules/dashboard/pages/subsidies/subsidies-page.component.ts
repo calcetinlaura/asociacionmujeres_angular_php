@@ -1,35 +1,37 @@
+import { CommonModule } from '@angular/common';
 import {
   Component,
   DestroyRef,
-  ElementRef,
-  HostListener,
   inject,
   OnInit,
-  ViewChild,
+  QueryList,
+  ViewChildren,
 } from '@angular/core';
-import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ReactiveFormsModule } from '@angular/forms';
+import { MatTabChangeEvent, MatTabsModule } from '@angular/material/tabs';
+import { tap } from 'rxjs';
+import { SubsidiesFacade } from 'src/app/application/subsidies.facade';
+import {
+  categoryFilterSubsidies,
+  SubsidyModel,
+} from 'src/app/core/interfaces/subsidy.interface';
 import {
   Filter,
   TypeActionModal,
   TypeList,
 } from 'src/app/core/models/general.model';
 import { SubsidiesService } from 'src/app/core/services/subsidies.services';
-import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
-import { CommonModule } from '@angular/common';
-import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
-import { tap } from 'rxjs';
+import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
+import { FiltersComponent } from 'src/app/modules/landing/components/filters/filters.component';
 import { AddButtonComponent } from 'src/app/shared/components/buttons/button-add/button-add.component';
 import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
-import { FiltersComponent } from 'src/app/modules/landing/components/filters/filters.component';
-import { MatTabChangeEvent, MatTabsModule } from '@angular/material/tabs';
-import { SubsidiesFacade } from 'src/app/application/subsidies.facade';
-import { SubsidyModel } from 'src/app/core/interfaces/subsidy.interface';
-import { TableSubsidyComponent } from './components/table-subsidies/table-subsidy.component';
-import { ModalShowSubsidyComponent } from './components/tab-subsidy/tab-subsidies.component';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { SpinnerLoadingComponent } from '../../../landing/components/spinner-loading/spinner-loading.component';
+import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
+import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
+import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
+import { ModalShowSubsidyComponent } from './components/tab-subsidy/tab-subsidies.component';
+import { TableSubsidyComponent } from './components/table-subsidies/table-subsidy.component';
 @Component({
   selector: 'app-subsidies-page',
   standalone: true,
@@ -51,223 +53,148 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
   styleUrl: './subsidies-page.component.css',
 })
 export class SubsidiesPageComponent implements OnInit {
+  // Injections
   private subsidiesFacade = inject(SubsidiesFacade);
   private modalService = inject(ModalService);
   private destroyRef = inject(DestroyRef);
   private generalService = inject(GeneralService);
-
-  showAllSubsidies: boolean = false;
-  isActiveButtonList: boolean = false;
-  selectedIndex: number = 0;
-  selectedTypeFilter: string | null = null;
+  // ViewChildren
+  @ViewChildren(ModalShowSubsidyComponent)
+  tabSubsidies!: QueryList<ModalShowSubsidyComponent>;
+  // UI & State
   typeList = TypeList;
   typeListModal: TypeList = TypeList.Subsidies;
+  currentModalAction: TypeActionModal = TypeActionModal.Create;
   subsidies: SubsidyModel[] = [];
   filtersYears: Filter[] = [];
   filteredAllSubsidies: SubsidyModel[] = [];
   filteredSubsidies: SubsidyModel[] = [];
+  showAllSubsidies: boolean = false;
+  isActiveButtonList: boolean = false;
+  selectedIndex: number = 0;
+  selectedTypeFilter: string | null = null;
   currentFilterSubsidyType: string | null = null;
   currentTab: string | null = null;
-  searchForm!: FormGroup;
-  dataLoaded: boolean = false;
+  isLoading: boolean = false;
+  isLoadingFromFacade = false;
   number: number = 0;
   isModalVisible: boolean = false;
-  currentModalAction: TypeActionModal = TypeActionModal.Create;
   item: any;
-  searchKeywordFilter = new FormControl();
-  isStickyToolbar: boolean = false;
-  selectedFilterYear: number | null = new Date().getFullYear();
+  selectedFilter: number | null = null;
+  currentYear = this.generalService.currentYear;
 
-  @ViewChild('toolbar') toolbar!: ElementRef;
+  filteredSubsidiesByType: { [key: string]: SubsidyModel[] } =
+    categoryFilterSubsidies.reduce((acc, filter) => {
+      acc[filter.code] = [];
+      return acc;
+    }, {} as { [key: string]: SubsidyModel[] });
 
-  @HostListener('window:scroll', [])
-  onWindowScroll() {
-    const scrollPosition =
-      window.scrollY ||
-      document.documentElement.scrollTop ||
-      document.body.scrollTop ||
-      0;
-
-    if (scrollPosition > 50) {
-      this.isStickyToolbar = true;
-    } else {
-      this.isStickyToolbar = false;
-    }
-  }
   ngOnInit(): void {
-    const currentYear = this.generalService.currentYear;
-    const startYear = 2018;
+    this.filtersYears = [
+      { code: '', name: 'Histórico subvenciones' },
+      ...this.generalService.getYearFilters(2018, this.currentYear),
+    ];
 
-    for (let year = startYear; year <= currentYear; year++) {
-      if (year === currentYear) {
-        this.filtersYears.push({ code: year, name: `Año actual ${year}` });
-      } else {
-        this.filtersYears.push({
-          code: year.toString(),
-          name: year.toString(),
-        });
-      }
-    }
-
-    // Invertir el array para que el último año esté primero
-    this.filtersYears.reverse();
-    this.filtersYears.unshift({ code: '', name: 'Listado subvenciones' });
-    this.loadAllSubsidies();
-
-    // Suscripción a los cambios de visibilidad del modal
     this.modalService.modalVisibility$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((isVisible) => {
-          this.isModalVisible = isVisible;
-        })
+        tap((isVisible) => (this.isModalVisible = isVisible))
       )
       .subscribe();
-  }
-  loadAllSubsidies(): void {
-    this.showAllSubsidies = true;
-    this.subsidiesFacade.loadAllSubsidies();
-    this.subsidiesFacade.subsidies$
+
+    this.subsidiesFacade.isLoadingSubsidies$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((loading) => (this.isLoadingFromFacade = loading));
+
+    this.subsidiesFacade.filteredSubsidies$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((subsidies) => {
           this.subsidies = subsidies;
           this.filteredAllSubsidies = subsidies;
-          this.number = this.subsidies.length;
-          this.dataLoaded = true;
+          this.number = subsidies.length;
+          this.classifySubsidies(subsidies);
+          this.isLoading = false;
         })
       )
       .subscribe();
+
+    this.showAllSubsidies = true;
+    this.subsidiesFacade.setCurrentFilter('TODOS');
   }
 
-  loadSubsidiesByYears(filter: number): void {
-    this.showAllSubsidies = false;
-    this.subsidiesFacade.loadSubsidiesByYear(filter);
-    this.subsidiesFacade.subsidies$
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((subsidies) => {
-          this.subsidies = subsidies;
-          this.filteredSubsidies = subsidies;
-          this.number = this.subsidies.length;
-          this.dataLoaded = true;
-        })
-      )
-      .subscribe();
+  ngAfterViewInit(): void {
+    this.tabSubsidies.changes
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((tabs: QueryList<ModalShowSubsidyComponent>) => {
+        if (!this.showAllSubsidies && tabs.length > 0) {
+          setTimeout(() => {
+            tabs.first?.load();
+          });
+        }
+      });
   }
-
-  loadSubsidies(): void {
-    this.subsidiesFacade.loadAllSubsidies();
-    this.subsidiesFacade.subsidies$
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((subsidies) => {
-          this.subsidies = subsidies;
-          this.filteredSubsidies = subsidies;
-          this.number = this.subsidies.length;
-          this.dataLoaded = true;
-        })
-      )
-      .subscribe();
+  hasTabsToShow(): boolean {
+    return Object.values(this.filteredSubsidiesByType).some(
+      (subs) => subs.length > 0
+    );
   }
-  filteredSubsidiesByType: { [key: string]: SubsidyModel[] } = {
-    GENERALITAT: [],
-    DIPUTACION: [],
-    AYUNT_EQUIPAMIENTO: [],
-    AYUNT_ACTIVIDADES: [],
-    MINISTERIO: [],
-  };
 
   filterYearSelected(filter: string): void {
-    this.showAllSubsidies = false;
-    if (filter === '') {
-      this.selectedFilterYear = null;
-      this.loadAllSubsidies();
+    if (!filter) {
+      this.selectedFilter = null;
+      this.showAllSubsidies = true;
+      this.subsidiesFacade.setCurrentFilter('TODOS');
     } else {
-      // Convierte a número
       const year = Number(filter);
-
-      // Verificar que sea un número válido
       if (!isNaN(year) && year > 0) {
-        this.selectedFilterYear = year;
+        this.selectedFilter = year;
+        this.showAllSubsidies = false;
+
         this.subsidiesFacade.loadSubsidiesByYear(year);
+
         this.subsidiesFacade.subsidies$
           .pipe(
             takeUntilDestroyed(this.destroyRef),
-            tap((subsidies) => {
-              this.filteredAllSubsidies = subsidies; // Aquí asumes que ya hemos filtrado por año.
-              this.classifySubsidies();
+            tap((subs) => {
+              this.filteredAllSubsidies = subs;
+              this.classifySubsidies(subs);
+              // 🔹 Esperamos a que los ViewChildren existan
+              setTimeout(() => {
+                const firstTab = this.tabSubsidies.first;
+                firstTab?.load();
+              });
             })
           )
           .subscribe();
-      } else {
-        console.error(`El filtro proporcionado no es un año válido: ${filter}`);
       }
     }
   }
 
-  classifySubsidies(): void {
-    this.filteredSubsidiesByType = {
-      GENERALITAT: [],
-      DIPUTACION: [],
-      AYUNT_EQUIPAMIENTO: [],
-      AYUNT_ACTIVIDADES: [],
-      MINISTERIO: [],
-    };
+  classifySubsidies(subsidies: SubsidyModel[]): void {
+    this.filteredSubsidiesByType = categoryFilterSubsidies.reduce(
+      (acc, filter) => {
+        acc[filter.code] = [];
+        return acc;
+      },
+      {} as { [key: string]: SubsidyModel[] }
+    );
 
-    this.filteredAllSubsidies.forEach((subsidy) => {
-      if (subsidy.name === 'GENERALITAT') {
-        this.filteredSubsidiesByType['GENERALITAT'].push(subsidy);
-      } else if (subsidy.name === 'DIPUTACION') {
-        this.filteredSubsidiesByType['DIPUTACION'].push(subsidy);
-      } else if (subsidy.name === 'AYUNT_EQUIPAMIENTO') {
-        this.filteredSubsidiesByType['AYUNT_EQUIPAMIENTO'].push(subsidy);
-      } else if (subsidy.name === 'AYUNT_ACTIVIDADES') {
-        this.filteredSubsidiesByType['AYUNT_ACTIVIDADES'].push(subsidy);
-      } else if (subsidy.name === 'MINISTERIO') {
-        this.filteredSubsidiesByType['MINISTERIO'].push(subsidy);
+    subsidies.forEach((subsidy) => {
+      const code = subsidy.name;
+      if (this.filteredSubsidiesByType[code]) {
+        this.filteredSubsidiesByType[code].push(subsidy);
       }
     });
   }
 
   tabActive(event: MatTabChangeEvent): void {
-    console.log('🧪 MatTabChangeEvent:', event);
-    if (!event.tab || !event.tab.textLabel) {
-      console.warn('Tab o textLabel no están disponibles aún', event);
-      return;
-    }
+    this.selectedIndex = event.index;
+    this.currentTab = event.tab?.textLabel || null;
 
-    this.currentTab = event.tab.textLabel;
-
-    switch (this.currentTab) {
-      case 'GENERALITAT':
-        this.currentFilterSubsidyType = 'Factura';
-        break;
-      case 'DIPUTACION':
-        this.currentFilterSubsidyType = 'Ticket';
-        break;
-      case 'AYUNT_ACTIVIDADES':
-      case 'AYUNT_EQUIPAMIENTO':
-        this.currentFilterSubsidyType = 'Ingreso';
-        break;
-      case 'MINISTERIO':
-        this.currentFilterSubsidyType = null;
-        break;
-      default:
-        this.currentFilterSubsidyType = null;
-        break;
-    }
-
-    if (this.currentFilterSubsidyType !== null) {
-      this.subsidiesFacade.applyFilterTab(this.currentFilterSubsidyType);
-    } else {
-      this.clearFilter();
-    }
+    const selectedTab = this.tabSubsidies.toArray()[event.index];
+    selectedTab?.load(); // ⬅️ llama al método `load()` del tab activo
   }
-
-  // applyFiltersWords(keyword: string): void {
-  //   this.subsidiesFacade.applyFiltersWords(keyword);
-  // }
 
   clearFilter(): void {
     this.currentFilterSubsidyType = null;
@@ -304,36 +231,19 @@ export class SubsidiesPageComponent implements OnInit {
     itemId: number;
     newSubsidyData: SubsidyModel;
   }): void {
-    if (event.itemId) {
-      this.subsidiesFacade.editSubsidy(event.itemId, event.newSubsidyData);
-      // Después de editar, recarga las facturas y aplica el filtro
-      this.subsidiesFacade.loadAllSubsidies();
-      // this.subsidiesFacade.applyFilterTab(this.currentFilterSubsidyType); // Aplicar el filtro actual
-    } else {
-      this.subsidiesFacade
-        .addSubsidy(event.newSubsidyData)
-        .pipe(
-          takeUntilDestroyed(this.destroyRef),
-          tap(() => {
-            // this.subsidiesFacade.applyFilterTab(this.currentFilterSubsidyType);
-            this.onCloseModal();
-          })
-        )
-        .subscribe();
-    }
-    this.onCloseModal();
+    const request$ = event.itemId
+      ? this.subsidiesFacade.editSubsidy(event.itemId, event.newSubsidyData)
+      : this.subsidiesFacade.addSubsidy(event.newSubsidyData);
+
+    request$
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap(() => this.onCloseModal())
+      )
+      .subscribe();
   }
 
-  applyFilter(keyword: string): void {
-    if (!keyword) {
-      this.filteredSubsidies = this.subsidies; // Si no hay palabra clave, mostrar todos los libros
-    } else {
-      keyword = keyword.toLowerCase();
-      this.filteredSubsidies = this.subsidies.filter(
-        (invoice) =>
-          Object.values(invoice).join(' ').toLowerCase().includes(keyword) // Filtrar libros por la palabra clave
-      );
-    }
-    this.number = this.filteredSubsidies.length; // Actualizar el conteo de libros filtrados
+  applyFilterWord(keyword: string): void {
+    this.subsidiesFacade.applyFilterWord(keyword);
   }
 }

@@ -1,35 +1,36 @@
-<div>
+<div class="sticky-zone">
   <app-dashboard-header
     [icon]="'uil uil-users-alt'"
     [title]="'Asociación'"
     [number]="number"
     [type]="'socias'"
   />
-  <div class="flex flex-col py-8 px-4" [class.sticky-toolbar]="isStickyToolbar">
+  <div class="flex flex-1 flex-col justify-center px-8 gap-y-3">
     <app-filters
-      [filters]="filtersYears"
-      (filterClicked)="filterYearSelected($event)"
-      class="mb-6"
+      [filters]="filters"
+      (filterClicked)="filterSelected($event)"
     ></app-filters>
-    <div class="px-4 flex add mb-4" *ngIf="selectedFilterYear === null">
+    <div class="flex gap-x-4">
       <app-button-add
         [buttonText]="'Nueva socia'"
         [iconClass]="'uil-plus'"
         (addClicked)="addNewPartnerModal()"
       />
-      <app-input-search (onDebounce)="applyFilter($event)" class="flex-1" />
+      <app-input-search (onDebounce)="applyFilterWord($event)" class="flex-1" />
     </div>
   </div>
+</div>
+<div class="flex flex-col px-8">
   <!-- Spinner Loading -->
-  <app-spinner-loading *ngIf="!dataLoaded; else results" />
+  <app-spinner-loading *ngIf="isLoading; else results" />
   <!-- Tabla -->
   <ng-template #results>
-    <app-table-partners
-      [data]="filteredPartners"
-      (openModal)="onOpenModal($event)"
-      class="pb-4 px-8 flex"
-      [class.sticky-table]="isStickyToolbar"
-    />
+    <div class="pb-4 flex">
+      <app-table-partners
+        [data]="filteredPartners"
+        (openModal)="onOpenModal($event)"
+      />
+    </div>
   </ng-template>
 </div>
 

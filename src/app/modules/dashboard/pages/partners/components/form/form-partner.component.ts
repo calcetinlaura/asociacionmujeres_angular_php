@@ -1,5 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, inject, Input, Output } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  EventEmitter,
+  inject,
+  Input,
+  Output,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   FormArray,
   FormControl,
@@ -9,13 +17,13 @@ import {
 } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import townsData from 'data/towns.json';
 import { filter, tap } from 'rxjs';
-import { PartnersFacade } from 'src/app/application';
+import { PartnersFacade } from 'src/app/application/partners.facade';
 import { PartnerModel } from 'src/app/core/interfaces/partner.interface';
 import { TypeList } from 'src/app/core/models/general.model';
 import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
-
 @Component({
   selector: 'app-form-partner',
   standalone: true,
@@ -31,6 +39,7 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
 })
 export class FormPartnerComponent {
   private partnersFacade = inject(PartnersFacade);
+  private destroyRef = inject(DestroyRef);
   private generalService = inject(GeneralService);
 
   @Input() itemId!: number;
@@ -52,21 +61,32 @@ export class FormPartnerComponent {
     name: new FormControl('', [Validators.required]),
     surname: new FormControl(''),
     birthday: new FormControl<string | null>(null),
+    province: new FormControl(''),
+    town: new FormControl(''),
     post_code: new FormControl(''),
     address: new FormControl(''),
     phone: new FormControl(''),
     email: new FormControl(''),
-    town: new FormControl(''),
     cuotas: new FormArray([]), // FormArray para checkboxes dinámicos
     img: new FormControl(''),
     observations: new FormControl(''),
     death: new FormControl(false),
     unsubscribe: new FormControl(false),
   });
+  provincias: {
+    label: string;
+    code: string;
+    towns: { label: string; code: string }[];
+  }[] = [];
+  municipios: { label: string; code: string }[] = [];
+  currentYear = this.generalService.currentYear;
 
   ngOnInit(): void {
-    const currentYear = new Date().getFullYear();
-    this.years = this.generalService.loadYears(currentYear, 1995);
+    this.years = this.generalService.loadYears(this.currentYear, 1995);
+
+    this.provincias = townsData
+      .flatMap((region) => region.provinces)
+      .sort((a, b) => a.label.localeCompare(b.label));
 
     // Inicializa los checkboxes como vacíos al principio
     this.initializeCuotasControls();
@@ -75,9 +95,15 @@ export class FormPartnerComponent {
       this.partnersFacade.loadPartnerById(this.itemId);
       this.partnersFacade.selectedPartner$
         .pipe(
+          takeUntilDestroyed(this.destroyRef),
           filter((partner: PartnerModel | null) => partner !== null),
           tap((partner: PartnerModel | null) => {
             if (partner) {
+              // 🔹 Primero actualizamos los municipios basándonos en la provincia recibida
+              const province = this.provincias.find(
+                (p) => p.label === partner.province
+              );
+              this.municipios = province?.towns ?? [];
               this.partnerData = partner;
               this.formPartner.patchValue({
                 name: partner.name,
@@ -85,11 +111,13 @@ export class FormPartnerComponent {
                 birthday: partner.birthday
                   ? partner.birthday.toString().slice(0, 10)
                   : '',
+                province: partner.province || '',
+                town: partner.town || '',
                 post_code: partner.post_code || '',
                 address: partner.address || '',
                 phone: partner.phone || '',
                 email: partner.email || '',
-                town: partner.town || '',
+
                 observations: partner.observations || '',
                 img: partner.img || '',
                 death: partner.death || false,
@@ -112,6 +140,12 @@ export class FormPartnerComponent {
     }
   }
 
+  onProvinceChange(): void {
+    const selectedProvince = this.formPartner.value.province;
+    const province = this.provincias.find((p) => p.label === selectedProvince);
+    this.municipios = province?.towns ?? [];
+    this.formPartner.patchValue({ town: '' }); // limpia el municipio
+  }
   async onImageSelected(file: File) {
     const result = await this.generalService.handleFileSelection(file);
     this.selectedImageFile = result.file;
@@ -176,11 +210,12 @@ export class FormPartnerComponent {
     formData.append('name', this.formPartner.value.name ?? '');
     formData.append('surname', this.formPartner.value.surname ?? '');
     formData.append('birthday', this.formPartner.value.birthday || '');
+    formData.append('province', this.formPartner.value.province ?? '');
+    formData.append('town', this.formPartner.value.town ?? '');
     formData.append('post_code', this.formPartner.value.post_code ?? '');
     formData.append('address', this.formPartner.value.address ?? '');
     formData.append('phone', this.formPartner.value.phone ?? '');
     formData.append('email', this.formPartner.value.email ?? '');
-    formData.append('town', this.formPartner.value.town ?? '');
     formData.append('observations', this.formPartner.value.observations ?? '');
     formData.append('death', String(this.formPartner.value.death ?? false)); // 🔧 Arreglado
     formData.append(

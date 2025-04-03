@@ -5,10 +5,9 @@ import {
   Validators,
 } from '@angular/forms';
 import { Component, DestroyRef, inject, OnInit } from '@angular/core';
-import { AuthService } from '../../../../modules/auth/services/auth.service';
+import { AuthService } from 'src/app/modules/auth/services/auth.service';
 import { Router, RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { CookieService } from 'ngx-cookie-service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { tap } from 'rxjs';
 

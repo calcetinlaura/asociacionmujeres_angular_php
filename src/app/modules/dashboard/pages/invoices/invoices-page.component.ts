@@ -1,37 +1,29 @@
+import { CommonModule } from '@angular/common';
+import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { MatTabChangeEvent, MatTabsModule } from '@angular/material/tabs';
+import { combineLatest, tap } from 'rxjs';
+import { InvoicesFacade } from 'src/app/application/invoices.facade';
 import {
-  Component,
-  DestroyRef,
-  ElementRef,
-  HostListener,
-  inject,
-  OnInit,
-  ViewChild,
-} from '@angular/core';
-import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
+  InvoiceModel,
+  InvoiceWithCreditorModel,
+} from 'src/app/core/interfaces/invoice.interface';
 import {
   Filter,
   TypeActionModal,
   TypeList,
 } from 'src/app/core/models/general.model';
 import { InvoicesService } from 'src/app/core/services/invoices.services';
-import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
-import { CommonModule } from '@angular/common';
-import { InvoicesFacade } from 'src/app/application';
-import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
-import { combineLatest, tap } from 'rxjs';
+import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
+import { FiltersComponent } from 'src/app/modules/landing/components/filters/filters.component';
 import { AddButtonComponent } from 'src/app/shared/components/buttons/button-add/button-add.component';
 import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
-import { TableInvoicesComponent } from './components/table-invoices/table-invoices.component';
-import { FiltersComponent } from 'src/app/modules/landing/components/filters/filters.component';
-import { MatTabChangeEvent, MatTabsModule } from '@angular/material/tabs';
-import {
-  InvoiceModel,
-  InvoiceWithCreditorModel,
-} from 'src/app/core/interfaces/invoice.interface';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { SpinnerLoadingComponent } from '../../../landing/components/spinner-loading/spinner-loading.component';
+import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
+import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
+import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
+import { TableInvoicesComponent } from './components/table-invoices/table-invoices.component';
 
 @Component({
   selector: 'app-invoices-page',
@@ -74,44 +66,15 @@ export class InvoicesPageComponent implements OnInit {
   item: any;
   searchKeywordFilter = new FormControl();
   isStickyToolbar: boolean = false;
-  selectedFilterYear: number | null = null;
-
-  @ViewChild('toolbar') toolbar!: ElementRef;
-
-  @HostListener('window:scroll', [])
-  onWindowScroll() {
-    const scrollPosition =
-      window.scrollY ||
-      document.documentElement.scrollTop ||
-      document.body.scrollTop ||
-      0;
-
-    if (scrollPosition > 50) {
-      this.isStickyToolbar = true;
-    } else {
-      this.isStickyToolbar = false;
-    }
-  }
+  selectedFilter: number | null = null;
+  currentYear = this.generalService.currentYear;
 
   ngOnInit(): void {
-    const currentYear = this.generalService.currentYear;
-    const startYear = 2018;
-
-    for (let year = startYear; year <= currentYear; year++) {
-      if (year === currentYear) {
-        this.filtersYears.push({ code: year, name: `Año actual ${year}` });
-      } else {
-        this.filtersYears.push({
-          code: year.toString(),
-          name: year.toString(),
-        });
-      }
-    }
-    // Invertir el array para que el último año esté primero
-    this.filtersYears.reverse();
-    this.loadInvoicesByYears(
-      this.selectedFilterYear ?? this.generalService.currentYear
-    );
+    (this.filtersYears = this.generalService.getYearFilters(
+      2018,
+      this.currentYear
+    )),
+      this.loadInvoicesByYears(this.selectedFilter ?? this.currentYear);
 
     // combinar ambos para simplificar y evitar doble carga innecesaria. Suscribirse a los cambios en las facturas filtradas
     combineLatest([
@@ -158,7 +121,7 @@ export class InvoicesPageComponent implements OnInit {
 
   filterYearSelected(filter: string): void {
     const year = parseInt(filter, 10); // convertir a número
-    this.selectedFilterYear = year;
+    this.selectedFilter = year;
     this.invoicesFacade.loadInvoicesByYears(year);
     this.invoicesFacade.invoices$
       .pipe(
@@ -201,14 +164,14 @@ export class InvoicesPageComponent implements OnInit {
     }
 
     if (this.currentFilterType !== null) {
-      this.invoicesFacade.applyFilterTab(this.currentFilterType);
+      this.invoicesFacade.applyFilterWordTab(this.currentFilterType);
     } else {
       this.clearFilter();
     }
   }
 
-  applyFiltersWords(keyword: string): void {
-    this.invoicesFacade.applyFiltersWords(keyword);
+  applyFilterWord(keyword: string): void {
+    this.invoicesFacade.applyFilterWord(keyword);
   }
 
   clearFilter(): void {
@@ -241,20 +204,16 @@ export class InvoicesPageComponent implements OnInit {
     if (event.itemId) {
       this.invoicesFacade.editInvoice(event.itemId, event.newInvoiceData);
       // Después de editar, recarga las facturas y aplica el filtro
-      this.loadInvoicesByYears(
-        this.selectedFilterYear ?? this.generalService.currentYear
-      );
-      this.invoicesFacade.applyFilterTab(this.currentFilterType); // Aplicar el filtro actual
+      this.loadInvoicesByYears(this.selectedFilter ?? this.currentYear);
+      this.invoicesFacade.applyFilterWordTab(this.currentFilterType); // Aplicar el filtro actual
     } else {
       this.invoicesFacade
         .addInvoice(event.newInvoiceData)
         .pipe(
           takeUntilDestroyed(this.destroyRef),
           tap(() => {
-            this.loadInvoicesByYears(
-              this.selectedFilterYear ?? this.generalService.currentYear
-            );
-            this.invoicesFacade.applyFilterTab(this.currentFilterType);
+            this.loadInvoicesByYears(this.selectedFilter ?? this.currentYear);
+            this.invoicesFacade.applyFilterWordTab(this.currentFilterType);
             this.onCloseModal();
           })
         )

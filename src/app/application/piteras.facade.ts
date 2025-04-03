@@ -1,22 +1,27 @@
-import { DestroyRef, inject, Injectable } from '@angular/core';
-import { BehaviorSubject, catchError, Observable, tap, throwError } from 'rxjs';
-import { PiterasService } from '../core/services/piteras.services';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { PiteraModel } from '../core/interfaces/pitera.interface';
 import { HttpErrorResponse } from '@angular/common/http';
+import { DestroyRef, inject, Injectable } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { BehaviorSubject, catchError, Observable, tap, throwError } from 'rxjs';
+import { PiteraModel } from 'src/app/core/interfaces/pitera.interface';
+import { PiterasService } from 'src/app/core/services/piteras.services';
 
 @Injectable({
   providedIn: 'root',
 })
 export class PiterasFacade {
-  private destroyRef = inject(DestroyRef);
-  private piterasService = inject(PiterasService);
-  private piterasSubject = new BehaviorSubject<PiteraModel[] | null>(null);
-  private selectedPiterasSubject = new BehaviorSubject<PiteraModel | null>(
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly piterasService = inject(PiterasService);
+  private readonly piterasSubject = new BehaviorSubject<PiteraModel[] | null>(
     null
   );
+  private readonly filteredPiterasSubject = new BehaviorSubject<
+    PiteraModel[] | null
+  >(null);
+  private readonly selectedPiterasSubject =
+    new BehaviorSubject<PiteraModel | null>(null);
   piteras$ = this.piterasSubject.asObservable();
   selectedPitera$ = this.selectedPiterasSubject.asObservable();
+  filteredPiteras$ = this.filteredPiterasSubject.asObservable();
 
   constructor() {}
 
@@ -25,7 +30,7 @@ export class PiterasFacade {
       .getPiteras()
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((piteras: PiteraModel[]) => this.piterasSubject.next(piteras)),
+        tap((piteras: PiteraModel[]) => this.updatePiteraState(piteras)),
         catchError(this.handleError)
       )
       .subscribe();
@@ -71,6 +76,28 @@ export class PiterasFacade {
 
   clearSelectedPitera(): void {
     this.selectedPiterasSubject.next(null);
+  }
+
+  applyFilterWord(keyword: string): void {
+    const allPiteras = this.piterasSubject.getValue();
+
+    if (!keyword.trim() || !allPiteras) {
+      this.filteredPiterasSubject.next(allPiteras);
+      return;
+    }
+    const search = keyword.trim().toLowerCase();
+    const filteredPiteras = allPiteras.filter(
+      (pitera) =>
+        pitera.title.toLowerCase().includes(search) ||
+        (pitera.theme && pitera.theme.toLowerCase().includes(search))
+    );
+
+    this.filteredPiterasSubject.next(filteredPiteras);
+  }
+
+  updatePiteraState(piteras: PiteraModel[]): void {
+    this.piterasSubject.next(piteras);
+    this.filteredPiterasSubject.next(piteras);
   }
 
   // Método para manejar errores

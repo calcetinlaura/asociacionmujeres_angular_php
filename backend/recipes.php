@@ -35,7 +35,7 @@ switch ($method) {
         $latestYear = $data['latestYear'];
 
         if ($latestYear) {
-            // Obtener libros filtrando por el último año
+            // Obtener recetas filtrando por el último año
             $stmt = $connection->prepare("SELECT * FROM recipes WHERE year = ?");
             $stmt->bind_param("i", $latestYear);
             $stmt->execute();
@@ -49,7 +49,7 @@ switch ($method) {
             echo json_encode([]);
         }
     } elseif (isset($_GET['year'])) {
-        // Obtener libros filtrando por año
+        // Obtener recetas filtrando por año
         $year = $_GET['year'];
         $stmt = $connection->prepare("SELECT * FROM recipes WHERE year = ?");
         $stmt->bind_param("i", $year);
@@ -60,11 +60,11 @@ switch ($method) {
             $recipes[] = $row;
         }
         echo json_encode($recipes);
-    } elseif (isset($_GET['gender'])) {
-        // Obtener libros filtrando por género
-        $gender = $_GET['gender'];
-        $stmt = $connection->prepare("SELECT * FROM recipes WHERE gender = ?");
-        $stmt->bind_param("s", $gender);
+    } elseif (isset($_GET['category'])) {
+        // Obtener recetas filtrando por género
+        $category = $_GET['category'];
+        $stmt = $connection->prepare("SELECT * FROM recipes WHERE category = ?");
+        $stmt->bind_param("s", $category);
         $stmt->execute();
         $result = $stmt->get_result();
         $recipes = [];
@@ -73,7 +73,7 @@ switch ($method) {
         }
         echo json_encode($recipes);
     } else {
-        // Obtener todos los libros
+        // Obtener todos los recetas
         $stmt = $connection->prepare("SELECT * FROM recipes");
         $stmt->execute();
         $result = $stmt->get_result();

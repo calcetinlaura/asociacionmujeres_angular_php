@@ -7,28 +7,30 @@ import {
   Input,
   Output,
 } from '@angular/core';
-import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatRadioModule } from '@angular/material/radio';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   FormControl,
   FormGroup,
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { filter, tap } from 'rxjs';
-import { filterSubsidies } from 'src/app/core/models/general.model';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   MatAutocompleteModule,
   MatAutocompleteSelectedEvent,
 } from '@angular/material/autocomplete';
+import { MatCardModule } from '@angular/material/card';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { CreditorModel } from 'src/app/core/interfaces/creditor.interface';
+import { MatRadioModule } from '@angular/material/radio';
 import { EditorModule } from '@tinymce/tinymce-angular';
-import { MatCardModule } from '@angular/material/card';
-import { SubsidyModel } from 'src/app/core/interfaces/subsidy.interface';
+import { filter, tap } from 'rxjs';
 import { SubsidiesFacade } from 'src/app/application/subsidies.facade';
+import { CreditorModel } from 'src/app/core/interfaces/creditor.interface';
+import {
+  categoryFilterSubsidies,
+  SubsidyModel,
+} from 'src/app/core/interfaces/subsidy.interface';
 import { SubsidiesService } from 'src/app/core/services/subsidies.services';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
@@ -63,7 +65,7 @@ export class FormSubsidyComponent {
   titleForm: string = 'Registrar subvención';
   buttonAction: string = 'Guardar';
   years: number[] = [];
-  FilterSubsidies = filterSubsidies;
+  FilterSubsidies = categoryFilterSubsidies;
   creditors: CreditorModel[] = [];
   selectedCreditor?: CreditorModel;
   filteredCreditors: CreditorModel[] = [];
@@ -92,10 +94,10 @@ export class FormSubsidyComponent {
     amount_association: new FormControl(),
     observations: new FormControl(''),
   });
+  currentYear = this.generalService.currentYear;
 
   ngOnInit(): void {
-    const currentYear = this.generalService.currentYear;
-    this.years = this.generalService.loadYears(currentYear, 2018);
+    this.years = this.generalService.loadYears(this.currentYear, 2018);
 
     if (this.itemId) {
       this.subsidiesFacade.loadSubsidyById(this.itemId);

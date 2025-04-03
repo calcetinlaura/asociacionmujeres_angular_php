@@ -7,32 +7,32 @@ import {
   Input,
   Output,
 } from '@angular/core';
-import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatRadioModule } from '@angular/material/radio';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   FormControl,
   FormGroup,
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { filter, map, Observable, tap, throwError } from 'rxjs';
-import { InvoicesFacade } from 'src/app/application';
-import { filterSubsidies } from 'src/app/core/models/general.model';
-import { CreditorsService } from 'src/app/core/services/creditors.services';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   MatAutocompleteModule,
   MatAutocompleteSelectedEvent,
 } from '@angular/material/autocomplete';
+import { MatCardModule } from '@angular/material/card';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { InvoiceWithCreditorModel } from 'src/app/core/interfaces/invoice.interface';
+import { MatRadioModule } from '@angular/material/radio';
+import { EditorModule } from '@tinymce/tinymce-angular';
+import { filter, map, Observable, tap, throwError } from 'rxjs';
+import { InvoicesFacade } from 'src/app/application/invoices.facade';
 import {
   CreditorAutocompleteModel,
   CreditorModel,
 } from 'src/app/core/interfaces/creditor.interface';
-import { EditorModule } from '@tinymce/tinymce-angular';
-import { MatCardModule } from '@angular/material/card';
+import { InvoiceWithCreditorModel } from 'src/app/core/interfaces/invoice.interface';
+import { categoryFilterSubsidies } from 'src/app/core/interfaces/subsidy.interface';
+import { CreditorsService } from 'src/app/core/services/creditors.services';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
@@ -70,7 +70,7 @@ export class FormInvoiceComponent {
   titleForm: string = 'Registrar factura';
   buttonAction: string = 'Guardar';
   years: number[] = [];
-  FilterSubsidies = filterSubsidies;
+  FilterSubsidies = categoryFilterSubsidies;
   creditors: CreditorModel[] = [];
   selectedCreditor?: CreditorAutocompleteModel;
   filteredCreditors: CreditorModel[] = [];
@@ -98,10 +98,10 @@ export class FormInvoiceComponent {
     ]),
     invoice_file: new FormControl<string | File | null>(null), // 🔹 Acepta string, File o null
   });
+  currentYear = this.generalService.currentYear;
 
   ngOnInit(): void {
-    const currentYear = this.generalService.currentYear;
-    this.years = this.generalService.loadYears(currentYear, 2018);
+    this.years = this.generalService.loadYears(this.currentYear, 2018);
 
     if (this.itemId) {
       this.invoicesFacade.loadInvoiceById(this.itemId);

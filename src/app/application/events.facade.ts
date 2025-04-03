@@ -1,30 +1,80 @@
-import { DestroyRef, inject, Injectable } from '@angular/core';
-import { BehaviorSubject, catchError, Observable, tap, throwError } from 'rxjs';
-import { EventsService } from '../core/services/events.services';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { EventModel } from '../core/interfaces/event.interface';
 import { HttpErrorResponse } from '@angular/common/http';
+import { DestroyRef, inject, Injectable } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import {
+  BehaviorSubject,
+  catchError,
+  map,
+  Observable,
+  of,
+  switchMap,
+  tap,
+  throwError,
+} from 'rxjs';
+import { EventWithPlaceModel } from 'src/app/core/interfaces/event.interface';
+import { PlaceModel } from 'src/app/core/interfaces/place.interface';
+import { EventsService } from 'src/app/core/services/events.services';
+import { PlacesService } from 'src/app/core/services/places.services';
 
 @Injectable({
   providedIn: 'root',
 })
 export class EventsFacade {
-  private destroyRef = inject(DestroyRef);
-  private eventsService = inject(EventsService);
-  private eventsSubject = new BehaviorSubject<EventModel[] | null>(null);
-  private selectedEventSubject = new BehaviorSubject<EventModel | null>(null);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly eventsService = inject(EventsService);
+  private readonly placesService = inject(PlacesService);
+  private readonly eventsSubject = new BehaviorSubject<
+    EventWithPlaceModel[] | null
+  >(null);
+  private readonly filteredEventsSubject = new BehaviorSubject<
+    EventWithPlaceModel[] | null
+  >(null);
+  private readonly selectedEventSubject =
+    new BehaviorSubject<EventWithPlaceModel | null>(null);
 
   events$ = this.eventsSubject.asObservable();
+  filteredEvents$ = this.filteredEventsSubject.asObservable();
   selectedEvent$ = this.selectedEventSubject.asObservable();
+  currentYear: number | null = null;
+  currentFilter: number | null = null;
 
   constructor() {}
+
+  setCurrentFilter(year: number | null): void {
+    this.currentFilter = year;
+  }
+
+  private reloadCurrentFilteredYear(): void {
+    if (this.currentFilter !== null) {
+      this.loadEventsByYear(this.currentFilter);
+    } else {
+      this.loadAllEvents();
+    }
+  }
 
   loadAllEvents(): void {
     this.eventsService
       .getEvents()
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((events: EventModel[]) => this.updateBookState(events)),
+        switchMap((events) => this.enrichWithPlaceData(events)),
+        catchError(this.handleError)
+      )
+      .subscribe();
+  }
+
+  setCurrentYear(year: number): void {
+    this.currentYear = year;
+  }
+
+  loadEventsByYear(year: number): void {
+    this.setCurrentFilter(year);
+
+    this.eventsService
+      .getEventsByYear(year)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        switchMap((events) => this.enrichWithPlaceData(events)),
         catchError(this.handleError)
       )
       .subscribe();
@@ -35,24 +85,24 @@ export class EventsFacade {
       .getEventById(id)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((event: EventModel) => this.selectedEventSubject.next(event)),
+        tap((event) => this.selectedEventSubject.next(event)),
         catchError(this.handleError)
       )
       .subscribe();
   }
 
-  addEvent(event: FormData): Observable<FormData> {
-    return this.eventsService.add(event).pipe(
+  editEvent(itemId: number, event: FormData): Observable<FormData> {
+    return this.eventsService.edit(itemId, event).pipe(
       takeUntilDestroyed(this.destroyRef),
-      tap(() => this.loadAllEvents()),
+      tap(() => this.reloadCurrentFilteredYear()),
       catchError(this.handleError)
     );
   }
 
-  editEvent(itemId: number, event: FormData): Observable<FormData> {
-    return this.eventsService.edit(itemId, event).pipe(
+  addEvent(event: FormData): Observable<FormData> {
+    return this.eventsService.add(event).pipe(
       takeUntilDestroyed(this.destroyRef),
-      tap(() => this.loadAllEvents()),
+      tap(() => this.reloadCurrentFilteredYear()),
       catchError(this.handleError)
     );
   }
@@ -62,7 +112,7 @@ export class EventsFacade {
       .delete(id)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap(() => this.loadAllEvents()),
+        tap(() => this.reloadCurrentFilteredYear()),
         catchError(this.handleError)
       )
       .subscribe();
@@ -71,29 +121,57 @@ export class EventsFacade {
   clearSelectedEvent(): void {
     this.selectedEventSubject.next(null);
   }
-  updateBookState(books: EventModel[]): void {
-    this.eventsSubject.next(books);
-  }
-  // Método para manejar errores
-  handleError(error: HttpErrorResponse) {
-    let errorMessage = '';
 
-    if (error.error instanceof ErrorEvent) {
-      // Error del lado del cliente o red
-      errorMessage = `Error del cliente o red: ${error.error.message}`;
-    } else {
-      // El backend retornó un código de error no exitoso
-      errorMessage = `Código de error del servidor: ${error.status}\nMensaje: ${error.message}`;
+  applyFilterWord(keyword: string): void {
+    const allEvents = this.eventsSubject.getValue();
+
+    if (!keyword.trim() || !allEvents) {
+      this.filteredEventsSubject.next(allEvents);
+      return;
+    }
+    const search = keyword.trim().toLowerCase();
+
+    const filteredEvents = allEvents.filter((event) =>
+      event.title.toLowerCase().includes(search)
+    );
+
+    this.enrichWithPlaceData(filteredEvents).subscribe(); // enriquecido
+  }
+
+  private enrichWithPlaceData(
+    events: EventWithPlaceModel[]
+  ): Observable<EventWithPlaceModel[]> {
+    if (!events || events.length === 0) {
+      this.updateEventState([]);
+      return of([]);
     }
 
-    console.error(errorMessage); // Para depuración
+    return this.placesService.getPlaces().pipe(
+      map((places: PlaceModel[]) => {
+        const enriched = events.map((event) => ({
+          ...event,
+          placeData:
+            places.find((p) => p.id === Number(event.place)) ?? undefined,
+        }));
 
-    // Aquí podrías devolver un mensaje amigable para el usuario, o simplemente retornar el error
-    return throwError(
-      () =>
-        new Error(
-          'Hubo un problema con la solicitud, inténtelo de nuevo más tarde.'
-        )
+        this.updateEventState(enriched); // ✅ actualiza estado
+        return enriched;
+      })
     );
+  }
+
+  private updateEventState(events: EventWithPlaceModel[]): void {
+    this.eventsSubject.next(events);
+    this.filteredEventsSubject.next(events);
+  }
+
+  private handleError(error: HttpErrorResponse) {
+    const errorMessage =
+      error.error instanceof ErrorEvent
+        ? `Error del cliente o red: ${error.error.message}`
+        : `Error del servidor: ${error.status} - ${error.message}`;
+
+    console.error('EventsFacade error:', errorMessage);
+    return throwError(() => new Error('Error al procesar la solicitud.'));
   }
 }

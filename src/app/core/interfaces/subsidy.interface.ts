@@ -1,6 +1,8 @@
+import { Filter } from '../models/general.model';
+
 export interface SubsidyModel {
   id?: number;
-  name?: string;
+  name: string;
   year: number;
   date_presentation: Date | null;
   date_justification: Date | null;
@@ -16,3 +18,11 @@ export interface SubsidyModel {
   amount_association?: number;
   observations?: string;
 }
+
+export const categoryFilterSubsidies: Filter[] = [
+  { code: 'AYUNT_EQUIPAMIENTO', name: 'Ayuntamiento Equipamiento' },
+  { code: 'AYUNT_ACTIVIDADES', name: 'Ayuntamiento Actividades' },
+  { code: 'DIPUTACION', name: 'Diputación' },
+  { code: 'GENERALITAT', name: 'Generalitat' },
+  { code: 'MINISTERIO', name: 'Ministerio' },
+];

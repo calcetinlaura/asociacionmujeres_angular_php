@@ -3,6 +3,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { catchError } from 'rxjs/operators';
 import { Observable, throwError } from 'rxjs';
 import { environments } from 'src/environments/environments';
+import { RecipeModel } from 'src/app/core/interfaces/recipe.interface';
 
 @Injectable({
   providedIn: 'root',
@@ -59,6 +60,24 @@ export class RecipesService {
     return this.http
       .delete(this.apiUrl, { params: { id: id } })
       .pipe(catchError(this.handleError));
+  }
+
+  sortRecipesByTitle(recipes: RecipeModel[]): RecipeModel[] {
+    return recipes.sort((a, b) =>
+      a.title.toLowerCase().localeCompare(b.title.toLowerCase())
+    );
+  }
+
+  sortRecipesById(recipes: RecipeModel[]): RecipeModel[] {
+    return recipes.sort((a, b) => b.id - a.id);
+  }
+
+  hasResults(recipes: RecipeModel[] | null): boolean {
+    return !!recipes && recipes.length > 0;
+  }
+
+  countRecipes(recipes: RecipeModel[] | null): number {
+    return recipes?.length ?? 0;
   }
 
   // Método para manejar errores

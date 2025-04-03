@@ -9,12 +9,12 @@ import {
 import { MatCardModule } from '@angular/material/card';
 import { EditorModule } from '@tinymce/tinymce-angular';
 import { filter, tap } from 'rxjs';
-import { MoviesFacade } from 'src/app/application';
+import { MoviesFacade } from 'src/app/application/movies.facade';
 import {
-  GenderFilterMovies,
+  genderFilterMovies,
   MovieModel,
 } from 'src/app/core/interfaces/movie.interface';
-import { filterMovies, TypeList } from 'src/app/core/models/general.model';
+import { TypeList } from 'src/app/core/models/general.model';
 import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
@@ -47,7 +47,7 @@ export class FormMovieComponent {
   titleForm: string = 'Registrar película';
   buttonAction: string = 'Guardar';
   years: number[] = [];
-  genderMovies = GenderFilterMovies;
+  genderMovies = genderFilterMovies;
   typeList = TypeList.Movies;
   formMovie = new FormGroup({
     title: new FormControl('', [Validators.required]),
@@ -57,10 +57,10 @@ export class FormMovieComponent {
     img: new FormControl(''),
     year: new FormControl(0, [Validators.required, Validators.min(2000)]),
   });
+  currentYear = this.generalService.currentYear;
 
   ngOnInit(): void {
-    const currentYear = this.generalService.currentYear;
-    this.years = this.generalService.loadYears(currentYear, 2018);
+    this.years = this.generalService.loadYears(this.currentYear, 2018);
 
     if (this.itemId) {
       this.moviesFacade.loadMovieById(this.itemId);

@@ -1,28 +1,32 @@
+import { CommonModule } from '@angular/common';
 import {
   Component,
   DestroyRef,
-  ElementRef,
-  HostListener,
   inject,
   OnInit,
   ViewChild,
 } from '@angular/core';
-import { DashboardHeaderComponent } from '../../components/dashboard-header/dashboard-header.component';
-import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
-import { ColumnModel } from 'src/app/core/interfaces/column.interface';
-import { EventsService } from 'src/app/core/services/events.services';
-import { TableComponent } from '../../components/table/table.component';
-import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
-import { CommonModule } from '@angular/common';
-import { EventsFacade } from 'src/app/application';
-import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { tap } from 'rxjs';
+import { EventsFacade } from 'src/app/application/events.facade';
+import { ColumnModel } from 'src/app/core/interfaces/column.interface';
+import { EventWithPlaceModel } from 'src/app/core/interfaces/event.interface';
+import {
+  Filter,
+  TypeActionModal,
+  TypeList,
+} from 'src/app/core/models/general.model';
+import { EventsService } from 'src/app/core/services/events.services';
+import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
+import { TableComponent } from 'src/app/modules/dashboard/components/table/table.component';
+import { FiltersComponent } from 'src/app/modules/landing/components/filters/filters.component';
 import { AddButtonComponent } from 'src/app/shared/components/buttons/button-add/button-add.component';
 import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
-import { EventModel } from 'src/app/core/interfaces/event.interface';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { SpinnerLoadingComponent } from '../../../landing/components/spinner-loading/spinner-loading.component';
+import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
+import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
+import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
+import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
   selector: 'app-events-page',
@@ -30,115 +34,110 @@ import { SpinnerLoadingComponent } from '../../../landing/components/spinner-loa
   imports: [
     CommonModule,
     DashboardHeaderComponent,
-    TableComponent,
     ModalComponent,
     AddButtonComponent,
     ReactiveFormsModule,
     InputSearchComponent,
     SpinnerLoadingComponent,
+    TableComponent,
+    FiltersComponent,
   ],
   templateUrl: './events-page.component.html',
   styleUrl: './events-page.component.css',
 })
 export class EventsPageComponent implements OnInit {
-  private eventsFacade = inject(EventsFacade);
-  private modalService = inject(ModalService);
-  private destroyRef = inject(DestroyRef);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly modalService = inject(ModalService);
+  private readonly eventsFacade = inject(EventsFacade);
+  private readonly eventsService = inject(EventsService);
+  private readonly generalService = inject(GeneralService);
 
+  events: EventWithPlaceModel[] = [];
+  filteredEvents: EventWithPlaceModel[] = [];
+  filters: Filter[] = [];
+
+  selectedFilter: number | null = null;
+  currentYear = this.generalService.currentYear;
   typeList = TypeList.Events;
-  events: EventModel[] = [];
-  filteredEvents: EventModel[] = [];
-  searchForm!: FormGroup;
-  dataLoaded: boolean = false;
-  number: number = 0;
-  headerListEvents: ColumnModel[] = [];
-  isModalVisible: boolean = false;
+  isLoading = true;
+  isModalVisible = false;
+  number = 0;
+
+  item: EventWithPlaceModel | null = null;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
-  item: any;
-  searchKeywordFilter = new FormControl();
-  isStickyToolbar: boolean = false;
+  searchForm!: FormGroup;
 
-  @ViewChild('toolbar') toolbar!: ElementRef;
+  headerListEvents: ColumnModel[] = [
+    { title: 'Cartel', key: 'img' },
+    { title: 'Título', key: 'title' },
+    { title: 'Fecha', key: 'start' },
+    { title: 'Descripción', key: 'description' },
+    { title: 'Espacio', key: 'placeData' },
+    { title: 'Aforo', key: 'capacity' },
+    { title: 'Precio', key: 'price' },
+    { title: 'Estado', key: 'status' },
+    { title: 'Requiere inscripción', key: 'inscription' },
+  ];
 
-  @HostListener('window:scroll', [])
-  onWindowScroll() {
-    const scrollPosition =
-      window.scrollY ||
-      document.documentElement.scrollTop ||
-      document.body.scrollTop ||
-      0;
-
-    if (scrollPosition > 50) {
-      this.isStickyToolbar = true;
-    } else {
-      this.isStickyToolbar = false;
-    }
-  }
+  @ViewChild(InputSearchComponent)
+  private inputSearchComponent!: InputSearchComponent;
 
   ngOnInit(): void {
-    this.loadAllEvents();
+    this.filters = [
+      { code: '', name: 'Histórico eventos' },
+      ...this.generalService.getYearFilters(2018, this.currentYear),
+    ];
 
     this.modalService.modalVisibility$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((isVisible) => {
-          this.isModalVisible = isVisible;
-        })
+        tap((isVisible) => (this.isModalVisible = isVisible))
       )
       .subscribe();
 
-    this.headerListEvents = [
-      { title: 'Cartel', key: 'img' },
-      { title: 'Título', key: 'title' },
-      { title: 'Fecha', key: 'start' },
-      { title: 'Descripción', key: 'description' },
-      { title: 'Espacio', key: 'place' },
-      { title: 'Aforo', key: 'capacity' },
-      { title: 'Precio', key: 'price' },
-      { title: 'Estado', key: 'status' },
-      { title: 'Requiere inscripción', key: 'inscription' },
-    ];
-  }
+    this.filterSelected(this.currentYear.toString());
 
-  loadAllEvents(): void {
-    this.eventsFacade.loadAllEvents();
-    this.eventsFacade.events$
+    this.eventsFacade.filteredEvents$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((events) => {
-          this.updateEventState(events);
-        })
+        tap((events) => this.updateEventState(events))
       )
       .subscribe();
   }
 
-  applyFilter(keyword: string): void {
-    if (!keyword) {
-      this.filteredEvents = this.events; // Si no hay palabra clave, mostrar todos los libros
+  filterSelected(filter: string): void {
+    const year = Number(filter);
+    this.selectedFilter = !isNaN(year) && year > 0 ? year : null;
+    this.generalService.clearSearchInput(this.inputSearchComponent);
+
+    if (this.selectedFilter) {
+      this.eventsFacade.loadEventsByYear(this.selectedFilter);
     } else {
-      keyword = keyword.toLowerCase();
-      this.filteredEvents = this.events.filter(
-        (event) =>
-          Object.values(event).join(' ').toLowerCase().includes(keyword) // Filtrar libros por la palabra clave
-      );
+      this.eventsFacade.loadAllEvents();
     }
-    this.number = this.filteredEvents.length; // Actualizar el conteo de libros filtrados
   }
 
-  confirmDeleteEvent(item: any): void {
-    this.eventsFacade.deleteEvent(item.id);
-    this.onCloseModal();
+  applyFilterWord(keyword: string): void {
+    this.eventsFacade.applyFilterWord(keyword);
   }
 
   addNewEventModal(): void {
-    this.currentModalAction = TypeActionModal.Create;
-    this.item = null;
-    this.modalService.openModal();
+    this.openModal(TypeActionModal.Create, null);
   }
 
-  onOpenModal(event: { action: TypeActionModal; item?: any }): void {
-    this.currentModalAction = event.action;
-    this.item = event.item;
+  onOpenModal(event: {
+    action: TypeActionModal;
+    item?: EventWithPlaceModel;
+  }): void {
+    this.openModal(event.action, event.item ?? null);
+  }
+
+  private openModal(
+    action: TypeActionModal,
+    item: EventWithPlaceModel | null
+  ): void {
+    this.currentModalAction = action;
+    this.item = item;
     this.modalService.openModal();
   }
 
@@ -146,36 +145,31 @@ export class EventsPageComponent implements OnInit {
     this.modalService.closeModal();
   }
 
-  sendFormEvent(event: { itemId: number; newEventData: FormData }): void {
-    if (event.itemId) {
-      this.eventsFacade
-        .editEvent(event.itemId, event.newEventData)
-        .pipe(
-          takeUntilDestroyed(this.destroyRef),
-          tap(() => {
-            this.onCloseModal();
-          })
-        )
-        .subscribe();
-    } else {
-      this.eventsFacade
-        .addEvent(event.newEventData)
-        .pipe(
-          takeUntilDestroyed(this.destroyRef),
-          tap(() => {
-            this.onCloseModal();
-          })
-        )
-        .subscribe();
-    }
+  confirmDeleteEvent(event: EventWithPlaceModel | null): void {
+    if (!event) return;
+    this.eventsFacade.deleteEvent(event.id);
+    this.onCloseModal();
   }
-  private updateEventState(events: EventModel[] | null): void {
-    if (events === null) {
-      return;
-    }
-    this.events = events.sort((a, b) => b.id - a.id);
+
+  sendFormEvent(event: { itemId: number; newEventData: FormData }): void {
+    const request$ = event.itemId
+      ? this.eventsFacade.editEvent(event.itemId, event.newEventData)
+      : this.eventsFacade.addEvent(event.newEventData);
+
+    request$
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap(() => this.onCloseModal())
+      )
+      .subscribe();
+  }
+
+  private updateEventState(events: EventWithPlaceModel[] | null): void {
+    if (!events) return;
+
+    this.events = this.eventsService.sortEventsById(events);
     this.filteredEvents = [...this.events];
-    this.number = this.events.length;
-    this.dataLoaded = true;
+    this.number = this.eventsService.countEvents(events);
+    this.isLoading = false;
   }
 }

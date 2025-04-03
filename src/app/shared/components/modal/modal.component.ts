@@ -1,11 +1,11 @@
 import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { CommonModule } from '@angular/common';
-import { FormEventComponent } from '../../../modules/dashboard/pages/events/components/form/form-event.component';
-import { FormRecipeComponent } from '../../../modules/dashboard/pages/recipes/components/form/form-recipe.component';
-import { FormBookComponent } from '../../../modules/dashboard/pages/books/components/form/form-book.component';
-import { FormMovieComponent } from '../../../modules/dashboard/pages/movies/components/form/form-movie.component';
-import { FormPiteraComponent } from '../../../modules/dashboard/pages/piteras/components/form/form-pitera.component';
+import { FormEventComponent } from 'src/app/modules/dashboard/pages/events/components/form/form-event.component';
+import { FormRecipeComponent } from 'src/app/modules/dashboard/pages/recipes/components/form/form-recipe.component';
+import { FormBookComponent } from 'src/app/modules/dashboard/pages/books/components/form/form-book.component';
+import { FormMovieComponent } from 'src/app/modules/dashboard/pages/movies/components/form/form-movie.component';
+import { FormPiteraComponent } from 'src/app/modules/dashboard/pages/piteras/components/form/form-pitera.component';
 import { FormInvoiceComponent } from 'src/app/modules/dashboard/pages/invoices/components/form/form-invoice.component';
 import { FormCreditorComponent } from 'src/app/modules/dashboard/pages/creditors/components/form/form-creditor.component';
 import { FormPlaceComponent } from 'src/app/modules/dashboard/pages/places/components/form/form-place.component';

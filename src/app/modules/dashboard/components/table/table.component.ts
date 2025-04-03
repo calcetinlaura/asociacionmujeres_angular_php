@@ -13,12 +13,14 @@ import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatSort, Sort, MatSortModule } from '@angular/material/sort';
 import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { ColumnModel } from 'src/app/core/interfaces/column.interface';
-import { IconActionComponent } from '../../../../shared/components/buttons/icon-action/icon-action.component';
+import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
 import { CommonModule, DatePipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { FormControl } from '@angular/forms';
 import { CircleIndicatorComponent } from '../circle-indicator/circle-indicator.component';
-import { ItemImagePipe } from '../../../../shared/pipe/item-img.pipe';
+import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
+import { PhoneFormatPipe } from 'src/app/shared/pipe/phoneFormat.pipe';
+import { FilterTransformCodePipe } from 'src/app/shared/pipe/filterTransformCode.pipe';
 
 @Component({
   standalone: true,
@@ -31,6 +33,8 @@ import { ItemImagePipe } from '../../../../shared/pipe/item-img.pipe';
     MatIconModule,
     CircleIndicatorComponent,
     ItemImagePipe,
+    PhoneFormatPipe,
+    FilterTransformCodePipe,
   ],
   selector: 'app-table',
   templateUrl: './table.component.html',
@@ -108,18 +112,5 @@ export class TableComponent {
     const d1 = new Date(date1);
     const d2 = new Date(date2);
     return d1.getTime() === d2.getTime();
-  }
-  formatearTelefono(numero: string | null | undefined): string {
-    if (!numero) return ''; // Retorna una cadena vacía si el valor es null o undefined
-
-    let valor = numero.replace(/\D/g, ''); // Elimina caracteres no numéricos
-    if (valor.length > 10) valor = valor.slice(0, 10); // Limita a 10 caracteres
-
-    return valor.replace(
-      /(\d{3})(\d{2})?(\d{2})?(\d{2})?/,
-      (_, g1, g2, g3, g4) => {
-        return [g1, g2, g3, g4].filter(Boolean).join(' '); // Une con espacios
-      }
-    );
   }
 }

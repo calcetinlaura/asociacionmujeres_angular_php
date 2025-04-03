@@ -1,6 +1,11 @@
-<div class="flex flex-1 flex-col justify-between my-8 mx-40 card-subsidy">
+<div
+  *ngIf="item"
+  class="flex flex-1 flex-col justify-between my-8 mx-40 card-subsidy"
+>
   <h1 class="text-center mb-4">
-    Subvención {{ item.name | i18nSelect : nameSubsidy }} {{ item.year }}
+    Subvención
+    <span *ngIf="item?.name">{{ item.name | i18nSelect : nameSubsidy }}</span>
+    <span *ngIf="item?.year">{{ item.year }}</span>
     <app-icon-action
       [icon]="'uil-edit'"
       (click)="

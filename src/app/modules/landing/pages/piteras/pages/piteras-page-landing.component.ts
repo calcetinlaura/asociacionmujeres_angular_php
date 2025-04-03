@@ -1,13 +1,13 @@
+import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, inject } from '@angular/core';
-import { PiterasService } from 'src/app/core/services/piteras.services';
-import { SectionGenericComponent } from '../../../components/section-generic/section-generic.component';
-import { TypeList } from 'src/app/core/models/general.model';
-import { PiteraModel } from 'src/app/core/interfaces/pitera.interface';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { tap } from 'rxjs';
-import { SpinnerLoadingComponent } from '../../../components/spinner-loading/spinner-loading.component';
-import { CommonModule } from '@angular/common';
-import { PiterasFacade } from 'src/app/application';
+import { PiterasFacade } from 'src/app/application/piteras.facade';
+import { PiteraModel } from 'src/app/core/interfaces/pitera.interface';
+import { TypeList } from 'src/app/core/models/general.model';
+import { PiterasService } from 'src/app/core/services/piteras.services';
+import { SectionGenericComponent } from 'src/app/modules/landing/components/section-generic/section-generic.component';
+import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 
 @Component({
   selector: 'app-piteras-page-landing',
@@ -17,13 +17,14 @@ import { PiterasFacade } from 'src/app/application';
   providers: [PiterasService],
 })
 export class PiterasPageLandingComponent {
-  private piterasFacade = inject(PiterasFacade);
-  private destroyRef = inject(DestroyRef);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly piterasFacade = inject(PiterasFacade);
+  private readonly piterasService = inject(PiterasService);
 
-  typeList = TypeList;
   piteras: PiteraModel[] = [];
-  number: number = 0;
-  isLoading: boolean = true;
+  isLoading = true;
+  typeList = TypeList;
+  number = 0;
 
   ngOnInit(): void {
     this.loadAllPiteras();
@@ -35,11 +36,9 @@ export class PiterasPageLandingComponent {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((piteras) => {
-          if (piteras === null) {
-            return;
-          }
-          this.piteras = piteras.sort((a, b) => b.year - a.year);
-          this.number = this.piteras.length;
+          if (!piteras) return;
+          this.piteras = this.piterasService.sortPiterasByYear(piteras);
+          this.number = this.piterasService.countPiteras(piteras);
           this.isLoading = false;
         })
       )

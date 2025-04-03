@@ -35,12 +35,27 @@
           <input formControlName="cif" type="text" />
         </div>
         <div class="flex justify-between gap-x-4">
-          <!-- Municipio -->
-          <div class="box-input">
-            <label for="town">Municipio</label>
-            <input formControlName="town" type="text" />
+          <!-- Provincia -->
+          <div class="box-input flex flex-1">
+            <label for="province">Provincia</label>
+            <select formControlName="province" (change)="onProvinceChange()">
+              <option value="">Seleccione una provincia</option>
+              <option *ngFor="let prov of provincias" [value]="prov.label">
+                {{ prov.label }}
+              </option>
+            </select>
           </div>
-          <div class="box-input">
+          <!-- Municipio -->
+          <div class="box-input flex flex-1">
+            <label for="town">Municipio</label>
+            <select formControlName="town">
+              <option value="">Seleccione un municipio</option>
+              <option *ngFor="let mun of municipios" [value]="mun.label">
+                {{ mun.label }}
+              </option>
+            </select>
+          </div>
+          <div class="box-input w-auto">
             <label for="post_code">C.Postal</label>
             <input formControlName="post_code" type="text" />
           </div>
@@ -72,7 +87,10 @@
       <div class="box-input gap-x-4 px-4">
         <label for="category">Categoría </label>
         <select formControlName="category">
-          <option *ngFor="let type of filterCreditors" [value]="type.code">
+          <option
+            *ngFor="let type of categoryFilterCreditors"
+            [value]="type.code"
+          >
             {{ type.name }}
           </option>
         </select>

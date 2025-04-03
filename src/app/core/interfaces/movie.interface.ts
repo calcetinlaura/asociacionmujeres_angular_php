@@ -1,4 +1,4 @@
-import { Filter } from '../models/general.model';
+import { Filter } from 'src/app/core/models/general.model';
 
 export interface MovieModel {
   id: number;
@@ -12,7 +12,7 @@ export interface MovieModel {
 
 export type GenderMovies = 'COMEDIA' | 'DOCUMENTAL' | 'DRAMA';
 
-export const GenderFilterMovies: Filter[] = [
+export const genderFilterMovies: Filter[] = [
   { code: 'COMEDIA', name: 'COMEDIA' },
   { code: 'DOCUMENTAL', name: 'DOCUMENTAL' },
   { code: 'DRAMA', name: 'DRAMA' },

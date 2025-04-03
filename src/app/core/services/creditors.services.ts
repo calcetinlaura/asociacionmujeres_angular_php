@@ -3,7 +3,10 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { catchError } from 'rxjs/operators';
 import { Observable, throwError } from 'rxjs';
 import { environments } from 'src/environments/environments';
-import { CreditorModel } from '../interfaces/creditor.interface';
+import {
+  CreditorModel,
+  CreditorWithInvoices,
+} from 'src/app/core/interfaces/creditor.interface';
 
 @Injectable({
   providedIn: 'root',
@@ -14,6 +17,12 @@ export class CreditorsService {
 
   getCreditors(): Observable<any> {
     return this.http.get(this.apiUrl).pipe(catchError(this.handleError));
+  }
+
+  getCreditorsByCategory(category: string): Observable<any> {
+    return this.http
+      .get(this.apiUrl, { params: { category: category } })
+      .pipe(catchError(this.handleError));
   }
 
   getCreditorById(id: number): Observable<any> {
@@ -48,6 +57,28 @@ export class CreditorsService {
     return this.http
       .get<CreditorModel[]>(`${this.apiUrl}?q=${query}&_limit=6`)
       .pipe(catchError(this.handleError));
+  }
+
+  sortCreditorsByCompany(creditors: CreditorModel[]): CreditorModel[] {
+    return creditors.sort((a, b) =>
+      a.company
+        .toLowerCase()
+        .localeCompare(b.company.toLowerCase(), undefined, {
+          sensitivity: 'base',
+        })
+    );
+  }
+
+  sortCreditorsById(creditors: CreditorWithInvoices[]): CreditorWithInvoices[] {
+    return creditors.sort((a, b) => b.id - a.id);
+  }
+
+  hasResults(creditors: CreditorWithInvoices[] | null): boolean {
+    return !!creditors && creditors.length > 0;
+  }
+
+  countCreditors(creditors: CreditorWithInvoices[] | null): number {
+    return creditors?.length ?? 0;
   }
 
   handleError(error: HttpErrorResponse) {

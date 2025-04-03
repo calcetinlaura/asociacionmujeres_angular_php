@@ -10,7 +10,7 @@ import { TextBorderComponent } from 'src/app/shared/components/text/text-border/
 import { TextEditorComponent } from 'src/app/shared/components/text/text-editor/text-editor.component';
 import { TextIconComponent } from 'src/app/shared/components/text/text-icon/text-icon.component';
 import { TextTitleComponent } from 'src/app/shared/components/text/text-title/text-title.component';
-import { EurosFormatPipe } from '../../../../../../shared/pipe/eurosFormat.pipe';
+import { EurosFormatPipe } from 'src/app/shared/pipe/eurosFormat.pipe';
 
 @Component({
   selector: 'app-modal-show-invoice',

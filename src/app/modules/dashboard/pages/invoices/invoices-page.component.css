@@ -1,3 +1,9 @@
-.sticky-toolbar {
-  padding-top: 220px;
+.sticky-zone {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: white;
+  height: 270px;
+  display: flex;
+  flex-direction: column;
 }

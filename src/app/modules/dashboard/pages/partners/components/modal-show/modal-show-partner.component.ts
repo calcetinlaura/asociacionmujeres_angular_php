@@ -9,6 +9,7 @@ import { TextBackgroundComponent } from 'src/app/shared/components/text/text-bac
 import { TextBorderComponent } from 'src/app/shared/components/text/text-border/text-border.component';
 import { TextSubTitleComponent } from 'src/app/shared/components/text/text-subTitle/text-subtitle.component';
 import { TextIconComponent } from 'src/app/shared/components/text/text-icon/text-icon.component';
+import { PhoneFormatPipe } from 'src/app/shared/pipe/phoneFormat.pipe';
 @Component({
   selector: 'app-modal-show-partner',
   standalone: true,
@@ -21,6 +22,7 @@ import { TextIconComponent } from 'src/app/shared/components/text/text-icon/text
     TextBorderComponent,
     TextSubTitleComponent,
     TextIconComponent,
+    PhoneFormatPipe,
   ],
   templateUrl: './modal-show-partner.component.html',
 })

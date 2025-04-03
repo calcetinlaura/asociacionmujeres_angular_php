@@ -1,21 +1,24 @@
-import { DestroyRef, inject, Injectable } from '@angular/core';
-import { BehaviorSubject, catchError, Observable, tap, throwError } from 'rxjs';
-import { PlacesService } from '../core/services/places.services';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { PlaceModel } from '../core/interfaces/place.interface';
 import { HttpErrorResponse } from '@angular/common/http';
+import { DestroyRef, inject, Injectable } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { BehaviorSubject, catchError, Observable, tap, throwError } from 'rxjs';
+import { PlaceModel } from 'src/app/core/interfaces/place.interface';
+import { PlacesService } from 'src/app/core/services/places.services';
 
 @Injectable({
   providedIn: 'root',
 })
 export class PlacesFacade {
-  private destroyRef = inject(DestroyRef);
-  private placesService = inject(PlacesService);
-  private placesSubject = new BehaviorSubject<PlaceModel[] | null>(null);
-  private filteredPlacesSubject = new BehaviorSubject<PlaceModel[] | null>(
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly placesService = inject(PlacesService);
+  private readonly placesSubject = new BehaviorSubject<PlaceModel[] | null>(
     null
   );
-  private selectedPlaceSubject = new BehaviorSubject<PlaceModel | null>(null);
+  private readonly filteredPlacesSubject = new BehaviorSubject<
+    PlaceModel[] | null
+  >(null);
+  private readonly selectedPlaceSubject =
+    new BehaviorSubject<PlaceModel | null>(null);
   places$ = this.placesSubject.asObservable();
   selectedPlace$ = this.selectedPlaceSubject.asObservable();
   filteredPlaces$ = this.filteredPlacesSubject.asObservable();
@@ -36,6 +39,17 @@ export class PlacesFacade {
   loadPlacesByManagement(management: string): void {
     this.placesService
       .getPlacesByManagement(management)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap((places: PlaceModel[]) => this.updatePlaceState(places)),
+        catchError(this.handleError)
+      )
+      .subscribe();
+  }
+
+  loadPlacesByTown(type: string): void {
+    this.placesService
+      .getPlacesByTown(type)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((places: PlaceModel[]) => this.updatePlaceState(places)),
@@ -97,24 +111,24 @@ export class PlacesFacade {
     this.selectedPlaceSubject.next(null);
   }
 
-  applyFilter(keyword: string): void {
-    const searchValue = keyword.toLowerCase();
+  applyFilterWord(keyword: string): void {
     const allPlaces = this.placesSubject.getValue();
 
-    if (!searchValue) {
+    if (!keyword.trim() || !allPlaces) {
       this.filteredPlacesSubject.next(allPlaces);
-    } else {
-      const filteredPlaces = this.placesSubject
-        .getValue()!
-        .filter((place) => place.name.toLowerCase().includes(searchValue));
-
-      this.filteredPlacesSubject.next(filteredPlaces);
+      return;
     }
+    const search = keyword.trim().toLowerCase();
+    const filteredPlaces = allPlaces.filter((place) =>
+      place.name.toLowerCase().includes(search)
+    );
+
+    this.filteredPlacesSubject.next(filteredPlaces);
   }
 
   updatePlaceState(places: PlaceModel[]): void {
     this.placesSubject.next(places);
-    this.filteredPlacesSubject.next(places); // Actualiza también los libros filtrados
+    this.filteredPlacesSubject.next(places);
   }
 
   // Método para manejar errores

@@ -3,11 +3,12 @@ export interface PartnerModel {
   name: string;
   surname?: string;
   birthday?: string;
+  province?: string;
+  town?: string;
   post_code?: string;
   address?: string;
   phone?: string;
   email?: string;
-  town?: string;
   cuotas: number[];
   img?: string;
   observations?: string;

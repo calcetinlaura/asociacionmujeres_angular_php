@@ -10,8 +10,7 @@
 th {
   text-transform: uppercase;
   font-size: 12px;
-  padding: 10px;
-  border-bottom: 1px solid #ddd;
+  padding: 5px 10px;
 }
 
 td {
@@ -106,6 +105,8 @@ th.mat-sort-header-sorted {
 
 .custom-header-row {
   position: sticky;
+  top: 270px;
+  background-color: #f2ebf2;
 }
 .custom-list-row {
   top: 800px;

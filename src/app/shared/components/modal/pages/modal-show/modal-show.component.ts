@@ -10,9 +10,9 @@ import { ModalShowMovieComponent } from 'src/app/modules/dashboard/pages/movies/
 import { ModalShowPartnerComponent } from 'src/app/modules/dashboard/pages/partners/components/modal-show/modal-show-partner.component';
 import { ModalShowPiteraComponent } from 'src/app/modules/dashboard/pages/piteras/components/modal-show/modal-show-pitera.component';
 import { ModalShowRecipeComponent } from 'src/app/modules/dashboard/pages/recipes/components/modal-show/modal-show-recipe.component';
-import { ImagenModal } from '../../components/img-modal/img-modal.components';
-import { ModalShowSubsidyComponent } from '../../../../../modules/dashboard/pages/subsidies/components/modal-show/modal-show-subsidy.component';
-import { ModalShowPlaceComponent } from '../../../../../modules/dashboard/pages/places/components/modal-show/modal-show-place.component';
+import { ImagenModal } from 'src/app/shared/components/modal/components/img-modal/img-modal.components';
+import { ModalShowSubsidyComponent } from 'src/app/modules/dashboard/pages/subsidies/components/modal-show/modal-show-subsidy.component';
+import { ModalShowPlaceComponent } from 'src/app/modules/dashboard/pages/places/components/modal-show/modal-show-place.component';
 
 @Component({
   standalone: true,

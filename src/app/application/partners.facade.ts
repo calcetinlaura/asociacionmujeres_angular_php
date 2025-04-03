@@ -1,24 +1,44 @@
-import { DestroyRef, inject, Injectable } from '@angular/core';
-import { BehaviorSubject, catchError, Observable, tap, throwError } from 'rxjs';
-import { PartnersService } from '../core/services/partners.services';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { PartnerModel } from '../core/interfaces/partner.interface';
 import { HttpErrorResponse } from '@angular/common/http';
+import { DestroyRef, inject, Injectable } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { BehaviorSubject, catchError, Observable, tap, throwError } from 'rxjs';
+import { PartnerModel } from 'src/app/core/interfaces/partner.interface';
+import { PartnersService } from 'src/app/core/services/partners.services';
 
 @Injectable({
   providedIn: 'root',
 })
 export class PartnersFacade {
-  private destroyRef = inject(DestroyRef);
-  private partnersService = inject(PartnersService);
-  private partnersSubject = new BehaviorSubject<PartnerModel[] | null>(null);
-  private selectedPartnerSubject = new BehaviorSubject<PartnerModel | null>(
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly partnersService = inject(PartnersService);
+  private readonly partnersSubject = new BehaviorSubject<PartnerModel[] | null>(
     null
   );
+  private readonly filteredPartnersSubject = new BehaviorSubject<
+    PartnerModel[] | null
+  >(null);
+  private readonly selectedPartnerSubject =
+    new BehaviorSubject<PartnerModel | null>(null);
+
   partners$ = this.partnersSubject.asObservable();
+  filteredPartners$ = this.filteredPartnersSubject.asObservable();
   selectedPartner$ = this.selectedPartnerSubject.asObservable();
+  currentYear: number | null = null;
+  currentFilter: number | null = null;
 
   constructor() {}
+
+  setCurrentFilter(year: number | null): void {
+    this.currentFilter = year;
+  }
+
+  private reloadCurrentFilteredYear(): void {
+    if (this.currentFilter !== null) {
+      this.loadPartnersByYear(this.currentFilter);
+    } else {
+      this.loadAllPartners();
+    }
+  }
 
   loadAllPartners(): void {
     this.partnersService
@@ -31,12 +51,19 @@ export class PartnersFacade {
       .subscribe();
   }
 
+  setCurrentYear(year: number): void {
+    this.currentYear = year;
+  }
+
   loadPartnersByYear(year: number): void {
+    this.setCurrentFilter(year);
+
     this.partnersService
       .getPartnersByYear(year)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((partner: PartnerModel[]) => this.partnersSubject.next(partner))
+        tap((partners: PartnerModel[]) => this.updatePartnerState(partners)),
+        catchError(this.handleError)
       )
       .subscribe();
   }
@@ -48,7 +75,8 @@ export class PartnersFacade {
         takeUntilDestroyed(this.destroyRef),
         tap((partner: PartnerModel) =>
           this.selectedPartnerSubject.next(partner)
-        )
+        ),
+        catchError(this.handleError)
       )
       .subscribe();
   }
@@ -56,7 +84,7 @@ export class PartnersFacade {
   addPartner(partner: FormData): Observable<any> {
     return this.partnersService.add(partner).pipe(
       takeUntilDestroyed(this.destroyRef),
-      tap(() => this.loadAllPartners()),
+      tap(() => this.reloadCurrentFilteredYear()),
       catchError(this.handleError)
     );
   }
@@ -64,7 +92,7 @@ export class PartnersFacade {
   editPartner(itemId: number, partner: FormData): Observable<any> {
     return this.partnersService.edit(itemId, partner).pipe(
       takeUntilDestroyed(this.destroyRef),
-      tap(() => this.loadAllPartners()),
+      tap(() => this.reloadCurrentFilteredYear()),
       catchError(this.handleError)
     );
   }
@@ -74,7 +102,7 @@ export class PartnersFacade {
       .delete(id)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap(() => this.loadAllPartners()),
+        tap(() => this.reloadCurrentFilteredYear()),
         catchError(this.handleError)
       )
       .subscribe();
@@ -83,30 +111,34 @@ export class PartnersFacade {
   clearSelectedPartner(): void {
     this.selectedPartnerSubject.next(null);
   }
-  updatePartnerState(partners: PartnerModel[]): void {
-    this.partnersSubject.next(partners);
+
+  applyFilterWord(keyword: string): void {
+    const allPartners = this.partnersSubject.getValue();
+
+    if (!keyword.trim() || !allPartners) {
+      this.filteredPartnersSubject.next(allPartners);
+      return;
+    }
+    const search = keyword.trim().toLowerCase();
+    const filteredPartners = allPartners.filter((partner) =>
+      partner.name.toLowerCase().includes(search)
+    );
+
+    this.updatePartnerState(filteredPartners);
   }
 
-  // Método para manejar errores
-  handleError(error: HttpErrorResponse) {
-    let errorMessage = '';
+  updatePartnerState(partners: PartnerModel[]): void {
+    this.partnersSubject.next(partners);
+    this.filteredPartnersSubject.next(partners); // Actualiza también los libros filtrados
+  }
 
-    if (error.error instanceof ErrorEvent) {
-      // Error del lado del cliente o red
-      errorMessage = `Error del cliente o red: ${error.error.message}`;
-    } else {
-      // El backend retornó un código de error no exitoso
-      errorMessage = `Código de error del servidor: ${error.status}\nMensaje: ${error.message}`;
-    }
+  private handleError(error: HttpErrorResponse) {
+    const errorMessage =
+      error.error instanceof ErrorEvent
+        ? `Error del cliente o red: ${error.error.message}`
+        : `Error del servidor: ${error.status} - ${error.message}`;
 
-    console.error(errorMessage); // Para depuración
-
-    // Aquí podrías devolver un mensaje amigable para el usuario, o simplemente retornar el error
-    return throwError(
-      () =>
-        new Error(
-          'Hubo un problema con la solicitud, inténtelo de nuevo más tarde.'
-        )
-    );
+    console.error('PartnersFacade error:', errorMessage);
+    return throwError(() => new Error('Error al procesar la solicitud.'));
   }
 }

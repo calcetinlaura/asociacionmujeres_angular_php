@@ -16,7 +16,6 @@ $result = $connection->query("SELECT id, password FROM users");
 
 // Leer el JSON de la petición
 $data = json_decode(file_get_contents("php://input"), true);
-file_put_contents("debug.txt", print_r($data, true));
 
 
 if (!isset($data['name']) || !isset($data['password'])) {

@@ -3,6 +3,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { catchError } from 'rxjs/operators';
 import { Observable, throwError } from 'rxjs';
 import { environments } from 'src/environments/environments';
+import { PlaceModel } from 'src/app/core/interfaces/place.interface';
 
 @Injectable({
   providedIn: 'root',
@@ -24,6 +25,12 @@ export class PlacesService {
   getPlacesByType(type: string): Observable<any> {
     return this.http
       .get(this.apiUrl, { params: { type: type } })
+      .pipe(catchError(this.handleError));
+  }
+
+  getPlacesByTown(town: string): Observable<any> {
+    return this.http
+      .get(this.apiUrl, { params: { town: town } })
       .pipe(catchError(this.handleError));
   }
 
@@ -51,13 +58,25 @@ export class PlacesService {
       .pipe(catchError(this.handleError));
   }
 
-  // //Autocomplete de evento
-  // getSuggestions(query: string): Observable<PlaceModel[]> {
-  //   return this.http
-  //     .get<PlaceModel[]>(`${this.apiUrl}?q=${query}&_limit=6`)
-  //     .pipe(catchError(this.handleError));
-  // }
+  sortPlacesByTitle(places: PlaceModel[]): PlaceModel[] {
+    return places.sort((a, b) =>
+      a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+    );
+  }
 
+  sortPlacesById(places: PlaceModel[]): PlaceModel[] {
+    return places.sort((a, b) => b.id - a.id);
+  }
+
+  hasResults(places: PlaceModel[] | null): boolean {
+    return !!places && places.length > 0;
+  }
+
+  countPlaces(places: PlaceModel[] | null): number {
+    return places?.length ?? 0;
+  }
+
+  // Método para manejar errores
   handleError(error: HttpErrorResponse) {
     let errorMessage = '';
 

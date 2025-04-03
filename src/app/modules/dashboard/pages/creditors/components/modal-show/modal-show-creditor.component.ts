@@ -5,9 +5,10 @@ import { TypeList } from 'src/app/core/models/general.model';
 import { TextBackgroundComponent } from 'src/app/shared/components/text/text-background/text-background.component';
 import { TextSubTitleComponent } from 'src/app/shared/components/text/text-subTitle/text-subtitle.component';
 import { TextTitleComponent } from 'src/app/shared/components/text/text-title/text-title.component';
-import { TextIconComponent } from '../../../../../../shared/components/text/text-icon/text-icon.component';
-import { TextEditorComponent } from '../../../../../../shared/components/text/text-editor/text-editor.component';
-import { EurosFormatPipe } from '../../../../../../shared/pipe/eurosFormat.pipe';
+import { TextIconComponent } from 'src/app/shared/components/text/text-icon/text-icon.component';
+import { TextEditorComponent } from 'src/app/shared/components/text/text-editor/text-editor.component';
+import { EurosFormatPipe } from 'src/app/shared/pipe/eurosFormat.pipe';
+import { PhoneFormatPipe } from 'src/app/shared/pipe/phoneFormat.pipe';
 
 @Component({
   selector: 'app-modal-show-creditor',
@@ -20,6 +21,7 @@ import { EurosFormatPipe } from '../../../../../../shared/pipe/eurosFormat.pipe'
     TextIconComponent,
     TextEditorComponent,
     EurosFormatPipe,
+    PhoneFormatPipe,
   ],
   templateUrl: './modal-show-creditor.component.html',
   styleUrl: './modal-show-creditor.component.css',
@@ -44,6 +46,24 @@ export class ModalShowCreditorComponent {
         (total, invoice) => Number(total) + Number(invoice.total_amount || 0),
         0
       ) || 0
+    );
+  }
+  groupInvoicesByYear(invoices: any[]): { [year: string]: any[] } {
+    if (!invoices || invoices.length === 0) return {};
+
+    return invoices.reduce((acc, invoice) => {
+      const year = new Date(invoice.date_invoice).getFullYear();
+      acc[year] = acc[year] || [];
+      acc[year].push(invoice);
+      return acc;
+    }, {} as { [year: string]: any[] });
+  }
+
+  // 📌 Obtener total de un año específico
+  getTotalAmountByYear(invoices: any[]): number {
+    return invoices.reduce(
+      (sum, invoice) => Number(sum) + Number(invoice.total_amount || 0),
+      0
     );
   }
 }

@@ -3,7 +3,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { catchError } from 'rxjs/operators';
 import { Observable, throwError } from 'rxjs';
 import { environments } from 'src/environments/environments';
-import { PartnerModel } from '../interfaces/partner.interface';
+import { PartnerModel } from 'src/app/core/interfaces/partner.interface';
 
 @Injectable({
   providedIn: 'root',
@@ -44,6 +44,24 @@ export class PartnersService {
     return this.http
       .delete(`${this.apiUrl}?id=${id}`) // 🔹 Ahora el id se pasa como parámetro en la URL
       .pipe(catchError(this.handleError));
+  }
+
+  sortPartnersByName(partners: PartnerModel[]): PartnerModel[] {
+    return partners.sort((a, b) =>
+      a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+    );
+  }
+
+  sortPartnersById(partners: PartnerModel[]): PartnerModel[] {
+    return partners.sort((a, b) => b.id - a.id);
+  }
+
+  hasResults(partners: PartnerModel[] | null): boolean {
+    return !!partners && partners.length > 0;
+  }
+
+  countPartners(partners: PartnerModel[] | null): number {
+    return partners?.length ?? 0;
   }
 
   handleError(error: HttpErrorResponse) {

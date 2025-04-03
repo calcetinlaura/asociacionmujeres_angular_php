@@ -1,6 +1,3 @@
-.table-container {
-  padding-top: 170px; /* Crea el espacio inicial para las primeras 8 filas */
-}
 .table {
   width: 100%;
   border-collapse: collapse;
@@ -13,9 +10,7 @@
 th {
   text-transform: uppercase;
   font-size: 12px;
-  padding: 10px;
-  border-bottom: 1px solid #ddd;
-  background-color: red;
+  padding: 5px 10px;
 }
 
 td {
@@ -169,7 +164,7 @@ th.mat-sort-header-sorted {
 .mat-column-img > div,
 .mat-column-cuotas > div,
 .mat-column-inscription > div,
-.mat-column-subspacesCount > div {
+.mat-column-salasCount > div {
   display: flex;
   justify-content: center;
 }
@@ -203,9 +198,9 @@ th.mat-sort-header-sorted {
 }
 .custom-header-row {
   position: sticky;
-  top: 170px;
-  padding-top: 170px;
+  top: 270px;
   z-index: 999;
+  background-color: #f2ebf2;
 }
 .custom-list-row {
   top: 800px;

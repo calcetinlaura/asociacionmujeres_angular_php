@@ -9,10 +9,10 @@ import {
 import { MatCardModule } from '@angular/material/card';
 import { EditorModule } from '@tinymce/tinymce-angular';
 import { filter, tap } from 'rxjs';
-import { BooksFacade } from 'src/app/application';
+import { BooksFacade } from 'src/app/application/books.facade';
 import {
   BookModel,
-  GenderFilterBooks,
+  genderFilterBooks,
 } from 'src/app/core/interfaces/book.interface';
 import { TypeList } from 'src/app/core/models/general.model';
 import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
@@ -48,7 +48,7 @@ export class FormBookComponent {
   titleForm: string = 'Registrar libro';
   buttonAction: string = 'Guardar';
   years: number[] = [];
-  genderBooks = GenderFilterBooks;
+  genderBooks = genderFilterBooks;
   typeList = TypeList.Books;
   formBook = new FormGroup({
     title: new FormControl('', [Validators.required]),
@@ -58,10 +58,10 @@ export class FormBookComponent {
     img: new FormControl(''),
     year: new FormControl(0, [Validators.required, Validators.min(2000)]),
   });
+  currentYear = this.generalService.currentYear;
 
   ngOnInit(): void {
-    const currentYear = this.generalService.currentYear;
-    this.years = this.generalService.loadYears(currentYear, 2018);
+    this.years = this.generalService.loadYears(this.currentYear, 2018);
 
     if (this.itemId) {
       this.booksFacade.loadBookById(this.itemId);

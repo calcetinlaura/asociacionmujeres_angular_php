@@ -82,9 +82,9 @@ switch ($method) {
             }
 
 
-            $stmt = $connection->prepare("UPDATE partners SET name=?, surname=?, birthday=?, post_code=?, address=?, phone=?, email=?, town=?, cuotas=?, img=?, observations=?, death=?, unsubscribe=? WHERE id=?");
+            $stmt = $connection->prepare("UPDATE partners SET name=?, surname=?, birthday=?, post_code=?, address=?, phone=?, email=?,province=?,  town=?, cuotas=?, img=?, observations=?, death=?, unsubscribe=? WHERE id=?");
             $stmt->bind_param(
-                "sssssssssssiii",
+                "ssssssssssssiii",
                 $data['name'],
                 $data['surname'],
                 $birthday,
@@ -92,6 +92,7 @@ switch ($method) {
                 $data['address'],
                 $data['phone'],
                 $data['email'],
+                $data['province'],
                 $data['town'],
                 $cuotasJson,
                 $imgName,
@@ -109,22 +110,24 @@ switch ($method) {
             }
         } else {
             // Nuevo registro
-            $stmt = $connection->prepare("INSERT INTO partners (name, surname, birthday, post_code, address, phone, email, town, cuotas, img, observations, death, unsubscribe) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt = $connection->prepare("INSERT INTO partners (name, surname, birthday, post_code, address, phone, email, province, town, cuotas, img, observations, death, unsubscribe) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             $stmt->bind_param(
-                "sssssssssssii",
-                $data['name'],
-                $data['surname'],
-                $birthday,
-                $data['post_code'],
-                $data['address'],
-                $data['phone'],
-                $data['email'],
-                $data['town'],
-                $cuotasJson,
-                $imgName,
-                $data['observations'], $death,
-                $unsubscribe,
-            );
+              "ssssssssssssii",
+              $data['name'],
+              $data['surname'],
+              $birthday,
+              $data['post_code'],
+              $data['address'],
+              $data['phone'],
+              $data['email'],
+              $data['province'],
+              $data['town'],
+              $cuotasJson,
+              $imgName,
+              $data['observations'],
+              $death,
+              $unsubscribe
+          );
 
             if ($stmt->execute()) {
                 echo json_encode(["message" => "Socia registrada con éxito."]);

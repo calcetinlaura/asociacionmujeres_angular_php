@@ -9,7 +9,7 @@ import {
 import { MatCardModule } from '@angular/material/card';
 import { EditorModule } from '@tinymce/tinymce-angular';
 import { filter, tap } from 'rxjs';
-import { PiterasFacade } from 'src/app/application';
+import { PiterasFacade } from 'src/app/application/piteras.facade';
 import { PiteraModel } from 'src/app/core/interfaces/pitera.interface';
 import { TypeList } from 'src/app/core/models/general.model';
 import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
@@ -58,10 +58,10 @@ export class FormPiteraComponent {
       Validators.max(new Date().getFullYear()),
     ]),
   });
+  currentYear = this.generalService.currentYear;
 
   ngOnInit(): void {
-    const currentYear = this.generalService.currentYear;
-    this.years = this.generalService.loadYears(currentYear, 1995);
+    this.years = this.generalService.loadYears(this.currentYear, 1995);
 
     if (this.itemId) {
       this.piterasFacade.loadPiteraById(this.itemId);

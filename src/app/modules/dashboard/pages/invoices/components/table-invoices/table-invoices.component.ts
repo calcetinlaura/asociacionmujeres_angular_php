@@ -17,8 +17,8 @@ import { FormControl } from '@angular/forms';
 import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
 import { InvoiceModel } from 'src/app/core/interfaces/invoice.interface';
 import { SubsidiesService } from 'src/app/core/services/subsidies.services';
-import { EurosFormatPipe } from '../../../../../../shared/pipe/eurosFormat.pipe';
-import { CircleIndicatorComponent } from '../../../../components/circle-indicator/circle-indicator.component';
+import { EurosFormatPipe } from 'src/app/shared/pipe/eurosFormat.pipe';
+import { CircleIndicatorComponent } from 'src/app/modules/dashboard/components/circle-indicator/circle-indicator.component';
 
 @Component({
   standalone: true,

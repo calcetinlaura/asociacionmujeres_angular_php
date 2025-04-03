@@ -1,4 +1,4 @@
-import { Filter } from '../models/general.model';
+import { Filter } from 'src/app/core/models/general.model';
 import { InvoiceModel } from './invoice.interface';
 
 export interface CreditorModel {
@@ -8,6 +8,7 @@ export interface CreditorModel {
   contact?: string;
   phone?: string;
   email?: string;
+  province?: string;
   town?: string;
   address?: string;
   post_code?: string;
@@ -25,9 +26,9 @@ export interface CreditorAutocompleteModel {
   company: string;
   cif?: string;
 }
-export const FilterCreditors: Filter[] = [
+export const categoryFilterCreditors: Filter[] = [
   { code: 'CINE', name: 'Cine' },
-  { code: 'COCINE', name: 'Cocina' },
+  { code: 'COCINA', name: 'Cocina' },
   { code: 'CHARLAS', name: 'Charlas' },
   { code: 'LOGÍSTICA', name: 'Logística y materiales' },
   { code: 'CURSOS', name: 'Cursos y talleres' },

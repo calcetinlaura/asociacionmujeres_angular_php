@@ -17,10 +17,12 @@ import { MatIconModule } from '@angular/material/icon';
 import { FormControl } from '@angular/forms';
 import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
 import { PartnerModel } from 'src/app/core/interfaces/partner.interface';
-import { CalculateAgePipe } from '../../../../../../shared/pipe/caculate_age.pipe';
-import { CircleIndicatorComponent } from '../../../../components/circle-indicator/circle-indicator.component';
+import { CalculateAgePipe } from 'src/app/shared/pipe/caculate_age.pipe';
 import { ChangeDetectorRef } from '@angular/core';
-import { ItemImagePipe } from '../../../../../../shared/pipe/item-img.pipe';
+import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
+import { PhoneFormatPipe } from 'src/app/shared/pipe/phoneFormat.pipe';
+import { GeneralService } from 'src/app/shared/services/generalService.service';
+import { CircleIndicatorComponent } from 'src/app/modules/dashboard/components/circle-indicator/circle-indicator.component';
 
 @Component({
   standalone: true,
@@ -33,6 +35,7 @@ import { ItemImagePipe } from '../../../../../../shared/pipe/item-img.pipe';
     CalculateAgePipe,
     CircleIndicatorComponent,
     ItemImagePipe,
+    PhoneFormatPipe,
   ],
   selector: 'app-table-partners',
   templateUrl: './table-partners.component.html',
@@ -41,6 +44,7 @@ import { ItemImagePipe } from '../../../../../../shared/pipe/item-img.pipe';
 export class TablePartnersComponent {
   private _liveAnnouncer = inject(LiveAnnouncer);
   private cdr = inject(ChangeDetectorRef);
+  private generalService = inject(GeneralService);
 
   @Input() type: TypeList = TypeList.Partners;
   @Input() data: PartnerModel[] = [];
@@ -69,7 +73,7 @@ export class TablePartnersComponent {
   searchKeywordFilter = new FormControl();
   total_amount: number = 0;
   private columnSortOrder: { [key: string]: 'asc' | 'desc' } = {};
-  currentYear = 0;
+  currentYear = this.generalService.currentYear;
   processedData: PartnerModel[] = [];
 
   @ViewChild(MatSort) sort!: MatSort;
@@ -95,8 +99,6 @@ export class TablePartnersComponent {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['data']) {
-      this.currentYear = new Date().getFullYear();
-
       setTimeout(() => {
         this.dataSource.data = (
           changes['data'].currentValue as PartnerModel[]

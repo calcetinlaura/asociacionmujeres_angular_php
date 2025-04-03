@@ -6,17 +6,21 @@ import {
   OnInit,
   ViewChild,
 } from '@angular/core';
-import { FiltersComponent } from '../../../components/filters/filters.component';
-import { TypeList, filterBooks } from 'src/app/core/models/general.model';
-import { BooksService } from 'src/app/core/services/books.services';
-import { SectionGenericComponent } from '../../../components/section-generic/section-generic.component';
-import { tap } from 'rxjs';
-import { BookModel } from 'src/app/core/interfaces/book.interface';
-import { InputSearchComponent } from '../../../../../shared/components/inputs/input-search/input-search.component';
-import { BooksFacade } from 'src/app/application';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { NoResultsComponent } from '../../../components/no-results/no-results.component';
-import { SpinnerLoadingComponent } from '../../../components/spinner-loading/spinner-loading.component';
+import { tap } from 'rxjs';
+import { BooksFacade } from 'src/app/application/books.facade';
+import {
+  BookModel,
+  genderFilterBooks,
+} from 'src/app/core/interfaces/book.interface';
+import { Filter, TypeList } from 'src/app/core/models/general.model';
+import { BooksService } from 'src/app/core/services/books.services';
+import { FiltersComponent } from 'src/app/modules/landing/components/filters/filters.component';
+import { NoResultsComponent } from 'src/app/modules/landing/components/no-results/no-results.component';
+import { SectionGenericComponent } from 'src/app/modules/landing/components/section-generic/section-generic.component';
+import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
+import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
+import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
   selector: 'app-books-page-landing',
@@ -30,45 +34,35 @@ import { SpinnerLoadingComponent } from '../../../components/spinner-loading/spi
     SpinnerLoadingComponent,
   ],
   templateUrl: './books-page-landing.component.html',
-  providers: [BooksService],
 })
 export class BooksPageLandingComponent implements OnInit {
-  private destroyRef = inject(DestroyRef);
-  private booksFacade = inject(BooksFacade);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly booksFacade = inject(BooksFacade);
+  private readonly booksService = inject(BooksService);
+  private readonly generalService = inject(GeneralService);
 
   books: BookModel[] = [];
   filteredBooks: BookModel[] = [];
-  isLoading: boolean = true;
-  areThereResults: boolean = false;
-  filterGenderBooks = filterBooks;
+  filters: Filter[] = [];
+  isLoading = true;
+  areThereResults = false;
   typeList = TypeList;
-  number: number = 0;
-  selectedFilter: string = 'TODOS';
+  number = 0;
+  selectedFilter = 'TODOS';
 
   @ViewChild(InputSearchComponent)
   private inputSearchComponent!: InputSearchComponent;
 
   ngOnInit(): void {
-    this.filterSelected('NOVEDADES');
-  }
+    this.filters = [
+      { code: 'NOVEDADES', name: 'Novedades' },
+      { code: 'TODOS', name: 'Todos' },
+      ...genderFilterBooks,
+    ];
 
-  filterSelected(filter: string): void {
-    this.selectedFilter = filter;
-    if (this.inputSearchComponent) {
-      this.inputSearchComponent.clearInput();
-    }
-    switch (filter) {
-      case 'TODOS':
-        this.booksFacade.loadAllBooks();
-        break;
-      case 'NOVEDADES':
-        this.booksFacade.loadBooksByLatest();
-        break;
-      default:
-        this.booksFacade.loadBooksByGender(filter);
-        break;
-    }
-    this.booksFacade.books$
+    this.filterSelected('NOVEDADES');
+
+    this.booksFacade.filteredBooks$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((books) => this.updateBookState(books))
@@ -76,28 +70,23 @@ export class BooksPageLandingComponent implements OnInit {
       .subscribe();
   }
 
-  applyFilter(keyword: string): void {
-    this.booksFacade.applyFilter(keyword);
-    this.booksFacade.filteredBooks$
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((books) => {
-          this.updateBookState(books);
-        })
-      )
-      .subscribe();
+  filterSelected(filter: string): void {
+    this.selectedFilter = filter;
+    this.generalService.clearSearchInput(this.inputSearchComponent);
+    this.booksFacade.setCurrentFilter(filter);
   }
 
-  private updateBookState(books: BookModel[] | null): void {
-    if (books === null) {
-      return;
-    }
-    this.books = books.sort((a, b) =>
-      a.title.toLowerCase().localeCompare(b.title.toLowerCase())
-    );
+  applyFilterWord(keyword: string): void {
+    this.booksFacade.applyFilterWord(keyword);
+  }
+
+  updateBookState(books: BookModel[] | null): void {
+    if (!books) return;
+
+    this.books = this.booksService.sortBooksByTitle(books);
     this.filteredBooks = [...this.books];
-    this.number = this.books.length;
-    this.areThereResults = this.number > 0;
+    this.number = this.booksService.countBooks(books);
+    this.areThereResults = this.booksService.hasResults(books);
     this.isLoading = false;
   }
 }

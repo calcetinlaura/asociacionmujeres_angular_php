@@ -3,6 +3,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { catchError } from 'rxjs/operators';
 import { Observable, throwError } from 'rxjs';
 import { environments } from 'src/environments/environments';
+import { MovieModel } from 'src/app/core/interfaces/movie.interface';
 
 @Injectable({
   providedIn: 'root',
@@ -55,6 +56,24 @@ export class MoviesService {
     return this.http
       .delete(this.apiUrl, { params: { id: id } })
       .pipe(catchError(this.handleError));
+  }
+
+  sortMoviesByTitle(movies: MovieModel[]): MovieModel[] {
+    return movies.sort((a, b) =>
+      a.title.toLowerCase().localeCompare(b.title.toLowerCase())
+    );
+  }
+
+  sortMoviesById(movies: MovieModel[]): MovieModel[] {
+    return movies.sort((a, b) => b.id - a.id);
+  }
+
+  hasResults(movies: MovieModel[] | null): boolean {
+    return !!movies && movies.length > 0;
+  }
+
+  countMovies(movies: MovieModel[] | null): number {
+    return movies?.length ?? 0;
   }
 
   // Método para manejar errores

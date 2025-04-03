@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, HostListener, Input, OnInit } from '@angular/core';
+import { Component, Input } from '@angular/core';
 
 @Component({
   selector: 'app-dashboard-header',
@@ -13,21 +13,4 @@ export class DashboardHeaderComponent {
   @Input() title: string = '';
   @Input() number: number = 0;
   @Input() type: string = '';
-  isSticky: boolean = false;
-
-  @HostListener('window:scroll', [])
-  onWindowScroll() {
-    const scrollPosition =
-      window.scrollY ||
-      document.documentElement.scrollTop ||
-      document.body.scrollTop ||
-      0;
-
-    // Detectamos si el scroll es mayor a una cantidad (e.g. 200px)
-    if (scrollPosition > 50) {
-      this.isSticky = true;
-    } else {
-      this.isSticky = false;
-    }
-  }
 }

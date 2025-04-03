@@ -1,27 +1,35 @@
+import { CommonModule } from '@angular/common';
 import {
   Component,
   DestroyRef,
-  ElementRef,
-  HostListener,
   inject,
   OnInit,
   ViewChild,
 } from '@angular/core';
-import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
-import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
-import { ColumnModel } from 'src/app/core/interfaces/column.interface';
-import { TableComponent } from 'src/app/modules/dashboard/components/table/table.component';
-import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
-import { CommonModule } from '@angular/common';
-import { MoviesFacade } from 'src/app/application';
-import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { tap } from 'rxjs';
+import { MoviesFacade } from 'src/app/application/movies.facade';
+import { ColumnModel } from 'src/app/core/interfaces/column.interface';
+import {
+  genderFilterMovies,
+  MovieModel,
+} from 'src/app/core/interfaces/movie.interface';
+import {
+  Filter,
+  TypeActionModal,
+  TypeList,
+} from 'src/app/core/models/general.model';
+import { MoviesService } from 'src/app/core/services/movies.services';
+import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
+import { TableComponent } from 'src/app/modules/dashboard/components/table/table.component';
+import { FiltersComponent } from 'src/app/modules/landing/components/filters/filters.component';
 import { AddButtonComponent } from 'src/app/shared/components/buttons/button-add/button-add.component';
 import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
-import { MovieModel } from 'src/app/core/interfaces/movie.interface';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { SpinnerLoadingComponent } from '../../../landing/components/spinner-loading/spinner-loading.component';
+import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
+import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
+import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
+import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
   selector: 'app-movies-page',
@@ -29,53 +37,56 @@ import { SpinnerLoadingComponent } from '../../../landing/components/spinner-loa
   imports: [
     CommonModule,
     DashboardHeaderComponent,
-    TableComponent,
     ModalComponent,
     AddButtonComponent,
     ReactiveFormsModule,
     InputSearchComponent,
+    FiltersComponent,
     SpinnerLoadingComponent,
+    TableComponent,
   ],
   templateUrl: './movies-page.component.html',
   styleUrl: './movies-page.component.css',
 })
 export class MoviesPageComponent implements OnInit {
-  private moviesFacade = inject(MoviesFacade);
-  private modalService = inject(ModalService);
-  private destroyRef = inject(DestroyRef);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly modalService = inject(ModalService);
+  private readonly moviesFacade = inject(MoviesFacade);
+  private readonly moviesService = inject(MoviesService);
+  private readonly generalService = inject(GeneralService);
 
-  typeList = TypeList.Movies;
   movies: MovieModel[] = [];
   filteredMovies: MovieModel[] = [];
-  searchForm!: FormGroup;
-  dataLoaded: boolean = false;
-  number: number = 0;
-  headerListMovies: ColumnModel[] = [];
-  isModalVisible: boolean = false;
+  filters: Filter[] = [];
+  selectedFilter = 'TODOS';
+
+  isLoading = true;
+  isModalVisible = false;
+  number = 0;
+
+  item: MovieModel | null = null;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
-  item: any;
-  searchKeywordFilter = new FormControl();
-  isStickyToolbar: boolean = false;
+  searchForm!: FormGroup;
+  typeList = TypeList.Movies;
 
-  @ViewChild('toolbar') toolbar!: ElementRef;
+  headerListMovies: ColumnModel[] = [
+    { title: 'Portada', key: 'img' },
+    { title: 'Título', key: 'title' },
+    { title: 'Director/a', key: 'director' },
+    { title: 'Descripción', key: 'description' },
+    { title: 'Género', key: 'gender' },
+    { title: 'Año compra', key: 'year' },
+  ];
 
-  @HostListener('window:scroll', [])
-  onWindowScroll() {
-    const scrollPosition =
-      window.scrollY ||
-      document.documentElement.scrollTop ||
-      document.body.scrollTop ||
-      0;
-
-    if (scrollPosition > 50) {
-      this.isStickyToolbar = true;
-    } else {
-      this.isStickyToolbar = false;
-    }
-  }
+  @ViewChild(InputSearchComponent)
+  private inputSearchComponent!: InputSearchComponent;
 
   ngOnInit(): void {
-    this.loadAllMovies();
+    this.filters = [
+      { code: 'NOVEDADES', name: 'Novedades' },
+      { code: 'TODOS', name: 'Todos' },
+      ...genderFilterMovies,
+    ];
 
     this.modalService.modalVisibility$
       .pipe(
@@ -86,54 +97,52 @@ export class MoviesPageComponent implements OnInit {
       )
       .subscribe();
 
-    this.headerListMovies = [
-      { title: 'Portada', key: 'img' },
-      { title: 'Título', key: 'title' },
-      { title: 'Director/a', key: 'director' },
-      { title: 'Descripción', key: 'description' },
-      { title: 'Género', key: 'gender' },
-      { title: 'Año compra', key: 'year' },
-    ];
+    this.filterSelected('NOVEDADES');
   }
 
-  loadAllMovies(): void {
-    this.moviesFacade.loadAllMovies();
+  filterSelected(filter: string): void {
+    this.selectedFilter = filter;
+    this.generalService.clearSearchInput(this.inputSearchComponent);
+    this.loadByFilter(filter);
+  }
+
+  private loadByFilter(filter: string): void {
+    const loaders: Record<string, () => void> = {
+      TODOS: () => this.moviesFacade.loadAllMovies(),
+      NOVEDADES: () => this.moviesFacade.loadMoviesByLatest(),
+    };
+
+    (loaders[filter] || (() => this.moviesFacade.loadMoviesByGender(filter)))();
+
     this.moviesFacade.movies$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((movies) => {
-          this.updateMovieState(movies);
-        })
+        tap((movies) => this.updateMovieState(movies))
       )
       .subscribe();
   }
 
-  applyFilter(keyword: string): void {
-    this.moviesFacade.applyFilter(keyword);
+  applyFilterWord(keyword: string): void {
+    this.moviesFacade.applyFilterWord(keyword);
     this.moviesFacade.filteredMovies$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((movies) => {
-          this.updateMovieState(movies);
-        })
+        tap((movies) => this.updateMovieState(movies))
       )
       .subscribe();
   }
 
-  confirmDeleteMovie(item: any): void {
-    this.moviesFacade.deleteMovie(item.id);
-    this.modalService.closeModal();
-  }
-
   addNewMovieModal(): void {
-    this.currentModalAction = TypeActionModal.Create;
-    this.item = null;
-    this.modalService.openModal();
+    this.openModal(TypeActionModal.Create, null);
   }
 
-  onOpenModal(event: { action: TypeActionModal; item: any }): void {
-    this.currentModalAction = event.action;
-    this.item = event.item;
+  onOpenModal(event: { action: TypeActionModal; item: MovieModel }): void {
+    this.openModal(event.action, event.item ?? null);
+  }
+
+  openModal(action: TypeActionModal, movie: MovieModel | null): void {
+    this.currentModalAction = action;
+    this.item = movie;
     this.modalService.openModal();
   }
 
@@ -141,37 +150,31 @@ export class MoviesPageComponent implements OnInit {
     this.modalService.closeModal();
   }
 
+  confirmDeleteMovie(movie: MovieModel | null): void {
+    if (!movie) return;
+    this.moviesFacade.deleteMovie(movie.id);
+    this.onCloseModal();
+  }
+
   sendFormMovie(event: { itemId: number; newMovieData: FormData }): void {
-    if (event.itemId) {
-      this.moviesFacade
-        .editMovie(event.itemId, event.newMovieData)
-        .pipe(
-          takeUntilDestroyed(this.destroyRef),
-          tap(() => {
-            this.onCloseModal();
-          })
-        )
-        .subscribe();
-    } else {
-      this.moviesFacade
-        .addMovie(event.newMovieData)
-        .pipe(
-          takeUntilDestroyed(this.destroyRef),
-          tap(() => {
-            this.onCloseModal();
-          })
-        )
-        .subscribe();
-    }
+    const save$ = event.itemId
+      ? this.moviesFacade.editMovie(event.itemId, event.newMovieData)
+      : this.moviesFacade.addMovie(event.newMovieData);
+
+    save$
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap(() => this.onCloseModal())
+      )
+      .subscribe();
   }
 
   private updateMovieState(movies: MovieModel[] | null): void {
-    if (movies === null) {
-      return;
-    }
-    this.movies = movies.sort((a, b) => b.id - a.id);
+    if (!movies) return;
+
+    this.movies = this.moviesService.sortMoviesById(movies);
     this.filteredMovies = [...this.movies];
-    this.number = this.movies.length;
-    this.dataLoaded = true;
+    this.number = this.moviesService.countMovies(movies);
+    this.isLoading = false;
   }
 }

@@ -1,48 +1,50 @@
-import { DestroyRef, inject, Injectable } from '@angular/core';
-import {
-  BehaviorSubject,
-  catchError,
-  map,
-  Observable,
-  tap,
-  throwError,
-} from 'rxjs';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { SubsidyModel } from '../core/interfaces/subsidy.interface';
-import { SubsidiesService } from '../core/services/subsidies.services';
 import { HttpErrorResponse } from '@angular/common/http';
+import { DestroyRef, inject, Injectable } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { BehaviorSubject, catchError, Observable, tap, throwError } from 'rxjs';
+import { SubsidyModel } from 'src/app/core/interfaces/subsidy.interface';
+import { SubsidiesService } from 'src/app/core/services/subsidies.services';
 
 @Injectable({
   providedIn: 'root',
 })
 export class SubsidiesFacade {
-  private destroyRef = inject(DestroyRef);
-  private subsidiesService = inject(SubsidiesService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly subsidiesService = inject(SubsidiesService);
+
   private subsidiesSubject = new BehaviorSubject<SubsidyModel[]>([]);
+  private filteredSubsidiesSubject = new BehaviorSubject<SubsidyModel[]>([]);
   private selectedSubsidySubject = new BehaviorSubject<SubsidyModel | null>(
     null
   );
-  private filteredSubsidiesByTypeSubject = new BehaviorSubject<SubsidyModel[]>(
-    []
-  );
-  private filteredSubsidiesSubject = new BehaviorSubject<SubsidyModel[]>([]);
-  private currentFilterTypeSubject = new BehaviorSubject<string | null>(null);
 
+  private currentFilter: string = 'TODOS';
+  private isLoadingSubject = new BehaviorSubject<boolean>(false);
+
+  isLoadingSubsidies$ = this.isLoadingSubject.asObservable();
   subsidies$ = this.subsidiesSubject.asObservable();
+  filteredSubsidies$ = this.filteredSubsidiesSubject.asObservable();
   selectedSubsidy$ = this.selectedSubsidySubject.asObservable();
-  currentFilterType$ = this.currentFilterTypeSubject.asObservable();
 
   constructor() {}
 
-  // Método para aplicar filtros
-  applyFilterTab(filterType: string | null): void {
-    this.currentFilterTypeSubject.next(filterType);
-    const invoices = this.subsidiesSubject.getValue();
-    const filtered = filterType
-      ? invoices.filter((subsidy) => subsidy.name === filterType)
-      : invoices;
+  /** Filtro actual (por tipo) */
+  setCurrentFilter(filter: string): void {
+    this.currentFilter = filter;
+    this.loadSubsidiesByFilter(filter);
+  }
 
-    this.filteredSubsidiesByTypeSubject.next(filtered);
+  private reloadCurrentFilter(): void {
+    this.loadSubsidiesByFilter(this.currentFilter);
+  }
+
+  /** Centraliza el enrutamiento de filtros */
+  loadSubsidiesByFilter(filter: string): void {
+    const loaders: Record<string, () => void> = {
+      TODOS: () => this.loadAllSubsidies(),
+    };
+
+    (loaders[filter] || (() => this.loadSubsidiesByType(filter)))();
   }
 
   loadAllSubsidies(): void {
@@ -50,34 +52,48 @@ export class SubsidiesFacade {
       .getSubisidies()
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((subsidies: SubsidyModel[]) =>
-          this.subsidiesSubject.next(subsidies)
-        ),
-        catchError(this.handleError)
+        tap((subsidies) => {
+          this.updateSubsidyState(subsidies);
+          this.isLoadingSubject.next(false);
+        }),
+        catchError((error) => {
+          this.isLoadingSubject.next(false);
+          return this.handleError(error);
+        })
       )
       .subscribe();
   }
 
-  loadSubsidyById(id: number): void {
+  loadSubsidiesByYear(year: number): void {
+    this.isLoadingSubject.next(true); // Comienza carga
     this.subsidiesService
-      .getSubsidieById(id)
+      .getSubsidiesByYear(year)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((subsidy: SubsidyModel) =>
-          this.selectedSubsidySubject.next(subsidy)
-        )
+        tap((subsidies) => {
+          this.updateSubsidyState(subsidies);
+          this.isLoadingSubject.next(false);
+        }),
+        catchError((error) => {
+          this.isLoadingSubject.next(false);
+          return this.handleError(error);
+        })
       )
       .subscribe();
   }
-
   loadSubsidiesByType(type: string): void {
     this.subsidiesService
       .getSubsidiesByType(type)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((subsidies: SubsidyModel[]) =>
-          this.subsidiesSubject.next(subsidies)
-        )
+        tap((subsidies) => {
+          this.updateSubsidyState(subsidies);
+          this.isLoadingSubject.next(false);
+        }),
+        catchError((error) => {
+          this.isLoadingSubject.next(false);
+          return this.handleError(error);
+        })
       )
       .subscribe();
   }
@@ -87,38 +103,41 @@ export class SubsidiesFacade {
       .getSubsidiesByLatest()
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((subsidies: SubsidyModel[]) => this.updateSubsidyState(subsidies)),
-        catchError(this.handleError)
-      )
-      .subscribe();
-  }
-
-  loadSubsidiesByYear(year: number): void {
-    this.subsidiesService
-      .getSubsidiesByYear(year)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((subsidies: SubsidyModel[]) => {
-          this.subsidiesSubject.next(subsidies);
+        tap((subsidies) => {
+          this.updateSubsidyState(subsidies);
+          this.isLoadingSubject.next(false);
+        }),
+        catchError((error) => {
+          this.isLoadingSubject.next(false);
+          return this.handleError(error);
         })
       )
       .subscribe();
   }
 
-  addSubsidy(subsidy: SubsidyModel): Observable<SubsidyModel> {
-    return this.subsidiesService
-      .add(subsidy)
-      .pipe(tap(() => this.loadAllSubsidies()));
-  }
-
-  editSubsidy(itemId: number, subsidy: SubsidyModel): void {
+  loadSubsidyById(id: number): void {
     this.subsidiesService
-      .edit(itemId, subsidy)
+      .getSubsidieById(id)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap(() => this.loadAllSubsidies())
+        tap((subsidy) => this.selectedSubsidySubject.next(subsidy)),
+        catchError(this.handleError)
       )
       .subscribe();
+  }
+
+  addSubsidy(subsidy: SubsidyModel): Observable<SubsidyModel> {
+    return this.subsidiesService.add(subsidy).pipe(
+      tap(() => this.reloadCurrentFilter()),
+      catchError(this.handleError)
+    );
+  }
+
+  editSubsidy(id: number, subsidy: SubsidyModel): Observable<SubsidyModel> {
+    return this.subsidiesService.edit(id, subsidy).pipe(
+      tap(() => this.reloadCurrentFilter()),
+      catchError(this.handleError)
+    );
   }
 
   deleteSubsidy(id: number): void {
@@ -126,40 +145,47 @@ export class SubsidiesFacade {
       .delete(id)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap(() => this.loadAllSubsidies())
+        tap(() => this.reloadCurrentFilter()),
+        catchError(this.handleError)
       )
       .subscribe();
   }
 
-  // Clear selected subsidy
   clearSelectedSubsidy(): void {
     this.selectedSubsidySubject.next(null);
   }
 
-  updateSubsidyState(subsidies: SubsidyModel[]): void {
-    this.subsidiesSubject.next(subsidies);
-    this.filteredSubsidiesSubject.next(subsidies); // Actualiza también los libros filtrados
-  }
-  // Método para manejar errores
-  handleError(error: HttpErrorResponse) {
-    let errorMessage = '';
+  /** Filtro por palabra clave */
+  applyFilterWord(keyword: string): void {
+    const allSubsidies = this.subsidiesSubject.getValue();
 
-    if (error.error instanceof ErrorEvent) {
-      // Error del lado del cliente o red
-      errorMessage = `Error del cliente o red: ${error.error.message}`;
-    } else {
-      // El backend retornó un código de error no exitoso
-      errorMessage = `Código de error del servidor: ${error.status}\nMensaje: ${error.message}`;
+    if (!keyword || !allSubsidies) {
+      this.filteredSubsidiesSubject.next(allSubsidies ?? []);
+      return;
     }
 
-    console.error(errorMessage); // Para depuración
-
-    // Aquí podrías devolver un mensaje amigable para el usuario, o simplemente retornar el error
-    return throwError(
-      () =>
-        new Error(
-          'Hubo un problema con la solicitud, inténtelo de nuevo más tarde.'
-        )
+    const search = keyword.trim().toLowerCase();
+    const filtered = allSubsidies.filter((subsidy) =>
+      subsidy.name.toLowerCase().includes(search)
     );
+
+    this.filteredSubsidiesSubject.next(filtered);
+  }
+
+  /** Actualiza el estado base y el filtrado inicial */
+  private updateSubsidyState(subsidies: SubsidyModel[]): void {
+    this.subsidiesSubject.next(subsidies);
+    this.filteredSubsidiesSubject.next(subsidies);
+  }
+
+  /** Manejo de errores */
+  private handleError(error: HttpErrorResponse) {
+    const errorMessage =
+      error.error instanceof ErrorEvent
+        ? `Error del cliente o red: ${error.error.message}`
+        : `Error del servidor: ${error.status} - ${error.message}`;
+
+    console.error('SubsidiesFacade error:', errorMessage);
+    return throwError(() => new Error('Error al procesar la solicitud.'));
   }
 }

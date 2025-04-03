@@ -28,13 +28,71 @@
       </div>
       <div class="flex justify-between gap-x-4">
         <div class="flex flex-col w-3/4 gap-y-4">
-          <div class="box-input gap-x-4 flex-1">
-            <label for="town">Municipio</label>
-            <input formControlName="town" type="text" />
+          <div class="flex justify-between gap-x-4">
+            <!-- Provincia -->
+            <div class="box-input gap-x-4 flex flex-1">
+              <label for="province">Provincia</label>
+              <select
+                formControlName="province"
+                (change)="onProvinceChange()"
+                [ngClass]="{
+                  'is-invalid': submitted && formEvent.get('province')?.invalid
+                }"
+              >
+                <option value="">Seleccione una provincia</option>
+                <option *ngFor="let prov of provincias" [value]="prov.label">
+                  {{ prov.label }}
+                </option>
+              </select>
+              <div
+                *ngIf="submitted && formEvent.get('town')?.invalid"
+                class="is-invalid-text"
+              >
+                Campo requerido
+              </div>
+            </div>
+            <!-- Municipio -->
+            <div class="box-input flex flex-1">
+              <label for="town">Municipio</label>
+              <select
+                formControlName="town"
+                [ngClass]="{
+                  'is-invalid': submitted && formEvent.get('town')?.invalid
+                }"
+                (change)="onTownChange()"
+              >
+                <option value="">Seleccione un municipio</option>
+                <option *ngFor="let mun of municipios" [value]="mun.label">
+                  {{ mun.label }}
+                </option>
+              </select>
+              <div
+                *ngIf="submitted && formEvent.get('town')?.invalid"
+                class="is-invalid-text"
+              >
+                Campo requerido
+              </div>
+            </div>
           </div>
-          <div class="box-input gap-x-4 flex-1">
+          <div class="box-input gap-x-4">
             <label for="place">Espacio</label>
-            <input formControlName="place" type="text" />
+            <select formControlName="place" (change)="onPlaceChange()">
+              <option *ngFor="let place of espacios" [value]="place.id">
+                {{ place.name }}
+              </option>
+            </select>
+          </div>
+          <!-- Mostrar select de salas si hay subspaces -->
+          <div *ngIf="selectedPlace?.salas?.length" class="box-input gap-x-4">
+            <label for="sala">Sala</label>
+            <select formControlName="sala" (change)="onSalaChange()">
+              <option
+                *ngFor="let sala of selectedPlace?.salas"
+                [value]="sala.name"
+              >
+                {{ sala.name }}
+              </option>
+            </select>
           </div>
           <div class="box-input gap-y-2 gap-x-4">
             <label for="status">Aforo</label>

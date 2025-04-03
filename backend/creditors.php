@@ -23,7 +23,18 @@ switch ($method) {
             $creditor = $result->fetch_assoc();
 
             echo json_encode($creditor ? $creditor : []);
-        } elseif  (isset($_GET['q'])) {
+        } elseif (isset($_GET['category'])) {
+          $category = $_GET['category'];
+          $stmt = $connection->prepare("SELECT * FROM creditors WHERE category = ?");
+          $stmt->bind_param("s", $category);
+          $stmt->execute();
+          $result = $stmt->get_result();
+          $creditors = [];
+          while ($row = $result->fetch_assoc()) {
+              $creditors[] = $row;
+          }
+          echo json_encode($creditors);
+      } elseif  (isset($_GET['q'])) {
           $query = '%' . $connection->real_escape_string($_GET['q']) . '%';
 
           $stmt = $connection->prepare("SELECT * FROM creditors WHERE company LIKE ? OR contact LIKE ? LIMIT 10");
@@ -70,6 +81,7 @@ switch ($method) {
         $contact = !empty($data['contact']) ? $data['contact'] : null;
         $phone = !empty($data['phone']) ? $data['phone'] : null;
         $email = !empty($data['email']) ? $data['email'] : null;
+        $province = !empty($data['province']) ? $data['province'] : null;
         $town = !empty($data['town']) ? $data['town'] : null;
         $address = !empty($data['address']) ? $data['address'] : null;
         $post_code = !empty($data['post_code']) ? $data['post_code'] : null;
@@ -78,11 +90,11 @@ switch ($method) {
         $observations = !empty($data['observations']) ? $data['observations'] : null;
 
         $stmt = $connection->prepare("INSERT INTO creditors
-            (company, cif, contact, phone, email, town, address, post_code, category, key_words, observations)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            (company, cif, contact, phone, email, province, town, address, post_code, category, key_words, observations)
+            VALUES (?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-        $stmt->bind_param("sssssssssss",
-            $company, $cif, $contact, $phone, $email, $town, $address, $post_code, $category, $key_words, $observations
+        $stmt->bind_param("ssssssssssss",
+            $company, $cif, $contact, $phone, $email, $province, $town, $address, $post_code, $category, $key_words, $observations
         );
 
         if ($stmt->execute()) {
@@ -113,6 +125,7 @@ switch ($method) {
         $contact = !empty($data['contact']) ? $data['contact'] : null;
         $phone = !empty($data['phone']) ? $data['phone'] : null;
         $email = !empty($data['email']) ? $data['email'] : null;
+        $province = !empty($data['province']) ? $data['province'] : null;
         $town = !empty($data['town']) ? $data['town'] : null;
         $address = !empty($data['address']) ? $data['address'] : null;
         $post_code = !empty($data['post_code']) ? $data['post_code'] : null;
@@ -121,12 +134,12 @@ switch ($method) {
         $observations = !empty($data['observations']) ? $data['observations'] : null;
 
         $stmt = $connection->prepare("UPDATE creditors
-            SET company = ?, cif = ?, contact = ?, phone = ?, email = ?, town = ?, address = ?, post_code = ?,
+            SET company = ?, cif = ?, contact = ?, phone = ?, email = ?, province = ?, town = ?, address = ?, post_code = ?,
                 category = ?, key_words = ?, observations = ?
             WHERE id = ?");
 
-        $stmt->bind_param("sssssssssssi",
-            $company, $cif, $contact, $phone, $email, $town, $address, $post_code, $category, $key_words, $observations, $id
+        $stmt->bind_param("ssssssssssssi",
+            $company, $cif, $contact, $phone, $email, $province, $town, $address, $post_code, $category, $key_words, $observations, $id
         );
 
         if ($stmt->execute()) {

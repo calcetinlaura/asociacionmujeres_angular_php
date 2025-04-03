@@ -6,17 +6,21 @@ import {
   OnInit,
   ViewChild,
 } from '@angular/core';
-import { FiltersComponent } from '../../../components/filters/filters.component';
-import { TypeList, filterRecipes } from 'src/app/core/models/general.model';
-import { RecipesService } from 'src/app/core/services/recipes.services';
-import { SectionGenericComponent } from '../../../components/section-generic/section-generic.component';
-import { tap } from 'rxjs';
-import { RecipeModel } from 'src/app/core/interfaces/recipe.interface';
-import { InputSearchComponent } from '../../../../../shared/components/inputs/input-search/input-search.component';
-import { RecipesFacade } from 'src/app/application';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { NoResultsComponent } from '../../../components/no-results/no-results.component';
-import { SpinnerLoadingComponent } from '../../../components/spinner-loading/spinner-loading.component';
+import { tap } from 'rxjs';
+import { RecipesFacade } from 'src/app/application/recipes.facade';
+import {
+  categoryFilterRecipes,
+  RecipeModel,
+} from 'src/app/core/interfaces/recipe.interface';
+import { Filter, TypeList } from 'src/app/core/models/general.model';
+import { RecipesService } from 'src/app/core/services/recipes.services';
+import { FiltersComponent } from 'src/app/modules/landing/components/filters/filters.component';
+import { NoResultsComponent } from 'src/app/modules/landing/components/no-results/no-results.component';
+import { SectionGenericComponent } from 'src/app/modules/landing/components/section-generic/section-generic.component';
+import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
+import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
+import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
   selector: 'app-recipes-page-landing',
@@ -30,45 +34,35 @@ import { SpinnerLoadingComponent } from '../../../components/spinner-loading/spi
     SpinnerLoadingComponent,
   ],
   templateUrl: './recipes-page-landing.component.html',
-  providers: [RecipesService],
 })
 export class RecipesPageLandingComponent implements OnInit {
-  private destroyRef = inject(DestroyRef);
-  private recipesFacade = inject(RecipesFacade);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly recipesFacade = inject(RecipesFacade);
+  private readonly recipesService = inject(RecipesService);
+  private readonly generalService = inject(GeneralService);
 
   recipes: RecipeModel[] = [];
   filteredRecipes: RecipeModel[] = [];
-  isLoading: boolean = true;
-  areThereResults: boolean = false;
-  filterCategoryRecipes = filterRecipes;
+  filters: Filter[] = [];
+  isLoading = true;
+  areThereResults = false;
   typeList = TypeList;
-  number: number = 0;
-  selectedFilter: string = 'TODOS';
+  number = 0;
+  selectedFilter = 'TODOS';
 
   @ViewChild(InputSearchComponent)
   private inputSearchComponent!: InputSearchComponent;
 
   ngOnInit(): void {
-    this.filterSelected('NOVEDADES');
-  }
+    this.filters = [
+      { code: 'NOVEDADES', name: 'Novedades' },
+      { code: 'TODOS', name: 'Todos' },
+      ...categoryFilterRecipes,
+    ];
 
-  filterSelected(filter: string): void {
-    this.selectedFilter = filter;
-    if (this.inputSearchComponent) {
-      this.inputSearchComponent.clearInput();
-    }
-    switch (filter) {
-      case 'TODOS':
-        this.recipesFacade.loadAllRecipes();
-        break;
-      case 'NOVEDADES':
-        this.recipesFacade.loadRecipesByLatest();
-        break;
-      default:
-        this.recipesFacade.loadRecipesByCategory(filter);
-        break;
-    }
-    this.recipesFacade.recipes$
+    this.filterSelected('NOVEDADES');
+
+    this.recipesFacade.filteredRecipes$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((recipes) => this.updateRecipeState(recipes))
@@ -76,28 +70,23 @@ export class RecipesPageLandingComponent implements OnInit {
       .subscribe();
   }
 
-  applyFilter(keyword: string): void {
-    this.recipesFacade.applyFilter(keyword);
-    this.recipesFacade.filteredRecipes$
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((recipes) => {
-          this.updateRecipeState(recipes);
-        })
-      )
-      .subscribe();
+  filterSelected(filter: string): void {
+    this.selectedFilter = filter;
+    this.generalService.clearSearchInput(this.inputSearchComponent);
+    this.recipesFacade.setCurrentFilter(filter);
+  }
+
+  applyFilterWord(keyword: string): void {
+    this.recipesFacade.applyFilterWord(keyword);
   }
 
   updateRecipeState(recipes: RecipeModel[] | null): void {
-    if (recipes === null) {
-      return;
-    }
-    this.recipes = recipes.sort((a, b) =>
-      a.title.toLowerCase().localeCompare(b.title.toLowerCase())
-    );
+    if (!recipes) return;
+
+    this.recipes = this.recipesService.sortRecipesByTitle(recipes);
     this.filteredRecipes = [...this.recipes];
-    this.number = this.recipes.length;
-    this.areThereResults = this.number > 0;
+    this.number = this.recipesService.countRecipes(recipes);
+    this.areThereResults = this.recipesService.hasResults(recipes);
     this.isLoading = false;
   }
 }

@@ -1,34 +1,50 @@
-import { DestroyRef, inject, Injectable } from '@angular/core';
-import {
-  BehaviorSubject,
-  catchError,
-  Observable,
-  of,
-  tap,
-  throwError,
-} from 'rxjs';
-import { RecipesService } from '../core/services/recipes.services';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RecipeModel } from '../core/interfaces/recipe.interface';
 import { HttpErrorResponse } from '@angular/common/http';
+import { DestroyRef, inject, Injectable } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { BehaviorSubject, catchError, Observable, tap, throwError } from 'rxjs';
+import { RecipeModel } from 'src/app/core/interfaces/recipe.interface';
+import { RecipesService } from 'src/app/core/services/recipes.services';
 
 @Injectable({
   providedIn: 'root',
 })
 export class RecipesFacade {
-  private destroyRef = inject(DestroyRef);
-  private recipesService = inject(RecipesService);
-  private recipesSubject = new BehaviorSubject<RecipeModel[] | null>(null);
-  private filteredRecipesSubject = new BehaviorSubject<RecipeModel[] | null>(
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly recipesService = inject(RecipesService);
+  private readonly recipesSubject = new BehaviorSubject<RecipeModel[] | null>(
     null
   );
-  private selectedRecipeSubject = new BehaviorSubject<RecipeModel | null>(null);
+  private readonly filteredRecipesSubject = new BehaviorSubject<
+    RecipeModel[] | null
+  >(null);
+  private readonly selectedRecipeSubject =
+    new BehaviorSubject<RecipeModel | null>(null);
 
   recipes$ = this.recipesSubject.asObservable();
   selectedRecipe$ = this.selectedRecipeSubject.asObservable();
   filteredRecipes$ = this.filteredRecipesSubject.asObservable();
 
+  currentFilter: string = 'TODOS';
+
   constructor() {}
+
+  setCurrentFilter(filter: string): void {
+    this.currentFilter = filter;
+    this.loadRecipesByFilter(filter);
+  }
+
+  loadRecipesByFilter(filter: string): void {
+    const loaders: Record<string, () => void> = {
+      TODOS: () => this.loadAllRecipes(),
+      NOVEDADES: () => this.loadRecipesByLatest(),
+    };
+
+    (loaders[filter] || (() => this.loadRecipesByCategory(filter)))();
+  }
+
+  private reloadCurrentFilter(): void {
+    this.loadRecipesByFilter(this.currentFilter);
+  }
 
   loadAllRecipes(): void {
     this.recipesService
@@ -36,17 +52,6 @@ export class RecipesFacade {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((recipes: RecipeModel[]) => this.updateRecipeState(recipes)),
-        catchError(this.handleError)
-      )
-      .subscribe();
-  }
-
-  loadRecipeById(id: number): void {
-    this.recipesService
-      .getRecipeById(id)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((recipe: RecipeModel) => this.selectedRecipeSubject.next(recipe)),
         catchError(this.handleError)
       )
       .subscribe();
@@ -85,10 +90,21 @@ export class RecipesFacade {
       .subscribe();
   }
 
+  loadRecipeById(id: number): void {
+    this.recipesService
+      .getRecipeById(id)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap((recipe: RecipeModel) => this.selectedRecipeSubject.next(recipe)),
+        catchError(this.handleError)
+      )
+      .subscribe();
+  }
+
   addRecipe(recipe: FormData): Observable<FormData> {
     return this.recipesService.add(recipe).pipe(
       takeUntilDestroyed(this.destroyRef),
-      tap(() => this.loadAllRecipes()),
+      tap(() => this.reloadCurrentFilter()),
       catchError(this.handleError)
     );
   }
@@ -96,7 +112,7 @@ export class RecipesFacade {
   editRecipe(itemId: number, recipe: FormData): Observable<FormData> {
     return this.recipesService.edit(itemId, recipe).pipe(
       takeUntilDestroyed(this.destroyRef),
-      tap(() => this.loadAllRecipes()),
+      tap(() => this.reloadCurrentFilter()),
       catchError(this.handleError)
     );
   }
@@ -106,7 +122,7 @@ export class RecipesFacade {
       .delete(id)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap(() => this.loadAllRecipes()),
+        tap(() => this.reloadCurrentFilter()),
         catchError(this.handleError)
       )
       .subscribe();
@@ -116,23 +132,21 @@ export class RecipesFacade {
     this.selectedRecipeSubject.next(null);
   }
 
-  applyFilter(keyword: string): void {
-    const searchValue = keyword.toLowerCase();
+  applyFilterWord(keyword: string): void {
     const allRecipes = this.recipesSubject.getValue();
 
-    if (!searchValue) {
+    if (!keyword.trim() || !allRecipes) {
       this.filteredRecipesSubject.next(allRecipes);
-    } else {
-      const filteredRecipes = this.recipesSubject
-        .getValue()!
-        .filter(
-          (recipe) =>
-            recipe.title.toLowerCase().includes(searchValue) ||
-            (recipe.owner && recipe.owner.toLowerCase().includes(searchValue))
-        );
-
-      this.filteredRecipesSubject.next(filteredRecipes);
+      return;
     }
+    const search = keyword.trim().toLowerCase();
+    const filteredRecipes = allRecipes.filter(
+      (recipe) =>
+        recipe.title.toLowerCase().includes(search) ||
+        (recipe.owner && recipe.owner.toLowerCase().includes(search))
+    );
+
+    this.filteredRecipesSubject.next(filteredRecipes);
   }
 
   updateRecipeState(recipes: RecipeModel[]): void {

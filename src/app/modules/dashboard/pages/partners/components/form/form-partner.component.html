@@ -14,7 +14,6 @@
             <!-- Nombre -->
             <div class="box-input gap-x-4">
               <label for="name">Nombre</label>
-
               <input
                 formControlName="name"
                 type="text"
@@ -36,7 +35,7 @@
             </div>
             <div class="flex gap-x-4">
               <!-- Fecha de nacimiento -->
-              <div class="box-input gap-x-4">
+              <div class="box-input gap-x-4 flex-1">
                 <label for="birthday">Fecha Nac.</label>
                 <input formControlName="birthday" type="date" />
               </div>
@@ -47,23 +46,44 @@
               </div>
             </div>
             <!-- Email -->
-            <div class="box-input gap-x-4 flex-1">
+            <div class="box-input gap-x-4">
               <label for="address">Email</label>
               <input formControlName="email" type="text" />
             </div>
-            <div class="flex gap-x-4">
-              <div class="box-input gap-x-4 flex-1">
-                <label for="town">Municipio</label>
-                <input formControlName="town" type="text" />
+            <div class="box-input flex gap-x-4">
+              <!-- Provincia -->
+              <div class="box-input flex gap-x-4 flex-1">
+                <label for="province">Provincia</label>
+                <select
+                  formControlName="province"
+                  (change)="onProvinceChange()"
+                >
+                  <option value="">Seleccione una provincia</option>
+                  <option *ngFor="let prov of provincias" [value]="prov.label">
+                    {{ prov.label }}
+                  </option>
+                </select>
               </div>
-              <div class="box-input gap-x-4">
+              <!-- Municipio -->
+              <div class="box-input gap-x-4 flex flex-1">
+                <label for="town">Municipio</label>
+                <select formControlName="town">
+                  <option value="">Seleccione un municipio</option>
+                  <option *ngFor="let mun of municipios" [value]="mun.label">
+                    {{ mun.label }}
+                  </option>
+                </select>
+              </div>
+            </div>
+            <div class="box-input flex gap-x-4">
+              <div class="box-input gap-x-4 flex-1">
+                <label for="address">Dirección</label>
+                <input formControlName="address" type="text" />
+              </div>
+              <div class="box-input gap-x-4 w-auto">
                 <label for="post_code">C.Postal</label>
                 <input formControlName="post_code" type="text" />
               </div>
-            </div>
-            <div class="box-input gap-x-4">
-              <label for="post_code">C.Postal</label>
-              <input formControlName="post_code" type="text" />
             </div>
           </div>
           <div class="box-input gap-x-4 px-4 w-1/4">

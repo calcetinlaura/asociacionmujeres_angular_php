@@ -3,7 +3,7 @@ import { CardPlayerComponent } from '../card/card.component';
 import { CommonModule } from '@angular/common';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
-import { EventModel } from 'src/app/core/interfaces/event.interface';
+import { EventWithPlaceModel } from 'src/app/core/interfaces/event.interface';
 import { BookModel } from 'src/app/core/interfaces/book.interface';
 import { MovieModel } from 'src/app/core/interfaces/movie.interface';
 import { RecipeModel } from 'src/app/core/interfaces/recipe.interface';
@@ -23,7 +23,7 @@ export class SectionGenericComponent implements OnInit {
   TypeList = TypeList;
   TypeActionModal = TypeActionModal;
 
-  Events: EventModel[] = [];
+  Events: EventWithPlaceModel[] = [];
   Books: BookModel[] = [];
   Movies: MovieModel[] = [];
   Recipes: RecipeModel[] = [];

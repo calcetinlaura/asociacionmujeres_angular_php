@@ -1,28 +1,35 @@
+import { CommonModule } from '@angular/common';
 import {
   Component,
   DestroyRef,
-  ElementRef,
-  HostListener,
   inject,
   OnInit,
   ViewChild,
 } from '@angular/core';
-import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
-import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
-import { ColumnModel } from 'src/app/core/interfaces/column.interface';
-import { RecipesService } from 'src/app/core/services/recipes.services';
-import { TableComponent } from 'src/app/modules/dashboard/components/table/table.component';
-import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
-import { CommonModule } from '@angular/common';
-import { RecipesFacade } from 'src/app/application';
-import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { tap } from 'rxjs';
+import { RecipesFacade } from 'src/app/application/recipes.facade';
+import { ColumnModel } from 'src/app/core/interfaces/column.interface';
+import {
+  categoryFilterRecipes,
+  RecipeModel,
+} from 'src/app/core/interfaces/recipe.interface';
+import {
+  Filter,
+  TypeActionModal,
+  TypeList,
+} from 'src/app/core/models/general.model';
+import { RecipesService } from 'src/app/core/services/recipes.services';
+import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
+import { TableComponent } from 'src/app/modules/dashboard/components/table/table.component';
+import { FiltersComponent } from 'src/app/modules/landing/components/filters/filters.component';
 import { AddButtonComponent } from 'src/app/shared/components/buttons/button-add/button-add.component';
 import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
-import { RecipeModel } from 'src/app/core/interfaces/recipe.interface';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { SpinnerLoadingComponent } from '../../../landing/components/spinner-loading/spinner-loading.component';
+import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
+import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
+import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
+import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
   selector: 'app-recipes-page',
@@ -30,113 +37,96 @@ import { SpinnerLoadingComponent } from '../../../landing/components/spinner-loa
   imports: [
     CommonModule,
     DashboardHeaderComponent,
-    TableComponent,
     ModalComponent,
     AddButtonComponent,
     ReactiveFormsModule,
     InputSearchComponent,
+    FiltersComponent,
     SpinnerLoadingComponent,
+    TableComponent,
   ],
-  providers: [RecipesService],
   templateUrl: './recipes-page.component.html',
   styleUrl: './recipes-page.component.css',
 })
 export class RecipesPageComponent implements OnInit {
-  private recipesFacade = inject(RecipesFacade);
-  private modalService = inject(ModalService);
-  private destroyRef = inject(DestroyRef);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly modalService = inject(ModalService);
+  private readonly recipesFacade = inject(RecipesFacade);
+  private readonly recipesService = inject(RecipesService);
+  private readonly generalService = inject(GeneralService);
 
-  typeList = TypeList.Recipes;
   recipes: RecipeModel[] = [];
   filteredRecipes: RecipeModel[] = [];
-  searchForm!: FormGroup;
-  dataLoaded: boolean = false;
-  number: number = 0;
-  headerListRecipes: ColumnModel[] = [];
-  isModalVisible: boolean = false;
+  filters: Filter[] = [];
+  selectedFilter = 'TODOS';
+
+  isLoading = true;
+  isModalVisible = false;
+  number = 0;
+
+  item: RecipeModel | null = null;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
-  item: any;
-  searchKeywordFilter = new FormControl();
-  isStickyToolbar: boolean = false;
+  searchForm!: FormGroup;
+  typeList = TypeList.Recipes;
 
-  @ViewChild('toolbar') toolbar!: ElementRef;
+  headerListRecipes: ColumnModel[] = [
+    { title: 'Portada', key: 'img' },
+    { title: 'Titulo', key: 'title' },
+    { title: 'Categoria', key: 'category' },
+    { title: 'Autor/a', key: 'owner' },
+    { title: 'Ingredientes', key: 'ingredients' },
+    { title: 'Receta', key: 'recipe' },
+    { title: 'Año', key: 'year' },
+  ];
 
-  @HostListener('window:scroll', [])
-  onWindowScroll() {
-    const scrollPosition =
-      window.scrollY ||
-      document.documentElement.scrollTop ||
-      document.body.scrollTop ||
-      0;
-
-    if (scrollPosition > 50) {
-      this.isStickyToolbar = true;
-    } else {
-      this.isStickyToolbar = false;
-    }
-  }
+  @ViewChild(InputSearchComponent)
+  private inputSearchComponent!: InputSearchComponent;
 
   ngOnInit(): void {
-    this.loadAllRecipes();
+    this.filters = [
+      { code: 'NOVEDADES', name: 'Novedades' },
+      { code: 'TODOS', name: 'Todos' },
+      ...categoryFilterRecipes,
+    ];
 
     this.modalService.modalVisibility$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((isVisible) => {
-          this.isModalVisible = isVisible;
-        })
+        tap((isVisible) => (this.isModalVisible = isVisible))
       )
       .subscribe();
 
-    this.headerListRecipes = [
-      { title: 'Portada', key: 'img' },
-      { title: 'Titulo', key: 'title' },
-      { title: 'Categoria', key: 'category' },
-      { title: 'Autor/a', key: 'owner' },
-      { title: 'Ingredientes', key: 'ingredients' },
-      { title: 'Receta', key: 'recipe' },
-      { title: 'Año', key: 'year' },
-    ];
-  }
+    this.filterSelected('NOVEDADES');
 
-  loadAllRecipes(): void {
-    this.recipesFacade.loadAllRecipes();
-    this.recipesFacade.recipes$
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((recipes) => {
-          this.updateRecipeState(recipes);
-        })
-      )
-      .subscribe();
-  }
-
-  applyFilter(keyword: string): void {
-    this.recipesFacade.applyFilter(keyword);
     this.recipesFacade.filteredRecipes$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((recipes) => {
-          this.updateRecipeState(recipes);
-        })
+        tap((recipes) => this.updateRecipeState(recipes))
       )
       .subscribe();
   }
 
-  confirmDeleteRecipe(item: any): void {
-    this.recipesFacade.deleteRecipe(item.id);
-    this.modalService.closeModal();
+  filterSelected(filter: string): void {
+    this.selectedFilter = filter;
+    this.generalService.clearSearchInput(this.inputSearchComponent);
+    this.recipesFacade.setCurrentFilter(filter); // usa facade
+  }
+
+  applyFilterWord(keyword: string): void {
+    this.recipesFacade.applyFilterWord(keyword);
   }
 
   addNewRecipeModal(): void {
-    this.currentModalAction = TypeActionModal.Create;
-    this.item = null;
-    this.modalService.openModal();
+    this.openModal(TypeActionModal.Create, null);
   }
 
-  onOpenModal(event: { action: TypeActionModal; item: any }): void {
-    this.currentModalAction = event.action;
-    this.item = event.item;
+  onOpenModal(event: { action: TypeActionModal; item: RecipeModel }): void {
+    this.openModal(event.action, event.item ?? null);
+  }
+
+  private openModal(action: TypeActionModal, recipe: RecipeModel | null): void {
+    this.currentModalAction = action;
+    this.item = recipe;
     this.modalService.openModal();
   }
 
@@ -144,39 +134,31 @@ export class RecipesPageComponent implements OnInit {
     this.modalService.closeModal();
   }
 
+  confirmDeleteRecipe(recipe: RecipeModel | null): void {
+    if (!recipe) return;
+    this.recipesFacade.deleteRecipe(recipe.id);
+    this.onCloseModal();
+  }
+
   sendFormRecipe(event: { itemId: number; newRecipeData: FormData }): void {
-    if (event.itemId) {
-      this.recipesFacade
-        .editRecipe(event.itemId, event.newRecipeData)
-        .pipe(
-          takeUntilDestroyed(this.destroyRef),
-          tap(() => {
-            this.onCloseModal();
-          })
-        )
-        .subscribe();
-    } else {
-      this.recipesFacade
-        .addRecipe(event.newRecipeData)
-        .pipe(
-          takeUntilDestroyed(this.destroyRef),
-          tap(() => {
-            this.onCloseModal();
-          })
-        )
-        .subscribe();
-    }
+    const save$ = event.itemId
+      ? this.recipesFacade.editRecipe(event.itemId, event.newRecipeData)
+      : this.recipesFacade.addRecipe(event.newRecipeData);
+
+    save$
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap(() => this.onCloseModal())
+      )
+      .subscribe();
   }
 
   private updateRecipeState(recipes: RecipeModel[] | null): void {
-    if (recipes === null) {
-      return;
-    }
-    this.recipes = recipes.sort((a, b) =>
-      a.title.localeCompare(b.title, undefined, { sensitivity: 'base' })
-    );
+    if (!recipes) return;
+
+    this.recipes = this.recipesService.sortRecipesById(recipes);
     this.filteredRecipes = [...this.recipes];
-    this.number = this.recipes.length;
-    this.dataLoaded = true;
+    this.number = this.recipesService.countRecipes(recipes);
+    this.isLoading = false;
   }
 }

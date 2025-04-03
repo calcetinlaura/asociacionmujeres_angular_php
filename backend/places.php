@@ -36,6 +36,18 @@ switch ($method) {
           $places[] = $row;
       }
       echo json_encode($places);
+    } elseif (isset($_GET['town'])) {
+      // Obtener libros filtrando por gestióngénero
+      $town = $_GET['town'];
+      $stmt = $connection->prepare("SELECT * FROM places WHERE town = ?");
+      $stmt->bind_param("s", $town);
+      $stmt->execute();
+      $result = $stmt->get_result();
+      $places = [];
+      while ($row = $result->fetch_assoc()) {
+          $places[] = $row;
+      }
+      echo json_encode($places);
     } else {
         $stmt = $connection->prepare("SELECT * FROM places");
         $stmt->execute();
@@ -65,10 +77,10 @@ switch ($method) {
       $place = []; // ✅ Inicializar la variable
 
       // ✅ Evitar `null` en `json_decode()`
-      if (!empty($data['subspaces'])) {
-          $place['subspaces'] = json_decode($data['subspaces'], true);
+      if (!empty($data['salas'])) {
+          $place['salas'] = json_decode($data['salas'], true);
       } else {
-          $place['subspaces'] = [];
+          $place['salas'] = [];
       }
 
       if (isset($data['_method']) && strtoupper($data['_method']) == 'PATCH') {
@@ -91,12 +103,12 @@ switch ($method) {
           $stmt = $connection->prepare("UPDATE places
               SET name = ?, province = ?, lat = ?, lon = ?, capacity = ?, address = ?,
                   town = ?, post_code = ?, description = ?, observations = ?,
-                  management = ?, type = ?, img = ?, subspaces = ? WHERE id = ?");
-          $subspacesJson = json_encode($place['subspaces']); // ✅ Guardamos el JSON en una variable
+                  management = ?, type = ?, img = ?, salas = ? WHERE id = ?");
+          $salasJson = json_encode($place['salas']); // ✅ Guardamos el JSON en una variable
           $stmt->bind_param("ssddisssssssssi", $data['name'], $data['province'], $data['lat'],
               $data['lon'], $data['capacity'], $data['address'], $data['town'],
               $data['post_code'], $data['description'], $data['observations'],
-              $data['management'], $data['type'], $imgName, $subspacesJson, $id);
+              $data['management'], $data['type'], $imgName, $salasJson, $id);
 
 
           if ($stmt->execute()) {
@@ -108,13 +120,13 @@ switch ($method) {
       } else {
           $stmt = $connection->prepare("INSERT INTO places
               (name, province, lat, lon, capacity, address, town, post_code,
-              description, observations, management, type, img, subspaces)
+              description, observations, management, type, img, salas)
               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-         $subspacesJson = json_encode($place['subspaces']); // ✅ Guardamos el JSON en una variable
-         $stmt->bind_param("ssddisssssssssi", $data['name'], $data['province'], $data['lat'],
+         $salasJson = json_encode($place['salas']); // ✅ Guardamos el JSON en una variable
+         $stmt->bind_param("ssddisssssssss", $data['name'], $data['province'], $data['lat'],
              $data['lon'], $data['capacity'], $data['address'], $data['town'],
              $data['post_code'], $data['description'], $data['observations'],
-             $data['management'], $data['type'], $imgName, $subspacesJson, $id);
+             $data['management'], $data['type'], $imgName, $salasJson);
 
 
           if ($stmt->execute()) {

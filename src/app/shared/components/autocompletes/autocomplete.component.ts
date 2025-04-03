@@ -37,7 +37,7 @@ export class InputSearchComponent implements OnInit {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((value) => {
-          this.filterCreditors(value);
+          this.categoryFilterCreditors(value);
         })
       )
       .subscribe();
@@ -56,7 +56,7 @@ export class InputSearchComponent implements OnInit {
       .subscribe();
   }
 
-  filterCreditors(value: string): void {
+  categoryFilterCreditors(value: string): void {
     const filterValue = value.toLowerCase();
     this.filteredCreditors = this.creditors
       .getValue()

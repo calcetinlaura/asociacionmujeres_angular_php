@@ -1,3 +1,5 @@
+import { LiveAnnouncer } from '@angular/cdk/a11y';
+import { CommonModule, DatePipe } from '@angular/common';
 import {
   Component,
   EventEmitter,
@@ -7,18 +9,16 @@ import {
   SimpleChanges,
   ViewChild,
 } from '@angular/core';
-import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { MatSort, Sort, MatSortModule } from '@angular/material/sort';
-import { LiveAnnouncer } from '@angular/cdk/a11y';
-import { CommonModule, DatePipe } from '@angular/common';
-import { MatIconModule } from '@angular/material/icon';
 import { FormControl } from '@angular/forms';
-import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
+import { MatIconModule } from '@angular/material/icon';
+import { MatSort, MatSortModule, Sort } from '@angular/material/sort';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { SubsidyModel } from 'src/app/core/interfaces/subsidy.interface';
+import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { SubsidiesService } from 'src/app/core/services/subsidies.services';
-import { CircleIndicatorComponent } from '../../../../components/circle-indicator/circle-indicator.component';
-import { EurosFormatPipe } from '../../../../../../shared/pipe/eurosFormat.pipe';
+import { CircleIndicatorComponent } from 'src/app/modules/dashboard/components/circle-indicator/circle-indicator.component';
+import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
+import { EurosFormatPipe } from 'src/app/shared/pipe/eurosFormat.pipe';
 
 @Component({
   standalone: true,
@@ -88,11 +88,6 @@ export class TableSubsidyComponent {
     }
   }
 
-  ngAfterViewInit(): void {
-    // Asegurarse de que el sorting esté correctamente asignado después de que la vista se haya inicializado
-    // this.dataSource.sort = this.sort;
-    // this.sort.sort({ id: 'year', start: 'desc', disableClear: false });
-  }
   getTotalAmountGranted(): number {
     return this.dataSource.data
       .map((item) => Number(item.amount_granted) || 0)

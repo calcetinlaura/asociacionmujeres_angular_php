@@ -27,7 +27,7 @@ switch ($method) {
     } elseif (isset($_GET['year']) && is_numeric($_GET['year'])) {
       // Filtrar subvenciones por año
       $year = $_GET['year'];
-      $stmt = $connection->prepare("SELECT * FROM subsidies WHERE YEAR(year) = ?");
+      $stmt = $connection->prepare("SELECT * FROM subsidies WHERE year = ?");
       $stmt->bind_param("i", $year);
       $stmt->execute();
       $result = $stmt->get_result();

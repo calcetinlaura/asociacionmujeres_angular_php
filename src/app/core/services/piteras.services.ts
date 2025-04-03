@@ -3,6 +3,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { catchError } from 'rxjs/operators';
 import { Observable, throwError } from 'rxjs';
 import { environments } from 'src/environments/environments';
+import { PiteraModel } from 'src/app/core/interfaces/pitera.interface';
 
 @Injectable({
   providedIn: 'root',
@@ -37,6 +38,22 @@ export class PiterasService {
     return this.http
       .delete(this.apiUrl, { params: { id: id } })
       .pipe(catchError(this.handleError));
+  }
+
+  sortPiterasByYear(piteras: PiteraModel[]): PiteraModel[] {
+    return piteras.sort((a, b) => b.year - a.year);
+  }
+
+  sortPiterasById(piteras: PiteraModel[]): PiteraModel[] {
+    return piteras.sort((a, b) => b.id - a.id);
+  }
+
+  hasResults(piteras: PiteraModel[] | null): boolean {
+    return !!piteras && piteras.length > 0;
+  }
+
+  countPiteras(piteras: PiteraModel[] | null): number {
+    return piteras?.length ?? 0;
   }
 
   // Método para manejar errores

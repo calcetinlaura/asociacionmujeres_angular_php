@@ -1,14 +1,16 @@
-import { Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FiltersComponent } from '../../../components/filters/filters.component';
-import { Filter, TypeList } from 'src/app/core/models/general.model';
-import { SectionGenericComponent } from '../../../components/section-generic/section-generic.component';
-import { EventsService } from 'src/app/core/services/events.services';
-import { EventModel } from 'src/app/core/interfaces/event.interface';
+import { Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { tap } from 'rxjs';
-import { SpinnerLoadingComponent } from '../../../components/spinner-loading/spinner-loading.component';
-import { NoResultsComponent } from '../../../components/no-results/no-results.component';
+import { EventsFacade } from 'src/app/application/events.facade';
+import { EventWithPlaceModel } from 'src/app/core/interfaces/event.interface';
+import { PlaceModel } from 'src/app/core/interfaces/place.interface';
+import { Filter, TypeList } from 'src/app/core/models/general.model';
+import { EventsService } from 'src/app/core/services/events.services';
+import { FiltersComponent } from 'src/app/modules/landing/components/filters/filters.component';
+import { NoResultsComponent } from 'src/app/modules/landing/components/no-results/no-results.component';
+import { SectionGenericComponent } from 'src/app/modules/landing/components/section-generic/section-generic.component';
+import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
@@ -18,86 +20,66 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
     CommonModule,
     FiltersComponent,
     SectionGenericComponent,
-    SpinnerLoadingComponent,
     NoResultsComponent,
+    SpinnerLoadingComponent,
   ],
   templateUrl: './events-page-landing.component.html',
   styleUrl: './events-page-landing.component.css',
-  providers: [EventsService],
 })
 export class EventsPageLandingComponent implements OnInit {
-  private generalService = inject(GeneralService);
-  private destroyRef = inject(DestroyRef);
-  private EventsService = inject(EventsService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly eventsFacade = inject(EventsFacade);
+  private readonly eventsService = inject(EventsService);
+  private readonly generalService = inject(GeneralService);
 
-  filtersEvents: Filter[] = [];
-  typeList = TypeList;
-  Events: EventModel[] = [];
-  number: number = 0;
-  selectedFilter: string = new Date().getFullYear().toString();
+  events: EventWithPlaceModel[] = [];
+  places: PlaceModel[] = [];
+  filteredEvents: EventWithPlaceModel[] = [];
+  filters: Filter[] = [];
+
   isLoading = true;
   areThereResults: boolean = false;
+  typeList = TypeList;
+  number: number = 0;
+  selectedFilter: number | null = null;
+  currentYear = this.generalService.currentYear;
 
   ngOnInit(): void {
-    const currentYear = this.generalService.currentYear;
-    const startYear = 2018;
+    this.filters = this.generalService.getYearFilters(
+      2018,
+      this.currentYear,
+      'Agenda'
+    );
 
-    for (let year = startYear; year <= currentYear; year++) {
-      if (year === currentYear) {
-        this.filtersEvents.push({ code: year, name: `Agenda ${year}` });
-      } else {
-        this.filtersEvents.push({
-          code: year.toString(),
-          name: year.toString(),
-        });
-      }
-    }
-    // Invertir el array para que el último año esté primero
-    this.filtersEvents.reverse();
-    this.loadEventsByYear(this.selectedFilter);
-  }
+    this.filterSelected(this.currentYear.toString());
 
-  loadEventsByYear(filter: string): void {
-    this.EventsService.getEventsByYear(parseInt(filter))
+    this.eventsFacade.filteredEvents$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap({
-          next: (data: EventModel[]) => {
-            let EventsCopy = data.map((event) => ({
-              ...event,
-              start: event.start ? new Date(event.start) : new Date(),
-              end: event.end ? new Date(event.end) : new Date(),
-            }));
-
-            EventsCopy = EventsCopy.sort(
-              (a, b) => a.start.getTime() - b.start.getTime()
-            );
-
-            this.Events = EventsCopy.map((event) => ({
-              ...event,
-              start: event.start ? new Date(event.start).toISOString() : '',
-              end: event.end ? new Date(event.end).toISOString() : '',
-            }));
-
-            this.number = this.Events.length;
-            this.areThereResults = this.Events.length > 0;
-          },
-          error: (error) => {
-            console.error(
-              `Error al recuperar eventos filtrando por años ${filter}`,
-              error
-            );
-          },
-          complete: () => {
-            this.isLoading = false;
-          },
-        })
+        tap((events) => this.updateEventState(events))
       )
       .subscribe();
   }
 
+  loadEventsByYear(year: number): void {
+    this.selectedFilter = year;
+    this.eventsFacade.loadEventsByYear(year);
+  }
+
   filterSelected(filter: string): void {
-    this.selectedFilter = filter;
-    this.loadEventsByYear(filter);
+    const year = Number(filter);
+    if (!isNaN(year)) {
+      this.loadEventsByYear(year);
+    }
+  }
+
+  private updateEventState(events: EventWithPlaceModel[] | null): void {
+    if (!events) return;
+
+    this.events = this.eventsService.sortEventsByTitle(events);
+    this.filteredEvents = [...this.events];
+    this.number = this.eventsService.countEvents(events);
+    this.areThereResults = this.eventsService.hasResults(events);
+    this.isLoading = false;
   }
 }

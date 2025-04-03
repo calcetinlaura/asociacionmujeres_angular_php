@@ -29,20 +29,45 @@
             </div>
           </div>
         </div>
-        <!-- Provincia -->
-        <div class="box-input">
-          <label for="province">Provincia</label>
-          <div class="flex flex-col flex-1">
-            <input
+        <div class="flex justify-between gap-x-4">
+          <!-- Provincia -->
+          <div class="box-input flex flex-1">
+            <label for="province">Provincia</label>
+            <select
               formControlName="province"
-              type="text"
+              (change)="onProvinceChange()"
               [ngClass]="{
                 'is-invalid': submitted && formPlace.get('province')?.invalid
               }"
-            />
-
+            >
+              <option value="">Seleccione una provincia</option>
+              <option *ngFor="let prov of provincias" [value]="prov.label">
+                {{ prov.label }}
+              </option>
+            </select>
             <div
-              *ngIf="submitted && formPlace.get('province')?.invalid"
+              *ngIf="submitted && formPlace.get('town')?.invalid"
+              class="is-invalid-text"
+            >
+              Campo requerido
+            </div>
+          </div>
+          <!-- Municipio -->
+          <div class="box-input flex flex-1">
+            <label for="town">Municipio</label>
+            <select
+              formControlName="town"
+              [ngClass]="{
+                'is-invalid': submitted && formPlace.get('town')?.invalid
+              }"
+            >
+              <option value="">Seleccione un municipio</option>
+              <option *ngFor="let mun of municipios" [value]="mun.label">
+                {{ mun.label }}
+              </option>
+            </select>
+            <div
+              *ngIf="submitted && formPlace.get('town')?.invalid"
               class="is-invalid-text"
             >
               Campo requerido
@@ -50,36 +75,16 @@
           </div>
         </div>
         <div class="flex justify-between gap-x-4">
-          <!-- Municipio -->
-          <div class="box-input flex flex-1">
-            <label for="town">Municipio</label>
-            <div class="flex flex-col flex-1">
-              <input
-                formControlName="town"
-                type="text"
-                [ngClass]="{
-                  'is-invalid': submitted && formPlace.get('town')?.invalid
-                }"
-              />
-
-              <div
-                *ngIf="submitted && formPlace.get('town')?.invalid"
-                class="is-invalid-text"
-              >
-                Campo requerido
-              </div>
-            </div>
+          <!-- Dirección -->
+          <div class="box-input flex-1">
+            <label for="address">Dirección</label>
+            <input formControlName="address" type="text" />
           </div>
           <!-- Código postal -->
-          <div class="box-input">
+          <div class="box-input w-auto">
             <label for="post_code">C. Postal</label>
             <input formControlName="post_code" type="text" />
           </div>
-        </div>
-        <!-- Dirección -->
-        <div class="box-input">
-          <label for="address">Dirección</label>
-          <input formControlName="address" type="text" />
         </div>
         <div class="flex justify-between gap-x-4">
           <!-- Lat -->
@@ -156,19 +161,19 @@
       <div class="flex justify-start gap-x-4 px-4">
         <input
           type="checkbox"
-          formControlName="hasSubspaces"
-          (change)="onHasSubspacesChange($event)"
+          formControlName="hassalas"
+          (change)="onHassalasChange($event)"
         />
-        <label for="hasSubspaces">¿El espacio dispone de más salas?</label>
+        <label for="hassalas">¿El espacio dispone de más salas?</label>
       </div>
-      <div *ngIf="formPlace.get('hasSubspaces')?.value === true">
-        <div formArrayName="subspaces" class="flex flex-col gap-y-4">
+      <div *ngIf="formPlace.get('hassalas')?.value === true">
+        <div formArrayName="salas" class="flex flex-col gap-y-4">
           <div
-            *ngFor="let subspace of subspaces.controls; let i = index"
+            *ngFor="let sala of salas.controls; let i = index"
             [formGroupName]="i"
             class="flex gap-x-4 px-8"
           >
-            <div class="subSpace_box flex justify-center items-center pr-4">
+            <div class="sala_box flex justify-center items-center pr-4">
               Sala {{ i + 1 }}
             </div>
             <div class="flex flex-col flex-1 gap-y-4 bg-lilaMuyClaro p-4">
@@ -208,11 +213,7 @@
               </div>
             </div>
             <div class="flex justify-center items-center">
-              <button
-                type="button"
-                (click)="removeSubspace(i)"
-                class="btn-danger"
-              >
+              <button type="button" (click)="removesala(i)" class="btn-danger">
                 Eliminar
               </button>
             </div>
@@ -222,11 +223,11 @@
           <app-button-add
             [buttonText]="'Añadir sala'"
             [iconClass]="'uil-plus'"
-            (addClicked)="addSubspace()"
+            (addClicked)="addsala()"
           />
         </div>
       </div>
-      <div *ngIf="!formPlace.get('hasSubspaces')?.value" class="flex gap-x-4">
+      <div *ngIf="!formPlace.get('hassalas')?.value" class="flex gap-x-4">
         <div class="box-input gap-x-4 px-4 flex flex-1">
           <label for="gender">Espacio</label>
           <div class="flex flex-col flex-1">

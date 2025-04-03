@@ -3,6 +3,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { catchError } from 'rxjs/operators';
 import { Observable, throwError } from 'rxjs';
 import { environments } from 'src/environments/environments';
+import { EventWithPlaceModel } from 'src/app/core/interfaces/event.interface';
 
 @Injectable({
   providedIn: 'root',
@@ -42,6 +43,24 @@ export class EventsService {
     return this.http
       .delete(this.apiUrl, { params: { id: id } })
       .pipe(catchError(this.handleError));
+  }
+
+  sortEventsByTitle(events: EventWithPlaceModel[]): EventWithPlaceModel[] {
+    return events.sort((a, b) =>
+      a.title.toLowerCase().localeCompare(b.title.toLowerCase())
+    );
+  }
+
+  sortEventsById(events: EventWithPlaceModel[]): EventWithPlaceModel[] {
+    return events.sort((a, b) => b.id - a.id);
+  }
+
+  hasResults(events: EventWithPlaceModel[] | null): boolean {
+    return !!events && events.length > 0;
+  }
+
+  countEvents(events: EventWithPlaceModel[] | null): number {
+    return events?.length ?? 0;
   }
 
   // Método para manejar errores

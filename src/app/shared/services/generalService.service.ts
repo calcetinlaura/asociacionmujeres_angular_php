@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { Filter } from 'src/app/core/models/general.model';
 
 @Injectable({
   providedIn: 'root',
@@ -15,19 +16,35 @@ export class GeneralService {
     return { time };
   }
 
-  /**
-   * Genera una lista de años en orden descendente.
-   */
+  /** Genera una lista de años en orden descendente. */
   loadYears(currentYear: number, sinceYear: number): number[] {
     return Array.from(
       { length: currentYear - sinceYear + 1 },
       (_, i) => currentYear - i
     );
   }
+  /** Genera una lista de filtros de año con etiqueta personalizada para el último año.*/
+  getYearFilters(
+    startYear: number,
+    endYear: number,
+    labelPrefix = ''
+  ): Filter[] {
+    const filters: Filter[] = [];
 
-  /**
-   * Maneja la previsualización de imágenes.
-   */
+    for (let year = startYear; year <= endYear; year++) {
+      filters.push({
+        code: year,
+        name:
+          labelPrefix && year === endYear
+            ? `${labelPrefix} ${year}`
+            : year.toString(),
+      });
+    }
+    // Invertir el array para que el último año esté primero
+    return filters.reverse();
+  }
+
+  /**  Maneja la previsualización de imágenes. */
   handleFileSelection(
     file: File | null
   ): Promise<{ file: File | null; imageSrc: string }> {
@@ -41,9 +58,11 @@ export class GeneralService {
     });
   }
 
-  /**
-   * Construye un FormData dinámico a partir de un objeto.
-   */
+  clearSearchInput(inputComponent?: { clearInput: () => void }): void {
+    inputComponent?.clearInput();
+  }
+
+  /** Construye un FormData dinámico a partir de un objeto   */
   createFormData(
     item: any,
     selectedImageFile: File | null,

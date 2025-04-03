@@ -7,19 +7,18 @@ import {
   Input,
   Output,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { MatIconModule } from '@angular/material/icon';
 import { catchError, of, tap } from 'rxjs';
 import { InvoiceModel } from 'src/app/core/interfaces/invoice.interface';
 import { SubsidyModel } from 'src/app/core/interfaces/subsidy.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
-import { TextEditorComponent } from 'src/app/shared/components/text/text-editor/text-editor.component';
-import { TableInvoicesComponent } from '../../../invoices/components/table-invoices/table-invoices.component';
-import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
 import { InvoicesService } from 'src/app/core/services/invoices.services';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MatIconModule } from '@angular/material/icon';
 import { SubsidiesService } from 'src/app/core/services/subsidies.services';
-import { IconActionComponent } from '../../../../../../shared/components/buttons/icon-action/icon-action.component';
-import { EurosFormatPipe } from '../../../../../../shared/pipe/eurosFormat.pipe';
+import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
+import { TextEditorComponent } from 'src/app/shared/components/text/text-editor/text-editor.component';
+import { EurosFormatPipe } from 'src/app/shared/pipe/eurosFormat.pipe';
+import { TableInvoicesComponent } from '../../../invoices/components/table-invoices/table-invoices.component';
 
 @Component({
   selector: 'app-tab-subsidy',
@@ -38,11 +37,10 @@ import { EurosFormatPipe } from '../../../../../../shared/pipe/eurosFormat.pipe'
 export class ModalShowSubsidyComponent {
   private subsidiesService = inject(SubsidiesService);
   private invoicesService = inject(InvoicesService);
-  private modalService = inject(ModalService);
   private destroyRef = inject(DestroyRef);
 
   @Input() item!: SubsidyModel;
-
+  @Input() loadInvoices: boolean = false;
   @Output() openModal = new EventEmitter<{
     type: TypeList;
     action: TypeActionModal;
@@ -62,51 +60,38 @@ export class ModalShowSubsidyComponent {
   typeActionModal = TypeActionModal;
   isModalVisible: boolean = false;
 
-  ngOnInit(): void {
-    this.loading = true;
-    const year = this.item.year;
-    console.log('🧪 Subsidy input YEAR:', this.item.year);
-    const subsidy = this.item.name;
+  load(): void {
+    if (!this.loadInvoices || !this.item?.year || !this.item?.name) return;
 
-    if (year && subsidy) {
-      this.invoicesService
-        .getInvoicesBySubsidy(subsidy, year)
-        .pipe(
-          takeUntilDestroyed(this.destroyRef),
-          tap((invoices: InvoiceModel[]) => {
-            this.filteredInvoices = invoices;
-            this.number_invoices = invoices.length;
-            this.amount_justified = invoices.reduce(
-              (acc, invoice) => acc + (invoice.total_amount || 0),
-              0
-            );
-            this.amountIrpf = invoices.reduce(
-              (acc, invoice) => acc + (invoice.irpf || 0),
-              0
-            );
-            this.amount_association =
-              this.amount_justified -
-              (this.item.amount_granted ? this.item.amount_granted : 0);
-            this.loading = false;
-          }),
-          catchError((error) => {
-            this.loading = false;
-            console.error('Error al cargar las facturas', error);
-            return of([]);
-          })
-        )
-        .subscribe();
-    }
-    // Suscripción a los cambios de visibilidad del modal
-    this.modalService.modalVisibility$
+    this.loading = true;
+    this.invoicesService
+      .getInvoicesBySubsidy(this.item.name, this.item.year)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((isVisible) => {
-          this.isModalVisible = isVisible;
+        tap((invoices: InvoiceModel[]) => {
+          this.filteredInvoices = invoices;
+          this.number_invoices = invoices.length;
+          this.amount_justified = invoices.reduce(
+            (acc, inv) => acc + (inv.total_amount || 0),
+            0
+          );
+          this.amountIrpf = invoices.reduce(
+            (acc, inv) => acc + (inv.irpf || 0),
+            0
+          );
+          this.amount_association =
+            this.amount_justified - (this.item.amount_granted ?? 0);
+          this.loading = false;
+        }),
+        catchError((err) => {
+          console.error('Error cargando facturas', err);
+          this.loading = false;
+          return of([]);
         })
       )
       .subscribe();
   }
+
   onOpenModal(event: {
     type: TypeList;
     action: TypeActionModal;

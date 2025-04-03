@@ -120,6 +120,7 @@ if (isset($_FILES['img']) && $_FILES['img']['error'] == 0) {
           $end = isset($data['end']) ? $data['end'] : null;
           $time = isset($data['time']) && $data['time'] !== '' ? $data['time'] : null;
           $description = isset($data['description']) && $data['description'] !== '' ? $data['description'] : null;
+          $province = isset($data['province']) && $data['province'] !== '' ? $data['province'] : null;
           $town = isset($data['town']) && $data['town'] !== '' ? $data['town'] : null;
           $place = isset($data['place']) && $data['place'] !== '' ? $data['place'] : null;
           $capacity = isset($data['capacity']) && is_numeric($data['capacity']) ? (int)$data['capacity'] : null;
@@ -141,7 +142,7 @@ if ($imgName == '') {
           // Validar que se hayan recibido los datos obligatorios
           if ($title && $start && $end  !== null) {
             $stmt = $connection->prepare("UPDATE events
-            SET title = ?, start = ?, end = ?, time = ?, description = ?, town = ?, place = ?, capacity = ?, price = ?, img = ?, status = ?, status_reason = ?, inscription = ?
+            SET title = ?, start = ?, end = ?, time = ?, description = ?, province = ?, town = ?, place = ?, capacity = ?, price = ?, img = ?, status = ?, status_reason = ?, inscription = ?
             WHERE id = ?");
             if (!$stmt) {
                    http_response_code(500);
@@ -149,9 +150,9 @@ if ($imgName == '') {
                    exit();
                }
 
-               $stmt->bind_param("sssssssissssii",
+               $stmt->bind_param("ssssssssissssii",
                $title, $start, $end, $time,
-               $description, $town, $place, $capacity,
+               $description, $province,$town, $place, $capacity,
                $price, $imgName, $status, $status_reason,
                $inscription, $id
            );
@@ -168,12 +169,12 @@ if ($imgName == '') {
       } else {
           // Si no es una actualización, se inserta un nuevo libro
           $stmt = $connection->prepare("INSERT INTO events
-          (title, start, end, time, description, town, place, capacity, price, img, status, status_reason, inscription)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+          (title, start, end, time, description, province, town, place, capacity, price, img, status, status_reason, inscription)
+          VALUES (?, ?, ?,?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-$stmt->bind_param("sssssssissssi",
+$stmt->bind_param("ssssssssissssi",
 $data['title'], $data['start'], $data['end'], $data['time'],
-$data['description'], $data['town'],$data['place'], $data['capacity'],
+$data['description'], $data['province'],$data['town'],$data['place'], $data['capacity'],
 $data['price'], $data['img'], $data['status'],$data['status_reason'],
 $inscription
 );

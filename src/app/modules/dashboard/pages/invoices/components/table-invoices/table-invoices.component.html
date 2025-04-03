@@ -112,11 +112,16 @@
       Acreedor
     </th>
     <td mat-cell *matCellDef="let element">
-      <ng-container *ngIf="element.creditor_company; else noCreditor">
+      <ng-container
+        *ngIf="
+          element.creditor_company !== element.creditor_contact;
+          else noCreditor
+        "
+      >
         {{ element.creditor_company }}<br />
         <small>{{ element.creditor_contact }}</small>
       </ng-container>
-      <ng-template #noCreditor>-</ng-template>
+      <ng-template #noCreditor>{{ element.creditor_company }} -</ng-template>
     </td>
     <td mat-footer-cell *matFooterCellDef></td>
   </ng-container>

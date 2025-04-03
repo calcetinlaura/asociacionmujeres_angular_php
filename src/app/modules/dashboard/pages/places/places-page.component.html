@@ -1,27 +1,27 @@
-<div>
+<div class="sticky-zone">
   <app-dashboard-header
     [icon]="'uil-building'"
     [title]="''"
     [number]="number"
     [type]="'Espacios'"
   />
-  <div
-    class="pt-8 px-8 flex add"
-    [class.sticky-toolbar]="isStickyToolbar"
-    #toolbar
-  >
-    <app-button-add
-      [buttonText]="'Nuevo espacio'"
-      [iconClass]="'uil-plus'"
-      (addClicked)="addNewPlaceModal()"
-    />
-    <app-input-search (onDebounce)="applyFilter($event)" class="flex-1" />
+  <div class="flex flex-1 flex-col justify-center px-8 gap-y-8">
+    <div class="flex gap-x-4">
+      <app-button-add
+        [buttonText]="'Nuevo espacio'"
+        [iconClass]="'uil-plus'"
+        (addClicked)="addNewPlaceModal()"
+      />
+      <app-input-search (onDebounce)="applyFilterWord($event)" class="flex-1" />
+    </div>
   </div>
+</div>
+<div class="flex flex-col px-8">
   <!-- Spinner Loading -->
-  <app-spinner-loading *ngIf="!dataLoaded; else results" />
+  <app-spinner-loading *ngIf="isLoading; else results" />
   <!-- Tabla -->
   <ng-template #results>
-    <div class="pb-4 px-8 flex" [class.sticky-table]="isStickyToolbar">
+    <div class="pb-4 flex">
       <app-table
         [data]="filteredPlaces"
         [type]="typeList"

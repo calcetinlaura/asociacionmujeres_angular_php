@@ -1,27 +1,20 @@
-import {
-  Component,
-  DestroyRef,
-  ElementRef,
-  HostListener,
-  inject,
-  OnInit,
-  ViewChild,
-} from '@angular/core';
-import { DashboardHeaderComponent } from '../../components/dashboard-header/dashboard-header.component';
-import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
-import { TableComponent } from '../../components/table/table.component';
-import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
 import { CommonModule } from '@angular/common';
-import { PiterasFacade } from 'src/app/application';
-import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
+import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { tap } from 'rxjs';
+import { PiterasFacade } from 'src/app/application/piteras.facade';
+import { ColumnModel } from 'src/app/core/interfaces/column.interface';
+import { PiteraModel } from 'src/app/core/interfaces/pitera.interface';
+import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
+import { PiterasService } from 'src/app/core/services/piteras.services';
+import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
+import { TableComponent } from 'src/app/modules/dashboard/components/table/table.component';
 import { AddButtonComponent } from 'src/app/shared/components/buttons/button-add/button-add.component';
 import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
-import { PiteraModel } from 'src/app/core/interfaces/pitera.interface';
-import { ColumnModel } from 'src/app/core/interfaces/column.interface';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { SpinnerLoadingComponent } from '../../../landing/components/spinner-loading/spinner-loading.component';
+import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
+import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
+import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 
 @Component({
   selector: 'app-piteras-page',
@@ -29,54 +22,43 @@ import { SpinnerLoadingComponent } from '../../../landing/components/spinner-loa
   imports: [
     CommonModule,
     DashboardHeaderComponent,
-    TableComponent,
     ModalComponent,
     AddButtonComponent,
     ReactiveFormsModule,
     InputSearchComponent,
     SpinnerLoadingComponent,
+    TableComponent,
   ],
   templateUrl: './piteras-page.component.html',
   styleUrl: './piteras-page.component.css',
 })
 export class PiterasPageComponent implements OnInit {
-  private piterasFacade = inject(PiterasFacade);
-  private modalService = inject(ModalService);
-  private destroyRef = inject(DestroyRef);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly modalService = inject(ModalService);
+  private readonly piterasFacade = inject(PiterasFacade);
+  private readonly piterasService = inject(PiterasService);
 
-  typeList = TypeList.Piteras;
   piteras: PiteraModel[] = [];
   filteredPiteras: PiteraModel[] = [];
-  searchForm!: FormGroup;
-  dataLoaded: boolean = false;
-  number: number = 0;
-  headerListPiteras: ColumnModel[] = [];
-  isModalVisible: boolean = false;
+
+  isLoading = true;
+  isModalVisible = false;
+  number = 0;
+
+  item: PiteraModel | null = null;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
-  item: any;
-  searchKeywordFilter = new FormControl();
-  isStickyToolbar: boolean = false;
+  searchForm!: FormGroup;
+  typeList = TypeList.Piteras;
 
-  @ViewChild('toolbar') toolbar!: ElementRef;
-
-  @HostListener('window:scroll', [])
-  onWindowScroll() {
-    const scrollPosition =
-      window.scrollY ||
-      document.documentElement.scrollTop ||
-      document.body.scrollTop ||
-      0;
-
-    if (scrollPosition > 50) {
-      this.isStickyToolbar = true;
-    } else {
-      this.isStickyToolbar = false;
-    }
-  }
+  headerListPiteras: ColumnModel[] = [
+    { title: 'Portada', key: 'img' },
+    { title: 'Título', key: 'title' },
+    { title: 'Año', key: 'year' },
+    { title: 'Tema', key: 'theme' },
+    { title: 'Url', key: 'url' },
+  ];
 
   ngOnInit(): void {
-    this.loadAllPiteras();
-
     this.modalService.modalVisibility$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
@@ -86,18 +68,12 @@ export class PiterasPageComponent implements OnInit {
       )
       .subscribe();
 
-    this.headerListPiteras = [
-      { title: 'Portada', key: 'img' },
-      { title: 'Título', key: 'title' },
-      { title: 'Año', key: 'year' },
-      { title: 'Tema', key: 'theme' },
-      { title: 'Url', key: 'url' },
-    ];
+    this.loadAllPiteras();
   }
 
   loadAllPiteras(): void {
     this.piterasFacade.loadAllPiteras();
-    this.piterasFacade.piteras$
+    this.piterasFacade.filteredPiteras$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((piteras) => {
@@ -108,32 +84,20 @@ export class PiterasPageComponent implements OnInit {
   }
 
   applyFilterWord(keyword: string): void {
-    if (!keyword) {
-      // Si no hay palabra clave, mostrar todos las piteras
-      this.filteredPiteras = this.piteras;
-    } else {
-      keyword = keyword.toLowerCase();
-      this.filteredPiteras = this.piteras.filter((pitera) =>
-        Object.values(pitera).join(' ').toLowerCase().includes(keyword)
-      );
-    }
-    this.number = this.filteredPiteras.length;
-  }
-
-  confirmDeletePitera(item: any): void {
-    this.piterasFacade.deletePitera(item.id);
-    this.onCloseModal();
+    this.piterasFacade.applyFilterWord(keyword);
   }
 
   addNewPiteraModal(): void {
-    this.currentModalAction = TypeActionModal.Create;
-    this.item = null;
-    this.modalService.openModal();
+    this.openModal(TypeActionModal.Create, null);
   }
 
-  onOpenModal(pitera: { action: TypeActionModal; item?: any }): void {
-    this.currentModalAction = pitera.action;
-    this.item = pitera.item;
+  onOpenModal(event: { action: TypeActionModal; item?: PiteraModel }): void {
+    this.openModal(event.action, event.item ?? null);
+  }
+
+  openModal(action: TypeActionModal, pitera: PiteraModel | null): void {
+    this.currentModalAction = action;
+    this.item = pitera;
     this.modalService.openModal();
   }
 
@@ -141,39 +105,31 @@ export class PiterasPageComponent implements OnInit {
     this.modalService.closeModal();
   }
 
-  sendFormPitera(pitera: { itemId: number; newPiteraData: FormData }): void {
-    if (pitera.itemId) {
-      this.piterasFacade
-        .editPitera(pitera.itemId, pitera.newPiteraData)
-        .pipe(
-          takeUntilDestroyed(this.destroyRef),
-          tap(() => {
-            this.onCloseModal();
-          })
-        )
-        .subscribe();
-    } else {
-      this.piterasFacade
-        .addPitera(pitera.newPiteraData)
-        .pipe(
-          takeUntilDestroyed(this.destroyRef),
-          tap(() => {
-            this.onCloseModal();
-          })
-        )
-        .subscribe();
-    }
+  confirmDeletePitera(pitera: PiteraModel | null): void {
+    if (!pitera) return;
+    this.piterasFacade.deletePitera(pitera.id);
+    this.onCloseModal();
+  }
+
+  sendFormPitera(event: { itemId: number; newPiteraData: FormData }): void {
+    const save$ = event.itemId
+      ? this.piterasFacade.editPitera(event.itemId, event.newPiteraData)
+      : this.piterasFacade.addPitera(event.newPiteraData);
+
+    save$
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap(() => this.onCloseModal())
+      )
+      .subscribe();
   }
 
   private updatePiteraState(piteras: PiteraModel[] | null): void {
-    if (piteras === null) {
-      return;
-    }
+    if (!piteras) return;
 
-    this.piteras = piteras.sort((a, b) => b.year - a.year); // 🔹 Ordenar de mayor a menor (descendente)
-
+    this.piteras = this.piterasService.sortPiterasByYear(piteras);
     this.filteredPiteras = [...this.piteras];
-    this.number = this.piteras.length;
-    this.dataLoaded = true;
+    this.number = this.piterasService.countPiteras(piteras);
+    this.isLoading = false;
   }
 }

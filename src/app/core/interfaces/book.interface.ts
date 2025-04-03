@@ -1,4 +1,4 @@
-import { Filter } from '../models/general.model';
+import { Filter } from 'src/app/core/models/general.model';
 
 export interface BookModel {
   id: number;
@@ -21,7 +21,7 @@ export type GenderBooks =
   | 'INFANTIL'
   | 'CLUB';
 
-export const GenderFilterBooks: Filter[] = [
+export const genderFilterBooks: Filter[] = [
   { code: 'ENSAYO', name: 'ENSAYO' },
   { code: 'MASCULINIDADES', name: 'MASCULINIDADES' },
   { code: 'MATERNIDAD', name: 'MATERNIDAD' },

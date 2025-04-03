@@ -9,9 +9,12 @@ import {
 import { MatCardModule } from '@angular/material/card';
 import { EditorModule } from '@tinymce/tinymce-angular';
 import { filter, tap } from 'rxjs';
-import { RecipesFacade } from 'src/app/application';
-import { RecipeModel } from 'src/app/core/interfaces/recipe.interface';
-import { filterRecipes, TypeList } from 'src/app/core/models/general.model';
+import { RecipesFacade } from 'src/app/application/recipes.facade';
+import {
+  categoryFilterRecipes,
+  RecipeModel,
+} from 'src/app/core/interfaces/recipe.interface';
+import { TypeList } from 'src/app/core/models/general.model';
 import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
@@ -45,7 +48,7 @@ export class FormRecipeComponent {
   titleForm: string = 'Registrar receta';
   buttonAction: string = 'Guardar';
   years: number[] = [];
-  FilterRecipes = filterRecipes;
+  FilterRecipes = categoryFilterRecipes;
   typeList = TypeList.Recipes;
   formRecipe = new FormGroup({
     title: new FormControl('', [Validators.required]),
@@ -60,10 +63,10 @@ export class FormRecipeComponent {
       Validators.max(new Date().getFullYear()),
     ]),
   });
+  currentYear = this.generalService.currentYear;
 
   ngOnInit(): void {
-    const currentYear = this.generalService.currentYear;
-    this.years = this.generalService.loadYears(currentYear, 2018);
+    this.years = this.generalService.loadYears(this.currentYear, 2018);
 
     if (this.itemId) {
       this.recipesFacade.loadRecipeById(this.itemId);
