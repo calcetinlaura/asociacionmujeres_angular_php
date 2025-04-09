@@ -1,49 +1,53 @@
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
-import { Observable, throwError } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { inject, Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { PlaceModel, SalaModel } from 'src/app/core/interfaces/place.interface';
+import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { environments } from 'src/environments/environments';
 
 @Injectable({
   providedIn: 'root',
 })
 export class PlacesService {
+  private readonly generalService = inject(GeneralService);
   private apiUrl: string = `${environments.api}/backend/places.php`;
   constructor(private http: HttpClient) {}
 
   getPlaces(): Observable<any> {
-    return this.http.get(this.apiUrl).pipe(catchError(this.handleError));
+    return this.http
+      .get(this.apiUrl)
+      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
   getPlacesByManagement(management: string): Observable<any> {
     return this.http
       .get(this.apiUrl, { params: { management: management } })
-      .pipe(catchError(this.handleError));
+      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
   getPlacesByType(type: string): Observable<any> {
     return this.http
       .get(this.apiUrl, { params: { type: type } })
-      .pipe(catchError(this.handleError));
+      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
   getPlacesByTown(town: string): Observable<any> {
     return this.http
       .get(this.apiUrl, { params: { town: town } })
-      .pipe(catchError(this.handleError));
+      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
   getPlaceById(id: number): Observable<any> {
     return this.http
       .get(`${this.apiUrl}/${id}`)
-      .pipe(catchError(this.handleError));
+      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
   getAllPlacesWithSalas(): Observable<PlaceModel[]> {
     return this.http
       .get<PlaceModel[]>(`${this.apiUrl}?withSalas=true`)
-      .pipe(catchError(this.handleError));
+      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
   getSalasByPlaceId(placeId: number): Observable<SalaModel[]> {
@@ -55,19 +59,19 @@ export class PlacesService {
   add(place: FormData): Observable<any> {
     return this.http
       .post(this.apiUrl, place)
-      .pipe(catchError(this.handleError));
+      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
   edit(id: number, place: FormData): Observable<any> {
     return this.http
       .post(this.apiUrl, place)
-      .pipe(catchError(this.handleError));
+      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
   delete(id: number): Observable<any> {
     return this.http
       .delete(this.apiUrl, { params: { id: id } })
-      .pipe(catchError(this.handleError));
+      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
   sortPlacesByTitle(places: PlaceModel[]): PlaceModel[] {
@@ -86,28 +90,5 @@ export class PlacesService {
 
   countPlaces(places: PlaceModel[] | null): number {
     return places?.length ?? 0;
-  }
-
-  // Método para manejar errores
-  handleError(error: HttpErrorResponse) {
-    let errorMessage = '';
-
-    if (error.error instanceof ErrorEvent) {
-      // Error del lado del cliente o red
-      errorMessage = `Error del cliente o red: ${error.error.message}`;
-    } else {
-      // El backend retornó un código de error no exitoso
-      errorMessage = `Código de error del servidor: ${error.status}\nMensaje: ${error.message}`;
-    }
-
-    console.error(errorMessage); // Para depuración
-
-    // Aquí podrías devolver un mensaje amigable para el usuario, o simplemente retornar el error
-    return throwError(
-      () =>
-        new Error(
-          'Hubo un problema con la solicitud, inténtelo de nuevo más tarde.'
-        )
-    );
   }
 }

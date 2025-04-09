@@ -1,25 +1,12 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { DestroyRef, inject, Injectable } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import {
-  BehaviorSubject,
-  catchError,
-  map,
-  Observable,
-  of,
-  switchMap,
-  tap,
-  throwError,
-} from 'rxjs';
-import { PlaceModel } from 'src/app/core/interfaces/place.interface';
+import { BehaviorSubject, catchError, Observable, tap } from 'rxjs';
 import { EventsService } from 'src/app/core/services/events.services';
-import { PlacesService } from 'src/app/core/services/places.services';
 import {
   EventModel,
   EventModelFullData,
 } from '../core/interfaces/event.interface';
-import { MacroeventModel } from '../core/interfaces/macroevent.interface';
-import { MacroeventsService } from '../core/services/macroevents.services';
+import { GeneralService } from '../shared/services/generalService.service';
 
 @Injectable({
   providedIn: 'root',
@@ -27,8 +14,7 @@ import { MacroeventsService } from '../core/services/macroevents.services';
 export class EventsFacade {
   private readonly destroyRef = inject(DestroyRef);
   private readonly eventsService = inject(EventsService);
-  private readonly macroeventsService = inject(MacroeventsService);
-  private readonly placesService = inject(PlacesService);
+  private readonly generalService = inject(GeneralService);
   private readonly eventsSubject = new BehaviorSubject<
     EventModelFullData[] | null
   >(null);
@@ -63,8 +49,8 @@ export class EventsFacade {
       .getEvents()
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        switchMap((events) => this.enrichWithFullData(events)),
-        catchError(this.handleError)
+        tap((events) => this.updateEventState(events)),
+        catchError((err) => this.generalService.handleHttpError(err))
       )
       .subscribe();
   }
@@ -80,8 +66,8 @@ export class EventsFacade {
       .getEventsByYear(year)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        switchMap((events) => this.enrichWithFullData(events)),
-        catchError(this.handleError)
+        tap((events) => this.updateEventState(events)),
+        catchError((err) => this.generalService.handleHttpError(err))
       )
       .subscribe();
   }
@@ -92,7 +78,7 @@ export class EventsFacade {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((event) => this.selectedEventSubject.next(event)),
-        catchError(this.handleError)
+        catchError((err) => this.generalService.handleHttpError(err))
       )
       .subscribe();
   }
@@ -101,7 +87,7 @@ export class EventsFacade {
     return this.eventsService.edit(itemId, event).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.reloadCurrentFilteredYear()),
-      catchError(this.handleError)
+      catchError((err) => this.generalService.handleHttpError(err))
     );
   }
 
@@ -109,7 +95,7 @@ export class EventsFacade {
     return this.eventsService.add(event).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.reloadCurrentFilteredYear()),
-      catchError(this.handleError)
+      catchError((err) => this.generalService.handleHttpError(err))
     );
   }
 
@@ -119,7 +105,7 @@ export class EventsFacade {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap(() => this.reloadCurrentFilteredYear()),
-        catchError(this.handleError)
+        catchError((err) => this.generalService.handleHttpError(err))
       )
       .subscribe();
   }
@@ -140,88 +126,11 @@ export class EventsFacade {
     const filteredEvents = allEvents.filter((event) =>
       event.title.toLowerCase().includes(search)
     );
-
-    this.enrichWithFullData(filteredEvents).subscribe(); // enriquecido
-  }
-
-  private enrichWithFullData(
-    events: EventModel[]
-  ): Observable<EventModelFullData[]> {
-    if (!events || events.length === 0) {
-      this.updateEventState([]);
-      return of([]);
-    }
-
-    return this.placesService.getAllPlacesWithSalas().pipe(
-      switchMap((places: PlaceModel[]) =>
-        this.macroeventsService.getMacroevents().pipe(
-          map((macroevents: MacroeventModel[]) => {
-            const enriched = events.map((event) => {
-              let placeData: PlaceModel | undefined;
-              let salaData: any = undefined;
-              let macroeventData: MacroeventModel | undefined = undefined;
-
-              // Asignar placeData y salaData como ya hacías
-              if (event.sala_id) {
-                for (const place of places) {
-                  const sala = place.salas?.find(
-                    (s) => s.sala_id === event.sala_id
-                  );
-                  if (sala) {
-                    placeData = place;
-                    salaData = sala;
-                    break;
-                  }
-                }
-              }
-              if (!placeData && event.place_id) {
-                placeData = places.find((place) => place.id === event.place_id);
-              }
-
-              // Asignar macroevento si existe
-              if (event.macroevent_id) {
-                macroeventData = macroevents.find(
-                  (m) => m.id === event.macroevent_id
-                );
-              }
-
-              return {
-                ...event,
-                placeData,
-                salaData,
-                macroeventData,
-              };
-            });
-
-            this.updateEventState(enriched);
-            return enriched;
-          })
-        )
-      )
-    );
+    this.updateEventState(filteredEvents);
   }
 
   private updateEventState(events: EventModel[]): void {
     this.eventsSubject.next(events);
     this.filteredEventsSubject.next(events);
-  }
-
-  private handleError(error: any): Observable<never> {
-    let errorMessage = 'Ha ocurrido un error desconocido.';
-
-    if (error instanceof HttpErrorResponse) {
-      if (error.error instanceof ProgressEvent) {
-        errorMessage = 'No se pudo conectar con el servidor.';
-      } else if (typeof error.error === 'string') {
-        errorMessage = error.error;
-      } else if (error.error?.message) {
-        errorMessage = error.error.message;
-      } else {
-        errorMessage = `Error ${error.status}: ${error.statusText}`;
-      }
-    }
-
-    console.error('Error capturado por handleError:', error);
-    return throwError(() => new Error(errorMessage));
   }
 }

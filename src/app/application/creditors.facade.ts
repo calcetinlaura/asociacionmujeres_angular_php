@@ -1,7 +1,6 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { DestroyRef, inject, Injectable } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, catchError, Observable, tap, throwError } from 'rxjs';
+import { BehaviorSubject, catchError, Observable, tap } from 'rxjs';
 import {
   CreditorModel,
   CreditorWithInvoices,
@@ -9,6 +8,7 @@ import {
 import { InvoiceModel } from 'src/app/core/interfaces/invoice.interface';
 import { CreditorsService } from 'src/app/core/services/creditors.services';
 import { InvoicesService } from 'src/app/core/services/invoices.services';
+import { GeneralService } from '../shared/services/generalService.service';
 
 @Injectable({
   providedIn: 'root',
@@ -16,6 +16,7 @@ import { InvoicesService } from 'src/app/core/services/invoices.services';
 export class CreditorsFacade {
   private readonly destroyRef = inject(DestroyRef);
   private readonly creditorsService = inject(CreditorsService);
+  private readonly generalService = inject(GeneralService);
   private readonly invoicesService = inject(InvoicesService);
 
   private readonly creditorsSubject = new BehaviorSubject<
@@ -58,7 +59,7 @@ export class CreditorsFacade {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((creditors) => this.loadInvoicesAndEnrich(creditors)),
-        catchError(this.handleError)
+        catchError((err) => this.generalService.handleHttpError(err))
       )
       .subscribe();
   }
@@ -69,7 +70,7 @@ export class CreditorsFacade {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((creditors) => this.loadInvoicesAndEnrich(creditors)),
-        catchError(this.handleError)
+        catchError((err) => this.generalService.handleHttpError(err))
       )
       .subscribe();
   }
@@ -80,7 +81,7 @@ export class CreditorsFacade {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((creditor) => this.selectedCreditorSubject.next(creditor)),
-        catchError(this.handleError)
+        catchError((err) => this.generalService.handleHttpError(err))
       )
       .subscribe();
   }
@@ -97,7 +98,7 @@ export class CreditorsFacade {
           );
           this.updateCreditorState(enriched);
         }),
-        catchError(this.handleError)
+        catchError((err) => this.generalService.handleHttpError(err))
       )
       .subscribe();
   }
@@ -131,14 +132,14 @@ export class CreditorsFacade {
   addCreditor(creditor: CreditorModel): Observable<CreditorModel> {
     return this.creditorsService.add(creditor).pipe(
       tap(() => this.reloadCurrentFilter()),
-      catchError(this.handleError)
+      catchError((err) => this.generalService.handleHttpError(err))
     );
   }
 
   editCreditor(id: number, creditor: CreditorModel): Observable<CreditorModel> {
     return this.creditorsService.edit(id, creditor).pipe(
       tap(() => this.reloadCurrentFilter()),
-      catchError(this.handleError)
+      catchError((err) => this.generalService.handleHttpError(err))
     );
   }
 
@@ -148,7 +149,7 @@ export class CreditorsFacade {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap(() => this.reloadCurrentFilter()),
-        catchError(this.handleError)
+        catchError((err) => this.generalService.handleHttpError(err))
       )
       .subscribe();
   }
@@ -179,15 +180,5 @@ export class CreditorsFacade {
   updateCreditorState(creditors: CreditorWithInvoices[]): void {
     this.creditorsSubject.next(creditors);
     this.filteredCreditorsSubject.next(creditors);
-  }
-
-  private handleError(error: HttpErrorResponse) {
-    const errorMessage =
-      error.error instanceof ErrorEvent
-        ? `Error del cliente o red: ${error.error.message}`
-        : `Error del servidor: ${error.status} - ${error.message}`;
-
-    console.error('CreditorsFacade error:', errorMessage);
-    return throwError(() => new Error('Error al procesar la solicitud.'));
   }
 }

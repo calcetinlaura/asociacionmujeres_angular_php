@@ -1,49 +1,53 @@
-import { Injectable } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
+import { inject, Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { Observable, throwError } from 'rxjs';
-import { environments } from 'src/environments/environments';
 import { PartnerModel } from 'src/app/core/interfaces/partner.interface';
+import { GeneralService } from 'src/app/shared/services/generalService.service';
+import { environments } from 'src/environments/environments';
 
 @Injectable({
   providedIn: 'root',
 })
 export class PartnersService {
+  private readonly generalService = inject(GeneralService);
   private apiUrl: string = `${environments.api}/backend/partners.php`;
   constructor(private http: HttpClient) {}
 
   getPartners(): Observable<any> {
-    return this.http.get(this.apiUrl).pipe(catchError(this.handleError));
+    return this.http
+      .get(this.apiUrl)
+      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
   getPartnersByYear(year: number): Observable<any> {
     return this.http
       .get(this.apiUrl, { params: { year: year } })
-      .pipe(catchError(this.handleError));
+      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
   getPartnerById(id: number): Observable<any> {
     return this.http
       .get(this.apiUrl, { params: { id: id } })
-      .pipe(catchError(this.handleError));
+      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
   add(partner: FormData): Observable<any> {
     return this.http
       .post(this.apiUrl, partner)
-      .pipe(catchError(this.handleError));
+      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
   edit(id: number, partner: FormData): Observable<any> {
     return this.http
       .post(this.apiUrl, partner)
-      .pipe(catchError(this.handleError));
+      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
   delete(id: number): Observable<any> {
     return this.http
       .delete(`${this.apiUrl}?id=${id}`) // 🔹 Ahora el id se pasa como parámetro en la URL
-      .pipe(catchError(this.handleError));
+      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
   sortPartnersByName(partners: PartnerModel[]): PartnerModel[] {
@@ -62,27 +66,5 @@ export class PartnersService {
 
   countPartners(partners: PartnerModel[] | null): number {
     return partners?.length ?? 0;
-  }
-
-  handleError(error: HttpErrorResponse) {
-    let errorMessage = '';
-
-    if (error.error instanceof ErrorEvent) {
-      // Error del lado del cliente o red
-      errorMessage = `Error del cliente o red: ${error.error.message}`;
-    } else {
-      // El backend retornó un código de error no exitoso
-      errorMessage = `Código de error del servidor: ${error.status}\nMensaje: ${error.message}`;
-    }
-
-    console.error(errorMessage); // Para depuración
-
-    // Aquí podrías devolver un mensaje amigable para el usuario, o simplemente retornar el error
-    return throwError(
-      () =>
-        new Error(
-          'Hubo un problema con la solicitud, inténtelo de nuevo más tarde.'
-        )
-    );
   }
 }

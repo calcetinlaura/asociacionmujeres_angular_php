@@ -1,9 +1,9 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { DestroyRef, inject, Injectable } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, catchError, Observable, tap, throwError } from 'rxjs';
+import { BehaviorSubject, catchError, Observable, tap } from 'rxjs';
 import { RecipeModel } from 'src/app/core/interfaces/recipe.interface';
 import { RecipesService } from 'src/app/core/services/recipes.services';
+import { GeneralService } from '../shared/services/generalService.service';
 
 @Injectable({
   providedIn: 'root',
@@ -11,6 +11,7 @@ import { RecipesService } from 'src/app/core/services/recipes.services';
 export class RecipesFacade {
   private readonly destroyRef = inject(DestroyRef);
   private readonly recipesService = inject(RecipesService);
+  private readonly generalService = inject(GeneralService);
   private readonly recipesSubject = new BehaviorSubject<RecipeModel[] | null>(
     null
   );
@@ -52,7 +53,7 @@ export class RecipesFacade {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((recipes: RecipeModel[]) => this.updateRecipeState(recipes)),
-        catchError(this.handleError)
+        catchError((err) => this.generalService.handleHttpError(err))
       )
       .subscribe();
   }
@@ -63,7 +64,7 @@ export class RecipesFacade {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((recipes: RecipeModel[]) => this.updateRecipeState(recipes)),
-        catchError(this.handleError)
+        catchError((err) => this.generalService.handleHttpError(err))
       )
       .subscribe();
   }
@@ -74,7 +75,7 @@ export class RecipesFacade {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((recipes: RecipeModel[]) => this.updateRecipeState(recipes)),
-        catchError(this.handleError)
+        catchError((err) => this.generalService.handleHttpError(err))
       )
       .subscribe();
   }
@@ -85,7 +86,7 @@ export class RecipesFacade {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((recipes: RecipeModel[]) => this.updateRecipeState(recipes)),
-        catchError(this.handleError)
+        catchError((err) => this.generalService.handleHttpError(err))
       )
       .subscribe();
   }
@@ -96,7 +97,7 @@ export class RecipesFacade {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((recipe: RecipeModel) => this.selectedRecipeSubject.next(recipe)),
-        catchError(this.handleError)
+        catchError((err) => this.generalService.handleHttpError(err))
       )
       .subscribe();
   }
@@ -105,7 +106,7 @@ export class RecipesFacade {
     return this.recipesService.add(recipe).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.reloadCurrentFilter()),
-      catchError(this.handleError)
+      catchError((err) => this.generalService.handleHttpError(err))
     );
   }
 
@@ -113,7 +114,7 @@ export class RecipesFacade {
     return this.recipesService.edit(itemId, recipe).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.reloadCurrentFilter()),
-      catchError(this.handleError)
+      catchError((err) => this.generalService.handleHttpError(err))
     );
   }
 
@@ -123,7 +124,7 @@ export class RecipesFacade {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap(() => this.reloadCurrentFilter()),
-        catchError(this.handleError)
+        catchError((err) => this.generalService.handleHttpError(err))
       )
       .subscribe();
   }
@@ -152,28 +153,5 @@ export class RecipesFacade {
   updateRecipeState(recipes: RecipeModel[]): void {
     this.recipesSubject.next(recipes);
     this.filteredRecipesSubject.next(recipes);
-  }
-
-  // Método para manejar errores
-  handleError(error: HttpErrorResponse) {
-    let errorMessage = '';
-
-    if (error.error instanceof ErrorEvent) {
-      // Error del lado del cliente o red
-      errorMessage = `Error del cliente o red: ${error.error.message}`;
-    } else {
-      // El backend retornó un código de error no exitoso
-      errorMessage = `Código de error del servidor: ${error.status}\nMensaje: ${error.message}`;
-    }
-
-    console.error(errorMessage); // Para depuración
-
-    // Aquí podrías devolver un mensaje amigable para el usuario, o simplemente retornar el error
-    return throwError(
-      () =>
-        new Error(
-          'Hubo un problema con la solicitud, inténtelo de nuevo más tarde.'
-        )
-    );
   }
 }

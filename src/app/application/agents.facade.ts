@@ -1,9 +1,9 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { DestroyRef, inject, Injectable } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, catchError, Observable, tap, throwError } from 'rxjs';
+import { BehaviorSubject, catchError, Observable, tap } from 'rxjs';
 import { AgentModel } from '../core/interfaces/agent.interface';
 import { AgentsService } from '../core/services/agents.services';
+import { GeneralService } from '../shared/services/generalService.service';
 
 @Injectable({
   providedIn: 'root',
@@ -11,6 +11,7 @@ import { AgentsService } from '../core/services/agents.services';
 export class AgentsFacade {
   private readonly destroyRef = inject(DestroyRef);
   private readonly agentsService = inject(AgentsService);
+  private readonly generalService = inject(GeneralService);
   private readonly agentsSubject = new BehaviorSubject<AgentModel[] | null>(
     null
   );
@@ -50,7 +51,7 @@ export class AgentsFacade {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((agents) => this.updateAgentState(agents)),
-        catchError(this.handleError)
+        catchError((err) => this.generalService.handleHttpError(err))
       )
       .subscribe();
   }
@@ -61,7 +62,7 @@ export class AgentsFacade {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((agents) => this.updateAgentState(agents)),
-        catchError(this.handleError)
+        catchError((err) => this.generalService.handleHttpError(err))
       )
       .subscribe();
   }
@@ -72,7 +73,7 @@ export class AgentsFacade {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((agent) => this.selectedAgentSubject.next(agent)),
-        catchError(this.handleError)
+        catchError((err) => this.generalService.handleHttpError(err))
       )
       .subscribe();
   }
@@ -81,7 +82,7 @@ export class AgentsFacade {
     return this.agentsService.add(agent).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.reloadCurrentFilter()),
-      catchError(this.handleError)
+      catchError((err) => this.generalService.handleHttpError(err))
     );
   }
 
@@ -89,7 +90,7 @@ export class AgentsFacade {
     return this.agentsService.edit(id, agent).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.reloadCurrentFilter()),
-      catchError(this.handleError)
+      catchError((err) => this.generalService.handleHttpError(err))
     );
   }
 
@@ -99,7 +100,7 @@ export class AgentsFacade {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap(() => this.reloadCurrentFilter()),
-        catchError(this.handleError)
+        catchError((err) => this.generalService.handleHttpError(err))
       )
       .subscribe();
   }
@@ -128,15 +129,5 @@ export class AgentsFacade {
   updateAgentState(agents: AgentModel[]): void {
     this.agentsSubject.next(agents);
     this.filteredAgentsSubject.next(agents);
-  }
-
-  private handleError(error: HttpErrorResponse) {
-    const errorMessage =
-      error.error instanceof ErrorEvent
-        ? `Error del cliente o red: ${error.error.message}`
-        : `Error del servidor: ${error.status} - ${error.message}`;
-
-    console.error('AgentsFacade error:', errorMessage);
-    return throwError(() => new Error('Error al procesar la solicitud.'));
   }
 }

@@ -1,4 +1,7 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { throwError } from 'rxjs';
 import { Filter } from 'src/app/core/models/general.model';
 
 @Injectable({
@@ -6,6 +9,7 @@ import { Filter } from 'src/app/core/models/general.model';
 })
 export class GeneralService {
   currentYear = new Date().getFullYear();
+  constructor(private snackBar: MatSnackBar) {}
 
   /**
    * Transforma una hora eliminando los segundos.
@@ -92,5 +96,28 @@ export class GeneralService {
     }
 
     return formData;
+  }
+  handleHttpError(error: HttpErrorResponse) {
+    let message = 'Error desconocido';
+
+    if (error.error instanceof ProgressEvent) {
+      message = 'No se pudo conectar con el servidor.';
+    } else if (typeof error.error === 'string') {
+      message = error.error;
+    } else if (error.error?.message) {
+      message = error.error.message;
+    } else {
+      message = `Error ${error.status}: ${error.statusText}`;
+    }
+
+    this.snackBar.open(message, 'Cerrar', {
+      duration: 4000,
+      horizontalPosition: 'end',
+      verticalPosition: 'bottom',
+      panelClass: ['bg-red-500', 'text-white'],
+    });
+
+    console.error('❌ Error HTTP:', message);
+    return throwError(() => new Error(message));
   }
 }

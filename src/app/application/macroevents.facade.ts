@@ -1,9 +1,9 @@
 import { DestroyRef, inject, Injectable } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, catchError, Observable, tap, throwError } from 'rxjs';
+import { BehaviorSubject, catchError, Observable, tap } from 'rxjs';
 import { MacroeventsService } from 'src/app/core/services/macroevents.services';
-import { PlacesService } from 'src/app/core/services/places.services';
 import { MacroeventModel } from '../core/interfaces/macroevent.interface';
+import { GeneralService } from '../shared/services/generalService.service';
 
 @Injectable({
   providedIn: 'root',
@@ -11,7 +11,7 @@ import { MacroeventModel } from '../core/interfaces/macroevent.interface';
 export class MacroeventsFacade {
   private readonly destroyRef = inject(DestroyRef);
   private readonly macroeventsService = inject(MacroeventsService);
-  private readonly placesService = inject(PlacesService);
+  private readonly generalService = inject(GeneralService);
   private readonly macroeventsSubject = new BehaviorSubject<
     MacroeventModel[] | null
   >(null);
@@ -49,7 +49,7 @@ export class MacroeventsFacade {
         tap((macroevents) => {
           this.updateMacroeventState(macroevents);
         }),
-        catchError(this.handleError)
+        catchError((err) => this.generalService.handleHttpError(err))
       )
       .subscribe();
   }
@@ -68,7 +68,7 @@ export class MacroeventsFacade {
         tap((macroevents: MacroeventModel[]) =>
           this.updateMacroeventState(macroevents)
         ),
-        catchError(this.handleError)
+        catchError((err) => this.generalService.handleHttpError(err))
       )
       .subscribe();
   }
@@ -79,7 +79,7 @@ export class MacroeventsFacade {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((event) => this.selectedMacroeventSubject.next(event)),
-        catchError(this.handleError)
+        catchError((err) => this.generalService.handleHttpError(err))
       )
       .subscribe();
   }
@@ -88,7 +88,7 @@ export class MacroeventsFacade {
     return this.macroeventsService.edit(itemId, event).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.reloadCurrentFilteredYear()),
-      catchError(this.handleError)
+      catchError((err) => this.generalService.handleHttpError(err))
     );
   }
 
@@ -96,7 +96,7 @@ export class MacroeventsFacade {
     return this.macroeventsService.add(event).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.reloadCurrentFilteredYear()),
-      catchError(this.handleError)
+      catchError((err) => this.generalService.handleHttpError(err))
     );
   }
 
@@ -106,7 +106,7 @@ export class MacroeventsFacade {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap(() => this.reloadCurrentFilteredYear()),
-        catchError(this.handleError)
+        catchError((err) => this.generalService.handleHttpError(err))
       )
       .subscribe();
   }
@@ -134,15 +134,5 @@ export class MacroeventsFacade {
   private updateMacroeventState(macroevents: MacroeventModel[]): void {
     this.macroeventsSubject.next(macroevents);
     this.filteredMacroeventsSubject.next(macroevents);
-  }
-
-  private handleError(error: any): Observable<never> {
-    const errorMessage =
-      error.error instanceof ErrorEvent
-        ? `Error del cliente o red: ${error.error.message}`
-        : `Error del servidor: ${error.status} - ${error.message}`;
-
-    console.error('SubsidiesFacade error:', errorMessage);
-    return throwError(() => new Error('Error al procesar la solicitud.'));
   }
 }

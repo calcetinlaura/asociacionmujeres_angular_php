@@ -1,9 +1,9 @@
 import { DestroyRef, inject, Injectable } from '@angular/core';
-import { BehaviorSubject, catchError, Observable, tap, throwError } from 'rxjs';
-import { InvoicesService } from 'src/app/core/services/invoices.services';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { BehaviorSubject, catchError, Observable, tap } from 'rxjs';
 import { InvoiceModel } from 'src/app/core/interfaces/invoice.interface';
-import { HttpErrorResponse } from '@angular/common/http';
+import { InvoicesService } from 'src/app/core/services/invoices.services';
+import { GeneralService } from '../shared/services/generalService.service';
 
 @Injectable({
   providedIn: 'root',
@@ -11,6 +11,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 export class InvoicesFacade {
   private destroyRef = inject(DestroyRef);
   private invoicesService = inject(InvoicesService);
+  private readonly generalService = inject(GeneralService);
   private invoicesSubject = new BehaviorSubject<InvoiceModel[]>([]);
   private filteredInvoicesByYearSubject = new BehaviorSubject<InvoiceModel[]>(
     []
@@ -78,7 +79,7 @@ export class InvoicesFacade {
         tap((invoice: InvoiceModel) =>
           this.selectedInvoiceSubject.next(invoice)
         ),
-        catchError(this.handleError)
+        catchError((err) => this.generalService.handleHttpError(err))
       )
       .subscribe();
   }
@@ -97,7 +98,7 @@ export class InvoicesFacade {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap(() => this.loadInvoices()),
-        catchError(this.handleError)
+        catchError((err) => this.generalService.handleHttpError(err))
       )
       .subscribe();
   }
@@ -135,28 +136,5 @@ export class InvoicesFacade {
       );
     }
     this.filteredInvoicesSubject.next(filtered);
-  }
-
-  // Método para manejar errores
-  handleError(error: HttpErrorResponse) {
-    let errorMessage = '';
-
-    if (error.error instanceof ErrorEvent) {
-      // Error del lado del cliente o red
-      errorMessage = `Error del cliente o red: ${error.error.message}`;
-    } else {
-      // El backend retornó un código de error no exitoso
-      errorMessage = `Código de error del servidor: ${error.status}\nMensaje: ${error.message}`;
-    }
-
-    console.error(errorMessage); // Para depuración
-
-    // Aquí podrías devolver un mensaje amigable para el usuario, o simplemente retornar el error
-    return throwError(
-      () =>
-        new Error(
-          'Hubo un problema con la solicitud, inténtelo de nuevo más tarde.'
-        )
-    );
   }
 }

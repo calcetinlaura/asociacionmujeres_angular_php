@@ -1,9 +1,9 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { DestroyRef, inject, Injectable } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, catchError, Observable, tap, throwError } from 'rxjs';
+import { BehaviorSubject, catchError, Observable, tap } from 'rxjs';
 import { SubsidyModel } from 'src/app/core/interfaces/subsidy.interface';
 import { SubsidiesService } from 'src/app/core/services/subsidies.services';
+import { GeneralService } from '../shared/services/generalService.service';
 
 @Injectable({
   providedIn: 'root',
@@ -11,7 +11,7 @@ import { SubsidiesService } from 'src/app/core/services/subsidies.services';
 export class SubsidiesFacade {
   private readonly destroyRef = inject(DestroyRef);
   private readonly subsidiesService = inject(SubsidiesService);
-
+  private readonly generalService = inject(GeneralService);
   private subsidiesSubject = new BehaviorSubject<SubsidyModel[]>([]);
   private filteredSubsidiesSubject = new BehaviorSubject<SubsidyModel[]>([]);
   private selectedSubsidySubject = new BehaviorSubject<SubsidyModel | null>(
@@ -58,7 +58,7 @@ export class SubsidiesFacade {
         }),
         catchError((error) => {
           this.isLoadingSubject.next(false);
-          return this.handleError(error);
+          return this.generalService.handleHttpError(error);
         })
       )
       .subscribe();
@@ -76,7 +76,7 @@ export class SubsidiesFacade {
         }),
         catchError((error) => {
           this.isLoadingSubject.next(false);
-          return this.handleError(error);
+          return this.generalService.handleHttpError(error);
         })
       )
       .subscribe();
@@ -92,7 +92,7 @@ export class SubsidiesFacade {
         }),
         catchError((error) => {
           this.isLoadingSubject.next(false);
-          return this.handleError(error);
+          return this.generalService.handleHttpError(error);
         })
       )
       .subscribe();
@@ -109,7 +109,7 @@ export class SubsidiesFacade {
         }),
         catchError((error) => {
           this.isLoadingSubject.next(false);
-          return this.handleError(error);
+          return this.generalService.handleHttpError(error);
         })
       )
       .subscribe();
@@ -121,7 +121,7 @@ export class SubsidiesFacade {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((subsidy) => this.selectedSubsidySubject.next(subsidy)),
-        catchError(this.handleError)
+        catchError((err) => this.generalService.handleHttpError(err))
       )
       .subscribe();
   }
@@ -129,14 +129,14 @@ export class SubsidiesFacade {
   addSubsidy(subsidy: SubsidyModel): Observable<SubsidyModel> {
     return this.subsidiesService.add(subsidy).pipe(
       tap(() => this.reloadCurrentFilter()),
-      catchError(this.handleError)
+      catchError((err) => this.generalService.handleHttpError(err))
     );
   }
 
   editSubsidy(id: number, subsidy: SubsidyModel): Observable<SubsidyModel> {
     return this.subsidiesService.edit(id, subsidy).pipe(
       tap(() => this.reloadCurrentFilter()),
-      catchError(this.handleError)
+      catchError((err) => this.generalService.handleHttpError(err))
     );
   }
 
@@ -146,7 +146,7 @@ export class SubsidiesFacade {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap(() => this.reloadCurrentFilter()),
-        catchError(this.handleError)
+        catchError((err) => this.generalService.handleHttpError(err))
       )
       .subscribe();
   }
@@ -176,16 +176,5 @@ export class SubsidiesFacade {
   private updateSubsidyState(subsidies: SubsidyModel[]): void {
     this.subsidiesSubject.next(subsidies);
     this.filteredSubsidiesSubject.next(subsidies);
-  }
-
-  /** Manejo de errores */
-  private handleError(error: HttpErrorResponse) {
-    const errorMessage =
-      error.error instanceof ErrorEvent
-        ? `Error del cliente o red: ${error.error.message}`
-        : `Error del servidor: ${error.status} - ${error.message}`;
-
-    console.error('SubsidiesFacade error:', errorMessage);
-    return throwError(() => new Error('Error al procesar la solicitud.'));
   }
 }

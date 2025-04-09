@@ -1,28 +1,32 @@
-import { Injectable } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
+import { inject, Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { Observable, throwError } from 'rxjs';
-import { environments } from 'src/environments/environments';
 import {
   CreditorModel,
   CreditorWithInvoices,
 } from 'src/app/core/interfaces/creditor.interface';
+import { GeneralService } from 'src/app/shared/services/generalService.service';
+import { environments } from 'src/environments/environments';
 
 @Injectable({
   providedIn: 'root',
 })
 export class CreditorsService {
+  private readonly generalService = inject(GeneralService);
   private apiUrl: string = `${environments.api}/backend/creditors.php`;
   constructor(private http: HttpClient) {}
 
   getCreditors(): Observable<any> {
-    return this.http.get(this.apiUrl).pipe(catchError(this.handleError));
+    return this.http
+      .get(this.apiUrl)
+      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
   getCreditorsByCategory(category: string): Observable<any> {
     return this.http
       .get(this.apiUrl, { params: { category: category } })
-      .pipe(catchError(this.handleError));
+      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
   getCreditorById(id: number): Observable<any> {
@@ -30,33 +34,33 @@ export class CreditorsService {
       this.http
         // .get(`${this.apiUrl}/${id}`)
         .get(this.apiUrl, { params: { id: id } })
-        .pipe(catchError(this.handleError))
+        .pipe(catchError((err) => this.generalService.handleHttpError(err)))
     );
   }
 
   add(creditor: CreditorModel): Observable<any> {
     return this.http
       .post(this.apiUrl, creditor)
-      .pipe(catchError(this.handleError));
+      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
   edit(id: number, creditor: CreditorModel): Observable<any> {
     return this.http
       .patch(`${this.apiUrl}/${id}`, creditor)
-      .pipe(catchError(this.handleError));
+      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
   delete(id: number): Observable<any> {
     return this.http
       .delete(`${this.apiUrl}?id=${id}`) // 🔹 Ahora el id se pasa como parámetro en la URL
-      .pipe(catchError(this.handleError));
+      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
   //Autocomplete de factura
   getSuggestions(query: string): Observable<CreditorModel[]> {
     return this.http
       .get<CreditorModel[]>(`${this.apiUrl}?q=${query}&_limit=6`)
-      .pipe(catchError(this.handleError));
+      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
   sortCreditorsByCompany(creditors: CreditorModel[]): CreditorModel[] {
@@ -79,27 +83,5 @@ export class CreditorsService {
 
   countCreditors(creditors: CreditorWithInvoices[] | null): number {
     return creditors?.length ?? 0;
-  }
-
-  handleError(error: HttpErrorResponse) {
-    let errorMessage = '';
-
-    if (error.error instanceof ErrorEvent) {
-      // Error del lado del cliente o red
-      errorMessage = `Error del cliente o red: ${error.error.message}`;
-    } else {
-      // El backend retornó un código de error no exitoso
-      errorMessage = `Código de error del servidor: ${error.status}\nMensaje: ${error.message}`;
-    }
-
-    console.error(errorMessage); // Para depuración
-
-    // Aquí podrías devolver un mensaje amigable para el usuario, o simplemente retornar el error
-    return throwError(
-      () =>
-        new Error(
-          'Hubo un problema con la solicitud, inténtelo de nuevo más tarde.'
-        )
-    );
   }
 }

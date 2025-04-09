@@ -1,9 +1,9 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { DestroyRef, inject, Injectable } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, catchError, Observable, tap, throwError } from 'rxjs';
+import { BehaviorSubject, catchError, Observable, tap } from 'rxjs';
 import { PartnerModel } from 'src/app/core/interfaces/partner.interface';
 import { PartnersService } from 'src/app/core/services/partners.services';
+import { GeneralService } from '../shared/services/generalService.service';
 
 @Injectable({
   providedIn: 'root',
@@ -11,6 +11,7 @@ import { PartnersService } from 'src/app/core/services/partners.services';
 export class PartnersFacade {
   private readonly destroyRef = inject(DestroyRef);
   private readonly partnersService = inject(PartnersService);
+  private readonly generalService = inject(GeneralService);
   private readonly partnersSubject = new BehaviorSubject<PartnerModel[] | null>(
     null
   );
@@ -46,7 +47,7 @@ export class PartnersFacade {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((partners: PartnerModel[]) => this.updatePartnerState(partners)),
-        catchError(this.handleError)
+        catchError((err) => this.generalService.handleHttpError(err))
       )
       .subscribe();
   }
@@ -63,7 +64,7 @@ export class PartnersFacade {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((partners: PartnerModel[]) => this.updatePartnerState(partners)),
-        catchError(this.handleError)
+        catchError((err) => this.generalService.handleHttpError(err))
       )
       .subscribe();
   }
@@ -76,7 +77,7 @@ export class PartnersFacade {
         tap((partner: PartnerModel) =>
           this.selectedPartnerSubject.next(partner)
         ),
-        catchError(this.handleError)
+        catchError((err) => this.generalService.handleHttpError(err))
       )
       .subscribe();
   }
@@ -85,7 +86,7 @@ export class PartnersFacade {
     return this.partnersService.add(partner).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.reloadCurrentFilteredYear()),
-      catchError(this.handleError)
+      catchError((err) => this.generalService.handleHttpError(err))
     );
   }
 
@@ -93,7 +94,7 @@ export class PartnersFacade {
     return this.partnersService.edit(itemId, partner).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.reloadCurrentFilteredYear()),
-      catchError(this.handleError)
+      catchError((err) => this.generalService.handleHttpError(err))
     );
   }
 
@@ -103,7 +104,7 @@ export class PartnersFacade {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap(() => this.reloadCurrentFilteredYear()),
-        catchError(this.handleError)
+        catchError((err) => this.generalService.handleHttpError(err))
       )
       .subscribe();
   }
@@ -130,15 +131,5 @@ export class PartnersFacade {
   updatePartnerState(partners: PartnerModel[]): void {
     this.partnersSubject.next(partners);
     this.filteredPartnersSubject.next(partners); // Actualiza también los libros filtrados
-  }
-
-  private handleError(error: HttpErrorResponse) {
-    const errorMessage =
-      error.error instanceof ErrorEvent
-        ? `Error del cliente o red: ${error.error.message}`
-        : `Error del servidor: ${error.status} - ${error.message}`;
-
-    console.error('PartnersFacade error:', errorMessage);
-    return throwError(() => new Error('Error al procesar la solicitud.'));
   }
 }
