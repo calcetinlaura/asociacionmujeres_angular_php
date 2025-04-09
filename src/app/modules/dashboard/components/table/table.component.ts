@@ -1,3 +1,5 @@
+import { LiveAnnouncer } from '@angular/cdk/a11y';
+import { CommonModule, DatePipe } from '@angular/common';
 import {
   Component,
   EventEmitter,
@@ -8,19 +10,17 @@ import {
   SimpleChanges,
   ViewChild,
 } from '@angular/core';
-import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { MatSort, Sort, MatSortModule } from '@angular/material/sort';
-import { LiveAnnouncer } from '@angular/cdk/a11y';
-import { ColumnModel } from 'src/app/core/interfaces/column.interface';
-import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
-import { CommonModule, DatePipe } from '@angular/common';
-import { MatIconModule } from '@angular/material/icon';
 import { FormControl } from '@angular/forms';
-import { CircleIndicatorComponent } from '../circle-indicator/circle-indicator.component';
+import { MatIconModule } from '@angular/material/icon';
+import { MatSort, MatSortModule, Sort } from '@angular/material/sort';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { ColumnModel } from 'src/app/core/interfaces/column.interface';
+import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
+import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
+import { FilterTransformCodePipe } from 'src/app/shared/pipe/filterTransformCode.pipe';
 import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
 import { PhoneFormatPipe } from 'src/app/shared/pipe/phoneFormat.pipe';
-import { FilterTransformCodePipe } from 'src/app/shared/pipe/filterTransformCode.pipe';
+import { CircleIndicatorComponent } from '../circle-indicator/circle-indicator.component';
 
 @Component({
   standalone: true,
@@ -53,6 +53,7 @@ export class TableComponent {
   dataSource = new MatTableDataSource();
   typeActionModal = TypeActionModal;
   searchKeywordFilter = new FormControl();
+  TypeList = TypeList;
 
   @ViewChild(MatSort) sort!: MatSort;
 

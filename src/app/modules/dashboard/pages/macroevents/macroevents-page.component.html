@@ -1,0 +1,49 @@
+<div class="sticky-zone">
+  <app-dashboard-header
+    [icon]="'uil-calculator-alt'"
+    [title]="'Programación'"
+    [number]="number"
+    [type]="'Macroeventos'"
+  />
+  <div class="flex flex-1 flex-col justify-center px-8 gap-y-8">
+    <app-filters
+      [filters]="filters"
+      (filterClicked)="filterSelected($event)"
+      [loadFirstFilter]="currentYear"
+    ></app-filters>
+    <div class="flex gap-x-4">
+      <app-button-add
+        [buttonText]="'Nueva macroevento'"
+        [iconClass]="'uil-plus'"
+        (addClicked)="addNewMacroeventModal()"
+      />
+      <app-input-search (onDebounce)="applyFilterWord($event)" class="flex-1" />
+    </div>
+  </div>
+</div>
+<div class="flex flex-col px-8">
+  <!-- Spinner Loading -->
+  <app-spinner-loading *ngIf="isLoading; else results" />
+  <!-- Tabla -->
+  <ng-template #results>
+    <div class="pb-4 flex">
+      <app-table
+        [data]="filteredMacroevents"
+        [type]="typeList"
+        [headerColumns]="headerListMacroevents"
+        (openModal)="onOpenModal($event)"
+      />
+    </div>
+  </ng-template>
+</div>
+
+<!-- Modal -->
+<app-modal
+  *ngIf="isModalVisible"
+  [item]="item"
+  [type]="typeList"
+  [action]="currentModalAction"
+  (closeModal)="onCloseModal()"
+  (confirmDelete)="confirmDeleteMacroevent(item)"
+  (sendFormMacroeventData)="sendFormMacroevent($event)"
+></app-modal>

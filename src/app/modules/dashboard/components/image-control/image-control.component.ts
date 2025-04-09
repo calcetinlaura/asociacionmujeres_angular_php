@@ -1,3 +1,5 @@
+import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import {
   Component,
   EventEmitter,
@@ -7,11 +9,9 @@ import {
   signal,
   SimpleChanges,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialogModule } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { HttpClient } from '@angular/common/http';
 import { TypeList } from 'src/app/core/models/general.model';
 
 @Component({
@@ -66,7 +66,7 @@ export class ImageControlComponent implements OnInit {
       console.log(this.previewImg, 'foto que carga');
       // Si el tipo es 'event', extraer el año del nombre del archivo
       let yearFolder = '';
-      if (this.type === TypeList.Events) {
+      if (this.type === TypeList.Events || this.type === TypeList.Macroevents) {
         const match = this.previewImg.match(/^(\d{4})_/); // Extrae el año del nombre del archivo (ej: 2024_evento.jpg)
         yearFolder = match ? match[1] : ''; // Si encuentra el año, lo asigna
       }

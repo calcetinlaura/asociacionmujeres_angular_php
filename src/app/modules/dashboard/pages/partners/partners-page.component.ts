@@ -54,8 +54,8 @@ export class PartnersPageComponent implements OnInit {
   partners: PartnerModel[] = [];
   filteredPartners: PartnerModel[] = [];
   filters: Filter[] = [];
-
   selectedFilter: number | null = null;
+
   currentYear = this.generalService.currentYear;
   typeList = TypeList.Partners;
   isLoading = true;

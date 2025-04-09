@@ -173,6 +173,9 @@
             [formGroupName]="i"
             class="flex gap-x-4 px-8"
           >
+            <input formControlName="id" type="hidden" />
+            <!-- ✅ Aquí -->
+
             <div class="sala_box flex justify-center items-center pr-4">
               Sala {{ i + 1 }}
             </div>
@@ -213,17 +216,18 @@
               </div>
             </div>
             <div class="flex justify-center items-center">
-              <button type="button" (click)="removesala(i)" class="btn-danger">
+              <button type="button" (click)="removeSala(i)" class="btn-danger">
                 Eliminar
               </button>
             </div>
           </div>
         </div>
+
         <div class="mt-4 ml-28">
           <app-button-add
             [buttonText]="'Añadir sala'"
             [iconClass]="'uil-plus'"
-            (addClicked)="addsala()"
+            (addClicked)="addSala()"
           />
         </div>
       </div>

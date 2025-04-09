@@ -1,0 +1,20 @@
+.body-inscription {
+  font-size: 12px;
+  padding: 3px 6px;
+  border-radius: 0.4rem;
+  color: rgb(96, 24, 24);
+}
+
+/* Media Queries para dispositivos más pequeños */
+/* Ordenador pequeño */
+@media (max-width: 1200px) {
+}
+/* Tablet */
+@media (max-width: 1024px) {
+}
+/* Móvil */
+@media (max-width: 768px) {
+}
+/* Móvil pequeño */
+@media (max-width: 480px) {
+}

@@ -18,6 +18,11 @@
           *ngTemplateOutlet="templateForm; context: { item: item }"
         ></ng-container>
       </ng-container>
+      <ng-container *ngSwitchCase="TypeActionModal.Duplicate">
+        <ng-container
+          *ngTemplateOutlet="templateForm; context: { item: item }"
+        ></ng-container>
+      </ng-container>
 
       <ng-container *ngSwitchCase="TypeActionModal.Delete">
         <ng-container
@@ -43,7 +48,7 @@
     [type]="type"
     [item]="item"
     (closeModal)="onCloseModal()"
-    (confirmDelete)="onConfirmDeleteBook($event)"
+    (confirmDelete)="onConfirmDelete($event)"
   />
 </ng-template>
 
@@ -61,7 +66,13 @@
   <app-form-event
     *ngIf="type === TypeList.Events"
     [itemId]="item?.id"
+    [item]="item"
     (sendFormEvent)="onSendFormEvent($event)"
+  />
+  <app-form-macroevent
+    *ngIf="type === TypeList.Macroevents"
+    [itemId]="item?.id"
+    (sendFormMacroevent)="onSendFormMacroevent($event)"
   />
   <app-form-recipe
     *ngIf="type === TypeList.Recipes"
@@ -92,6 +103,11 @@
     *ngIf="type === TypeList.Creditors"
     [itemId]="item?.id"
     (sendFormCreditor)="onSendFormCreditor($event)"
+  />
+  <app-form-agent
+    *ngIf="type === TypeList.Agents"
+    [itemId]="item?.id"
+    (sendFormAgent)="onSendFormAgent($event)"
   />
   <app-form-place
     *ngIf="type === TypeList.Places"

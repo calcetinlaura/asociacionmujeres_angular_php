@@ -1,0 +1,29 @@
+<div class="px-14 mb-4 flex flex-col gap-y-5">
+  <div class="flex gap-x-4">
+    <div class="flex items-center pr-4">
+      <label
+        class="py-2 px-4 rounded-xl text-sm text-lilaText bg-lilaMuyClaro"
+        >{{ label }}</label
+      >
+    </div>
+    <div class="flex flex-col gap-y-2 flex-1 pl-4 border-l-2 border-lilaClaro">
+      <div
+        *ngFor="let group of formArray.controls; let i = index"
+        [formGroup]="getFormGroupAt(i)"
+        class="flex gap-x-4 items-center"
+      >
+        <div class="box-input flex-1 gap-x-4">
+          <select formControlName="agent_id">
+            <option value="">Seleccione un {{ label }}</option>
+            <option *ngFor="let agent of agents" [value]="agent.id">
+              {{ agent.name }}
+            </option>
+          </select>
+        </div>
+        <button type="button" (click)="remove.emit(i)" class="btn-danger">
+          Eliminar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

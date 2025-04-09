@@ -1,5 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, inject, Input, Output } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  EventEmitter,
+  inject,
+  Input,
+  Output,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   FormControl,
   FormGroup,
@@ -33,6 +41,7 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
 })
 export class FormBookComponent {
   private booksFacade = inject(BooksFacade);
+  private destroyRef = inject(DestroyRef);
   private generalService = inject(GeneralService);
 
   @Input() itemId!: number;
@@ -43,8 +52,8 @@ export class FormBookComponent {
   selectedImageFile: File | null = null;
   bookData: any;
   imageSrc: string = '';
-  errorSession: boolean = false;
-  submitted: boolean = false;
+  errorSession = false;
+  submitted = false;
   titleForm: string = 'Registrar libro';
   buttonAction: string = 'Guardar';
   years: number[] = [];
@@ -67,6 +76,7 @@ export class FormBookComponent {
       this.booksFacade.loadBookById(this.itemId);
       this.booksFacade.selectedBook$
         .pipe(
+          takeUntilDestroyed(this.destroyRef),
           filter((book: BookModel | null) => book !== null),
           tap((book: BookModel | null) => {
             if (book) {

@@ -3,7 +3,7 @@ import { Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { tap } from 'rxjs';
 import { EventsFacade } from 'src/app/application/events.facade';
-import { EventWithPlaceModel } from 'src/app/core/interfaces/event.interface';
+import { EventModel } from 'src/app/core/interfaces/event.interface';
 import { PlaceModel } from 'src/app/core/interfaces/place.interface';
 import { Filter, TypeList } from 'src/app/core/models/general.model';
 import { EventsService } from 'src/app/core/services/events.services';
@@ -32,9 +32,9 @@ export class EventsPageLandingComponent implements OnInit {
   private readonly eventsService = inject(EventsService);
   private readonly generalService = inject(GeneralService);
 
-  events: EventWithPlaceModel[] = [];
+  events: EventModel[] = [];
   places: PlaceModel[] = [];
-  filteredEvents: EventWithPlaceModel[] = [];
+  filteredEvents: EventModel[] = [];
   filters: Filter[] = [];
 
   isLoading = true;
@@ -56,7 +56,10 @@ export class EventsPageLandingComponent implements OnInit {
     this.eventsFacade.filteredEvents$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((events) => this.updateEventState(events))
+        tap((events) => {
+          console.log('EVENTOS ENRIQUECIDOS', events); // 👈
+          this.updateEventState(events);
+        })
       )
       .subscribe();
   }
@@ -73,13 +76,41 @@ export class EventsPageLandingComponent implements OnInit {
     }
   }
 
-  private updateEventState(events: EventWithPlaceModel[] | null): void {
+  private updateEventState(events: EventModel[] | null): void {
     if (!events) return;
 
-    this.events = this.eventsService.sortEventsByTitle(events);
-    this.filteredEvents = [...this.events];
-    this.number = this.eventsService.countEvents(events);
-    this.areThereResults = this.eventsService.hasResults(events);
+    const now = new Date();
+    const currentYear = this.generalService.currentYear;
+
+    const futureEvents: EventModel[] = [];
+    const pastEvents: EventModel[] = [];
+
+    for (const event of events) {
+      const startDate = new Date(event.start);
+
+      // Solo clasifica si es del año actual
+      if (startDate.getFullYear() === currentYear) {
+        if (startDate >= now) {
+          futureEvents.push({ ...event, isPast: false });
+        } else {
+          pastEvents.push({ ...event, isPast: true });
+        }
+      } else {
+        // Si no es del año actual, no se clasifica como pasado
+        futureEvents.push({ ...event, isPast: false });
+      }
+    }
+
+    // Ordenar los eventos ya clasificados (futuros + pasados)
+    const allEvents = this.eventsService.sortEventsByDate([
+      ...futureEvents,
+      ...pastEvents,
+    ]);
+
+    this.events = allEvents;
+    this.filteredEvents = [...allEvents];
+    this.number = this.eventsService.countEvents(allEvents);
+    this.areThereResults = this.eventsService.hasResults(allEvents);
     this.isLoading = false;
   }
 }

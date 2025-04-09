@@ -1,20 +1,22 @@
-import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
-import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { CommonModule } from '@angular/common';
-import { FormEventComponent } from 'src/app/modules/dashboard/pages/events/components/form/form-event.component';
-import { FormRecipeComponent } from 'src/app/modules/dashboard/pages/recipes/components/form/form-recipe.component';
-import { FormBookComponent } from 'src/app/modules/dashboard/pages/books/components/form/form-book.component';
-import { FormMovieComponent } from 'src/app/modules/dashboard/pages/movies/components/form/form-movie.component';
-import { FormPiteraComponent } from 'src/app/modules/dashboard/pages/piteras/components/form/form-pitera.component';
-import { FormInvoiceComponent } from 'src/app/modules/dashboard/pages/invoices/components/form/form-invoice.component';
-import { FormCreditorComponent } from 'src/app/modules/dashboard/pages/creditors/components/form/form-creditor.component';
-import { FormPlaceComponent } from 'src/app/modules/dashboard/pages/places/components/form/form-place.component';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CreditorModel } from 'src/app/core/interfaces/creditor.interface';
-import { ModalShowComponent } from './pages/modal-show/modal-show.component';
-import { ModalDeleteComponent } from './pages/modal-delete/modal-delete.component';
-import { FormPartnerComponent } from 'src/app/modules/dashboard/pages/partners/components/form/form-partner.component';
 import { SubsidyModel } from 'src/app/core/interfaces/subsidy.interface';
+import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
+import { FormAgentComponent } from 'src/app/modules/dashboard/pages/agents/components/form/form-agent.component';
+import { FormBookComponent } from 'src/app/modules/dashboard/pages/books/components/form/form-book.component';
+import { FormCreditorComponent } from 'src/app/modules/dashboard/pages/creditors/components/form/form-creditor.component';
+import { FormEventComponent } from 'src/app/modules/dashboard/pages/events/components/form/form-event.component';
+import { FormInvoiceComponent } from 'src/app/modules/dashboard/pages/invoices/components/form/form-invoice.component';
+import { FormMovieComponent } from 'src/app/modules/dashboard/pages/movies/components/form/form-movie.component';
+import { FormPartnerComponent } from 'src/app/modules/dashboard/pages/partners/components/form/form-partner.component';
+import { FormPiteraComponent } from 'src/app/modules/dashboard/pages/piteras/components/form/form-pitera.component';
+import { FormPlaceComponent } from 'src/app/modules/dashboard/pages/places/components/form/form-place.component';
+import { FormRecipeComponent } from 'src/app/modules/dashboard/pages/recipes/components/form/form-recipe.component';
 import { FormSubsidyComponent } from 'src/app/modules/dashboard/pages/subsidies/components/form/form-subsidy.component';
+import { FormMacroeventComponent } from '../../../modules/dashboard/pages/macroevents/components/form/form-macroevent.component';
+import { ModalDeleteComponent } from './pages/modal-delete/modal-delete.component';
+import { ModalShowComponent } from './pages/modal-show/modal-show.component';
 
 @Component({
   standalone: true,
@@ -29,9 +31,11 @@ import { FormSubsidyComponent } from 'src/app/modules/dashboard/pages/subsidies/
     FormInvoiceComponent,
     FormSubsidyComponent,
     FormCreditorComponent,
+    FormAgentComponent,
     FormPlaceComponent,
     ModalShowComponent,
     ModalDeleteComponent,
+    FormMacroeventComponent,
   ],
   selector: 'app-modal',
   templateUrl: './modal.component.html',
@@ -48,6 +52,10 @@ export class ModalComponent implements OnInit {
   @Output() sendFormEventData = new EventEmitter<{
     itemId: number;
     newEventData: FormData;
+  }>();
+  @Output() sendFormMacroeventData = new EventEmitter<{
+    itemId: number;
+    newMacroeventData: FormData;
   }>();
   @Output() sendFormMovieData = new EventEmitter<{
     itemId: number;
@@ -76,6 +84,10 @@ export class ModalComponent implements OnInit {
   @Output() sendFormCreditorData = new EventEmitter<{
     itemId: number;
     newCreditorData: CreditorModel;
+  }>();
+  @Output() sendFormAgentData = new EventEmitter<{
+    itemId: number;
+    newAgentData: FormData;
   }>();
   @Output() sendFormPlaceData = new EventEmitter<{
     itemId: number;
@@ -109,7 +121,7 @@ export class ModalComponent implements OnInit {
     }
   }
 
-  onConfirmDeleteBook(id: number): void {
+  onConfirmDelete(id: number): void {
     if (id) {
       this.confirmDelete.emit(id);
     }
@@ -126,6 +138,12 @@ export class ModalComponent implements OnInit {
     this.sendFormEventData.emit({
       itemId: event.itemId,
       newEventData: event.newEventData,
+    });
+  }
+  onSendFormMacroevent(event: { itemId: number; newMacroeventData: FormData }) {
+    this.sendFormMacroeventData.emit({
+      itemId: event.itemId,
+      newMacroeventData: event.newMacroeventData,
     });
   }
 
@@ -179,6 +197,14 @@ export class ModalComponent implements OnInit {
       newCreditorData: event.newCreditorData,
     });
   }
+
+  onSendFormAgent(event: { itemId: number; newAgentData: FormData }) {
+    this.sendFormAgentData.emit({
+      itemId: event.itemId,
+      newAgentData: event.newAgentData,
+    });
+  }
+
   onSendFormPlace(event: { itemId: number; newPlaceData: FormData }) {
     this.sendFormPlaceData.emit({
       itemId: event.itemId,

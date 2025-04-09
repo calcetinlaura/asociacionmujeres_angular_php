@@ -1,4 +1,6 @@
-import { PlaceModel } from './place.interface';
+import { AgentAutocompleteModel } from './agent.interface';
+import { MacroeventModel } from './macroevent.interface';
+import { PlaceModel, SalaModel } from './place.interface';
 
 export interface EventModel {
   id: number;
@@ -9,15 +11,23 @@ export interface EventModel {
   description?: string;
   province: string;
   town: string;
-  place?: number;
+  place_id?: number;
+  sala_id?: number;
   capacity?: number;
   price?: string;
   img?: string;
   status?: string;
   status_reason?: string;
   inscription?: boolean;
+  isPast?: boolean;
+  macroevent_id?: number;
 }
 
-export interface EventWithPlaceModel extends EventModel {
+export interface EventModelFullData extends EventModel {
   placeData?: PlaceModel;
+  salaData?: SalaModel;
+  organizer?: AgentAutocompleteModel[];
+  collaborator?: AgentAutocompleteModel[];
+  sponsor?: AgentAutocompleteModel[];
+  macroeventData?: MacroeventModel;
 }

@@ -1,0 +1,48 @@
+<div class="sticky-zone">
+  <app-dashboard-header
+    [icon]="'uil-comments'"
+    [title]="''"
+    [number]="number"
+    [type]="'agentes'"
+  />
+  <div class="flex flex-1 flex-col justify-center px-8 gap-y-8">
+    <app-filters
+      [filters]="filters"
+      (filterClicked)="filterSelected($event)"
+    ></app-filters>
+    <div class="flex gap-x-4">
+      <app-button-add
+        [buttonText]="'Nuevo agente'"
+        [iconClass]="'uil-plus'"
+        (addClicked)="addNewAgentModal()"
+      />
+      <app-input-search (onDebounce)="applyFilterWord($event)" class="flex-1" />
+    </div>
+  </div>
+</div>
+<div class="flex flex-col px-8">
+  <!-- Spinner Loading -->
+  <app-spinner-loading *ngIf="isLoading; else results" />
+  <!-- Tabla -->
+  <ng-template #results>
+    <div class="pb-4 flex">
+      <app-table
+        [data]="filteredAgents"
+        [type]="typeList"
+        [headerColumns]="headerListAgents"
+        (openModal)="onOpenModal($event)"
+      />
+    </div>
+  </ng-template>
+</div>
+
+<!-- Modal -->
+<app-modal
+  *ngIf="isModalVisible"
+  [item]="item"
+  [type]="typeList"
+  [action]="currentModalAction"
+  (closeModal)="onCloseModal()"
+  (confirmDelete)="confirmDeleteAgent(item)"
+  (sendFormAgentData)="sendFormAgent($event)"
+></app-modal>

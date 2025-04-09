@@ -150,7 +150,6 @@ if ($imgName == '') {
                echo json_encode(["message" => "Datos incompletos para actualizar el libro."]);
           }
       } else {
-          // Si no es una actualización, se inserta un nuevo libro
           $stmt = $connection->prepare("INSERT INTO books (title, author, gender, year, description, img) VALUES (?, ?, ?, ?, ?, ?)");
           $stmt->bind_param("sssiss", $data['title'], $data['author'], $data['gender'], $data['year'], $data['description'], $data['img']);
 
@@ -164,7 +163,6 @@ if ($imgName == '') {
       break;
 
     case 'DELETE':
-          // Extraer el ID de la URI
           $id = isset($_GET['id']) ? $_GET['id'] : null;
           if (!is_numeric($id)) {
             http_response_code(400);
@@ -184,7 +182,5 @@ if ($imgName == '') {
         http_response_code(405);
         echo json_encode(["message" => "Método no permitido"]);
         break;
-
 }
-
 ?>

@@ -1,7 +1,15 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, inject, Input, Output } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  EventEmitter,
+  inject,
+  Input,
+  Output,
+} from '@angular/core';
 import {
   AbstractControl,
+  FormArray,
   FormControl,
   FormGroup,
   ReactiveFormsModule,
@@ -10,14 +18,23 @@ import {
 import { MatCardModule } from '@angular/material/card';
 import { EditorModule } from '@tinymce/tinymce-angular';
 import townsData from 'data/towns.json';
-import { filter, tap } from 'rxjs';
+import { filter, map, Observable, switchMap, tap } from 'rxjs';
 import { EventsFacade } from 'src/app/application/events.facade';
-import { EventModel } from 'src/app/core/interfaces/event.interface';
+import { AgentModel } from 'src/app/core/interfaces/agent.interface';
+import { EventModelFullData } from 'src/app/core/interfaces/event.interface';
 import { PlaceModel } from 'src/app/core/interfaces/place.interface';
 import { TypeList } from 'src/app/core/models/general.model';
-import { PlacesService } from 'src/app/core/services/places.services';
+import { AgentsService } from 'src/app/core/services/agents.services';
 import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
+import { AddButtonComponent } from '../../../../../../shared/components/buttons/button-add/button-add.component';
+import { AgentArrayControlComponent } from '../array-agents/array-agents.component';
+// Importaciones...
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { PlacesFacade } from 'src/app/application/places.facade';
+import { MacroeventModel } from 'src/app/core/interfaces/macroevent.interface';
+import { SalaModel } from 'src/app/core/interfaces/place.interface'; // Asegúrate de tener este modelo
+import { MacroeventsService } from 'src/app/core/services/macroevents.services';
 
 @Component({
   selector: 'app-form-event',
@@ -28,29 +45,40 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
     EditorModule,
     MatCardModule,
     ImageControlComponent,
+    AddButtonComponent,
+    AgentArrayControlComponent,
   ],
   templateUrl: './form-event.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],
 })
 export class FormEventComponent {
-  private eventsFacade = inject(EventsFacade);
-  private placesService = inject(PlacesService);
-  private generalService = inject(GeneralService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly eventsFacade = inject(EventsFacade);
+  private readonly placesFacade = inject(PlacesFacade);
+  private readonly macroeventsService = inject(MacroeventsService);
+  private readonly agentsService = inject(AgentsService);
+  private readonly generalService = inject(GeneralService);
+  @Input() item!: EventModelFullData | null;
   @Input() itemId!: number;
   @Output() sendFormEvent = new EventEmitter<{
     itemId: number;
     newEventData: FormData;
   }>();
+
   selectedImageFile: File | null = null;
-  eventData: any;
   imageSrc: string = '';
   errorSession: boolean = false;
   submitted: boolean = false;
   titleForm: string = 'Registrar evento';
   buttonAction: string = 'Guardar';
   typeList = TypeList.Events;
+  showOrganizers = false;
+  showCollaborators = false;
+  showSponsors = false;
+
   formEvent = new FormGroup(
     {
+      macroevent_id: new FormControl<number | null>(null),
       title: new FormControl('', [Validators.required]),
       start: new FormControl('', [Validators.required]),
       end: new FormControl('', [Validators.required]),
@@ -58,17 +86,21 @@ export class FormEventComponent {
       description: new FormControl('', [Validators.maxLength(2000)]),
       province: new FormControl(''),
       town: new FormControl(''),
-      place: new FormControl(0),
-      sala: new FormControl(''),
+      place_id: new FormControl<number | null>(null), // 👈 Agregado
+      sala_id: new FormControl<number | null>(null),
       capacity: new FormControl(),
       price: new FormControl(''),
       img: new FormControl(''),
       status: new FormControl(''),
       status_reason: new FormControl(''),
       inscription: new FormControl(false),
+      organizer: new FormArray([]),
+      collaborator: new FormArray([]),
+      sponsor: new FormArray([]),
     },
     { validators: this.dateRangeValidator }
   );
+  macroevents: MacroeventModel[] = [];
   provincias: {
     label: string;
     code: string;
@@ -76,95 +108,177 @@ export class FormEventComponent {
   }[] = [];
   municipios: { label: string; code: string }[] = [];
   espacios: PlaceModel[] = [];
+  salasDelLugar: SalaModel[] = []; // ← NUEVO
+  agents: AgentModel[] = [];
+  selectedPlaceId: number | null = null;
 
   private dateRangeValidator(control: AbstractControl) {
     const start = control.get('start')?.value;
     const end = control.get('end')?.value;
-
     if (start && end && end < start) {
       control.get('end')?.setErrors({ invalidDateRange: true });
       return { invalidDateRange: true };
     }
-
     return null;
   }
+
   ngOnInit(): void {
     this.provincias = townsData
       .flatMap((region) => region.provinces)
       .sort((a, b) => a.label.localeCompare(b.label));
 
-    if (this.itemId) {
-      this.eventsFacade.loadEventById(this.itemId);
-      this.eventsFacade.selectedEvent$
-        .pipe(
-          filter((event: EventModel | null) => event !== null),
-          tap((event: EventModel | null) => {
-            if (event) {
-              // 🔹 Primero actualizamos los municipios basándonos en la provincia recibida
-              const province = this.provincias.find(
-                (p) => p.label === event.province
-              );
-              this.municipios = province?.towns ?? [];
-              // Cargar los valores del formulario
-              this.formEvent.patchValue({
-                title: event.title,
-                start: event.start || '',
-                end: event.end || '',
-                time: event.time || '',
-                description: event.description || '',
-                province: event.province || '',
-                town: event.town || '',
-                place: event.place || 0,
-                capacity: event.capacity || undefined,
-                price: event.price || '',
-                img: event.img || '',
-                status: event.status || '',
-                status_reason: event.status_reason || '',
-                inscription: event.inscription || false,
-              });
-              this.onTownChange();
-              this.titleForm = 'Editar Evento';
-              this.buttonAction = 'Guardar cambios';
-              if (event.img) {
-                this.imageSrc = event.img;
-                this.selectedImageFile = null;
-              }
-            }
-          })
-        )
-        .subscribe();
-    }
+    this.agentsService.getAgents().subscribe((data) => {
+      this.agents = data;
+    });
+
     this.formEvent
-      .get('status')
+      .get('start')
       ?.valueChanges.pipe(
-        tap((value) => {
-          if (value !== '') {
+        takeUntilDestroyed(this.destroyRef),
+        tap((start: string | null) => {
+          if (start) {
+            const year = new Date(start).getFullYear();
+            this.loadMacroeventosByYear(year).subscribe(); // solo para nuevas fechas
           }
         })
       )
       .subscribe();
+
+    if (this.itemId && this.itemId !== 0) {
+      // 🔄 EDICIÓN: cargar desde el back
+      this.eventsFacade.loadEventById(this.itemId);
+
+      this.eventsFacade.selectedEvent$
+        .pipe(
+          filter((event): event is EventModelFullData => !!event),
+          switchMap((event) => this.populateFormWithEvent(event)),
+          takeUntilDestroyed(this.destroyRef)
+        )
+        .subscribe();
+    } else if (this.item) {
+      // 🆕 DUPLICADO o NUEVO
+      this.populateFormWithEvent(this.item).subscribe();
+    }
+  }
+
+  private populateFormWithEvent(event: EventModelFullData): Observable<void> {
+    this.organizers.clear();
+    this.collaborators.clear();
+    this.sponsors.clear();
+
+    const year = new Date(event.start).getFullYear();
+
+    return this.loadMacroeventosByYear(year).pipe(
+      tap(() => {
+        const province = this.provincias.find(
+          (p) => p.label === event.province
+        );
+        this.municipios = province?.towns ?? [];
+
+        this.formEvent.patchValue({
+          macroevent_id: event.macroevent_id,
+          title: event.title,
+          start: event.start,
+          end: event.end,
+          time: event.time,
+          description: event.description,
+          province: event.province,
+          town: event.town,
+          place_id: event.place_id,
+          sala_id: event.sala_id,
+          capacity: event.capacity ?? null,
+          price: event.price,
+          img: event.img,
+          status: event.status,
+          status_reason: event.status_reason,
+          inscription: event.inscription ?? false,
+        });
+
+        if (event.place_id) {
+          this.placesFacade
+            .loadSalasForPlace(event.place_id, event.sala_id)
+            .pipe(
+              takeUntilDestroyed(this.destroyRef),
+              tap(({ salas, selectedSala }) => {
+                this.salasDelLugar = salas;
+                this.formEvent.patchValue({
+                  sala_id: selectedSala?.sala_id ?? null,
+                  capacity: selectedSala?.capacity ?? null,
+                });
+              })
+            )
+            .subscribe();
+        }
+
+        if (event.organizer && event.organizer.length > 0) {
+          console.log(
+            'Organizadores desde el backend:',
+            event.organizer.length
+          );
+          this.showOrganizers = true;
+          event.organizer.forEach((agent) =>
+            this.organizers.push(this.createEntityForm(agent.id))
+          );
+        }
+
+        if (event.collaborator && event.collaborator.length > 0) {
+          console.log(
+            'Colaboradores desde el backend:',
+            event.collaborator.length
+          );
+          this.showCollaborators = true;
+          event.collaborator.forEach((agent) =>
+            this.collaborators.push(this.createEntityForm(agent.id))
+          );
+        }
+
+        if (event.sponsor && event.sponsor.length > 0) {
+          console.log('Patrocinadores desde el backend:', event.sponsor.length);
+          this.showSponsors = true;
+          event.sponsor.forEach((agent) =>
+            this.sponsors.push(this.createEntityForm(agent.id))
+          );
+        }
+
+        this.onTownChange();
+        this.titleForm =
+          this.itemId === 0 ? 'Duplicar evento' : 'Editar Evento';
+        this.buttonAction = this.itemId === 0 ? 'Duplicar' : 'Guardar cambios';
+
+        if (event.img) {
+          this.imageSrc = event.img;
+          this.selectedImageFile = null;
+        }
+      }),
+      map(() => void 0) // 👈 Aquí está la conversión a Observable<void>
+    );
+  }
+
+  loadMacroeventosByYear(year: number): Observable<MacroeventModel[]> {
+    return this.macroeventsService.getMacroeventsByYear(year).pipe(
+      tap((macroevents) => {
+        this.macroevents = macroevents;
+      })
+    );
   }
 
   onProvinceChange(): void {
     const selectedProvince = this.formEvent.value.province;
     const province = this.provincias.find((p) => p.label === selectedProvince);
     this.municipios = province?.towns ?? [];
-    this.formEvent.patchValue({ town: '' }); // limpia el municipio
+    this.formEvent.patchValue({ town: '' });
   }
 
-  // Filtrar espacios según el municipio seleccionado
   onTownChange(): void {
     const selectedTown = this.formEvent.value.town;
-
     if (selectedTown) {
-      this.placesService
-        .getPlacesByTown(selectedTown)
+      this.placesFacade
+        .loadPlacesByTown(selectedTown)
         .pipe(
           tap((places: PlaceModel[]) => {
-            this.espacios = places.map((place) => ({
-              ...place,
-              salas: place.salas ? JSON.parse(place.salas as any) : [], // 👈 Parseo necesario
-            }));
+            this.espacios = [...places].sort((a, b) =>
+              a.name.localeCompare(b.name)
+            );
           })
         )
         .subscribe();
@@ -173,25 +287,91 @@ export class FormEventComponent {
     }
   }
 
-  // Asignar el espacio seleccionado al formulario
   onPlaceChange(): void {
-    this.formEvent.patchValue({ sala: '', capacity: null }); // Limpia sala y aforo
-  }
+    const placeId = this.formEvent.value.place_id;
 
-  get selectedPlace(): PlaceModel | undefined {
-    const selectedPlaceId = Number(this.formEvent.value.place);
-    return this.espacios.find((p) => p.id === selectedPlaceId);
+    if (placeId) {
+      this.placesFacade
+        .loadSalasForPlace(placeId)
+        .pipe(
+          tap(({ salas }) => {
+            this.salasDelLugar = [...salas].sort((a, b) =>
+              a.name.localeCompare(b.name)
+            );
+            this.formEvent.patchValue({ sala_id: null, capacity: null });
+          })
+        )
+        .subscribe();
+    } else {
+      this.salasDelLugar = [];
+      this.formEvent.patchValue({ sala_id: null, capacity: null });
+    }
   }
 
   onSalaChange(): void {
-    const salaName = this.formEvent.value.sala;
-    const place = this.selectedPlace;
-    const selectedSala = place?.salas?.find((s) => s.name === salaName);
+    const salaId = this.formEvent.value.sala_id;
+    const placeId = this.formEvent.value.place_id;
 
-    if (selectedSala?.capacity) {
-      this.formEvent.patchValue({ capacity: selectedSala.capacity });
+    const matchingSala = this.salasDelLugar.find(
+      (s) => s.place_id === placeId && s.sala_id === salaId
+    );
+
+    if (matchingSala) {
+      this.formEvent.patchValue({
+        sala_id: matchingSala.sala_id,
+        capacity: matchingSala.capacity ?? null,
+      });
     }
   }
+
+  get organizers(): FormArray {
+    return this.formEvent.get('organizer') as FormArray;
+  }
+
+  get collaborators(): FormArray {
+    return this.formEvent.get('collaborator') as FormArray;
+  }
+
+  get sponsors(): FormArray {
+    return this.formEvent.get('sponsor') as FormArray;
+  }
+
+  createEntityForm(agent_id: number | null = null): FormGroup {
+    return new FormGroup({
+      agent_id: new FormControl(agent_id, Validators.required),
+    });
+  }
+
+  addOrganizer(): void {
+    this.showOrganizers = true;
+    this.organizers.push(this.createEntityForm(null));
+  }
+
+  addCollaborator(): void {
+    this.showCollaborators = true;
+    this.collaborators.push(this.createEntityForm(null));
+  }
+
+  addSponsor(): void {
+    this.showSponsors = true;
+    this.sponsors.push(this.createEntityForm(null));
+  }
+
+  removeOrganizer(index: number): void {
+    this.organizers.removeAt(index);
+    if (this.organizers.length === 0) this.showOrganizers = false;
+  }
+
+  removeCollaborator(index: number): void {
+    this.collaborators.removeAt(index);
+    if (this.collaborators.length === 0) this.showCollaborators = false;
+  }
+
+  removeSponsor(index: number): void {
+    this.sponsors.removeAt(index);
+    if (this.sponsors.length === 0) this.showSponsors = false;
+  }
+
   async onImageSelected(file: File) {
     const result = await this.generalService.handleFileSelection(file);
     this.selectedImageFile = result.file;
@@ -199,14 +379,35 @@ export class FormEventComponent {
   }
 
   onSendFormEvent(): void {
+    this.submitted = true;
+
     if (this.formEvent.invalid) {
-      this.submitted = true;
       console.log('Formulario inválido', this.formEvent.errors);
       return;
     }
 
+    const value = this.formEvent.value;
+
+    const organizerIds = this.organizers
+      .getRawValue()
+      .map((a: any) => a.agent_id);
+    const collaboratorIds = this.collaborators
+      .getRawValue()
+      .map((a: any) => a.agent_id);
+    const sponsorIds = this.sponsors.getRawValue().map((a: any) => a.agent_id);
+
+    const dataToSend = {
+      ...value,
+      macroevent_id: value.macroevent_id ? Number(value.macroevent_id) : null,
+      place_id: value.place_id ? Number(value.place_id) : null,
+      sala_id: value.sala_id ? Number(value.sala_id) : null,
+      organizer: JSON.stringify(organizerIds),
+      collaborator: JSON.stringify(collaboratorIds),
+      sponsor: JSON.stringify(sponsorIds),
+    };
+
     const formData = this.generalService.createFormData(
-      this.formEvent.value,
+      dataToSend,
       this.selectedImageFile,
       this.itemId
     );

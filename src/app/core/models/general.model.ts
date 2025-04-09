@@ -8,8 +8,10 @@ export enum TypeList {
   Partners = 'PARTNERS',
   Invoices = 'INVOICES',
   Creditors = 'CREDITORS',
+  Agents = 'AGENTS',
   Subsidies = 'SUBSIDIES',
   Places = 'PLACES',
+  Macroevents = 'MACROEVENTS',
 }
 
 export enum TypeActionModal {
@@ -17,6 +19,7 @@ export enum TypeActionModal {
   Delete = 'DELETE',
   Show = 'SHOW',
   Create = 'CREATE',
+  Duplicate = 'DUPLICATE',
 }
 export interface Filter {
   code: string | number;

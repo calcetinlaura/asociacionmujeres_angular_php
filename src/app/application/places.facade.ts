@@ -1,7 +1,14 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { DestroyRef, inject, Injectable } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, catchError, Observable, tap, throwError } from 'rxjs';
+import {
+  BehaviorSubject,
+  catchError,
+  map,
+  Observable,
+  tap,
+  throwError,
+} from 'rxjs';
 import { PlaceModel } from 'src/app/core/interfaces/place.interface';
 import { PlacesService } from 'src/app/core/services/places.services';
 
@@ -47,15 +54,11 @@ export class PlacesFacade {
       .subscribe();
   }
 
-  loadPlacesByTown(type: string): void {
-    this.placesService
-      .getPlacesByTown(type)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((places: PlaceModel[]) => this.updatePlaceState(places)),
-        catchError(this.handleError)
-      )
-      .subscribe();
+  loadPlacesByTown(type: string): Observable<PlaceModel[]> {
+    return this.placesService.getPlacesByTown(type).pipe(
+      tap((places: PlaceModel[]) => this.updatePlaceState(places)),
+      catchError(this.handleError)
+    );
   }
 
   loadPlacesByType(type: string): void {
@@ -67,6 +70,24 @@ export class PlacesFacade {
         catchError(this.handleError)
       )
       .subscribe();
+  }
+
+  loadSalasForPlace(
+    placeId: number,
+    salaId?: number
+  ): Observable<{
+    salas: any[];
+    selectedSala?: any;
+  }> {
+    return this.placesService.getSalasByPlaceId(placeId).pipe(
+      map((salas) => {
+        const selectedSala = salaId
+          ? salas.find((s) => s.sala_id === salaId)
+          : undefined;
+
+        return { salas, selectedSala };
+      })
+    );
   }
 
   loadPlaceById(id: number): void {
@@ -127,8 +148,11 @@ export class PlacesFacade {
   }
 
   updatePlaceState(places: PlaceModel[]): void {
-    this.placesSubject.next(places);
-    this.filteredPlacesSubject.next(places);
+    const sortedPlaces = [...places].sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+    this.placesSubject.next(sortedPlaces);
+    this.filteredPlacesSubject.next(sortedPlaces);
   }
 
   // Método para manejar errores

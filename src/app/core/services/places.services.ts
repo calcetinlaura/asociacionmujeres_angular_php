@@ -1,9 +1,9 @@
-import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { catchError } from 'rxjs/operators';
+import { Injectable } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { PlaceModel, SalaModel } from 'src/app/core/interfaces/place.interface';
 import { environments } from 'src/environments/environments';
-import { PlaceModel } from 'src/app/core/interfaces/place.interface';
 
 @Injectable({
   providedIn: 'root',
@@ -38,6 +38,18 @@ export class PlacesService {
     return this.http
       .get(`${this.apiUrl}/${id}`)
       .pipe(catchError(this.handleError));
+  }
+
+  getAllPlacesWithSalas(): Observable<PlaceModel[]> {
+    return this.http
+      .get<PlaceModel[]>(`${this.apiUrl}?withSalas=true`)
+      .pipe(catchError(this.handleError));
+  }
+
+  getSalasByPlaceId(placeId: number): Observable<SalaModel[]> {
+    return this.http.get<SalaModel[]>(
+      `${this.apiUrl}/salas?place_id=${placeId}`
+    );
   }
 
   add(place: FormData): Observable<any> {

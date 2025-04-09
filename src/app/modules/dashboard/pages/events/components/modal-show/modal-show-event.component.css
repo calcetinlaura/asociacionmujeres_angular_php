@@ -4,7 +4,15 @@
   border-radius: 0.4rem;
   color: rgb(96, 24, 24);
 }
-
+.macro {
+  background-color: rgb(248, 194, 112);
+  font-size: 12px;
+  font-weight: bold;
+  border-radius: 4px;
+  padding: 3px 6px 3px 6px;
+  width: auto;
+  display: inline-block;
+}
 /* Media Queries para dispositivos más pequeños */
 /* Ordenador pequeño */
 @media (max-width: 1200px) {

@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
-import { EventWithPlaceModel } from 'src/app/core/interfaces/event.interface';
+import { EventModelFullData } from 'src/app/core/interfaces/event.interface';
 import { TypeList } from 'src/app/core/models/general.model';
 import { MapComponent } from 'src/app/shared/components/map/map.component';
 import { TextBackgroundComponent } from 'src/app/shared/components/text/text-background/text-background.component';
@@ -25,7 +25,7 @@ import { TextTitleComponent } from 'src/app/shared/components/text/text-title/te
   styleUrls: ['./modal-show-event.component.css'],
 })
 export class ModalShowEventComponent {
-  @Input() item!: EventWithPlaceModel;
+  @Input() item!: EventModelFullData;
   type: TypeList = TypeList.Events;
   datesEquals = false;
 

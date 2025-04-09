@@ -11,10 +11,15 @@ import {
   tap,
   throwError,
 } from 'rxjs';
-import { EventWithPlaceModel } from 'src/app/core/interfaces/event.interface';
 import { PlaceModel } from 'src/app/core/interfaces/place.interface';
 import { EventsService } from 'src/app/core/services/events.services';
 import { PlacesService } from 'src/app/core/services/places.services';
+import {
+  EventModel,
+  EventModelFullData,
+} from '../core/interfaces/event.interface';
+import { MacroeventModel } from '../core/interfaces/macroevent.interface';
+import { MacroeventsService } from '../core/services/macroevents.services';
 
 @Injectable({
   providedIn: 'root',
@@ -22,15 +27,16 @@ import { PlacesService } from 'src/app/core/services/places.services';
 export class EventsFacade {
   private readonly destroyRef = inject(DestroyRef);
   private readonly eventsService = inject(EventsService);
+  private readonly macroeventsService = inject(MacroeventsService);
   private readonly placesService = inject(PlacesService);
   private readonly eventsSubject = new BehaviorSubject<
-    EventWithPlaceModel[] | null
+    EventModelFullData[] | null
   >(null);
   private readonly filteredEventsSubject = new BehaviorSubject<
-    EventWithPlaceModel[] | null
+    EventModelFullData[] | null
   >(null);
   private readonly selectedEventSubject =
-    new BehaviorSubject<EventWithPlaceModel | null>(null);
+    new BehaviorSubject<EventModelFullData | null>(null);
 
   events$ = this.eventsSubject.asObservable();
   filteredEvents$ = this.filteredEventsSubject.asObservable();
@@ -57,7 +63,7 @@ export class EventsFacade {
       .getEvents()
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        switchMap((events) => this.enrichWithPlaceData(events)),
+        switchMap((events) => this.enrichWithFullData(events)),
         catchError(this.handleError)
       )
       .subscribe();
@@ -74,7 +80,7 @@ export class EventsFacade {
       .getEventsByYear(year)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        switchMap((events) => this.enrichWithPlaceData(events)),
+        switchMap((events) => this.enrichWithFullData(events)),
         catchError(this.handleError)
       )
       .subscribe();
@@ -135,43 +141,87 @@ export class EventsFacade {
       event.title.toLowerCase().includes(search)
     );
 
-    this.enrichWithPlaceData(filteredEvents).subscribe(); // enriquecido
+    this.enrichWithFullData(filteredEvents).subscribe(); // enriquecido
   }
 
-  private enrichWithPlaceData(
-    events: EventWithPlaceModel[]
-  ): Observable<EventWithPlaceModel[]> {
+  private enrichWithFullData(
+    events: EventModel[]
+  ): Observable<EventModelFullData[]> {
     if (!events || events.length === 0) {
       this.updateEventState([]);
       return of([]);
     }
 
-    return this.placesService.getPlaces().pipe(
-      map((places: PlaceModel[]) => {
-        const enriched = events.map((event) => ({
-          ...event,
-          placeData:
-            places.find((p) => p.id === Number(event.place)) ?? undefined,
-        }));
+    return this.placesService.getAllPlacesWithSalas().pipe(
+      switchMap((places: PlaceModel[]) =>
+        this.macroeventsService.getMacroevents().pipe(
+          map((macroevents: MacroeventModel[]) => {
+            const enriched = events.map((event) => {
+              let placeData: PlaceModel | undefined;
+              let salaData: any = undefined;
+              let macroeventData: MacroeventModel | undefined = undefined;
 
-        this.updateEventState(enriched); // ✅ actualiza estado
-        return enriched;
-      })
+              // Asignar placeData y salaData como ya hacías
+              if (event.sala_id) {
+                for (const place of places) {
+                  const sala = place.salas?.find(
+                    (s) => s.sala_id === event.sala_id
+                  );
+                  if (sala) {
+                    placeData = place;
+                    salaData = sala;
+                    break;
+                  }
+                }
+              }
+              if (!placeData && event.place_id) {
+                placeData = places.find((place) => place.id === event.place_id);
+              }
+
+              // Asignar macroevento si existe
+              if (event.macroevent_id) {
+                macroeventData = macroevents.find(
+                  (m) => m.id === event.macroevent_id
+                );
+              }
+
+              return {
+                ...event,
+                placeData,
+                salaData,
+                macroeventData,
+              };
+            });
+
+            this.updateEventState(enriched);
+            return enriched;
+          })
+        )
+      )
     );
   }
 
-  private updateEventState(events: EventWithPlaceModel[]): void {
+  private updateEventState(events: EventModel[]): void {
     this.eventsSubject.next(events);
     this.filteredEventsSubject.next(events);
   }
 
-  private handleError(error: HttpErrorResponse) {
-    const errorMessage =
-      error.error instanceof ErrorEvent
-        ? `Error del cliente o red: ${error.error.message}`
-        : `Error del servidor: ${error.status} - ${error.message}`;
+  private handleError(error: any): Observable<never> {
+    let errorMessage = 'Ha ocurrido un error desconocido.';
 
-    console.error('EventsFacade error:', errorMessage);
-    return throwError(() => new Error('Error al procesar la solicitud.'));
+    if (error instanceof HttpErrorResponse) {
+      if (error.error instanceof ProgressEvent) {
+        errorMessage = 'No se pudo conectar con el servidor.';
+      } else if (typeof error.error === 'string') {
+        errorMessage = error.error;
+      } else if (error.error?.message) {
+        errorMessage = error.error.message;
+      } else {
+        errorMessage = `Error ${error.status}: ${error.statusText}`;
+      }
+    }
+
+    console.error('Error capturado por handleError:', error);
+    return throwError(() => new Error(errorMessage));
   }
 }

@@ -24,6 +24,11 @@ export class SideBarComponent implements OnInit {
 
   ngOnInit(): void {
     this.mainMenu = [
+      {
+        name: 'Macroeventos',
+        icon: 'uil-calculator-alt',
+        router: ['/dashboard/macroevents'],
+      },
       { name: 'Eventos', icon: 'uil-ticket', router: ['/dashboard/events'] },
       { name: 'Biblioteca', icon: 'uil-book', router: ['/dashboard/books'] },
       { name: 'Filmoteca', icon: 'uil-video', router: ['/dashboard/movies'] },
@@ -45,6 +50,11 @@ export class SideBarComponent implements OnInit {
         name: 'Espacios',
         icon: 'uil-building',
         router: ['/dashboard/places'],
+      },
+      {
+        name: 'Agentes',
+        icon: 'uil-comments',
+        router: ['/dashboard/agents'],
       },
     ];
     this.accountingOptions = [

@@ -1,9 +1,9 @@
-import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { catchError } from 'rxjs/operators';
+import { Injectable } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
-import { environments } from 'src/environments/environments';
+import { catchError } from 'rxjs/operators';
 import { BookModel } from 'src/app/core/interfaces/book.interface';
+import { environments } from 'src/environments/environments';
 
 @Injectable({
   providedIn: 'root',
@@ -72,7 +72,6 @@ export class BooksService {
     return books?.length ?? 0;
   }
 
-  // Método para manejar errores
   handleError(error: HttpErrorResponse) {
     let errorMessage = '';
 

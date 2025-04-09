@@ -18,20 +18,19 @@ export class CreditorsFacade {
   private readonly creditorsService = inject(CreditorsService);
   private readonly invoicesService = inject(InvoicesService);
 
-  private creditorsSubject = new BehaviorSubject<CreditorWithInvoices[] | null>(
-    null
-  );
-  private filteredCreditorsSubject = new BehaviorSubject<
+  private readonly creditorsSubject = new BehaviorSubject<
     CreditorWithInvoices[] | null
   >(null);
-  private selectedCreditorSubject =
+  private readonly filteredCreditorsSubject = new BehaviorSubject<
+    CreditorWithInvoices[] | null
+  >(null);
+  private readonly selectedCreditorSubject =
     new BehaviorSubject<CreditorWithInvoices | null>(null);
 
   creditors$ = this.creditorsSubject.asObservable();
   filteredCreditors$ = this.filteredCreditorsSubject.asObservable();
   selectedCreditor$ = this.selectedCreditorSubject.asObservable();
-
-  private currentFilter: string = 'TODOS';
+  currentFilter: string = 'TODOS';
 
   constructor() {}
 

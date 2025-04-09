@@ -1,13 +1,13 @@
-import { Component, Input, OnInit } from '@angular/core';
-import { CardPlayerComponent } from '../card/card.component';
 import { CommonModule } from '@angular/common';
+import { Component, Input, OnInit } from '@angular/core';
+import { BookModel } from 'src/app/core/interfaces/book.interface';
+import { EventModel } from 'src/app/core/interfaces/event.interface';
+import { MovieModel } from 'src/app/core/interfaces/movie.interface';
+import { PiteraModel } from 'src/app/core/interfaces/pitera.interface';
+import { RecipeModel } from 'src/app/core/interfaces/recipe.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
-import { EventWithPlaceModel } from 'src/app/core/interfaces/event.interface';
-import { BookModel } from 'src/app/core/interfaces/book.interface';
-import { MovieModel } from 'src/app/core/interfaces/movie.interface';
-import { RecipeModel } from 'src/app/core/interfaces/recipe.interface';
-import { PiteraModel } from 'src/app/core/interfaces/pitera.interface';
+import { CardPlayerComponent } from '../card/card.component';
 
 @Component({
   selector: 'app-section-generic',
@@ -23,7 +23,7 @@ export class SectionGenericComponent implements OnInit {
   TypeList = TypeList;
   TypeActionModal = TypeActionModal;
 
-  Events: EventWithPlaceModel[] = [];
+  Events: EventModel[] = [];
   Books: BookModel[] = [];
   Movies: MovieModel[] = [];
   Recipes: RecipeModel[] = [];

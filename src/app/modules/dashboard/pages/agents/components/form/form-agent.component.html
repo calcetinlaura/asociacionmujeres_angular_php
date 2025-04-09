@@ -1,0 +1,133 @@
+<div class="flex flex-col">
+  <div class="text-center pb-5 uppercase">
+    <p class="text-2xl">{{ titleForm }}</p>
+  </div>
+  <form
+    (ngSubmit)="onSendFormAgent()"
+    [formGroup]="formAgent"
+    class="login-auth-form"
+  >
+    <div class="flex flex-col gap-y-4">
+      <div class="flex flex-col bg-lilaMuyClaro p-4 gap-y-4">
+        <!-- Nombre -->
+        <div class="box-input">
+          <label for="name">Nombre institución</label>
+          <div class="flex flex-col flex-1">
+            <input
+              formControlName="name"
+              type="text"
+              [ngClass]="{
+                'is-invalid': submitted && formAgent.get('name')?.invalid
+              }"
+            />
+
+            <div
+              *ngIf="submitted && formAgent.get('name')?.invalid"
+              class="is-invalid-text"
+            >
+              Campo requerido
+            </div>
+          </div>
+        </div>
+        <div class="flex justify-between gap-x-4">
+          <!-- Provincia -->
+          <div class="box-input flex flex-1">
+            <label for="province">Provincia</label>
+            <select formControlName="province" (change)="onProvinceChange()">
+              <option value="">Seleccione una provincia</option>
+              <option *ngFor="let prov of provincias" [value]="prov.label">
+                {{ prov.label }}
+              </option>
+            </select>
+          </div>
+          <!-- Municipio -->
+          <div class="box-input flex flex-1">
+            <label for="town">Municipio</label>
+            <select formControlName="town">
+              <option value="">Seleccione un municipio</option>
+              <option *ngFor="let mun of municipios" [value]="mun.label">
+                {{ mun.label }}
+              </option>
+            </select>
+          </div>
+          <div class="box-input w-auto">
+            <label for="post_code">C.Postal</label>
+            <input formControlName="post_code" type="text" />
+          </div>
+        </div>
+        <!-- Dirección -->
+        <div class="box-input">
+          <label for="address">Dirección</label>
+          <input formControlName="address" type="text" />
+        </div>
+      </div>
+      <hr />
+      <div class="box-input gap-x-4 px-4">
+        <label for="contact">Contacto</label>
+        <input formControlName="contact" type="text" />
+      </div>
+      <div class="flex justify-between gap-x-4 px-4">
+        <!-- Teléfono -->
+        <div class="box-input gap-x-4">
+          <label for="address">Teléfono</label>
+          <input formControlName="phone" type="text" />
+        </div>
+        <!-- Email -->
+        <div class="box-input gap-x-4 flex-1">
+          <label for="address">Email</label>
+          <input formControlName="email" type="text" />
+        </div>
+      </div>
+      <hr />
+      <div class="box-input gap-x-4 px-4">
+        <label for="category">Categoría </label>
+        <select formControlName="category">
+          <option *ngFor="let type of categoryFilterAgents" [value]="type.code">
+            {{ type.name }}
+          </option>
+        </select>
+      </div>
+      <div class="flex gap-4">
+        <!-- Descripción -->
+        <div class="box-input gap-x-4 px-4 w-3/4">
+          <label for="observations">Descripción</label>
+          <mat-card-content>
+            <editor
+              apiKey="c8uxjgc7f76nt677zqdn22a8a97bjhc7fyph9y4oxuj7nrx3"
+              [init]="{
+                height: 300,
+                plugins: ['advlist', 'lists', 'wordcount'],
+                toolbar:
+                  'undo redo | bold italic  underline strikethrough | fontfamily fontsize forecolor  backcolor| \
+               alignleft aligncenter alignright alignjustify | \
+               bullist numlist  | removeformat '
+              }"
+              formControlName="observations"
+            ></editor>
+          </mat-card-content>
+        </div>
+        <!-- Portada (Imagen) -->
+        <div class="box-input gap-x-4 px-4 w-1/4">
+          <app-image-control
+            [previewImg]="
+              formAgent.get('img')?.value ? formAgent.get('img')?.value! : null
+            "
+            [type]="typeList"
+            (imgSelected)="onImageSelected($event)"
+            [imageWidthValue]="'full'"
+          ></app-image-control>
+        </div>
+      </div>
+      <!-- Mensaje de error global -->
+      <div *ngIf="errorSession" class="is-invalid-text">
+        Ocurrió un error con el envío del formulario
+      </div>
+      <!-- Botón de envío -->
+      <div class="flex justify-center">
+        <button class="bg-black p-4 text-white" type="submit">
+          {{ buttonAction }}
+        </button>
+      </div>
+    </div>
+  </form>
+</div>

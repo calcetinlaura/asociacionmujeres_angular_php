@@ -135,7 +135,7 @@ th.mat-sort-header-sorted {
 }
 .mat-column-actions {
   text-align: right;
-  flex: 0 0 150px !important;
+  flex: 0 0 130px !important;
   width: 130px;
 }
 .mat-column-year,

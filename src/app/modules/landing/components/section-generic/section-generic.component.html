@@ -4,7 +4,10 @@
   </div>
   <div class="section--generic--list">
     <ul class="list">
-      <li *ngFor="let item of data">
+      <li
+        *ngFor="let item of data"
+        [ngClass]="{ 'opacity-50 grayscale': item.isPast }"
+      >
         <app-card-player
           [item]="item"
           [type]="selectedTypeModal"

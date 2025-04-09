@@ -20,7 +20,7 @@ export class ItemImagePipe implements PipeTransform {
     }
 
     // Si es un evento: buscar si contiene el año en el nombre del archivo (ej. 2024_nombre.jpg)
-    if (type === TypeList.Events) {
+    if (type === TypeList.Events || type === TypeList.Macroevents) {
       const match = value.match(/^(\d{4})_/);
       const year = match?.[1];
       return year

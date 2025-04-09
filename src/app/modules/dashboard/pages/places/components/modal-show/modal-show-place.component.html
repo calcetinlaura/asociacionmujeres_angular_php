@@ -25,9 +25,9 @@
         [text]="item.management | filterTransformCode : 'PlaceManagement'"
       />
     </div>
-    <div class="mt-4">
+    <div class="mt-4" *ngIf="item.salas!.length > 0">
       <app-text-background [text]="'Salas'"></app-text-background>
-      <table *ngIf="item.salas" class="w-full -collapse tableInvoices">
+      <table class="w-full -collapse tableInvoices">
         <thead>
           <tr>
             <th class="p-2 text-left">Sala</th>

@@ -19,7 +19,8 @@ export interface PlaceModel {
 }
 
 export interface SalaModel {
-  id: number;
+  sala_id: number;
+  place_id: number;
   name: string;
   type?: string;
   capacity?: number;

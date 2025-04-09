@@ -11,7 +11,10 @@ import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { tap } from 'rxjs';
 import { EventsFacade } from 'src/app/application/events.facade';
 import { ColumnModel } from 'src/app/core/interfaces/column.interface';
-import { EventWithPlaceModel } from 'src/app/core/interfaces/event.interface';
+import {
+  EventModel,
+  EventModelFullData,
+} from 'src/app/core/interfaces/event.interface';
 import {
   Filter,
   TypeActionModal,
@@ -52,8 +55,8 @@ export class EventsPageComponent implements OnInit {
   private readonly eventsService = inject(EventsService);
   private readonly generalService = inject(GeneralService);
 
-  events: EventWithPlaceModel[] = [];
-  filteredEvents: EventWithPlaceModel[] = [];
+  events: EventModelFullData[] = [];
+  filteredEvents: EventModelFullData[] = [];
   filters: Filter[] = [];
 
   selectedFilter: number | null = null;
@@ -63,20 +66,23 @@ export class EventsPageComponent implements OnInit {
   isModalVisible = false;
   number = 0;
 
-  item: EventWithPlaceModel | null = null;
+  item: EventModelFullData | null = null;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
   searchForm!: FormGroup;
 
   headerListEvents: ColumnModel[] = [
     { title: 'Cartel', key: 'img' },
-    { title: 'Título', key: 'title' },
+    { title: 'Título', key: 'titleEvent' },
     { title: 'Fecha', key: 'start' },
     { title: 'Descripción', key: 'description' },
-    { title: 'Espacio', key: 'placeData' },
+    { title: 'Espacio', key: 'espacioTable' },
     { title: 'Aforo', key: 'capacity' },
     { title: 'Precio', key: 'price' },
     { title: 'Estado', key: 'status' },
     { title: 'Requiere inscripción', key: 'inscription' },
+    // { title: 'Organizer', key: 'organizer' },
+    // { title: 'Colaborador', key: 'collaborator' },
+    // { title: 'Patrocinador', key: 'sponsor' },
   ];
 
   @ViewChild(InputSearchComponent)
@@ -127,17 +133,27 @@ export class EventsPageComponent implements OnInit {
 
   onOpenModal(event: {
     action: TypeActionModal;
-    item?: EventWithPlaceModel;
+    item?: EventModelFullData;
   }): void {
     this.openModal(event.action, event.item ?? null);
   }
 
   private openModal(
     action: TypeActionModal,
-    item: EventWithPlaceModel | null
+    item: EventModelFullData | null
   ): void {
     this.currentModalAction = action;
-    this.item = item;
+    if (action === TypeActionModal.Duplicate && item) {
+      // Clonar el evento
+      const clonedItem: EventModelFullData = {
+        ...item,
+        id: 0, // ← importante: sin ID para que se cree como nuevo
+      };
+
+      this.item = clonedItem;
+    } else {
+      this.item = item;
+    }
     this.modalService.openModal();
   }
 
@@ -145,7 +161,7 @@ export class EventsPageComponent implements OnInit {
     this.modalService.closeModal();
   }
 
-  confirmDeleteEvent(event: EventWithPlaceModel | null): void {
+  confirmDeleteEvent(event: EventModel | null): void {
     if (!event) return;
     this.eventsFacade.deleteEvent(event.id);
     this.onCloseModal();
@@ -164,7 +180,7 @@ export class EventsPageComponent implements OnInit {
       .subscribe();
   }
 
-  private updateEventState(events: EventWithPlaceModel[] | null): void {
+  private updateEventState(events: EventModelFullData[] | null): void {
     if (!events) return;
 
     this.events = this.eventsService.sortEventsById(events);

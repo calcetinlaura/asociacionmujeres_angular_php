@@ -71,8 +71,14 @@ export class GeneralService {
     const formData = new FormData();
 
     Object.keys(item).forEach((key) => {
-      if (item[key] !== null && item[key] !== undefined) {
-        formData.append(key, item[key].toString());
+      const value = item[key];
+
+      if (value !== null && value !== undefined) {
+        if (Array.isArray(value) || typeof value === 'object') {
+          formData.append(key, JSON.stringify(value));
+        } else {
+          formData.append(key, value.toString());
+        }
       }
     });
 

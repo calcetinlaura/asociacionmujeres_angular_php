@@ -1,9 +1,12 @@
-import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { catchError } from 'rxjs/operators';
+import { Injectable } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import {
+  EventModel,
+  EventModelFullData,
+} from 'src/app/core/interfaces/event.interface';
 import { environments } from 'src/environments/environments';
-import { EventWithPlaceModel } from 'src/app/core/interfaces/event.interface';
 
 @Injectable({
   providedIn: 'root',
@@ -20,7 +23,13 @@ export class EventsService {
       .get(this.apiUrl, { params: { year: year } })
       .pipe(catchError(this.handleError));
   }
-
+  getEventsByMacroevent(macroeventId: number): Observable<any> {
+    return this.http
+      .get(this.apiUrl, {
+        params: { macroevent_id: macroeventId },
+      })
+      .pipe(catchError(this.handleError));
+  }
   getEventById(id: number): Observable<any> {
     return this.http
       .get(`${this.apiUrl}/${id}`)
@@ -45,21 +54,27 @@ export class EventsService {
       .pipe(catchError(this.handleError));
   }
 
-  sortEventsByTitle(events: EventWithPlaceModel[]): EventWithPlaceModel[] {
+  sortEventsByTitle(events: EventModelFullData[]): EventModel[] {
     return events.sort((a, b) =>
       a.title.toLowerCase().localeCompare(b.title.toLowerCase())
     );
   }
 
-  sortEventsById(events: EventWithPlaceModel[]): EventWithPlaceModel[] {
+  sortEventsByDate(events: EventModel[]): EventModel[] {
+    return events.sort(
+      (a, b) => new Date(b.start).getTime() - new Date(a.start).getTime()
+    );
+  }
+
+  sortEventsById(events: EventModelFullData[]): EventModel[] {
     return events.sort((a, b) => b.id - a.id);
   }
 
-  hasResults(events: EventWithPlaceModel[] | null): boolean {
+  hasResults(events: EventModelFullData[] | null): boolean {
     return !!events && events.length > 0;
   }
 
-  countEvents(events: EventWithPlaceModel[] | null): number {
+  countEvents(events: EventModelFullData[] | null): number {
     return events?.length ?? 0;
   }
 
