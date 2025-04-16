@@ -68,12 +68,12 @@ export class MacroeventsPageComponent implements OnInit {
   searchForm!: FormGroup;
 
   headerListMacroevents: ColumnModel[] = [
-    { title: 'Cartel', key: 'img' },
-    { title: 'Título', key: 'title' },
-    { title: 'Fecha', key: 'start' },
-    { title: 'Descripción', key: 'description' },
-    { title: 'Municipio', key: 'town' },
-    { title: 'Estado', key: 'status' },
+    { title: 'Cartel', key: 'img', sortable: false },
+    { title: 'Título', key: 'title', sortable: true },
+    { title: 'Fecha', key: 'start', sortable: true },
+    { title: 'Eventos', key: 'events', sortable: true },
+    { title: 'Descripción', key: 'description', sortable: true },
+    { title: 'Municipio', key: 'town', sortable: true },
   ];
 
   @ViewChild(InputSearchComponent)
@@ -81,7 +81,7 @@ export class MacroeventsPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.filters = [
-      { code: '', name: 'Histórico macroeventos' },
+      { code: 'ALL', name: 'Histórico' },
       ...this.generalService.getYearFilters(2018, this.currentYear),
     ];
 
@@ -103,17 +103,16 @@ export class MacroeventsPageComponent implements OnInit {
   }
 
   filterSelected(filter: string): void {
-    console.log('FILTRO', filter);
-    const year = Number(filter);
-    this.selectedFilter = !isNaN(year) && year > 0 ? year : null;
+    this.selectedFilter = filter === 'ALL' ? null : Number(filter);
+
     this.generalService.clearSearchInput(this.inputSearchComponent);
 
-    if (this.selectedFilter) {
-      console.log('dentro POR AÑO');
-      this.macroeventsFacade.loadMacroeventsByYear(this.selectedFilter);
-    } else {
-      console.log('dentro general');
+    if (filter === 'ALL') {
+      this.macroeventsFacade.setCurrentFilter(null); // aún puedes guardar como null
       this.macroeventsFacade.loadAllMacroevents();
+    } else {
+      this.macroeventsFacade.setCurrentFilter(Number(filter));
+      this.macroeventsFacade.loadMacroeventsByYear(Number(filter));
     }
   }
 
@@ -151,16 +150,13 @@ export class MacroeventsPageComponent implements OnInit {
     this.onCloseModal();
   }
 
-  sendFormMacroevent(macroevent: {
-    itemId: number;
-    newMacroeventData: FormData;
-  }): void {
+  sendFormMacroevent(macroevent: { itemId: number; formData: FormData }): void {
     const request$ = macroevent.itemId
       ? this.macroeventsFacade.editMacroevent(
           macroevent.itemId,
-          macroevent.newMacroeventData
+          macroevent.formData
         )
-      : this.macroeventsFacade.addMacroevent(macroevent.newMacroeventData);
+      : this.macroeventsFacade.addMacroevent(macroevent.formData);
 
     request$
       .pipe(

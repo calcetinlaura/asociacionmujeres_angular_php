@@ -13,6 +13,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TypeList } from 'src/app/core/models/general.model';
+import { environments } from 'src/environments/environments';
 
 @Component({
   selector: 'app-image-control',
@@ -33,12 +34,14 @@ export class ImageControlComponent implements OnInit {
   @Input() type: TypeList | null = null;
   @Output() imgSelected = new EventEmitter<File>();
   @Input() imageWidthValue: number | string | null = 200;
+  @Input() entityId: number | null = null;
+  private apiUrl: string = `${environments.api}/backend`;
   imageHeightValue: number = 150;
   previewUrl: string = '';
 
-  private basePath = '/uploads/img';
-  private placeholder = 'assets/img/error.jpg';
-  private placeholderPartner = 'assets/img/mujer.jpg';
+  basePath = '/uploads/img';
+  placeholder = 'assets/img/error.jpg';
+  placeholderPartner = 'assets/img/mujer.jpg';
   constructor(private http: HttpClient) {}
 
   ngOnInit(): void {
@@ -56,25 +59,20 @@ export class ImageControlComponent implements OnInit {
     }
   }
 
-  // private setPreviewUrl() {
-  //   this.previewUrl = this.previewImg
-  //     ? `${this.basePath}/${this.type}/${this.previewImg}`
-  //     : this.placeholder; // Si no hay imagen, usa el placeholder
-  // }
   private setPreviewUrl() {
     if (this.previewImg) {
       console.log(this.previewImg, 'foto que carga');
       // Si el tipo es 'event', extraer el año del nombre del archivo
       let yearFolder = '';
       if (this.type === TypeList.Events || this.type === TypeList.Macroevents) {
-        const match = this.previewImg.match(/^(\d{4})_/); // Extrae el año del nombre del archivo (ej: 2024_evento.jpg)
-        yearFolder = match ? match[1] : ''; // Si encuentra el año, lo asigna
+        const match = this.previewImg.match(/^(\d{4})_/);
+        yearFolder = match ? match[1] : '';
       }
 
       // Construir la URL correctamente
       this.previewUrl = yearFolder
-        ? `${this.basePath}/${this.type}/${yearFolder}/${this.previewImg}` // Si es evento, agregar carpeta del año
-        : `${this.basePath}/${this.type}/${this.previewImg}`; // Si no es evento, solo usar el tipo
+        ? `${this.basePath}/${this.type}/${yearFolder}/${this.previewImg}`
+        : `${this.basePath}/${this.type}/${this.previewImg}`;
     } else {
       if (this.type !== 'PARTNERS') {
         this.previewUrl = this.placeholder; // Si no hay imagen, usa el placeholder
@@ -113,25 +111,62 @@ export class ImageControlComponent implements OnInit {
       this.imgSelected.emit(img);
     }
   }
-  // Método para manejar la subida de la imagen
+
   async onSubmit() {
     if (this.selectedFile) {
-      this.uploading.set(true); // Cambiar el estado de carga
+      this.uploading.set(true);
       const formData = new FormData();
       formData.append('img', this.selectedFile);
+      formData.append('type', this.type?.toString() ?? 'GENERAL');
 
       try {
-        // Cambiar la URL a la de tu API para subir la imagen
-        const response = await this.http.post(
-          'http://localhost/ASOC/books.php/upload',
-          formData
-        );
-        console.log('Upload successful:', response);
+        const response = await this.http.post(this.getEndpointUrl(), formData);
+        console.log('Imagen subida:', response);
       } catch (error) {
-        console.error('Upload failed:', error);
+        console.error('Error al subir imagen:', error);
       } finally {
-        this.uploading.set(false); // Resetear el estado de carga
+        this.uploading.set(false);
       }
     }
+  }
+
+  removeImage() {
+    const hasUploadedImage =
+      this.previewImg &&
+      this.previewImg !== this.placeholder &&
+      this.previewImg !== this.placeholderPartner;
+
+    // Solo hacer llamada al backend si hay imagen subida Y hay ID
+    if (hasUploadedImage && this.entityId) {
+      const formData = new FormData();
+      formData.append('action', 'deleteImage');
+      formData.append('id', this.entityId.toString());
+      formData.append('type', this.type?.toString() ?? 'GENERAL');
+
+      this.http.post(this.getEndpointUrl(), formData).subscribe({
+        next: () => {
+          console.log('Imagen eliminada del servidor');
+          this.resetImagePreview();
+        },
+        error: (err) => {
+          console.error('Error al eliminar imagen del servidor:', err);
+          this.resetImagePreview();
+        },
+      });
+    } else {
+      // Si no hay ID, solo quitamos la previsualización del frontend
+      this.resetImagePreview();
+    }
+  }
+
+  private resetImagePreview() {
+    this.selectedFile = null;
+    this.previewImg = null; // ¡Muy importante!
+    this.previewUrl =
+      this.type !== 'PARTNERS' ? this.placeholder : this.placeholderPartner;
+    this.imgSelected.emit(null as any);
+  }
+  private getEndpointUrl(): string {
+    return `${this.apiUrl}/${this.type?.toString().toLowerCase()}.php`;
   }
 }

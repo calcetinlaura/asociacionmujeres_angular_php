@@ -51,11 +51,11 @@ export class PiterasPageComponent implements OnInit {
   typeList = TypeList.Piteras;
 
   headerListPiteras: ColumnModel[] = [
-    { title: 'Portada', key: 'img' },
-    { title: 'Título', key: 'title' },
-    { title: 'Año', key: 'year' },
-    { title: 'Tema', key: 'theme' },
-    { title: 'Url', key: 'url' },
+    { title: 'Portada', key: 'img', sortable: false },
+    { title: 'Título', key: 'title', sortable: true },
+    { title: 'Año', key: 'year', sortable: true },
+    { title: 'Temática', key: 'theme', sortable: true },
+    { title: 'Url', key: 'url', sortable: true },
   ];
 
   ngOnInit(): void {
@@ -111,10 +111,10 @@ export class PiterasPageComponent implements OnInit {
     this.onCloseModal();
   }
 
-  sendFormPitera(event: { itemId: number; newPiteraData: FormData }): void {
+  sendFormPitera(event: { itemId: number; formData: FormData }): void {
     const save$ = event.itemId
-      ? this.piterasFacade.editPitera(event.itemId, event.newPiteraData)
-      : this.piterasFacade.addPitera(event.newPiteraData);
+      ? this.piterasFacade.editPitera(event.itemId, event.formData)
+      : this.piterasFacade.addPitera(event.formData);
 
     save$
       .pipe(

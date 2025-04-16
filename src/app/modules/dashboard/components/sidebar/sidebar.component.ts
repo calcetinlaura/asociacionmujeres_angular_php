@@ -35,8 +35,18 @@ export class SideBarComponent implements OnInit {
       { name: 'Recetas', icon: 'uil-utensils', router: ['/dashboard/recipes'] },
       {
         name: 'Piteras',
-        icon: 'uil-newspaper',
+        icon: 'uil uil-book',
         router: ['/dashboard/piteras'],
+      },
+      {
+        name: 'Podcats',
+        icon: 'uil uil-microphone',
+        router: ['/dashboard/podcasts'],
+      },
+      {
+        name: 'Articulos',
+        icon: 'uil-newspaper',
+        router: ['/dashboard/articles'],
       },
     ];
 
@@ -59,14 +69,19 @@ export class SideBarComponent implements OnInit {
     ];
     this.accountingOptions = [
       {
-        name: 'Contabilidad',
-        icon: 'uil-calculator',
-        router: ['/dashboard/invoices'],
+        name: 'Proyectos',
+        icon: 'uil uil-pen',
+        router: ['/dashboard/projects'],
       },
       {
         name: 'Subvenciones',
         icon: 'uil-euro-circle',
         router: ['/dashboard/subsidies'],
+      },
+      {
+        name: 'Contabilidad',
+        icon: 'uil-calculator',
+        router: ['/dashboard/invoices'],
       },
       {
         name: 'Acreedores/as',

@@ -43,7 +43,7 @@ export class FormPlaceComponent {
   @Input() itemId!: number;
   @Output() sendFormPlace = new EventEmitter<{
     itemId: number;
-    newPlaceData: FormData;
+    formData: FormData;
   }>();
 
   selectedImageFile: File | null = null;
@@ -167,7 +167,7 @@ export class FormPlaceComponent {
     const newSala = new FormGroup({
       id: new FormControl(salaData.id ?? null),
       name: new FormControl(salaData.name || '', Validators.required),
-      location: new FormControl(salaData.location || '', Validators.required),
+      location: new FormControl(salaData.location || ''),
       type: new FormControl(salaData.type || '', Validators.required),
       capacity: new FormControl(salaData.capacity ?? null),
     });
@@ -224,7 +224,7 @@ export class FormPlaceComponent {
 
     this.sendFormPlace.emit({
       itemId: this.itemId,
-      newPlaceData: formData,
+      formData: formData,
     });
   }
 }

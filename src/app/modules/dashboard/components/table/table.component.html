@@ -6,7 +6,7 @@
   class="mat-elevation-z8 table"
 >
   <ng-container matColumnDef="number">
-    <th mat-header-cell *matHeaderCellDef>Num.</th>
+    <th mat-header-cell *matHeaderCellDef>Nº</th>
     <td mat-cell *matCellDef="let element; let i = index">
       {{ i + 1 }}
     </td>
@@ -15,9 +15,16 @@
     *ngFor="let column of headerColumns"
     [matColumnDef]="column.key"
   >
-    <th mat-header-cell *matHeaderCellDef mat-sort-header>
-      {{ column.title }}
-    </th>
+    <ng-container *ngIf="column.sortable; else noSort">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header="{{ column.key }}">
+        {{ column.title }}
+      </th>
+    </ng-container>
+    <ng-template #noSort>
+      <th mat-header-cell *matHeaderCellDef>
+        {{ column.title }}
+      </th>
+    </ng-template>
     <td
       mat-cell
       *matCellDef="let element"
@@ -42,20 +49,20 @@
         </ng-container>
         <!-- Diseño especial para 'fechas evento' -->
         <ng-container *ngSwitchCase="'start'">
-          <div class="startColumn">
-            <div>
-              <mat-icon class="calendar-icon">calendar_today</mat-icon>
-            </div>
-            <div>
-              <span class="dateColumn">
-                <span *ngIf="element['end'] === element['start']">
-                  {{ element[column.key] | date : "dd MMM yyyy" }}</span
-                >
-                <span *ngIf="element['end'] !== element['start']">
-                  {{ element[column.key] | date : "dd MMM" }} -
-                  {{ element["end"] | date : "dd MMM yyyy" }}</span
-                >
-              </span>
+          <div class="flex justify-center">
+            <p class="dateColumn" *ngIf="element['end'] === element['start']">
+              {{ element["start"] | date : "EEE dd MMM yyyy" }}
+            </p>
+            <div
+              class="flex flex-col"
+              *ngIf="element['end'] !== element['start']"
+            >
+              <p class="dateColumn">
+                {{ element["start"] | date : "EEE dd MMM yyyy" }}<br />
+                AL<br />
+
+                {{ element["end"] | date : "EEE dd MMM yyyy" }}
+              </p>
             </div>
           </div>
         </ng-container>
@@ -64,6 +71,67 @@
           <div class="genderColumn">
             <span>{{ element[column.key] }}</span>
           </div>
+        </ng-container>
+        <ng-container *ngSwitchCase="'subsidy_name'">
+          <ng-container *ngIf="element[column.key]; else noSubsidy">
+            <div class="text-center">
+              <span
+                class="subsidy"
+                [ngClass]="{
+                  'subsidy-ayunt-equip':
+                    element[column.key] === 'AYUNT_EQUIPAMIENTO',
+                  'subsidy-ayunt-activ':
+                    element[column.key] === 'AYUNT_ACTIVIDADES',
+                  'subsidy-gener': element[column.key] === 'GENERALITAT',
+                  'subsidy-dipu': element[column.key] === 'DIPUTACION',
+                  'subsidy-minis': element[column.key] === 'MINISTERIO'
+                }"
+                >{{ element[column.key] }}
+              </span>
+            </div>
+          </ng-container>
+          <ng-template #noSubsidy>
+            <app-circle-indicator [item]="false"></app-circle-indicator>
+          </ng-template>
+        </ng-container>
+        <ng-container *ngSwitchCase="'events'">
+          <div
+            class="box-events"
+            *ngIf="element.events?.length > 0; else noEvents"
+          >
+            <p class="events-list" *ngFor="let event of element.events">
+              {{ event.title }}
+              <span>{{ event.start | date : "EEE dd/MM/yyyy" }}</span>
+            </p>
+          </div>
+          <ng-template #noEvents>
+            <app-circle-indicator [item]="false"></app-circle-indicator>
+          </ng-template>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'invoices'">
+          <div
+            class="box-invoices"
+            *ngIf="element.invoices?.length > 0; else noInvoices"
+          >
+            <div class="flex items-center">
+              <div class="border-r-2 px-3">
+                <p
+                  class="invoices-list"
+                  *ngFor="let invoice of element.invoices"
+                >
+                  {{ invoice.type_invoice }} {{ invoice.number_invoice }}
+                  <span>{{ invoice.total_amount | eurosFormat }}</span>
+                </p>
+              </div>
+              <div class="px-3 invoices-totalAmount">
+                {{ getTotalInvoiceAmount(element) | eurosFormat }}
+              </div>
+            </div>
+          </div>
+          <ng-template #noInvoices>
+            <app-circle-indicator [item]="false"></app-circle-indicator>
+          </ng-template>
         </ng-container>
 
         <!-- Diseño especial para 'status' -->
@@ -124,12 +192,60 @@
             [item]="element[column.key]"
           ></app-circle-indicator>
         </ng-container>
+        <!-- Organizadores -->
+        <ng-container *ngSwitchCase="'organizer'">
+          <ng-container
+            *ngIf="element[column.key].length > 0; else noOrganizers"
+          >
+            <ul class="agent-list">
+              <li *ngFor="let agent of element[column.key]">
+                {{ agent.name }}
+              </li>
+            </ul>
+          </ng-container>
+          <ng-template #noOrganizers>
+            <app-circle-indicator [item]="false"></app-circle-indicator>
+          </ng-template>
+        </ng-container>
+
+        <!-- Colaboradores -->
+        <ng-container *ngSwitchCase="'collaborator'">
+          <ng-container
+            *ngIf="element[column.key].length > 0; else noCollaborators"
+          >
+            <ul class="agent-list">
+              <li *ngFor="let agent of element[column.key]">
+                {{ agent.name }}
+              </li>
+            </ul>
+          </ng-container>
+          <ng-template #noCollaborators>
+            <app-circle-indicator [item]="false"></app-circle-indicator>
+          </ng-template>
+        </ng-container>
+
+        <!-- 💰 Patrocinadores -->
+        <ng-container *ngSwitchCase="'sponsor'">
+          <ng-container *ngIf="element[column.key].length > 0; else noSponsors">
+            <ul class="agent-list">
+              <li *ngFor="let agent of element[column.key]">
+                {{ agent.name }}
+              </li>
+            </ul>
+          </ng-container>
+          <ng-template #noSponsors>
+            <app-circle-indicator [item]="false"></app-circle-indicator>
+          </ng-template>
+        </ng-container>
         <!-- Diseño especial para 'descripción' -->
         <ng-container *ngSwitchCase="'description'">
-          <div class="tableTextEditor" [title]="element[column.key]">
+          <!-- <div class="tableTextEditor" [title]="element[column.key]">
             <span [innerHTML]="element[column.key]"></span>
             <span *ngIf="element.description">...</span>
-          </div>
+          </div> -->
+          <app-circle-indicator
+            [item]="element[column.key]"
+          ></app-circle-indicator>
         </ng-container>
         <!-- Diseño especial para 'ingredientes' -->
         <ng-container *ngSwitchCase="'ingredients'">
@@ -145,6 +261,9 @@
             <span *ngIf="element.recipe">...</span>
           </div>
         </ng-container>
+        <ng-container *ngSwitchCase="'name'">
+          {{ element[column.key] }}</ng-container
+        >
         <!-- Diseño especial para 'cuota' -->
         <ng-container *ngSwitchCase="'cuotas'">
           <app-circle-indicator

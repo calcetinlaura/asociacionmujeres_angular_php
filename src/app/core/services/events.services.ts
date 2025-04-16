@@ -34,6 +34,13 @@ export class EventsService {
       })
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
+  getEventsByProject(projectId: number): Observable<any> {
+    return this.http
+      .get(this.apiUrl, {
+        params: { project_id: projectId },
+      })
+      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
+  }
   getEventById(id: number): Observable<any> {
     return this.http
       .get(`${this.apiUrl}/${id}`)

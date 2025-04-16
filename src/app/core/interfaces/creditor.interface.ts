@@ -1,5 +1,5 @@
 import { Filter } from 'src/app/core/models/general.model';
-import { InvoiceModel } from './invoice.interface';
+import { InvoiceModelFullData } from './invoice.interface';
 
 export interface CreditorModel {
   id: number;
@@ -19,7 +19,7 @@ export interface CreditorModel {
 export interface CreditorWithInvoices extends CreditorModel {
   numInvoices: number;
   invoiceIds: number[]; // Lista de IDs de facturas
-  invoices: InvoiceModel[];
+  invoices: InvoiceModelFullData[];
 }
 export interface CreditorAutocompleteModel {
   id: number;

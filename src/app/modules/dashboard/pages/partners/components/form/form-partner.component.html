@@ -93,6 +93,7 @@
                   ? formPartner.get('img')?.value!
                   : null
               "
+              [entityId]="itemId"
               [type]="typeList"
               (imgSelected)="onImageSelected($event)"
               [imageWidthValue]="'full'"

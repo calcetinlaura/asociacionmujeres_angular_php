@@ -9,7 +9,6 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
-  AbstractControl,
   FormControl,
   FormGroup,
   ReactiveFormsModule,
@@ -24,6 +23,7 @@ import { MacroeventModel } from 'src/app/core/interfaces/macroevent.interface';
 import { TypeList } from 'src/app/core/models/general.model';
 import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
+import { dateRangeValidator } from 'src/app/shared/utils/validators.utils';
 
 @Component({
   selector: 'app-form-macroevent',
@@ -46,7 +46,7 @@ export class FormMacroeventComponent {
   @Input() itemId!: number;
   @Output() sendFormMacroevent = new EventEmitter<{
     itemId: number;
-    newMacroeventData: FormData;
+    formData: FormData;
   }>();
   selectedImageFile: File | null = null;
   imageSrc: string = '';
@@ -66,7 +66,7 @@ export class FormMacroeventComponent {
       town: new FormControl(''),
       img: new FormControl(''),
     },
-    { validators: this.dateRangeValidator }
+    { validators: dateRangeValidator }
   );
 
   provincias: {
@@ -75,16 +75,6 @@ export class FormMacroeventComponent {
     towns: { label: string; code: string }[];
   }[] = [];
   municipios: { label: string; code: string }[] = [];
-
-  private dateRangeValidator(control: AbstractControl) {
-    const start = control.get('start')?.value;
-    const end = control.get('end')?.value;
-    if (start && end && end < start) {
-      control.get('end')?.setErrors({ invalidDateRange: true });
-      return { invalidDateRange: true };
-    }
-    return null;
-  }
 
   ngOnInit(): void {
     this.provincias = townsData
@@ -157,7 +147,7 @@ export class FormMacroeventComponent {
 
     this.sendFormMacroevent.emit({
       itemId: this.itemId,
-      newMacroeventData: formData,
+      formData: formData,
     });
   }
 }

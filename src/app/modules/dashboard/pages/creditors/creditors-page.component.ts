@@ -71,15 +71,15 @@ export class CreditorsPageComponent implements OnInit {
   typeList = TypeList.Creditors;
 
   headerListCreditors: ColumnModel[] = [
-    { title: 'Compañía', key: 'company' },
-    { title: 'Cif', key: 'cif' },
-    { title: 'Contacto', key: 'contact' },
-    { title: 'Teléfono', key: 'phone' },
-    { title: 'Email', key: 'email' },
-    { title: 'Municipio', key: 'town' },
-    { title: 'Nº Facturas', key: 'numInvoices' },
-    { title: 'Categoría', key: 'category' },
-    { title: 'Palabras clave', key: 'key_words' },
+    { title: 'Compañía', key: 'company', sortable: true },
+    { title: 'Cif', key: 'cif', sortable: true },
+    { title: 'Contacto', key: 'contact', sortable: true },
+    { title: 'Teléfono', key: 'phone', sortable: true },
+    { title: 'Email', key: 'email', sortable: true },
+    { title: 'Municipio', key: 'town', sortable: true },
+    { title: 'Nº Facturas', key: 'numInvoices', sortable: true },
+    { title: 'Categoría', key: 'category', sortable: true },
+    { title: 'Palabras clave', key: 'key_words', sortable: true },
   ];
 
   @ViewChild(InputSearchComponent)

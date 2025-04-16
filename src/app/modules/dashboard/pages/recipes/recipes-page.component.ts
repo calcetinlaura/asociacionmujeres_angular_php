@@ -70,13 +70,13 @@ export class RecipesPageComponent implements OnInit {
   typeList = TypeList.Recipes;
 
   headerListRecipes: ColumnModel[] = [
-    { title: 'Portada', key: 'img' },
-    { title: 'Titulo', key: 'title' },
-    { title: 'Categoria', key: 'category' },
-    { title: 'Autor/a', key: 'owner' },
-    { title: 'Ingredientes', key: 'ingredients' },
-    { title: 'Receta', key: 'recipe' },
-    { title: 'Año', key: 'year' },
+    { title: 'Portada', key: 'img', sortable: false },
+    { title: 'Titulo', key: 'title', sortable: true },
+    { title: 'Categoria', key: 'category', sortable: true },
+    { title: 'Autor/a', key: 'owner', sortable: true },
+    { title: 'Ingredientes', key: 'ingredients', sortable: true },
+    { title: 'Receta', key: 'recipe', sortable: true },
+    { title: 'Año', key: 'year', sortable: true },
   ];
 
   @ViewChild(InputSearchComponent)
@@ -140,10 +140,10 @@ export class RecipesPageComponent implements OnInit {
     this.onCloseModal();
   }
 
-  sendFormRecipe(event: { itemId: number; newRecipeData: FormData }): void {
+  sendFormRecipe(event: { itemId: number; formData: FormData }): void {
     const save$ = event.itemId
-      ? this.recipesFacade.editRecipe(event.itemId, event.newRecipeData)
-      : this.recipesFacade.addRecipe(event.newRecipeData);
+      ? this.recipesFacade.editRecipe(event.itemId, event.formData)
+      : this.recipesFacade.addRecipe(event.formData);
 
     save$
       .pipe(

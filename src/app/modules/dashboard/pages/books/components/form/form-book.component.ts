@@ -47,11 +47,24 @@ export class FormBookComponent {
   @Input() itemId!: number;
   @Output() sendFormBook = new EventEmitter<{
     itemId: number;
-    newBookData: FormData;
+    formData: FormData;
   }>();
+
+  formBook = new FormGroup({
+    title: new FormControl('', [Validators.required]),
+    author: new FormControl(''),
+    description: new FormControl('', [Validators.maxLength(2000)]),
+    gender: new FormControl('', [Validators.required]),
+    img: new FormControl(''),
+    year: new FormControl<number | null>(null, [
+      Validators.required,
+      Validators.min(2000),
+    ]),
+  });
+
   selectedImageFile: File | null = null;
   bookData: any;
-  imageSrc: string = '';
+  imageSrc = '';
   errorSession = false;
   submitted = false;
   titleForm: string = 'Registrar libro';
@@ -59,14 +72,7 @@ export class FormBookComponent {
   years: number[] = [];
   genderBooks = genderFilterBooks;
   typeList = TypeList.Books;
-  formBook = new FormGroup({
-    title: new FormControl('', [Validators.required]),
-    author: new FormControl(''),
-    description: new FormControl('', [Validators.maxLength(2000)]),
-    gender: new FormControl('', [Validators.required]),
-    img: new FormControl(''),
-    year: new FormControl(0, [Validators.required, Validators.min(2000)]),
-  });
+
   currentYear = this.generalService.currentYear;
 
   ngOnInit(): void {
@@ -122,6 +128,6 @@ export class FormBookComponent {
       this.itemId
     );
 
-    this.sendFormBook.emit({ itemId: this.itemId, newBookData: formData });
+    this.sendFormBook.emit({ itemId: this.itemId, formData: formData });
   }
 }

@@ -91,7 +91,7 @@ export class SubsidiesPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.filtersYears = [
-      { code: '', name: 'Histórico subvenciones' },
+      { code: 'ALL', name: 'Histórico' },
       ...this.generalService.getYearFilters(2018, this.currentYear),
     ];
 
@@ -141,15 +141,32 @@ export class SubsidiesPageComponent implements OnInit {
   }
 
   filterYearSelected(filter: string): void {
-    if (!filter) {
+    if (filter === 'all') {
       this.selectedFilter = null;
       this.showAllSubsidies = true;
+
+      // Si quieres guardar el texto del filtro activo:
       this.subsidiesFacade.setCurrentFilter('TODOS');
+
+      this.subsidiesFacade.loadAllSubsidies(); // 👈 carga todos los datos
+
+      this.subsidiesFacade.subsidies$
+        .pipe(
+          takeUntilDestroyed(this.destroyRef),
+          tap((subs) => {
+            this.filteredAllSubsidies = subs;
+            this.classifySubsidies(subs);
+            setTimeout(() => this.tabSubsidies.first?.load());
+          })
+        )
+        .subscribe();
     } else {
       const year = Number(filter);
       if (!isNaN(year) && year > 0) {
         this.selectedFilter = year;
         this.showAllSubsidies = false;
+
+        this.subsidiesFacade.setCurrentFilter(year.toString());
 
         this.subsidiesFacade.loadSubsidiesByYear(year);
 
@@ -159,11 +176,7 @@ export class SubsidiesPageComponent implements OnInit {
             tap((subs) => {
               this.filteredAllSubsidies = subs;
               this.classifySubsidies(subs);
-              // 🔹 Esperamos a que los ViewChildren existan
-              setTimeout(() => {
-                const firstTab = this.tabSubsidies.first;
-                firstTab?.load();
-              });
+              setTimeout(() => this.tabSubsidies.first?.load());
             })
           )
           .subscribe();

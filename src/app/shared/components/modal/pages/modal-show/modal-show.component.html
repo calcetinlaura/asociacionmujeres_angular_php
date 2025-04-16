@@ -1,25 +1,11 @@
 <div class="box-modal-show">
   <div *ngIf="type !== TypeList.Creditors">
-    <app-img-modal [img]="item.img" [title]="item.title" [type]="type" />
+    <app-img-modal [img]="item?.img" [title]="item?.title" [type]="type" />
   </div>
+
   <div class="flex flex-1 flex-col justify-between px-2 pt-4 pb-2 sm:p-4">
-    <app-modal-show-movie *ngIf="type === TypeList.Movies" [item]="item" />
-    <app-modal-show-book *ngIf="type === TypeList.Books" [item]="item" />
-    <app-modal-show-macroevent
-      *ngIf="type === TypeList.Macroevents"
-      [item]="item"
-    />
-    <app-modal-show-event *ngIf="type === TypeList.Events" [item]="item" />
-    <app-modal-show-pitera *ngIf="type === TypeList.Piteras" [item]="item" />
-    <app-modal-show-recipe *ngIf="type === TypeList.Recipes" [item]="item" />
-    <app-modal-show-partner *ngIf="type === TypeList.Partners" [item]="item" />
-    <app-modal-show-invoice *ngIf="type === TypeList.Invoices" [item]="item" />
-    <app-modal-show-subsidy *ngIf="type === TypeList.Subsidies" [item]="item" />
-    <app-modal-show-creditor
-      *ngIf="type === TypeList.Creditors"
-      [item]="item"
-    />
-    <app-modal-show-agent *ngIf="type === TypeList.Agents" [item]="item" />
-    <app-modal-show-place *ngIf="type === TypeList.Places" [item]="item" />
+    <ng-container
+      *ngComponentOutlet="getDynamicComponent(); inputs: { item: item }"
+    ></ng-container>
   </div>
 </div>

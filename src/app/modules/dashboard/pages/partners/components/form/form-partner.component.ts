@@ -45,7 +45,7 @@ export class FormPartnerComponent {
   @Input() itemId!: number;
   @Output() sendFormPartner = new EventEmitter<{
     itemId: number;
-    newPartnerData: FormData;
+    formData: FormData;
   }>();
   selectedImageFile: File | null = null;
   partnerData: PartnerModel | null = null;
@@ -239,7 +239,7 @@ export class FormPartnerComponent {
 
     this.sendFormPartner.emit({
       itemId: this.itemId,
-      newPartnerData: formData,
+      formData: formData,
     });
   }
 }

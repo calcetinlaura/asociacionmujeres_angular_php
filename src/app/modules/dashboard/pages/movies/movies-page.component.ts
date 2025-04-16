@@ -70,12 +70,12 @@ export class MoviesPageComponent implements OnInit {
   typeList = TypeList.Movies;
 
   headerListMovies: ColumnModel[] = [
-    { title: 'Portada', key: 'img' },
-    { title: 'Título', key: 'title' },
-    { title: 'Director/a', key: 'director' },
-    { title: 'Descripción', key: 'description' },
-    { title: 'Género', key: 'gender' },
-    { title: 'Año compra', key: 'year' },
+    { title: 'Portada', key: 'img', sortable: false },
+    { title: 'Título', key: 'title', sortable: true },
+    { title: 'Director/a', key: 'director', sortable: true },
+    { title: 'Descripción', key: 'description', sortable: true },
+    { title: 'Género', key: 'gender', sortable: true },
+    { title: 'Año compra', key: 'year', sortable: true },
   ];
 
   @ViewChild(InputSearchComponent)
@@ -156,10 +156,10 @@ export class MoviesPageComponent implements OnInit {
     this.onCloseModal();
   }
 
-  sendFormMovie(event: { itemId: number; newMovieData: FormData }): void {
+  sendFormMovie(event: { itemId: number; formData: FormData }): void {
     const save$ = event.itemId
-      ? this.moviesFacade.editMovie(event.itemId, event.newMovieData)
-      : this.moviesFacade.addMovie(event.newMovieData);
+      ? this.moviesFacade.editMovie(event.itemId, event.formData)
+      : this.moviesFacade.addMovie(event.formData);
 
     save$
       .pipe(

@@ -65,6 +65,7 @@
           [previewImg]="
             formPitera.get('img')?.value ? formPitera.get('img')?.value! : null
           "
+          [entityId]="itemId"
           [type]="typeList"
           (imgSelected)="onImageSelected($event)"
         ></app-image-control>

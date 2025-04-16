@@ -12,11 +12,13 @@ export interface InvoiceModel {
   iva?: number;
   total_amount: number;
   total_amount_irpf?: number;
-  subsidy?: string;
-  subsidy_year?: number;
+  subsidy_id?: number;
+  project_id?: number;
   invoice_file?: File;
 }
-export interface InvoiceWithCreditorModel extends InvoiceModel {
+export interface InvoiceModelFullData extends InvoiceModel {
   creditor_company?: string;
   creditor_contact?: string;
+  subsidy_name: string;
+  project_title: string;
 }

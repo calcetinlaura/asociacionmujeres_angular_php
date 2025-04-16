@@ -35,7 +35,7 @@ export class FormPiteraComponent {
   @Input() itemId!: number;
   @Output() sendFormPitera = new EventEmitter<{
     itemId: number;
-    newPiteraData: FormData;
+    formData: FormData;
   }>();
   selectedImageFile: File | null = null;
   piteraData: any;
@@ -148,6 +148,6 @@ export class FormPiteraComponent {
       Object.fromEntries((formData as any).entries())
     );
 
-    this.sendFormPitera.emit({ itemId: this.itemId, newPiteraData: formData });
+    this.sendFormPitera.emit({ itemId: this.itemId, formData: formData });
   }
 }

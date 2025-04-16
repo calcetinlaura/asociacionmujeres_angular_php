@@ -1,16 +1,19 @@
 <?php
 header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET, POST, PATCH, DELETE");
+header("Access-Control-Allow-Methods: GET, POST, PATCH, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json; charset=UTF-8");
 
 include '../config/conexion.php';
+include 'utils/utils.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 if ($method === 'OPTIONS') {
     http_response_code(204);
     exit();
 }
+
+$basePath = "../uploads/img/AGENTS/";
 
 switch ($method) {
     case 'GET':
@@ -36,22 +39,41 @@ switch ($method) {
     case 'POST':
         error_reporting(E_ALL);
         ini_set('display_errors', 1);
+        // 🔥 Manejar eliminación de imagen si viene la acción
+      if (isset($_POST['action']) && $_POST['action'] === 'deleteImage') {
+        $type = $_POST['type'];
 
-        $imgName = '';
-        if (isset($_FILES['img']) && $_FILES['img']['error'] === 0) {
-            $uploadDir = "../uploads/img/AGENTS/";
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0777, true);
-            }
-            $imgName = time() . '_' . basename($_FILES['img']['name']);
-            move_uploaded_file($_FILES['img']['tmp_name'], $uploadDir . $imgName);
+        if (!empty($_POST['id'])) {
+          $id = (int)$_POST['id'];
+
+          if (eliminarSoloImagen($connection, strtolower($type), 'img', $id, $basePath)) {
+            echo json_encode(["message" => "Imagen eliminada correctamente"]);
+          } else {
+            http_response_code(500);
+            echo json_encode(["message" => "Error al eliminar imagen"]);
+          }
+          exit();
         }
 
-        $data = $_POST;
-        $data['img'] = $imgName;
+        http_response_code(400);
+        echo json_encode(["message" => "ID requerido para eliminar imagen"]);
+        exit();
+      }
 
-        if (isset($data['_method']) && strtoupper($data['_method']) === 'PATCH') {
-            // PATCH
+        $data = $_POST;
+        $imgName = procesarImagen($basePath, 'img', $data);
+
+        // Validación de campos obligatorios
+        $campoFaltante = validarCamposRequeridos($data, ['name']);
+        if ($campoFaltante !== null) {
+            http_response_code(400);
+            echo json_encode(["message" => "El campo '$campoFaltante' es obligatorio."]);
+            exit();
+        }
+
+        $isUpdate = isset($data['_method']) && strtoupper($data['_method']) === 'PATCH';
+
+        if ($isUpdate) {
             $id = $data['id'] ?? null;
             if (!is_numeric($id)) {
                 http_response_code(400);
@@ -59,21 +81,22 @@ switch ($method) {
                 exit();
             }
 
+            // Obtener imagen anterior
+            $stmtCurrent = $connection->prepare("SELECT img FROM agents WHERE id = ?");
+            $stmtCurrent->bind_param("i", $id);
+            $stmtCurrent->execute();
+            $result = $stmtCurrent->get_result();
+            $existing = $result->fetch_assoc();
+            $oldImg = $existing['img'] ?? '';
+
             if ($imgName === '') {
-                // Recuperar imagen actual si no se envió una nueva
-                $stmt = $connection->prepare("SELECT img FROM agents WHERE id = ?");
-                $stmt->bind_param("i", $id);
-                $stmt->execute();
-                $result = $stmt->get_result();
-                $existing = $result->fetch_assoc();
-                $imgName = $existing['img'];
+                $imgName = $oldImg;
             }
 
             $stmt = $connection->prepare("UPDATE agents SET
                 name = ?, contact = ?, phone = ?, email = ?, province = ?, town = ?,
                 address = ?, post_code = ?, category = ?, observations = ?, img = ?
                 WHERE id = ?");
-
             $stmt->bind_param("sssssssssssi",
                 $data['name'], $data['contact'], $data['phone'], $data['email'],
                 $data['province'], $data['town'], $data['address'], $data['post_code'],
@@ -81,6 +104,9 @@ switch ($method) {
             );
 
             if ($stmt->execute()) {
+                if ($oldImg && $imgName !== $oldImg) {
+                    eliminarImagenSiNoSeUsa($connection, 'agents', 'img', $oldImg, $basePath);
+                }
                 echo json_encode(["message" => "Agente actualizado con éxito."]);
             } else {
                 http_response_code(500);
@@ -89,16 +115,9 @@ switch ($method) {
 
         } else {
             // CREATE
-            if (empty($data['name'])) {
-                http_response_code(400);
-                echo json_encode(["message" => "El nombre del agente es obligatorio."]);
-                exit();
-            }
-
             $stmt = $connection->prepare("INSERT INTO agents
                 (name, contact, phone, email, province, town, address, post_code, category, observations, img)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-
             $stmt->bind_param("sssssssssss",
                 $data['name'], $data['contact'], $data['phone'], $data['email'],
                 $data['province'], $data['town'], $data['address'], $data['post_code'],
@@ -122,10 +141,20 @@ switch ($method) {
             exit();
         }
 
+        // Recuperar imagen
+        $stmtImg = $connection->prepare("SELECT img FROM agents WHERE id = ?");
+        $stmtImg->bind_param("i", $id);
+        $stmtImg->execute();
+        $resultImg = $stmtImg->get_result();
+        $imgToDelete = $resultImg->fetch_assoc()['img'] ?? '';
+
         $stmt = $connection->prepare("DELETE FROM agents WHERE id = ?");
         $stmt->bind_param("i", $id);
 
         if ($stmt->execute()) {
+            if ($imgToDelete) {
+                eliminarImagenSiNoSeUsa($connection, 'agents', 'img', $imgToDelete, $basePath);
+            }
             echo json_encode(["message" => "Agente eliminado con éxito."]);
         } else {
             http_response_code(500);

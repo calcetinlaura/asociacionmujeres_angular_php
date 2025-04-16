@@ -5,9 +5,9 @@ import {
   CreditorModel,
   CreditorWithInvoices,
 } from 'src/app/core/interfaces/creditor.interface';
-import { InvoiceModel } from 'src/app/core/interfaces/invoice.interface';
 import { CreditorsService } from 'src/app/core/services/creditors.services';
 import { InvoicesService } from 'src/app/core/services/invoices.services';
+import { InvoiceModelFullData } from '../core/interfaces/invoice.interface';
 import { GeneralService } from '../shared/services/generalService.service';
 
 @Injectable({
@@ -105,9 +105,9 @@ export class CreditorsFacade {
 
   private enrichCreditorsWithInvoices(
     creditors: CreditorWithInvoices[],
-    invoices: InvoiceModel[]
+    invoices: InvoiceModelFullData[]
   ): CreditorWithInvoices[] {
-    const invoiceMap: Record<number, InvoiceModel[]> = {};
+    const invoiceMap: Record<number, InvoiceModelFullData[]> = {};
 
     invoices.forEach((invoice) => {
       if (invoice.creditor_id) {

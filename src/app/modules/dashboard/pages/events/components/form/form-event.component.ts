@@ -5,10 +5,12 @@ import {
   EventEmitter,
   inject,
   Input,
+  OnChanges,
+  OnInit,
   Output,
+  SimpleChanges,
 } from '@angular/core';
 import {
-  AbstractControl,
   FormArray,
   FormControl,
   FormGroup,
@@ -18,10 +20,14 @@ import {
 import { MatCardModule } from '@angular/material/card';
 import { EditorModule } from '@tinymce/tinymce-angular';
 import townsData from 'data/towns.json';
-import { filter, map, Observable, switchMap, tap } from 'rxjs';
+import { filter, forkJoin, map, Observable, switchMap, tap } from 'rxjs';
 import { EventsFacade } from 'src/app/application/events.facade';
 import { AgentModel } from 'src/app/core/interfaces/agent.interface';
-import { EventModelFullData } from 'src/app/core/interfaces/event.interface';
+import {
+  EnumStatusEvent,
+  EventModelFullData,
+  statusEvent,
+} from 'src/app/core/interfaces/event.interface';
 import { PlaceModel } from 'src/app/core/interfaces/place.interface';
 import { TypeList } from 'src/app/core/models/general.model';
 import { AgentsService } from 'src/app/core/services/agents.services';
@@ -34,7 +40,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PlacesFacade } from 'src/app/application/places.facade';
 import { MacroeventModel } from 'src/app/core/interfaces/macroevent.interface';
 import { SalaModel } from 'src/app/core/interfaces/place.interface'; // Asegúrate de tener este modelo
+import { ProjectModel } from 'src/app/core/interfaces/project.interface';
 import { MacroeventsService } from 'src/app/core/services/macroevents.services';
+import { ProjectsService } from 'src/app/core/services/projects.services';
+import { dateRangeValidator } from 'src/app/shared/utils/validators.utils';
 
 @Component({
   selector: 'app-form-event',
@@ -51,34 +60,36 @@ import { MacroeventsService } from 'src/app/core/services/macroevents.services';
   templateUrl: './form-event.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],
 })
-export class FormEventComponent {
+export class FormEventComponent implements OnInit, OnChanges {
   private readonly destroyRef = inject(DestroyRef);
   private readonly eventsFacade = inject(EventsFacade);
   private readonly placesFacade = inject(PlacesFacade);
   private readonly macroeventsService = inject(MacroeventsService);
+  private readonly projectsService = inject(ProjectsService);
   private readonly agentsService = inject(AgentsService);
   private readonly generalService = inject(GeneralService);
   @Input() item!: EventModelFullData | null;
   @Input() itemId!: number;
   @Output() sendFormEvent = new EventEmitter<{
     itemId: number;
-    newEventData: FormData;
+    formData: FormData;
   }>();
 
   selectedImageFile: File | null = null;
-  imageSrc: string = '';
-  errorSession: boolean = false;
-  submitted: boolean = false;
+  imageSrc = '';
+  errorSession = false;
+  submitted = false;
   titleForm: string = 'Registrar evento';
   buttonAction: string = 'Guardar';
   typeList = TypeList.Events;
+  statusEvent = statusEvent;
+  enumStatusEnum = EnumStatusEvent;
   showOrganizers = false;
   showCollaborators = false;
   showSponsors = false;
 
   formEvent = new FormGroup(
     {
-      macroevent_id: new FormControl<number | null>(null),
       title: new FormControl('', [Validators.required]),
       start: new FormControl('', [Validators.required]),
       end: new FormControl('', [Validators.required]),
@@ -86,21 +97,30 @@ export class FormEventComponent {
       description: new FormControl('', [Validators.maxLength(2000)]),
       province: new FormControl(''),
       town: new FormControl(''),
-      place_id: new FormControl<number | null>(null), // 👈 Agregado
+      place_id: new FormControl<number | null>(null),
       sala_id: new FormControl<number | null>(null),
       capacity: new FormControl(),
       price: new FormControl(''),
       img: new FormControl(''),
-      status: new FormControl(''),
+      status: new FormControl(EnumStatusEvent.EJECUCION),
       status_reason: new FormControl(''),
       inscription: new FormControl(false),
       organizer: new FormArray([]),
       collaborator: new FormArray([]),
       sponsor: new FormArray([]),
+      macroevent_id: new FormControl<number | null>({
+        value: null,
+        disabled: true,
+      }),
+      project_id: new FormControl<number | null>({
+        value: null,
+        disabled: true,
+      }),
     },
-    { validators: this.dateRangeValidator }
+    { validators: dateRangeValidator }
   );
   macroevents: MacroeventModel[] = [];
+  projects: ProjectModel[] = [];
   provincias: {
     label: string;
     code: string;
@@ -111,53 +131,82 @@ export class FormEventComponent {
   salasDelLugar: SalaModel[] = []; // ← NUEVO
   agents: AgentModel[] = [];
   selectedPlaceId: number | null = null;
-
-  private dateRangeValidator(control: AbstractControl) {
-    const start = control.get('start')?.value;
-    const end = control.get('end')?.value;
-    if (start && end && end < start) {
-      control.get('end')?.setErrors({ invalidDateRange: true });
-      return { invalidDateRange: true };
-    }
-    return null;
-  }
+  isCreate = false;
 
   ngOnInit(): void {
     this.provincias = townsData
       .flatMap((region) => region.provinces)
       .sort((a, b) => a.label.localeCompare(b.label));
 
-    this.agentsService.getAgents().subscribe((data) => {
-      this.agents = data;
-    });
-
+    this.agentsService
+      .getAgents()
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap((data) => (this.agents = data))
+      )
+      .subscribe();
+    this.formEvent
+      .get('status')
+      ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((status) => {
+        if (status === EnumStatusEvent.EJECUCION) {
+          this.formEvent.get('status_reason')?.disable();
+        } else {
+          this.formEvent.get('status_reason')?.enable();
+        }
+      });
+    // 👇 Aquí vuelves a escuchar cambios de fecha
     this.formEvent
       .get('start')
       ?.valueChanges.pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((start: string | null) => {
           if (start) {
-            const year = new Date(start).getFullYear();
-            this.loadMacroeventosByYear(year).subscribe(); // solo para nuevas fechas
+            const year = this.generalService.getYearFromDate(start);
+            this.loadYearlyData(year).subscribe();
+            this.generalService.enableInputControls(this.formEvent, [
+              'project_id',
+              'macroevent_id',
+            ]);
+          } else {
+            this.generalService.disableInputControls(this.formEvent, [
+              'project_id',
+              'macroevent_id',
+            ]);
           }
         })
       )
       .subscribe();
+  }
 
-    if (this.itemId && this.itemId !== 0) {
-      // 🔄 EDICIÓN: cargar desde el back
-      this.eventsFacade.loadEventById(this.itemId);
+  ngOnChanges(changes: SimpleChanges): void {
+    if (
+      changes['itemId'] &&
+      changes['itemId'].currentValue !== changes['itemId'].previousValue
+    ) {
+      const newId = changes['itemId'].currentValue;
 
-      this.eventsFacade.selectedEvent$
-        .pipe(
-          filter((event): event is EventModelFullData => !!event),
-          switchMap((event) => this.populateFormWithEvent(event)),
-          takeUntilDestroyed(this.destroyRef)
-        )
-        .subscribe();
-    } else if (this.item) {
-      // 🆕 DUPLICADO o NUEVO
-      this.populateFormWithEvent(this.item).subscribe();
+      if (newId) {
+        this.eventsFacade.loadEventById(newId);
+
+        this.eventsFacade.selectedEvent$
+          .pipe(
+            takeUntilDestroyed(this.destroyRef),
+            filter(
+              (event): event is EventModelFullData =>
+                !!event && event.id === newId
+            ),
+            tap(() => this.formEvent.reset()), // 👈 para evitar parches sobre datos viejos
+            switchMap((event) => this.populateFormWithEvent(event))
+          )
+          .subscribe();
+      }
+    }
+
+    // 👇 Manejo cuando es duplicar o crear (ya tienes la data directamente)
+    if (changes['item'] && changes['item'].currentValue && this.itemId === 0) {
+      this.formEvent.reset(); // ← importante para que no se mezclen restos
+      this.populateFormWithEvent(this.item!).subscribe();
     }
   }
 
@@ -166,34 +215,42 @@ export class FormEventComponent {
     this.collaborators.clear();
     this.sponsors.clear();
 
-    const year = new Date(event.start).getFullYear();
+    const year = this.generalService.getYearFromDate(event.start);
 
-    return this.loadMacroeventosByYear(year).pipe(
+    return this.loadYearlyData(year).pipe(
+      // switchMap(() => this.loadMacroeventosByYear(year)),
       tap(() => {
         const province = this.provincias.find(
           (p) => p.label === event.province
         );
         this.municipios = province?.towns ?? [];
 
-        this.formEvent.patchValue({
-          macroevent_id: event.macroevent_id,
-          title: event.title,
-          start: event.start,
-          end: event.end,
-          time: event.time,
-          description: event.description,
-          province: event.province,
-          town: event.town,
-          place_id: event.place_id,
-          sala_id: event.sala_id,
-          capacity: event.capacity ?? null,
-          price: event.price,
-          img: event.img,
-          status: event.status,
-          status_reason: event.status_reason,
-          inscription: event.inscription ?? false,
-        });
-
+        this.formEvent.patchValue(
+          {
+            title: event.title,
+            start: event.start,
+            end: event.end,
+            time: event.time,
+            description: event.description,
+            province: event.province,
+            town: event.town,
+            place_id: event.place_id,
+            sala_id: event.sala_id,
+            capacity: event.capacity ?? null,
+            price: event.price,
+            img: event.img,
+            status: event.status,
+            status_reason: event.status_reason,
+            inscription: event.inscription ?? false,
+            macroevent_id: event.macroevent_id,
+            project_id: event.project_id,
+          },
+          { emitEvent: false }
+        );
+        this.generalService.enableInputControls(this.formEvent, [
+          'project_id',
+          'macroevent_id',
+        ]);
         if (event.place_id) {
           this.placesFacade
             .loadSalasForPlace(event.place_id, event.sala_id)
@@ -217,7 +274,7 @@ export class FormEventComponent {
           );
           this.showOrganizers = true;
           event.organizer.forEach((agent) =>
-            this.organizers.push(this.createEntityForm(agent.id))
+            this.organizers.push(this.createAgentForm(agent.id))
           );
         }
 
@@ -228,7 +285,7 @@ export class FormEventComponent {
           );
           this.showCollaborators = true;
           event.collaborator.forEach((agent) =>
-            this.collaborators.push(this.createEntityForm(agent.id))
+            this.collaborators.push(this.createAgentForm(agent.id))
           );
         }
 
@@ -236,7 +293,7 @@ export class FormEventComponent {
           console.log('Patrocinadores desde el backend:', event.sponsor.length);
           this.showSponsors = true;
           event.sponsor.forEach((agent) =>
-            this.sponsors.push(this.createEntityForm(agent.id))
+            this.sponsors.push(this.createAgentForm(agent.id))
           );
         }
 
@@ -253,11 +310,26 @@ export class FormEventComponent {
       map(() => void 0) // 👈 Aquí está la conversión a Observable<void>
     );
   }
+  private loadYearlyData(year: number): Observable<void> {
+    // 🔁 Siempre cargar, aunque sea el mismo año
+    return forkJoin([
+      this.loadProjectsByYear(year),
+      this.loadMacroeventosByYear(year),
+    ]).pipe(map(() => void 0));
+  }
 
   loadMacroeventosByYear(year: number): Observable<MacroeventModel[]> {
     return this.macroeventsService.getMacroeventsByYear(year).pipe(
       tap((macroevents) => {
         this.macroevents = macroevents;
+      })
+    );
+  }
+
+  loadProjectsByYear(year: number): Observable<ProjectModel[]> {
+    return this.projectsService.getProjectsByYear(year).pipe(
+      tap((projects) => {
+        this.projects = projects;
       })
     );
   }
@@ -275,6 +347,7 @@ export class FormEventComponent {
       this.placesFacade
         .loadPlacesByTown(selectedTown)
         .pipe(
+          takeUntilDestroyed(this.destroyRef),
           tap((places: PlaceModel[]) => {
             this.espacios = [...places].sort((a, b) =>
               a.name.localeCompare(b.name)
@@ -294,6 +367,7 @@ export class FormEventComponent {
       this.placesFacade
         .loadSalasForPlace(placeId)
         .pipe(
+          takeUntilDestroyed(this.destroyRef),
           tap(({ salas }) => {
             this.salasDelLugar = [...salas].sort((a, b) =>
               a.name.localeCompare(b.name)
@@ -336,7 +410,7 @@ export class FormEventComponent {
     return this.formEvent.get('sponsor') as FormArray;
   }
 
-  createEntityForm(agent_id: number | null = null): FormGroup {
+  createAgentForm(agent_id: number | null = null): FormGroup {
     return new FormGroup({
       agent_id: new FormControl(agent_id, Validators.required),
     });
@@ -344,17 +418,17 @@ export class FormEventComponent {
 
   addOrganizer(): void {
     this.showOrganizers = true;
-    this.organizers.push(this.createEntityForm(null));
+    this.organizers.push(this.createAgentForm(null));
   }
 
   addCollaborator(): void {
     this.showCollaborators = true;
-    this.collaborators.push(this.createEntityForm(null));
+    this.collaborators.push(this.createAgentForm(null));
   }
 
   addSponsor(): void {
     this.showSponsors = true;
-    this.sponsors.push(this.createEntityForm(null));
+    this.sponsors.push(this.createAgentForm(null));
   }
 
   removeOrganizer(index: number): void {
@@ -372,7 +446,14 @@ export class FormEventComponent {
     if (this.sponsors.length === 0) this.showSponsors = false;
   }
 
-  async onImageSelected(file: File) {
+  async onImageSelected(file: File | null) {
+    if (!file) {
+      this.selectedImageFile = null;
+      this.imageSrc = '';
+      this.formEvent.get('img')?.setValue(null); // 🔁 importante para resetear el valor
+      return;
+    }
+
     const result = await this.generalService.handleFileSelection(file);
     this.selectedImageFile = result.file;
     this.imageSrc = result.imageSrc;
@@ -399,6 +480,7 @@ export class FormEventComponent {
     const dataToSend = {
       ...value,
       macroevent_id: value.macroevent_id ? Number(value.macroevent_id) : null,
+      project_id: value.project_id ? Number(value.project_id) : null,
       place_id: value.place_id ? Number(value.place_id) : null,
       sala_id: value.sala_id ? Number(value.sala_id) : null,
       organizer: JSON.stringify(organizerIds),
@@ -412,6 +494,6 @@ export class FormEventComponent {
       this.itemId
     );
 
-    this.sendFormEvent.emit({ itemId: this.itemId, newEventData: formData });
+    this.sendFormEvent.emit({ itemId: this.itemId, formData: formData });
   }
 }

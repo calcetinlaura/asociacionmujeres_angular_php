@@ -20,6 +20,7 @@ import { IconActionComponent } from 'src/app/shared/components/buttons/icon-acti
 import { FilterTransformCodePipe } from 'src/app/shared/pipe/filterTransformCode.pipe';
 import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
 import { PhoneFormatPipe } from 'src/app/shared/pipe/phoneFormat.pipe';
+import { EurosFormatPipe } from '../../../../shared/pipe/eurosFormat.pipe';
 import { CircleIndicatorComponent } from '../circle-indicator/circle-indicator.component';
 
 @Component({
@@ -35,6 +36,7 @@ import { CircleIndicatorComponent } from '../circle-indicator/circle-indicator.c
     ItemImagePipe,
     PhoneFormatPipe,
     FilterTransformCodePipe,
+    EurosFormatPipe,
   ],
   selector: 'app-table',
   templateUrl: './table.component.html',
@@ -88,7 +90,18 @@ export class TableComponent {
   }
 
   ngAfterViewInit(): void {
-    // Asegurarse de que el sorting esté correctamente asignado después de que la vista se haya inicializado
+    this.dataSource.sortingDataAccessor = (item: any, property: string) => {
+      if (['organizer', 'collaborator', 'sponsor'].includes(property)) {
+        return item[property]?.[0]?.name?.toLowerCase() || '';
+      }
+
+      if (property === 'espacioTable') {
+        return item.placeData?.name?.toLowerCase() || '';
+      }
+
+      const value = item[property];
+      return typeof value === 'string' ? value.toLowerCase() : value;
+    };
     this.dataSource.sort = this.sort;
   }
 
@@ -113,5 +126,14 @@ export class TableComponent {
     const d1 = new Date(date1);
     const d2 = new Date(date2);
     return d1.getTime() === d2.getTime();
+  }
+  getTotalInvoiceAmount(element: any): number {
+    if (!element?.invoices || !Array.isArray(element.invoices)) {
+      return 0;
+    }
+    return element.invoices.reduce((sum: number, inv: any) => {
+      const amount = Number(inv?.total_amount);
+      return sum + (isNaN(amount) ? 0 : amount);
+    }, 0);
   }
 }

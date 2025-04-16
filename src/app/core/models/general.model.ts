@@ -12,6 +12,9 @@ export enum TypeList {
   Subsidies = 'SUBSIDIES',
   Places = 'PLACES',
   Macroevents = 'MACROEVENTS',
+  Projects = 'PROJECTS',
+  Podcasts = 'PODCASTS',
+  Articles = 'ARTICLES',
 }
 
 export enum TypeActionModal {

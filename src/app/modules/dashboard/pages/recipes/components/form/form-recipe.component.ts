@@ -38,7 +38,7 @@ export class FormRecipeComponent {
   @Input() itemId!: number;
   @Output() sendFormRecipe = new EventEmitter<{
     itemId: number;
-    newRecipeData: FormData;
+    formData: FormData;
   }>();
   selectedImageFile: File | null = null;
   recipeData: any;
@@ -117,6 +117,6 @@ export class FormRecipeComponent {
       this.itemId
     );
 
-    this.sendFormRecipe.emit({ itemId: this.itemId, newRecipeData: formData });
+    this.sendFormRecipe.emit({ itemId: this.itemId, formData: formData });
   }
 }

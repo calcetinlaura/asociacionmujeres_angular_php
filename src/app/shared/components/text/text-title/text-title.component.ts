@@ -9,6 +9,6 @@ import { Component, Input } from '@angular/core';
   imports: [CommonModule],
 })
 export class TextTitleComponent {
-  @Input() text: string = '';
+  @Input() text?: string = '';
   @Input() number?: number = 36;
 }

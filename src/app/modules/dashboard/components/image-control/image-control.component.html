@@ -23,13 +23,18 @@
   <button type="button" mat-raised-button (click)="inputField.click()">
     Seleccionar imagen
   </button>
-
-  <!-- <button
+  <button
+    *ngIf="
+      previewUrl &&
+      previewUrl !== placeholder &&
+      previewUrl !== placeholderPartner
+    "
     type="button"
     mat-raised-button
-    (click)="onSubmit()"
-    *ngIf="selectedFile"
+    color="warn"
+    (click)="removeImage()"
+    style="margin-left: 10px"
   >
-    Subir foto
-  </button> -->
+    Eliminar imagen
+  </button>
 </div>

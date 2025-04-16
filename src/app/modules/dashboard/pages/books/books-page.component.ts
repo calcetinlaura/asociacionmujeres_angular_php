@@ -70,12 +70,12 @@ export class BooksPageComponent implements OnInit {
   typeList = TypeList.Books;
 
   headerListBooks: ColumnModel[] = [
-    { title: 'Portada', key: 'img' },
-    { title: 'Título', key: 'title' },
-    { title: 'Autor/a', key: 'author' },
-    { title: 'Descripción', key: 'description' },
-    { title: 'Género', key: 'gender' },
-    { title: 'Año compra', key: 'year' },
+    { title: 'Portada', key: 'img', sortable: false },
+    { title: 'Título', key: 'title', sortable: true },
+    { title: 'Autor/a', key: 'author', sortable: true },
+    { title: 'Descripción', key: 'description', sortable: true },
+    { title: 'Género', key: 'gender', sortable: true },
+    { title: 'Año compra', key: 'year', sortable: true },
   ];
 
   @ViewChild(InputSearchComponent)
@@ -139,10 +139,10 @@ export class BooksPageComponent implements OnInit {
     this.onCloseModal();
   }
 
-  sendFormBook(event: { itemId: number; newBookData: FormData }): void {
+  sendFormBook(event: { itemId: number; formData: FormData }): void {
     const save$ = event.itemId
-      ? this.booksFacade.editBook(event.itemId, event.newBookData)
-      : this.booksFacade.addBook(event.newBookData);
+      ? this.booksFacade.editBook(event.itemId, event.formData)
+      : this.booksFacade.addBook(event.formData);
 
     save$
       .pipe(

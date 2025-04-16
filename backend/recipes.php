@@ -1,10 +1,11 @@
 <?php
-header("Access-Control-Allow-Origin: *"); // Permite todas las orígenes, puedes restringirlo a tu dominio específico si es necesario
-header("Access-Control-Allow-Methods: GET, POST, PATCH, DELETE"); // Métodos permitidos
-header("Access-Control-Allow-Headers: Content-Type"); // Cabeceras permitidas
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: GET, POST, PATCH, DELETE");
+header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json; charset=UTF-8");
 
-include '../config/conexion.php'; // Incluye aquí la conexión a la base de datos
+include '../config/conexion.php';
+include 'utils/utils.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 if ($method === 'OPTIONS') {
@@ -12,30 +13,24 @@ if ($method === 'OPTIONS') {
   exit();
 }
 
-// Extraer la URI
 $uriParts = explode('/', trim($_SERVER['REQUEST_URI'], '/'));
-$resource = array_pop($uriParts); // Obtener el último segmento como el recurso
+$resource = array_pop($uriParts);
+$basePath = "../uploads/img/RECIPES/";
 
 switch ($method) {
   case 'GET':
     if (is_numeric($resource)) {
-        // Obtener libro por ID
         $stmt = $connection->prepare("SELECT * FROM recipes WHERE id = ?");
         $stmt->bind_param("i", $resource);
         $stmt->execute();
         $result = $stmt->get_result();
-        $recipe = $result->fetch_assoc();
-        echo json_encode($recipe ? $recipe : []);
+        echo json_encode($result->fetch_assoc() ?: []);
     } elseif (isset($_GET['latest'])) {
-        // Obtener el año más reciente
         $stmt = $connection->prepare("SELECT MAX(year) AS latestYear FROM recipes");
         $stmt->execute();
-        $result = $stmt->get_result();
-        $data = $result->fetch_assoc();
-        $latestYear = $data['latestYear'];
+        $latestYear = $stmt->get_result()->fetch_assoc()['latestYear'];
 
         if ($latestYear) {
-            // Obtener recetas filtrando por el último año
             $stmt = $connection->prepare("SELECT * FROM recipes WHERE year = ?");
             $stmt->bind_param("i", $latestYear);
             $stmt->execute();
@@ -49,7 +44,6 @@ switch ($method) {
             echo json_encode([]);
         }
     } elseif (isset($_GET['year'])) {
-        // Obtener recetas filtrando por año
         $year = $_GET['year'];
         $stmt = $connection->prepare("SELECT * FROM recipes WHERE year = ?");
         $stmt->bind_param("i", $year);
@@ -61,7 +55,6 @@ switch ($method) {
         }
         echo json_encode($recipes);
     } elseif (isset($_GET['category'])) {
-        // Obtener recetas filtrando por género
         $category = $_GET['category'];
         $stmt = $connection->prepare("SELECT * FROM recipes WHERE category = ?");
         $stmt->bind_param("s", $category);
@@ -73,7 +66,6 @@ switch ($method) {
         }
         echo json_encode($recipes);
     } else {
-        // Obtener todos los recetas
         $stmt = $connection->prepare("SELECT * FROM recipes");
         $stmt->execute();
         $result = $stmt->get_result();
@@ -85,115 +77,125 @@ switch ($method) {
     }
     break;
 
-    case 'POST':
-      error_reporting(E_ALL);
-      ini_set('display_errors', 1);
+  case 'POST':
+    error_reporting(E_ALL);
+    ini_set('display_errors', 1);
+// 🔥 Manejar eliminación de imagen si viene la acción
+if (isset($_POST['action']) && $_POST['action'] === 'deleteImage') {
+  $type = $_POST['type'];
 
-      // Procesar la imagen
-      if (isset($_FILES['img']) && $_FILES['img']['error'] == 0) {
-        $ruta = "../uploads/img/RECIPES/";
-        move_uploaded_file($_FILES['img']['tmp_name'], $ruta . $_FILES['img']['name']);
-        $imgName = $_FILES['img']['name'];
-      } else {
-        $imgName = '';
-      }
+  if (!empty($_POST['id'])) {
+    $id = (int)$_POST['id'];
 
-      // Leer los datos del formulario
-      $data = $_POST;
-      $data['img'] = $imgName;
+    if (eliminarSoloImagen($connection, strtolower($type), 'img', $id, $basePath)) {
+      echo json_encode(["message" => "Imagen eliminada correctamente"]);
+    } else {
+      http_response_code(500);
+      echo json_encode(["message" => "Error al eliminar imagen"]);
+    }
+    exit();
+  }
 
-      // Verificar si se indica que se trata de una actualización (override a PATCH)
-      if (isset($data['_method']) && strtoupper($data['_method']) == 'PATCH') {
-          // Obtener el ID enviado en el formulario
-          $id = isset($data['id']) ? $data['id'] : null;
-          if (!is_numeric($id)) {
-              http_response_code(400);
-              echo json_encode(["message" => "ID no válido."]);
-              exit();
-          }
-
-// Recuperar datos desde $_POST
-$title = isset($data['title']) ? $data['title'] : null;
-$category = isset($data['category']) ? $data['category'] : null;
-$owner = isset($data['owner']) ? $data['owner'] : null;
-$ingredients = isset($data['ingredients']) ? $data['ingredients'] : null;
-$recipe = isset($data['recipe']) ? $data['recipe'] : null;
-$year = isset($data['year']) ? (int)$data['year'] : null;
-
-if ($imgName == '') {
-  $stmtCurrent = $connection->prepare("SELECT img FROM recipes WHERE id = ?");
-  $stmtCurrent->bind_param("i", $id);
-  $stmtCurrent->execute();
-  $result = $stmtCurrent->get_result();
-  $currentBook = $result->fetch_assoc();
-  $imgName = $currentBook['img'];
+  http_response_code(400);
+  echo json_encode(["message" => "ID requerido para eliminar imagen"]);
+  exit();
 }
-          // Validar que se hayan recibido los datos obligatorios
-          if ($title && $category && $year !== null) {
-            $stmt = $connection->prepare("UPDATE recipes SET title = ?, category = ?, owner = ?, ingredients = ?, recipe = ?, img = ?, year = ? WHERE id = ?");
-            if (!$stmt) {
-                http_response_code(500);
-                echo json_encode(["message" => "Error al preparar la consulta: " . $connection->error]);
-                exit();
-            }
+    $data = $_POST;
+    $imgName = procesarImagen($basePath, 'img', $data);
+    $data['img'] = $imgName;
+    $isUpdate = isset($data['_method']) && strtoupper($data['_method']) === 'PATCH';
 
-            $stmt->bind_param("ssssssii", $title, $category, $owner, $ingredients, $recipe, $imgName, $year, $id);
-            if ($stmt->execute()) {
-                echo json_encode(["message" => "Receta actualizada con éxito."]);
-            } else {
-                http_response_code(500);
-                echo json_encode(["message" => "Error al actualizar la receta: " . $stmt->error]);
-            }
-        } else {
-            http_response_code(400);
-            echo json_encode(["message" => "Datos incompletos para actualizar la receta."]);
-        }
-      } else {
-        // Si no es una actualización, se inserta una nueva receta
-        $stmt = $connection->prepare("INSERT INTO recipes (title, category, owner, ingredients, recipe, img, year) VALUES (?, ?, ?, ?, ?, ?, ?)");
-      $stmt->bind_param(
-            "ssssssi",
-            $data['title'],
-            $data['category'],
-            $data['owner'],
-            $data['ingredients'],
-            $data['recipe'],
-            $data['img'],
-            $data['year']
-        );
-
-        if ($stmt->execute()) {
-            echo json_encode(["message" => "Receta añadida con éxito."]);
-        } else {
-            http_response_code(500);
-            echo json_encode(["message" => "Error al añadir la receta: " . $stmt->error]);
-        }
+    // Validar campos obligatorios
+    $campoFaltante = validarCamposRequeridos($data, ['title', 'category', 'year']);
+    if ($campoFaltante !== null) {
+      http_response_code(400);
+      echo json_encode(["message" => "El campo '$campoFaltante' es obligatorio."]);
+      exit();
     }
 
-      break;
+    $year = (int)$data['year'];
 
-    case 'DELETE':
-          // Extraer el ID de la URI
-          $id = isset($_GET['id']) ? $_GET['id'] : null;
-          if (!is_numeric($id)) {
-            http_response_code(400);
-            echo json_encode(["message" => "ID no válido."]);
-            exit();
+    if ($isUpdate) {
+        $id = isset($data['id']) ? (int)$data['id'] : null;
+        if (!$id) {
+          http_response_code(400);
+          echo json_encode(["message" => "ID no válido."]);
+          exit();
         }
-          $stmt = $connection->prepare("DELETE FROM recipes WHERE id = ?");
-          $stmt->bind_param("i", $id);
-          if ($stmt->execute()) {
-              echo json_encode(["message" => "Libro eliminado con éxito."]);
-          } else {
-              http_response_code(500);
-              echo json_encode(["message" => "Error al eliminar el libro: " . $stmt->error]);
+
+        $stmtCurrent = $connection->prepare("SELECT img FROM recipes WHERE id = ?");
+        $stmtCurrent->bind_param("i", $id);
+        $stmtCurrent->execute();
+        $result = $stmtCurrent->get_result();
+        $current = $result->fetch_assoc();
+        $oldImg = $current['img'] ?? '';
+
+        if ($imgName === '') {
+          $imgName = $oldImg;
+        }
+
+        $stmt = $connection->prepare("
+          UPDATE recipes SET title = ?, category = ?, owner = ?, ingredients = ?, recipe = ?, img = ?, year = ? WHERE id = ?
+        ");
+        $stmt->bind_param("ssssssii", $data['title'], $data['category'], $data['owner'], $data['ingredients'], $data['recipe'], $imgName, $year, $id);
+
+        if ($stmt->execute()) {
+          if ($oldImg && $imgName !== $oldImg) {
+            eliminarImagenSiNoSeUsa($connection, 'recipes', 'img', $oldImg, $basePath);
           }
-          break;
-    default:
-        http_response_code(405);
-        echo json_encode(["message" => "Método no permitido"]);
-        break;
+          echo json_encode(["message" => "Receta actualizada con éxito."]);
+        } else {
+          http_response_code(500);
+          echo json_encode(["message" => "Error al actualizar la receta: " . $stmt->error]);
+        }
 
+    } else {
+        $stmt = $connection->prepare("
+          INSERT INTO recipes (title, category, owner, ingredients, recipe, img, year)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        ");
+        $stmt->bind_param("ssssssi", $data['title'], $data['category'], $data['owner'], $data['ingredients'], $data['recipe'], $imgName, $year);
+
+        if ($stmt->execute()) {
+          echo json_encode(["message" => "Receta añadida con éxito."]);
+        } else {
+          http_response_code(500);
+          echo json_encode(["message" => "Error al añadir la receta: " . $stmt->error]);
+        }
+    }
+    break;
+
+  case 'DELETE':
+    $id = isset($_GET['id']) ? (int)$_GET['id'] : null;
+    if (!$id) {
+      http_response_code(400);
+      echo json_encode(["message" => "ID no válido."]);
+      exit();
+    }
+
+    $stmtImg = $connection->prepare("SELECT img FROM recipes WHERE id = ?");
+    $stmtImg->bind_param("i", $id);
+    $stmtImg->execute();
+    $imgResult = $stmtImg->get_result();
+    $imgToDelete = $imgResult->fetch_assoc()['img'] ?? '';
+
+    $stmt = $connection->prepare("DELETE FROM recipes WHERE id = ?");
+    $stmt->bind_param("i", $id);
+
+    if ($stmt->execute()) {
+      if ($imgToDelete) {
+        eliminarImagenSiNoSeUsa($connection, 'recipes', 'img', $imgToDelete, $basePath);
+      }
+      echo json_encode(["message" => "Receta eliminada con éxito."]);
+    } else {
+      http_response_code(500);
+      echo json_encode(["message" => "Error al eliminar la receta: " . $stmt->error]);
+    }
+    break;
+
+  default:
+    http_response_code(405);
+    echo json_encode(["message" => "Método no permitido"]);
+    break;
 }
-
 ?>

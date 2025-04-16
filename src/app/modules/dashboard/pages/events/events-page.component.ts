@@ -71,18 +71,18 @@ export class EventsPageComponent implements OnInit {
   searchForm!: FormGroup;
 
   headerListEvents: ColumnModel[] = [
-    { title: 'Cartel', key: 'img' },
-    { title: 'Título', key: 'titleEvent' },
-    { title: 'Fecha', key: 'start' },
-    { title: 'Descripción', key: 'description' },
-    { title: 'Espacio', key: 'espacioTable' },
-    { title: 'Aforo', key: 'capacity' },
-    { title: 'Precio', key: 'price' },
-    { title: 'Estado', key: 'status' },
-    { title: 'Requiere inscripción', key: 'inscription' },
-    // { title: 'Organizer', key: 'organizer' },
-    // { title: 'Colaborador', key: 'collaborator' },
-    // { title: 'Patrocinador', key: 'sponsor' },
+    { title: 'Cartel', key: 'img', sortable: false },
+    { title: 'Título', key: 'titleEvent', sortable: true },
+    { title: 'Fecha', key: 'start', sortable: true },
+    { title: 'Descripción', key: 'description', sortable: true },
+    { title: 'Espacio', key: 'espacioTable', sortable: true },
+    { title: 'Aforo', key: 'capacity', sortable: false },
+    { title: 'Precio', key: 'price', sortable: true },
+    { title: 'Estado', key: 'status', sortable: true },
+    { title: 'Inscripción', key: 'inscription', sortable: true },
+    { title: 'Organizador', key: 'organizer', sortable: false },
+    { title: 'Colaborador', key: 'collaborator', sortable: false },
+    { title: 'Patrocinador', key: 'sponsor', sortable: false },
   ];
 
   @ViewChild(InputSearchComponent)
@@ -90,7 +90,7 @@ export class EventsPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.filters = [
-      { code: '', name: 'Histórico eventos' },
+      { code: 'ALL', name: 'Histórico' },
       ...this.generalService.getYearFilters(2018, this.currentYear),
     ];
 
@@ -112,14 +112,13 @@ export class EventsPageComponent implements OnInit {
   }
 
   filterSelected(filter: string): void {
-    const year = Number(filter);
-    this.selectedFilter = !isNaN(year) && year > 0 ? year : null;
+    this.selectedFilter = filter === 'ALL' ? null : Number(filter);
     this.generalService.clearSearchInput(this.inputSearchComponent);
 
-    if (this.selectedFilter) {
-      this.eventsFacade.loadEventsByYear(this.selectedFilter);
-    } else {
+    if (filter === 'ALL') {
       this.eventsFacade.loadAllEvents();
+    } else {
+      this.eventsFacade.loadEventsByYear(Number(filter));
     }
   }
 
@@ -159,6 +158,7 @@ export class EventsPageComponent implements OnInit {
 
   onCloseModal(): void {
     this.modalService.closeModal();
+    this.item = null;
   }
 
   confirmDeleteEvent(event: EventModel | null): void {
@@ -167,10 +167,10 @@ export class EventsPageComponent implements OnInit {
     this.onCloseModal();
   }
 
-  sendFormEvent(event: { itemId: number; newEventData: FormData }): void {
+  sendFormEvent(event: { itemId: number; formData: FormData }): void {
     const request$ = event.itemId
-      ? this.eventsFacade.editEvent(event.itemId, event.newEventData)
-      : this.eventsFacade.addEvent(event.newEventData);
+      ? this.eventsFacade.editEvent(event.itemId, event.formData)
+      : this.eventsFacade.addEvent(event.formData);
 
     request$
       .pipe(

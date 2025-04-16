@@ -8,126 +8,82 @@
     class="login-auth-form"
   >
     <div class="flex flex-col gap-y-4">
-      <div class="box-input gap-x-4 flex flex-1">
-        <label for="province">Macroevento</label>
-        <select formControlName="macroevent_id">
-          <option [ngValue]="null">Seleccione un macroevento</option>
-          <option *ngFor="let macro of macroevents" [ngValue]="macro.id">
-            {{ macro.title }}
-          </option>
-        </select>
-        <div
-          *ngIf="submitted && formEvent.get('town')?.invalid"
-          class="is-invalid-text"
-        >
-          Campo requerido
-        </div>
-      </div>
-      <div class="box-input gap-x-4">
-        <label for="email">Título</label>
-        <div class="flex flex-col flex-1">
-          <input
-            formControlName="title"
-            type="text"
-            [ngClass]="{
-              'is-invalid': submitted && formEvent.get('title')?.invalid
-            }"
-          />
-          <div
-            *ngIf="submitted && formEvent.get('title')?.invalid"
-            class="is-invalid-text"
-          >
-            Campo requerido
-          </div>
-        </div>
-      </div>
       <div class="flex justify-between gap-x-4">
         <div class="flex flex-col w-3/4 gap-y-4">
-          <div class="flex justify-between gap-x-4">
-            <!-- Provincia -->
-            <div class="box-input gap-x-4 flex flex-1">
-              <label for="province">Provincia</label>
-              <select
-                formControlName="province"
-                (change)="onProvinceChange()"
-                [ngClass]="{
-                  'is-invalid': submitted && formEvent.get('province')?.invalid
-                }"
-              >
-                <option value="">Seleccione una provincia</option>
-                <option *ngFor="let prov of provincias" [value]="prov.label">
-                  {{ prov.label }}
-                </option>
-              </select>
-              <div
-                *ngIf="submitted && formEvent.get('town')?.invalid"
-                class="is-invalid-text"
-              >
-                Campo requerido
-              </div>
-            </div>
-            <!-- Municipio -->
-            <div class="box-input flex flex-1">
-              <label for="town">Municipio</label>
-              <select
-                formControlName="town"
-                [ngClass]="{
-                  'is-invalid': submitted && formEvent.get('town')?.invalid
-                }"
-                (change)="onTownChange()"
-              >
-                <option value="">Seleccione un municipio</option>
-                <option *ngFor="let mun of municipios" [value]="mun.label">
-                  {{ mun.label }}
-                </option>
-              </select>
-              <div
-                *ngIf="submitted && formEvent.get('town')?.invalid"
-                class="is-invalid-text"
-              >
-                Campo requerido
-              </div>
-            </div>
-          </div>
-          <!-- Select de Espacio -->
           <div class="box-input gap-x-4">
-            <label for="place">Espacio</label>
-            <select formControlName="place_id" (change)="onPlaceChange()">
-              <option [ngValue]="null" disabled>Selecciona un espacio</option>
-              <option *ngFor="let place of espacios" [ngValue]="place.id">
-                {{ place.name }}
-              </option>
-            </select>
-          </div>
-
-          <!-- Select de Sala -->
-          <div *ngIf="salasDelLugar.length > 0" class="box-input gap-x-4">
-            <label for="sala">Sala</label>
-            <select formControlName="sala_id" (change)="onSalaChange()">
-              <option [ngValue]="null" disabled>Selecciona una sala</option>
-              <option
-                *ngFor="let sala of salasDelLugar"
-                [ngValue]="sala.sala_id"
-              >
-                {{ sala.name }} - {{ sala.location }}
-              </option>
-            </select>
-          </div>
-          <div class="box-input gap-y-2 gap-x-4">
-            <label for="status">Aforo</label>
-            <input formControlName="capacity" type="number" />
-          </div>
-          <div class="box-input gap-y-2 gap-x-4">
-            <label for="price">Precio</label>
-            <input formControlName="price" type="text" />
-          </div>
-        </div>
-        <div class="flex flex-col gap-y-4 w-1/4 bg-lilaMuyClaro p-4">
-          <div class="flex box-input gap-x-4">
-            <label for="start">Inicio</label>
+            <label for="email">Título</label>
             <div class="flex flex-col flex-1">
               <input
+                formControlName="title"
+                type="text"
+                [ngClass]="{
+                  'is-invalid': submitted && formEvent.get('title')?.invalid
+                }"
+              />
+              <div
+                *ngIf="submitted && formEvent.get('title')?.invalid"
+                class="is-invalid-text"
+              >
+                Campo requerido
+              </div>
+            </div>
+          </div>
+          <!-- <div class="flex justify-between gap-x-4"> -->
+          <!-- Provincia -->
+          <div class="box-input gap-x-4 flex flex-1">
+            <label for="province">Provincia</label>
+            <select
+              formControlName="province"
+              (change)="onProvinceChange()"
+              [ngClass]="{
+                'is-invalid': submitted && formEvent.get('province')?.invalid
+              }"
+            >
+              <option value="">Seleccione una provincia</option>
+              <option *ngFor="let prov of provincias" [value]="prov.label">
+                {{ prov.label }}
+              </option>
+            </select>
+            <div
+              *ngIf="submitted && formEvent.get('town')?.invalid"
+              class="is-invalid-text"
+            >
+              Campo requerido
+            </div>
+          </div>
+          <!-- Municipio -->
+          <div class="box-input flex flex-1">
+            <label for="town">Municipio</label>
+            <select
+              formControlName="town"
+              [ngClass]="{
+                'is-invalid': submitted && formEvent.get('town')?.invalid
+              }"
+              (change)="onTownChange()"
+            >
+              <option value="">Seleccione un municipio</option>
+              <option *ngFor="let mun of municipios" [value]="mun.label">
+                {{ mun.label }}
+              </option>
+            </select>
+            <div
+              *ngIf="submitted && formEvent.get('town')?.invalid"
+              class="is-invalid-text"
+            >
+              Campo requerido
+            </div>
+          </div>
+        </div>
+
+        <!-- Select de Espacio -->
+
+        <div class="flex flex-col gap-y-4 w-72 bg-lilaMuyClaro p-4">
+          <div class="flex gap-x-4 justify-between">
+            <label for="start">Inicio</label>
+            <div class="w-2/3">
+              <input
                 formControlName="start"
+                class="w-full p-1 border border-gray-300 rounded"
                 type="date"
                 [ngClass]="{
                   'is-invalid': submitted && formEvent.get('start')?.invalid
@@ -141,12 +97,13 @@
               </div>
             </div>
           </div>
-          <div class="flex box-input gap-x-4">
+          <div class="flex gap-x-4 justify-between">
             <label for="end">Fin</label>
-            <div class="flex flex-col flex-1">
+            <div class="w-2/3">
               <input
                 formControlName="end"
                 type="date"
+                class="w-full p-1 border border-gray-300 rounded"
                 [ngClass]="{
                   'is-invalid': submitted && (formEvent.get('end')?.invalid || formEvent.errors?.['invalidDateRange'])
                 }"
@@ -169,30 +126,57 @@
               </div>
             </div>
           </div>
-          <div class="flex box-input gap-x-4">
+          <div class="flex gap-x-4 justify-between">
             <label for="time">Hora</label>
-            <input formControlName="time" type="time" placeholder="00:00" />
+            <div class="w-2/3">
+              <input
+                formControlName="time"
+                class="w-full p-1 border border-gray-300 rounded"
+                type="time"
+                placeholder="00:00"
+              />
+            </div>
           </div>
         </div>
+      </div>
+      <div class="box-input gap-x-4">
+        <label for="place">Espacio</label>
+        <select formControlName="place_id" (change)="onPlaceChange()">
+          <option [ngValue]="null" disabled>Selecciona un espacio</option>
+          <option *ngFor="let place of espacios" [ngValue]="place.id">
+            {{ place.name }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Select de Sala -->
+      <div *ngIf="salasDelLugar.length > 0" class="box-input gap-x-4">
+        <label for="sala">Sala</label>
+        <select formControlName="sala_id" (change)="onSalaChange()">
+          <option [ngValue]="null" disabled>Selecciona una sala</option>
+          <option *ngFor="let sala of salasDelLugar" [ngValue]="sala.sala_id">
+            {{ sala.name }} - {{ sala.location }}
+          </option>
+        </select>
+      </div>
+      <div class="box-input gap-y-2 gap-x-4">
+        <label for="status">Aforo</label>
+        <input formControlName="capacity" type="number" />
+      </div>
+      <div class="box-input gap-y-2 gap-x-4">
+        <label for="price">Precio</label>
+        <input formControlName="price" type="text" />
       </div>
       <div class="flex gap-x-4">
         <div class="flex-col gap-y-4 w-3/4">
           <div class="box-input gap-x-4">
             <label for="description">Descripción</label>
-            <mat-card-content>
-              <editor
-                apiKey="c8uxjgc7f76nt677zqdn22a8a97bjhc7fyph9y4oxuj7nrx3"
-                [init]="{
-                  height: 250,
-                  plugins: ['advlist', 'lists', 'wordcount'],
-                  toolbar:
-                    'undo redo | bold italic  underline strikethrough | fontfamily fontsize forecolor  backcolor| \
-               alignleft aligncenter alignright alignjustify | \
-               bullist numlist  | removeformat '
-                }"
-                formControlName="description"
-              ></editor>
-            </mat-card-content>
+            <textarea
+              formControlName="description"
+              rows="6"
+              class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-200 text-sm"
+              placeholder="Escribe aquí la descripción del evento..."
+            ></textarea>
           </div>
           <div class="flex gap-x-4 py-4">
             <label for="inscription">¿Requiere de incripción previa?</label>
@@ -201,42 +185,73 @@
           <div class="box-input gap-y-2 gap-x-4">
             <label for="status">Estado</label>
             <select formControlName="status">
-              <option value="" selected>En marcha</option>
-              <option value="Cancelado">Cancelado</option>
-              <option value="Aplazado">Aplazado</option>
-              <option value="Agotadas">Plazas agotadas</option>
+              <option *ngFor="let status of statusEvent" [value]="status.code">
+                {{ status.name }}
+              </option>
             </select>
           </div>
           <div
             class="box-input gap-x-4 pt-4"
-            *ngIf="formEvent.get('status')?.value !== ''"
+            *ngIf="formEvent.get('status')?.value !== enumStatusEnum.EJECUCION"
           >
-            <label for="description">Motivos <br />cambio</label>
-            <mat-card-content>
-              <editor
-                apiKey="c8uxjgc7f76nt677zqdn22a8a97bjhc7fyph9y4oxuj7nrx3"
-                [init]="{
-                  height: 250,
-                  plugins: ['advlist', 'lists', 'wordcount'],
-                  toolbar:
-                    'undo redo | bold italic  underline strikethrough | fontfamily fontsize forecolor  backcolor| \
-                   alignleft aligncenter alignright alignjustify | \
-                   bullist numlist  | removeformat '
-                }"
-                formControlName="status_reason"
-              ></editor>
-            </mat-card-content>
+            <label for="status_reason">Motivos <br />cambio</label>
+
+            <textarea
+              formControlName="status_reason"
+              rows="6"
+              class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-200 text-sm"
+              placeholder="Escribe aquí el motico de cambio en el estado del evento..."
+            ></textarea>
           </div>
         </div>
-        <div class="box-input gap-y-2 w-1/4">
+        <div class="box-input gap-y-2 w-72">
           <app-image-control
             [previewImg]="
               formEvent.get('img')?.value ? formEvent.get('img')?.value! : null
             "
+            [entityId]="itemId"
             [type]="typeList"
             (imgSelected)="onImageSelected($event)"
             [imageWidthValue]="'full'"
           ></app-image-control>
+        </div>
+      </div>
+      <div class="bg-lilaMuyClaro p-4 flex flex-col gap-y-4">
+        <div class="box-input gap-x-4 flex flex-1">
+          <label for="province">Macroevento</label>
+          <div class="flex flex-col flex-1">
+            <select formControlName="macroevent_id">
+              <option [ngValue]="null">Seleccione un macroevento</option>
+              <option *ngFor="let macro of macroevents" [ngValue]="macro.id">
+                {{ macro.title }} - {{ macro.start | date : "yyyy" }}
+              </option>
+            </select>
+            <div *ngIf="formEvent.controls.macroevent_id.disabled">
+              <small class="text-gray-500 italic">
+                Selecciona una fecha de inicio para habilitar los macroeventos
+                de ese año
+              </small>
+            </div>
+          </div>
+        </div>
+        <div class="box-input gap-x-4 flex flex-1">
+          <label for="province">Proyecto</label>
+          <div class="flex flex-col flex-1">
+            <select formControlName="project_id">
+              <option [ngValue]="null">
+                Seleccione una subvención si el proyecto pertenece a alguna
+              </option>
+              <option *ngFor="let project of projects" [value]="project.id">
+                {{ project.title }} - {{ project.year }}
+              </option>
+            </select>
+            <div *ngIf="formEvent.controls.project_id.disabled">
+              <small class="text-gray-500 italic">
+                Selecciona una fecha de inicio para habilitar los proyectos de
+                ese año
+              </small>
+            </div>
+          </div>
         </div>
       </div>
       <!-- ORGANIZADORES -->

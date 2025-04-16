@@ -1,3 +1,5 @@
+import { LiveAnnouncer } from '@angular/cdk/a11y';
+import { CommonModule, DatePipe } from '@angular/common';
 import {
   Component,
   EventEmitter,
@@ -7,18 +9,16 @@ import {
   SimpleChanges,
   ViewChild,
 } from '@angular/core';
-import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { MatSort, Sort, MatSortModule } from '@angular/material/sort';
-import { LiveAnnouncer } from '@angular/cdk/a11y';
-import { CommonModule, DatePipe } from '@angular/common';
-import { MatIconModule } from '@angular/material/icon';
 import { FormControl } from '@angular/forms';
-import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
-import { InvoiceModel } from 'src/app/core/interfaces/invoice.interface';
+import { MatIconModule } from '@angular/material/icon';
+import { MatSort, MatSortModule, Sort } from '@angular/material/sort';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { InvoiceModelFullData } from 'src/app/core/interfaces/invoice.interface';
+import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { SubsidiesService } from 'src/app/core/services/subsidies.services';
-import { EurosFormatPipe } from 'src/app/shared/pipe/eurosFormat.pipe';
 import { CircleIndicatorComponent } from 'src/app/modules/dashboard/components/circle-indicator/circle-indicator.component';
+import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
+import { EurosFormatPipe } from 'src/app/shared/pipe/eurosFormat.pipe';
 
 @Component({
   standalone: true,
@@ -42,7 +42,7 @@ export class TableInvoicesComponent {
 
   @Input() tableInsideSubsidy = false;
   @Input() type: TypeList = TypeList.Invoices;
-  @Input() data: InvoiceModel[] = [];
+  @Input() data: InvoiceModelFullData[] = [];
   @Input() delete? = true;
   @Input() edit? = true;
   @Output() openModal = new EventEmitter<{
@@ -51,7 +51,7 @@ export class TableInvoicesComponent {
     item: any;
   }>();
   displayedColumns: string[] = [];
-  dataSource = new MatTableDataSource<InvoiceModel>();
+  dataSource = new MatTableDataSource<InvoiceModelFullData>();
   subsidies: any;
   typeActionModal = TypeActionModal;
   searchKeywordFilter = new FormControl();
@@ -61,7 +61,9 @@ export class TableInvoicesComponent {
   @ViewChild(MatSort) sort!: MatSort;
 
   ngOnInit(): void {
-    this.dataSource = new MatTableDataSource<InvoiceModel>(this.data || []);
+    this.dataSource = new MatTableDataSource<InvoiceModelFullData>(
+      this.data || []
+    );
     this.dataSource.sort = this.sort;
 
     this.displayedColumns = [
@@ -78,7 +80,8 @@ export class TableInvoicesComponent {
       'iva',
       'irpf',
       'total_amount',
-      'subsidy',
+      'subsidy_name',
+      'project_title',
       'actions',
     ];
   }

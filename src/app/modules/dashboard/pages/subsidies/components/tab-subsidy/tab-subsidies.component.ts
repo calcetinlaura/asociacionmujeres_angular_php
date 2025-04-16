@@ -10,7 +10,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatIconModule } from '@angular/material/icon';
 import { catchError, of, tap } from 'rxjs';
-import { InvoiceModel } from 'src/app/core/interfaces/invoice.interface';
+import { InvoiceModelFullData } from 'src/app/core/interfaces/invoice.interface';
 import { SubsidyModel } from 'src/app/core/interfaces/subsidy.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { InvoicesService } from 'src/app/core/services/invoices.services';
@@ -46,10 +46,10 @@ export class ModalShowSubsidyComponent {
     action: TypeActionModal;
     item: any;
   }>();
-  itemInvoice?: InvoiceModel;
+  itemInvoice?: InvoiceModelFullData;
   typeList = TypeList;
   type: TypeList = TypeList.Subsidies;
-  filteredInvoices: InvoiceModel[] = [];
+  filteredInvoices: InvoiceModelFullData[] = [];
   number_invoices: number = 0;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
   loading: boolean = true;
@@ -68,7 +68,7 @@ export class ModalShowSubsidyComponent {
       .getInvoicesBySubsidy(this.item.name, this.item.year)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((invoices: InvoiceModel[]) => {
+        tap((invoices: InvoiceModelFullData[]) => {
           this.filteredInvoices = invoices;
           this.number_invoices = invoices.length;
           this.amount_justified = invoices.reduce(

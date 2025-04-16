@@ -24,15 +24,21 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatRadioModule } from '@angular/material/radio';
 import { EditorModule } from '@tinymce/tinymce-angular';
-import { filter, map, Observable, tap, throwError } from 'rxjs';
+import { filter, forkJoin, map, Observable, tap, throwError } from 'rxjs';
 import { InvoicesFacade } from 'src/app/application/invoices.facade';
 import {
   CreditorAutocompleteModel,
   CreditorModel,
 } from 'src/app/core/interfaces/creditor.interface';
-import { InvoiceWithCreditorModel } from 'src/app/core/interfaces/invoice.interface';
-import { categoryFilterSubsidies } from 'src/app/core/interfaces/subsidy.interface';
+import { InvoiceModelFullData } from 'src/app/core/interfaces/invoice.interface';
+import { ProjectModel } from 'src/app/core/interfaces/project.interface';
+import {
+  categoryFilterSubsidies,
+  SubsidyModel,
+} from 'src/app/core/interfaces/subsidy.interface';
 import { CreditorsService } from 'src/app/core/services/creditors.services';
+import { ProjectsService } from 'src/app/core/services/projects.services';
+import { SubsidiesService } from 'src/app/core/services/subsidies.services';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
@@ -57,12 +63,15 @@ export class FormInvoiceComponent {
   private invoicesFacade = inject(InvoicesFacade);
   private generalService = inject(GeneralService);
   private creditorsService = inject(CreditorsService);
+  private subsidiesService = inject(SubsidiesService);
+  private projectsService = inject(ProjectsService);
 
   @Input() itemId!: number;
   @Output() sendFormInvoice = new EventEmitter<{
     itemId: number;
-    newInvoiceData: FormData;
+    formData: FormData;
   }>();
+
   invoiceData: any;
   imageSrc: string = '';
   errorSession: boolean = false;
@@ -85,32 +94,39 @@ export class FormInvoiceComponent {
     date_accounting: new FormControl(''),
     date_payment: new FormControl(''),
     creditor_id: new FormControl<number | null>(null),
-    description: new FormControl('', [Validators.required]),
+    description: new FormControl('', [Validators.maxLength(2000)]),
     amount: new FormControl(),
     irpf: new FormControl(),
     iva: new FormControl(),
     total_amount: new FormControl(0, [Validators.required, Validators.min(1)]),
     total_amount_irpf: new FormControl(),
-    subsidy: new FormControl(''),
-    subsidy_year: new FormControl<number | null>(null, [
-      Validators.min(1995),
-      Validators.max(new Date().getFullYear()),
-    ]),
+    subsidy_id: new FormControl<number | null>({
+      value: null,
+      disabled: true,
+    }),
+    project_id: new FormControl<number | null>({
+      value: null,
+      disabled: true,
+    }),
     invoice_file: new FormControl<string | File | null>(null), // 🔹 Acepta string, File o null
   });
+  subsidies: SubsidyModel[] = [];
+  projects: ProjectModel[] = [];
   currentYear = this.generalService.currentYear;
+  isCreate = false;
+  private loadedYearData: number | null = null;
 
   ngOnInit(): void {
+    this.isCreate = this.itemId !== 0;
     this.years = this.generalService.loadYears(this.currentYear, 2018);
 
     if (this.itemId) {
       this.invoicesFacade.loadInvoiceById(this.itemId);
       this.invoicesFacade.selectedInvoice$
         .pipe(
-          filter(
-            (invoice: InvoiceWithCreditorModel | null) => invoice !== null
-          ),
-          tap((invoice: InvoiceWithCreditorModel | null) => {
+          takeUntilDestroyed(this.destroyRef),
+          filter((invoice: InvoiceModelFullData | null) => invoice !== null),
+          tap((invoice: InvoiceModelFullData | null) => {
             if (invoice) {
               this.formInvoice.patchValue({
                 number_invoice: invoice.number_invoice || '',
@@ -125,10 +141,11 @@ export class FormInvoiceComponent {
                 iva: invoice.iva || null,
                 total_amount: invoice.total_amount || null,
                 total_amount_irpf: invoice.total_amount_irpf || null,
-                subsidy: invoice.subsidy || '',
-                subsidy_year: invoice.subsidy_year || null,
+                subsidy_id: invoice.subsidy_id,
+                project_id: invoice.project_id,
                 invoice_file: invoice.invoice_file || '',
               });
+
               if (invoice.creditor_company) {
                 let displayValue = invoice.creditor_company;
 
@@ -142,6 +159,20 @@ export class FormInvoiceComponent {
 
                 this.searchInput.setValue(displayValue);
               }
+
+              // ✅ Solución: cargar el acreedor por ID si existe
+              if (invoice.creditor_id) {
+                this.getCreditorsById(invoice.creditor_id)
+                  .pipe(
+                    takeUntilDestroyed(this.destroyRef),
+                    tap((creditor) => {
+                      this.creditors = [creditor];
+                      this.formInvoice.patchValue({ creditor_id: creditor.id });
+                    })
+                  )
+                  .subscribe();
+              }
+
               this.titleForm = 'Editar Factura';
               this.buttonAction = 'Guardar cambios';
             }
@@ -150,46 +181,58 @@ export class FormInvoiceComponent {
         .subscribe();
     }
     this.formInvoice
-      .get('type_invoice')
+      .get('date_invoice')
       ?.valueChanges.pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((value) => {
-          if (value !== null) {
-            if (value === 'Ticket' || value === 'Ingreso') {
-              this.formInvoice
-                .get('subsidy')
-                ?.setValue('', { emitEvent: false });
-              this.formInvoice.get('subsidy')?.disable();
-            } else {
-              this.formInvoice.get('subsidy')?.enable();
-            }
-          }
-        })
-      )
-      .subscribe();
-
-    this.formInvoice
-      .get('subsidy')
-      ?.valueChanges.pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((value) => {
-          const subsidy_yearControl = this.formInvoice.get('subsidy_year');
-          if (subsidy_yearControl) {
-            if (value) {
-              subsidy_yearControl.setValidators([Validators.required]);
-              subsidy_yearControl.enable();
-            } else {
-              subsidy_yearControl.clearValidators();
-              subsidy_yearControl.disable();
-            }
-            subsidy_yearControl.updateValueAndValidity();
-            subsidy_yearControl.setValue(null);
+        // filter(() => !this.isCreate), // Evita llamadas al editar
+        tap((date_invoice: string | null) => {
+          console.log('🗓 Fecha seleccionada en factura:', date_invoice);
+          if (date_invoice) {
+            const year = this.generalService.getYearFromDate(date_invoice);
+            this.loadYearlyData(year).subscribe();
+            this.generalService.enableInputControls(this.formInvoice, [
+              'project_id',
+              'subsidy_id',
+            ]);
+          } else {
+            this.generalService.disableInputControls(this.formInvoice, [
+              'project_id',
+              'subsidy_id',
+            ]);
           }
         })
       )
       .subscribe();
   }
 
+  private loadYearlyData(year: number): Observable<void> {
+    if (this.loadedYearData === year) {
+      return new Observable<void>((obs) => obs.complete());
+    }
+
+    this.loadedYearData = year;
+
+    return forkJoin([
+      this.loadProjectsByYear(year),
+      this.loadSubsidiesByYear(year),
+    ]).pipe(map(() => void 0));
+  }
+
+  loadSubsidiesByYear(year: number): Observable<SubsidyModel[]> {
+    return this.subsidiesService.getSubsidiesByYear(year).pipe(
+      tap((subsidies) => {
+        this.subsidies = subsidies;
+      })
+    );
+  }
+
+  loadProjectsByYear(year: number): Observable<ProjectModel[]> {
+    return this.projectsService.getProjectsByYear(year).pipe(
+      tap((projects) => {
+        this.projects = projects;
+      })
+    );
+  }
   searchCreditor() {
     const value: string = this.searchInput.value?.trim() || '';
 
@@ -204,9 +247,11 @@ export class FormInvoiceComponent {
         takeUntilDestroyed(this.destroyRef),
         tap((creditors) => {
           this.creditors = creditors;
-          const isValid = creditors.some(
-            (creditor) => creditor.company === value
-          );
+          const isValid =
+            creditors.some(
+              (creditor) =>
+                creditor.company === value || value.includes(creditor.company)
+            ) || !!this.formInvoice.value.creditor_id;
 
           if (!isValid) {
             this.formInvoice
@@ -221,17 +266,22 @@ export class FormInvoiceComponent {
   }
 
   onSelectedOption(event: MatAutocompleteSelectedEvent): void {
-    if (!event.option.value) {
+    const creditor: CreditorModel = event.option.value;
+
+    if (!creditor) {
       this.selectedCreditor = undefined;
       return;
     }
-    const creditor: CreditorModel = event.option.value;
+
     let displayValue = creditor.company;
     if (creditor.contact && creditor.contact !== creditor.company) {
       displayValue += ' - ' + creditor.contact;
     }
+
     this.searchInput.setValue(displayValue);
     this.selectedCreditor = creditor;
+
+    this.creditorSelected(creditor);
   }
 
   creditorSelected(creditor: CreditorModel): void {
@@ -276,84 +326,50 @@ export class FormInvoiceComponent {
   }
 
   onSendFormInvoice(): void {
+    this.submitted = true;
     if (this.formInvoice.invalid) {
-      this.submitted = true;
-      console.log('⚠️ Formulario inválido', this.formInvoice.errors);
+      console.warn('⚠️ Formulario inválido', this.formInvoice.errors);
       return;
     }
-    // 🚨 Validación: Si el campo tiene texto pero no es un acreedor válido
-    const enteredCreditor = this.searchInput.value;
-    const isValidCreditor = this.creditors.some(
-      (creditor) => creditor.company === enteredCreditor
-    );
 
-    if (enteredCreditor && !isValidCreditor) {
+    const creditorId = this.formInvoice.value.creditor_id;
+    const enteredCreditor = this.searchInput.value?.trim() || '';
+
+    const isValidCreditor =
+      typeof creditorId === 'number' ||
+      this.creditors.some((c) => enteredCreditor.includes(c.company));
+
+    if (!isValidCreditor) {
       this.formInvoice.get('creditor_id')?.setErrors({ notRegistered: true });
+      console.warn('⚠️ Acreedor no válido');
       return;
     }
-    const formData = new FormData();
 
-    formData.append(
-      'number_invoice',
-      this.formInvoice.value.number_invoice || ''
-    );
-    formData.append('type_invoice', this.formInvoice.value.type_invoice || '');
-    formData.append('date_invoice', this.formInvoice.value.date_invoice || '');
-    formData.append(
-      'date_accounting',
-      this.formInvoice.value.date_accounting || ''
-    );
-    formData.append('date_payment', this.formInvoice.value.date_payment || '');
-    formData.append('description', this.formInvoice.value.description || '');
-    formData.append('amount', this.formInvoice.value.amount?.toString() || '');
-    formData.append('irpf', this.formInvoice.value.irpf?.toString() || '');
-    formData.append('iva', this.formInvoice.value.iva?.toString() || '');
-    formData.append(
-      'total_amount',
-      this.formInvoice.value.total_amount?.toString() || ''
-    );
-    formData.append(
-      'total_amount_irpf',
-      this.formInvoice.value.total_amount_irpf?.toString() || ''
-    );
-    formData.append('subsidy', this.formInvoice.value.subsidy || '');
-    formData.append(
-      'subsidy_year',
-      this.formInvoice.value.subsidy_year
-        ? this.formInvoice.value.subsidy_year.toString()
-        : ''
-    );
+    // 👉 Obtener valores y convertir a tipo libre
+    const rawValues = { ...this.formInvoice.getRawValue() } as any;
 
-    // Si `creditor_id` existe
-    if (this.formInvoice.value.creditor_id) {
-      formData.append(
-        'creditor_id',
-        this.formInvoice.value.creditor_id.toString()
-      );
+    // 👉 Separar el archivo (si es que lo hay)
+    const fileOrUrl = rawValues.invoice_file;
+    const selectedFile = fileOrUrl instanceof File ? fileOrUrl : null;
+
+    // 👉 Limpiar campos innecesarios
+    delete rawValues.invoice_file;
+
+    // 👉 Si el valor es una URL (edición), agregarla
+    if (typeof fileOrUrl === 'string') {
+      rawValues.existingUrl = fileOrUrl;
     }
 
-    // 🔹 Añadir archivo o URL existente
-    const urlValue = this.formInvoice.value.invoice_file;
-    if (urlValue instanceof File) {
-      formData.append('invoice_file', urlValue);
-    } else if (typeof urlValue === 'string') {
-      formData.append('existingUrl', urlValue);
-    }
-
-    // 🔹 Si es edición, añadir método y ID
-    if (this.itemId) {
-      formData.append('_method', 'PATCH');
-      formData.append('id', this.itemId.toString());
-    }
-
-    console.log(
-      '📤 Enviando FormData:',
-      Object.fromEntries((formData as any).entries())
+    // 👉 Crear FormData
+    const formData = this.generalService.createFormData(
+      rawValues,
+      selectedFile,
+      this.itemId
     );
 
     this.sendFormInvoice.emit({
       itemId: this.itemId,
-      newInvoiceData: formData,
+      formData: formData,
     });
   }
 }

@@ -1,0 +1,119 @@
+import { CommonModule } from '@angular/common';
+import {
+  Component,
+  DestroyRef,
+  EventEmitter,
+  inject,
+  Input,
+  Output,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import {
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
+import { MatCardModule } from '@angular/material/card';
+import { EditorModule } from '@tinymce/tinymce-angular';
+import { filter, tap } from 'rxjs';
+import { ArticlesFacade } from 'src/app/application/articles.facade';
+import { ArticleModel } from 'src/app/core/interfaces/article.interface';
+import { TypeList } from 'src/app/core/models/general.model';
+import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
+import { GeneralService } from 'src/app/shared/services/generalService.service';
+
+@Component({
+  selector: 'app-form-article',
+  standalone: true,
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    EditorModule,
+    MatCardModule,
+    ImageControlComponent,
+  ],
+  templateUrl: './form-article.component.html',
+  styleUrls: ['../../../../components/form/form.component.css'],
+})
+export class FormArticleComponent {
+  private articlesFacade = inject(ArticlesFacade);
+  private destroyRef = inject(DestroyRef);
+  private generalService = inject(GeneralService);
+
+  @Input() itemId!: number;
+  @Output() sendFormArticle = new EventEmitter<{
+    itemId: number;
+    formData: FormData;
+  }>();
+
+  formArticle = new FormGroup({
+    title: new FormControl('', [Validators.required]),
+    date: new FormControl('', [Validators.required]),
+    description: new FormControl('', [Validators.maxLength(2000)]),
+    img: new FormControl(''),
+  });
+
+  selectedImageFile: File | null = null;
+  imageSrc = '';
+  errorSession = false;
+  submitted = false;
+  titleForm = 'Registrar artículo';
+  buttonAction = 'Guardar';
+  typeList = TypeList.Articles;
+
+  ngOnInit(): void {
+    if (this.itemId) {
+      this.articlesFacade.loadArticleById(this.itemId);
+      this.articlesFacade.selectedArticle$
+        .pipe(
+          takeUntilDestroyed(this.destroyRef),
+          filter((a): a is ArticleModel => !!a),
+          tap((article: ArticleModel | null) => {
+            if (article) {
+              this.formArticle.patchValue({
+                title: article.title || null,
+                date: article.date || null,
+                description: article.description || null,
+                img: article.img || null,
+              });
+
+              this.titleForm = 'Editar artículo';
+              this.buttonAction = 'Guardar cambios';
+
+              if (article.img) {
+                this.imageSrc = article.img;
+                this.selectedImageFile = null;
+              }
+            }
+          })
+        )
+        .subscribe();
+    }
+  }
+
+  async onImageSelected(file: File) {
+    const result = await this.generalService.handleFileSelection(file);
+    this.selectedImageFile = result.file;
+    this.imageSrc = result.imageSrc;
+  }
+
+  onSendFormArticle(): void {
+    if (this.formArticle.invalid) {
+      this.submitted = true;
+      console.log('Formulario inválido', this.formArticle.errors);
+      return;
+    }
+
+    const formData = this.generalService.createFormData(
+      this.formArticle.value,
+      this.selectedImageFile,
+      this.itemId
+    );
+
+    this.sendFormArticle.emit({
+      itemId: this.itemId,
+      formData,
+    });
+  }
+}

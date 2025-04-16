@@ -192,7 +192,7 @@
   </ng-container>
 
   <!-- SUBVENCIÓN -->
-  <ng-container matColumnDef="subsidy">
+  <ng-container matColumnDef="subsidy_name">
     <th
       mat-header-cell
       *matHeaderCellDef
@@ -202,8 +202,36 @@
       SUBVENCIÓN
     </th>
     <td mat-cell *matCellDef="let element">
-      <div *ngIf="element.subsidy">
+      <div *ngIf="element.subsidy_name">
         <span
+          [ngClass]="{
+            'subsidy-ayunt-equip':
+              element.subsidy_name === 'AYUNT_EQUIPAMIENTO',
+            'subsidy-ayunt-activ': element.subsidy_name === 'AYUNT_ACTIVIDADES',
+            'subsidy-gener': element.subsidy_name === 'GENERALITAT',
+            'subsidy-dipu': element.subsidy_name === 'DIPUTACION',
+            'subsidy-minis': element.subsidy_name === 'MINISTERIO'
+          }"
+          >{{ element.subsidy_name | i18nSelect : nameSubsidy }}</span
+        >
+      </div>
+    </td>
+    <td mat-footer-cell *matFooterCellDef></td>
+  </ng-container>
+  <!-- PROEYECTO -->
+  <ng-container matColumnDef="project_title">
+    <th
+      mat-header-cell
+      *matHeaderCellDef
+      mat-sort-header
+      sortActionDescription="Sort by IRPF"
+    >
+      PROYECTO
+    </th>
+    <td mat-cell *matCellDef="let element">
+      <div *ngIf="element.project_title">
+        {{ element.project_title }}
+        <!-- <span
           [ngClass]="{
             'subsidy-ayunt-equip': element.subsidy === 'AYUNT_EQUIPAMIENTO',
             'subsidy-ayunt-activ': element.subsidy === 'AYUNT_ACTIVIDADES',
@@ -213,7 +241,7 @@
           }"
           >{{ element.subsidy | i18nSelect : nameSubsidy }} -
           {{ element.subsidy_year }}</span
-        >
+        > -->
       </div>
     </td>
     <td mat-footer-cell *matFooterCellDef></td>

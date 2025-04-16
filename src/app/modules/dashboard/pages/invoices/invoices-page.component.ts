@@ -5,10 +5,7 @@ import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatTabChangeEvent, MatTabsModule } from '@angular/material/tabs';
 import { combineLatest, tap } from 'rxjs';
 import { InvoicesFacade } from 'src/app/application/invoices.facade';
-import {
-  InvoiceModel,
-  InvoiceWithCreditorModel,
-} from 'src/app/core/interfaces/invoice.interface';
+import { InvoiceModelFullData } from 'src/app/core/interfaces/invoice.interface';
 import {
   Filter,
   TypeActionModal,
@@ -53,9 +50,9 @@ export class InvoicesPageComponent implements OnInit {
   selectedIndex: number = 0;
   selectedTypeFilter: string | null = null;
   typeList = TypeList.Invoices;
-  invoices: InvoiceWithCreditorModel[] = [];
+  invoices: InvoiceModelFullData[] = [];
   filtersYears: Filter[] = [];
-  filteredInvoices: InvoiceWithCreditorModel[] = [];
+  filteredInvoices: InvoiceModelFullData[] = [];
   currentFilterType: string | null = null;
   currentTab: string | null = null;
   searchForm!: FormGroup;
@@ -200,15 +197,22 @@ export class InvoicesPageComponent implements OnInit {
     this.modalService.closeModal();
   }
 
-  sendFormInvoice(event: { itemId: number; newInvoiceData: FormData }): void {
+  sendFormInvoice(event: { itemId: number; formData: FormData }): void {
     if (event.itemId) {
-      this.invoicesFacade.editInvoice(event.itemId, event.newInvoiceData);
-      // Después de editar, recarga las facturas y aplica el filtro
-      this.loadInvoicesByYears(this.selectedFilter ?? this.currentYear);
-      this.invoicesFacade.applyFilterWordTab(this.currentFilterType); // Aplicar el filtro actual
+      this.invoicesFacade
+        .editInvoice(event.itemId, event.formData)
+        .pipe(
+          takeUntilDestroyed(this.destroyRef),
+          tap(() => {
+            this.loadInvoicesByYears(this.selectedFilter ?? this.currentYear);
+            this.invoicesFacade.applyFilterWordTab(this.currentFilterType);
+            this.onCloseModal(); // ✅ ahora también cierra al editar
+          })
+        )
+        .subscribe();
     } else {
       this.invoicesFacade
-        .addInvoice(event.newInvoiceData)
+        .addInvoice(event.formData)
         .pipe(
           takeUntilDestroyed(this.destroyRef),
           tap(() => {
@@ -221,7 +225,7 @@ export class InvoicesPageComponent implements OnInit {
     }
   }
 
-  private update_invoiceState(invoices: InvoiceModel[] | null): void {
+  private update_invoiceState(invoices: InvoiceModelFullData[] | null): void {
     if (invoices === null) {
       return;
     }

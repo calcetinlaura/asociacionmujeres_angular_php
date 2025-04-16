@@ -1,6 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
-import { EventModelFullData } from 'src/app/core/interfaces/event.interface';
+import {
+  EnumStatusEvent,
+  EventModelFullData,
+} from 'src/app/core/interfaces/event.interface';
 import { TypeList } from 'src/app/core/models/general.model';
 import { MapComponent } from 'src/app/shared/components/map/map.component';
 import { TextBackgroundComponent } from 'src/app/shared/components/text/text-background/text-background.component';
@@ -28,6 +31,7 @@ export class ModalShowEventComponent {
   @Input() item!: EventModelFullData;
   type: TypeList = TypeList.Events;
   datesEquals = false;
+  enumStatusEnum = EnumStatusEvent;
 
   ngOnInit(): void {
     if (this.item.start && this.item.end) {

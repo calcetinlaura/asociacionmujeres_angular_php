@@ -17,8 +17,12 @@
 }
 
 .side-bar__list .list-label {
-  font-size: 90%;
+  font-size: 14px;
   font-weight: 500;
+}
+.side-bar__list .list-label:hover {
+  font-size: 15px;
+  cursor: pointer;
 }
 
 .side-bar__list .list-wrapper-item {
@@ -29,9 +33,8 @@
   align-content: center;
   text-transform: uppercase;
   font-family: "poppins";
-  padding-bottom: 2rem;
+  padding-bottom: 1rem;
 }
-
 .side-bar__list .list-wrapper-item .uil {
   font-size: var(--font-size-3);
   padding-right: 0.5rem;
@@ -47,8 +50,4 @@
 
 .side-bar__list.list-three .list-wrapper-item {
   padding: 0.25rem 0;
-}
-
-.side-bar__list li {
-  cursor: pointer;
 }

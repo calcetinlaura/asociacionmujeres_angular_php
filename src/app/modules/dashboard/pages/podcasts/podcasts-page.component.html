@@ -1,0 +1,44 @@
+<div class="sticky-zone">
+  <app-dashboard-header
+    [icon]="'uil uil-newspaper'"
+    [title]="''"
+    [number]="number"
+    [type]="'Podcasts'"
+  />
+  <div class="flex flex-1 flex-col justify-center px-8 gap-y-8">
+    <div class="flex gap-x-4">
+      <app-button-add
+        [buttonText]="'Nuevo Podcast'"
+        [iconClass]="'uil-plus'"
+        (addClicked)="addNewPodcastModal()"
+      />
+      <app-input-search (onDebounce)="applyFilterWord($event)" class="flex-1" />
+    </div>
+  </div>
+</div>
+<div class="flex flex-col px-8">
+  <!-- Spinner Loading -->
+  <app-spinner-loading *ngIf="isLoading; else results" />
+  <!-- Tabla -->
+  <ng-template #results>
+    <div class="pb-4 flex">
+      <app-table
+        [data]="filteredPodcasts"
+        [type]="typeList"
+        [headerColumns]="headerListPodcasts"
+        (openModal)="onOpenModal($event)"
+      />
+    </div>
+  </ng-template>
+</div>
+
+<!-- Modal -->
+<app-modal
+  *ngIf="isModalVisible"
+  [item]="item"
+  [type]="typeList"
+  [action]="currentModalAction"
+  (closeModal)="onCloseModal()"
+  (confirmDelete)="confirmDeletePodcast(item)"
+  (sendFormPodcastData)="sendFormPodcast($event)"
+></app-modal>

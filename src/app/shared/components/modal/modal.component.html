@@ -1,5 +1,17 @@
 <div class="modal" (click)="onCloseModalFromOutside($event)">
-  <div class="modal_body relative">
+  <div
+    (click)="$event.stopPropagation()"
+    class="modal_body relative"
+    [class.modal-delete]="action === TypeActionModal.Delete"
+    [class.modal-show]="action === TypeActionModal.Show"
+    [class.modal-edit]="
+      [
+        TypeActionModal.Edit,
+        TypeActionModal.Create,
+        TypeActionModal.Duplicate
+      ].includes(action)
+    "
+  >
     <div
       class="absolute top-3 right-3 block text-gray-500 cursor-pointer hover:text-black"
       (click)="onCloseModal()"
@@ -65,7 +77,7 @@
   />
   <app-form-event
     *ngIf="type === TypeList.Events"
-    [itemId]="item?.id"
+    [itemId]="item?.id || 0"
     [item]="item"
     (sendFormEvent)="onSendFormEvent($event)"
   />
@@ -113,5 +125,20 @@
     *ngIf="type === TypeList.Places"
     [itemId]="item?.id"
     (sendFormPlace)="onSendFormPlace($event)"
+  />
+  <app-form-podcast
+    *ngIf="type === TypeList.Podcasts"
+    [itemId]="item?.id"
+    (sendFormPodcast)="onSendFormPodcast($event)"
+  />
+  <app-form-project
+    *ngIf="type === TypeList.Projects"
+    [itemId]="item?.id"
+    (sendFormProject)="onSendFormProject($event)"
+  />
+  <app-form-article
+    *ngIf="type === TypeList.Articles"
+    [itemId]="item?.id"
+    (sendFormArticle)="onSendFormArticle($event)"
   />
 </ng-template>

@@ -62,6 +62,6 @@
   <app-text-background [text]="'Subvención'"></app-text-background>
   <app-text-icon
     [icon]="'uil uil-building icon'"
-    [text]="item.subsidy + ' - ' + item.subsidy_year"
+    [text]="item.subsidy_id?.toString()"
   ></app-text-icon>
 </div>

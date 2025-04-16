@@ -1,7 +1,10 @@
 import { DestroyRef, inject, Injectable } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, catchError, Observable, tap } from 'rxjs';
-import { InvoiceModel } from 'src/app/core/interfaces/invoice.interface';
+import {
+  InvoiceModel,
+  InvoiceModelFullData,
+} from 'src/app/core/interfaces/invoice.interface';
 import { InvoicesService } from 'src/app/core/services/invoices.services';
 import { GeneralService } from '../shared/services/generalService.service';
 
@@ -12,16 +15,15 @@ export class InvoicesFacade {
   private destroyRef = inject(DestroyRef);
   private invoicesService = inject(InvoicesService);
   private readonly generalService = inject(GeneralService);
-  private invoicesSubject = new BehaviorSubject<InvoiceModel[]>([]);
-  private filteredInvoicesByYearSubject = new BehaviorSubject<InvoiceModel[]>(
-    []
-  );
-  private filteredInvoicesSubject = new BehaviorSubject<InvoiceModel[] | null>(
-    null
-  );
-  private selectedInvoiceSubject = new BehaviorSubject<InvoiceModel | null>(
-    null
-  );
+  private invoicesSubject = new BehaviorSubject<InvoiceModelFullData[]>([]);
+  private filteredInvoicesByYearSubject = new BehaviorSubject<
+    InvoiceModelFullData[]
+  >([]);
+  private filteredInvoicesSubject = new BehaviorSubject<
+    InvoiceModelFullData[] | null
+  >(null);
+  private selectedInvoiceSubject =
+    new BehaviorSubject<InvoiceModelFullData | null>(null);
   private currentFilterTypeSubject = new BehaviorSubject<string | null>(null);
 
   invoices$ = this.invoicesSubject.asObservable();
@@ -37,7 +39,7 @@ export class InvoicesFacade {
       .getInvoices()
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((invoices: InvoiceModel[]) => {
+        tap((invoices: InvoiceModelFullData[]) => {
           this.invoicesSubject.next(invoices);
           // Aplicar el filtro actual después de cargar las facturas
           const currentFilterType = this.currentFilterTypeSubject.getValue();
@@ -52,7 +54,7 @@ export class InvoicesFacade {
       .getInvoicesBySubsidy(subsidy, year)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((invoices: InvoiceModel[]) => {
+        tap((invoices: InvoiceModelFullData[]) => {
           this.invoicesSubject.next(invoices);
         })
       )
@@ -64,7 +66,7 @@ export class InvoicesFacade {
       .getInvoicesByYear(year)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((invoices: InvoiceModel[]) => {
+        tap((invoices: InvoiceModelFullData[]) => {
           this.invoicesSubject.next(invoices);
         })
       )
@@ -76,7 +78,7 @@ export class InvoicesFacade {
       .getInvoiceById(id)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((invoice: InvoiceModel) =>
+        tap((invoice: InvoiceModelFullData) =>
           this.selectedInvoiceSubject.next(invoice)
         ),
         catchError((err) => this.generalService.handleHttpError(err))
@@ -88,8 +90,8 @@ export class InvoicesFacade {
     return this.invoicesService.add(invoice);
   }
 
-  editInvoice(itemId: number, invoice: FormData): void {
-    this.invoicesService.edit(itemId, invoice).subscribe();
+  editInvoice(itemId: number, invoice: FormData): Observable<InvoiceModel> {
+    return this.invoicesService.edit(itemId, invoice);
   }
 
   deleteInvoice(id: number): void {

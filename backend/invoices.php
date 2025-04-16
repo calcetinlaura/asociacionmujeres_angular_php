@@ -18,58 +18,60 @@ $resource = array_pop($uriParts);
 switch ($method) {
   case 'GET':
     if (is_numeric($resource)) {
-        $stmt = $connection->prepare("SELECT invoices.*,
-        creditors.company AS creditor_company,
-        creditors.contact AS creditor_contact
-      FROM invoices
-      LEFT JOIN creditors ON invoices.creditor_id = creditors.id WHERE invoices.id = ?");
+        // Obtener una factura por ID
+        $stmt = $connection->prepare("
+            SELECT invoices.*,
+                   creditors.company AS creditor_company,
+                   creditors.contact AS creditor_contact,
+                   subsidies.name AS subsidy_name,
+                   projects.title AS project_title
+            FROM invoices
+            LEFT JOIN creditors ON invoices.creditor_id = creditors.id
+            LEFT JOIN subsidies ON invoices.subsidy_id = subsidies.id
+            LEFT JOIN projects ON invoices.project_id = projects.id
+            WHERE invoices.id = ?
+        ");
         $stmt->bind_param("i", $resource);
         $stmt->execute();
         $result = $stmt->get_result();
         $invoice = $result->fetch_assoc();
         echo json_encode($invoice ? $invoice : []);
-    }  elseif (isset($_GET['year']) && is_numeric($_GET['year'])) {
-      // Filtrar facturas por año
-      $year = $_GET['year'];
-      $stmt = $connection->prepare("SELECT invoices.*,
-        creditors.company AS creditor_company,
-        creditors.contact AS creditor_contact
-      FROM invoices
-      LEFT JOIN creditors ON invoices.creditor_id = creditors.id WHERE YEAR(date_invoice) = ?");
-      $stmt->bind_param("i", $year);
-      $stmt->execute();
-      $result = $stmt->get_result();
-      $Invoices = [];
-      while ($row = $result->fetch_assoc()) {
-          $Invoices[] = $row;
-      }
-      echo json_encode($Invoices);
-    }elseif (isset($_GET['subsidy']) && isset($_GET['subsidy_year']) && is_numeric($_GET['subsidy_year'])) {
-      // Filtrar subvenciones por nombre y año
-      $subsidy = $_GET['subsidy'];
-      $year = $_GET['subsidy_year'];
-
-      $stmt = $connection->prepare("SELECT * FROM invoices WHERE subsidy = ? AND subsidy_year = ?");
-      $stmt->bind_param("si", $subsidy, $year); // s = string, i = integer
-      $stmt->execute();
-      $result = $stmt->get_result();
-      $subsidies = [];
-
-      while ($row = $result->fetch_assoc()) {
-          $subsidies[] = $row;
-      }
-
-      echo json_encode($subsidies);
-
-    }else {
-      $stmt = $connection->prepare("
-      SELECT
-        invoices.*,
-        creditors.company AS creditor_company,
-        creditors.contact AS creditor_contact
-      FROM invoices
-      LEFT JOIN creditors ON invoices.creditor_id = creditors.id
-    ");
+    } elseif (isset($_GET['year']) && is_numeric($_GET['year'])) {
+        // Filtrar facturas por año
+        $year = $_GET['year'];
+        $stmt = $connection->prepare("
+            SELECT invoices.*,
+                   creditors.company AS creditor_company,
+                   creditors.contact AS creditor_contact,
+                   subsidies.name AS subsidy_name,
+                   projects.title AS project_title
+            FROM invoices
+            LEFT JOIN creditors ON invoices.creditor_id = creditors.id
+            LEFT JOIN subsidies ON invoices.subsidy_id = subsidies.id
+            LEFT JOIN projects ON invoices.project_id = projects.id
+            WHERE YEAR(invoices.date_invoice) = ?
+        ");
+        $stmt->bind_param("i", $year);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $invoices = [];
+        while ($row = $result->fetch_assoc()) {
+            $invoices[] = $row;
+        }
+        echo json_encode($invoices);
+    } else {
+        // Obtener todas las facturas
+        $stmt = $connection->prepare("
+            SELECT invoices.*,
+                   creditors.company AS creditor_company,
+                   creditors.contact AS creditor_contact,
+                   subsidies.name AS subsidy_name,
+                   projects.title AS project_title
+            FROM invoices
+            LEFT JOIN creditors ON invoices.creditor_id = creditors.id
+            LEFT JOIN subsidies ON invoices.subsidy_id = subsidies.id
+            LEFT JOIN projects ON invoices.project_id = projects.id
+        ");
         $stmt->execute();
         $result = $stmt->get_result();
         $invoices = [];
@@ -94,9 +96,9 @@ switch ($method) {
 
     $number_invoice = $data['number_invoice'] ?? null;
     $type_invoice = $data['type_invoice'] ?? null;
-    $date_invoice = isset($data['date_invoice']) ? $data['date_invoice'] : null;
-    $date_accounting = isset($data['date_accounting']) ? $data['date_accounting'] : null;
-    $date_payment = isset($data['date_payment']) ? $data['date_payment'] : null;
+    $date_invoice = $_POST['date_invoice'] ?? null;
+$date_accounting = !empty($_POST['date_accounting']) ? $_POST['date_accounting'] : null;
+$date_payment = !empty($_POST['date_payment']) ? $_POST['date_payment'] : null;
     $creditor_id = isset($data['creditor_id']) && is_numeric($data['creditor_id']) ? (int)$data['creditor_id'] : null;
     $description = $data['description'] ?? '';
     $amount = isset($data['amount']) ? (float)$data['amount'] : 0;
@@ -104,8 +106,8 @@ switch ($method) {
     $iva = isset($data['iva']) ? (float)$data['iva'] : 0;
     $total_amount = isset($data['total_amount']) ? (float)$data['total_amount'] : 0;
     $total_amount_irpf = isset($data['total_amount_irpf']) ? (float)$data['total_amount_irpf'] : 0;
-    $subsidy = $data['subsidy'] ?? null;
-    $subsidy_year = isset($data['subsidy_year']) ? (int)$data['subsidy_year'] : null;
+    $subsidy_id = isset($data['subsidy_id']) && is_numeric($data['subsidy_id']) ? (int)$data['subsidy_id'] : null;
+    $project_id = isset($data['project_id']) && is_numeric($data['project_id']) ? (int)$data['project_id'] : null;
 
     // PATCH (actualización)
     if (isset($data['_method']) && strtoupper($data['_method']) === 'PATCH') {
@@ -119,7 +121,7 @@ switch ($method) {
       $stmt = $connection->prepare("UPDATE invoices SET
         number_invoice = ?, type_invoice = ?, date_invoice = ?, date_accounting = ?, date_payment = ?,
         creditor_id = ?, description = ?, amount = ?, irpf = ?, iva = ?,
-        total_amount = ?, total_amount_irpf = ?, subsidy = ?, subsidy_year = ?
+        total_amount = ?, total_amount_irpf = ?, subsidy_id = ?, project_id = ?
         WHERE id = ?");
 
       if (!$stmt) {
@@ -129,7 +131,7 @@ switch ($method) {
       }
 
       $stmt->bind_param(
-        "sssssisddddssii",
+        "sssssisddddsiii",
         $number_invoice,
         $type_invoice,
         $date_invoice,
@@ -142,8 +144,8 @@ switch ($method) {
         $iva,
         $total_amount,
         $total_amount_irpf,
-        $subsidy,
-        $subsidy_year,
+        $subsidy_id,
+        $project_id,
         $id
       );
 
@@ -159,7 +161,7 @@ switch ($method) {
       $stmt = $connection->prepare("INSERT INTO invoices
         (number_invoice, type_invoice, date_invoice, date_accounting, date_payment,
         creditor_id, description, amount, irpf, iva,
-        total_amount, total_amount_irpf, subsidy, subsidy_year)
+        total_amount, total_amount_irpf, subsidy_id, project_id)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
       if (!$stmt) {
@@ -169,7 +171,7 @@ switch ($method) {
       }
 
       $stmt->bind_param(
-        "sssssisddddssi",
+        "sssssisddddsii",
         $number_invoice,
         $type_invoice,
         $date_invoice,
@@ -182,8 +184,8 @@ switch ($method) {
         $iva,
         $total_amount,
         $total_amount_irpf,
-        $subsidy,
-        $subsidy_year
+        $subsidy_id,
+        $project_id
       );
 
       if ($stmt->execute()) {

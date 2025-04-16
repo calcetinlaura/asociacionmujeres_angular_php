@@ -37,7 +37,7 @@ export class FormMovieComponent {
   @Input() itemId!: number;
   @Output() sendFormMovie = new EventEmitter<{
     itemId: number;
-    newMovieData: FormData;
+    formData: FormData;
   }>();
   selectedImageFile: File | null = null;
   movieData: any;
@@ -55,7 +55,10 @@ export class FormMovieComponent {
     description: new FormControl('', [Validators.maxLength(2000)]),
     gender: new FormControl('', [Validators.required]),
     img: new FormControl(''),
-    year: new FormControl(0, [Validators.required, Validators.min(2000)]),
+    year: new FormControl<number | null>(null, [
+      Validators.required,
+      Validators.min(2000),
+    ]),
   });
   currentYear = this.generalService.currentYear;
 
@@ -110,6 +113,6 @@ export class FormMovieComponent {
       this.itemId
     );
 
-    this.sendFormMovie.emit({ itemId: this.itemId, newMovieData: formData });
+    this.sendFormMovie.emit({ itemId: this.itemId, formData: formData });
   }
 }

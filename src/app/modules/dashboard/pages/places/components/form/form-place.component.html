@@ -108,6 +108,7 @@
               'is-invalid': submitted && formPlace.get('management')?.invalid
             }"
           >
+            <option value="">Seleccione el tipo de gestión del espacio</option>
             <option
               *ngFor="let management of managementPlaces"
               [value]="management.code"
@@ -127,27 +128,21 @@
         <!-- Descripción -->
         <div class="box-input gap-x-4 px-4 w-3/4">
           <label for="description">Descripción</label>
-          <mat-card-content>
-            <editor
-              apiKey="c8uxjgc7f76nt677zqdn22a8a97bjhc7fyph9y4oxuj7nrx3"
-              [init]="{
-                height: 300,
-                plugins: ['advlist', 'lists', 'wordcount'],
-                toolbar:
-                  'undo redo | bold italic  underline strikethrough | fontfamily fontsize forecolor  backcolor| \
-               alignleft aligncenter alignright alignjustify | \
-               bullist numlist  | removeformat '
-              }"
-              formControlName="description"
-            ></editor>
-          </mat-card-content>
+
+          <textarea
+            formControlName="description"
+            rows="6"
+            class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-200 text-sm"
+            placeholder="Escribe aquí la descripción del macroevento..."
+          ></textarea>
         </div>
         <!-- Imagen -->
-        <div class="box-input gap-x-4 px-4 w-1/4">
+        <div class="box-input gap-x-4 px-4 w-72">
           <app-image-control
             [previewImg]="
               formPlace.get('img')?.value ? formPlace.get('img')?.value! : null
             "
+            [entityId]="itemId"
             [type]="typeList"
             (imgSelected)="onImageSelected($event)"
             [imageWidthValue]="'full'"
@@ -174,19 +169,35 @@
             class="flex gap-x-4 px-8"
           >
             <input formControlName="id" type="hidden" />
-            <!-- ✅ Aquí -->
-
             <div class="sala_box flex justify-center items-center pr-4">
               Sala {{ i + 1 }}
             </div>
             <div class="flex flex-col flex-1 gap-y-4 bg-lilaMuyClaro p-4">
               <div class="box-input gap-x-4">
                 <label for="name">Nombre</label>
-                <input
-                  formControlName="name"
-                  placeholder="Salón de actos"
-                  required
-                />
+                <div class="flex flex-col flex-1">
+                  <input
+                    formControlName="name"
+                    placeholder="Salón de actos"
+                    [ngClass]="{
+                      'is-invalid':
+                        submitted &&
+                        formPlace.get('salas')?.get(i.toString())?.get('name')
+                          ?.invalid
+                    }"
+                  />
+
+                  <div
+                    *ngIf="
+                      submitted &&
+                      formPlace.get('salas')?.get(i.toString())?.get('name')
+                        ?.invalid
+                    "
+                    class="is-invalid-text"
+                  >
+                    Campo requerido si se añada una sala
+                  </div>
+                </div>
               </div>
               <div class="box-input gap-x-4">
                 <label for="location">Localización</label>
@@ -199,11 +210,28 @@
               <div class="flex gap-x-4">
                 <div class="box-input gap-x-4 flex flex-1">
                   <label for="name">Situación</label>
-                  <select formControlName="type">
-                    <option *ngFor="let type of typePlaces" [value]="type.code">
-                      {{ type.name }}
-                    </option>
-                  </select>
+                  <div class="flex flex-col flex-1">
+                    <select
+                      formControlName="type"
+                      [ngClass]="{
+                        'is-invalid': submitted && sala.get('type')?.invalid
+                      }"
+                    >
+                      <option value="">Seleccione el tipo de espacio</option>
+                      <option
+                        *ngFor="let type of typePlaces"
+                        [value]="type.code"
+                      >
+                        {{ type.name }}
+                      </option>
+                    </select>
+                    <div
+                      *ngIf="submitted && sala.get('type')?.invalid"
+                      class="is-invalid-text"
+                    >
+                      Campo requerido si se añada una sala
+                    </div>
+                  </div>
                 </div>
                 <div class="box-input gap-x-4">
                   <label for="capacity">Aforo</label>
@@ -241,6 +269,7 @@
                 'is-invalid': submitted && formPlace.get('type')?.invalid
               }"
             >
+              <option value="">Seleccione el tipo de espacio</option>
               <option *ngFor="let type of typePlaces" [value]="type.code">
                 {{ type.name }}
               </option>

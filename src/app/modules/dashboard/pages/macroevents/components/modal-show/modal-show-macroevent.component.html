@@ -1,9 +1,9 @@
-<div class="flex flex-col justify-between">
+<div *ngIf="item" class="flex flex-col justify-between">
   <div>
-    <app-text-title [text]="item.title" />
+    <app-text-title *ngIf="item.title" [text]="item.title" />
     <app-text-subtitle *ngIf="item.town" [text]="item.town" />
     <div class="flex flex-col sm:flex-row gap-4 my-4">
-      <ng-container *ngIf="datesEquals; else dateRange" class="lowercase">
+      <ng-container *ngIf="datesEquals; else dateRange">
         <app-text-background
           *ngIf="item.start"
           [text]="item.start | date : 'EEEE dd MMMM yyyy'"
@@ -20,8 +20,12 @@
         ></app-text-background>
       </ng-template>
     </div>
-    <app-text-editor [text]="item.description"></app-text-editor>
+    <app-text-editor
+      *ngIf="item.description"
+      [text]="item.description"
+    ></app-text-editor>
   </div>
+
   <div *ngIf="eventsOfMacro.length > 0" class="mt-6">
     <div class="flex flex-col gap-3 mt-3">
       <div *ngFor="let event of eventsOfMacro" class="flex w-full gap-x-4">
@@ -44,12 +48,15 @@
             {{ event.start | date : "EEEE dd MMMM yyyy" }} |
             {{ event.time?.slice(0, 5) }}h
           </p>
-          <p class="text-xs text-gray-600 pt-4" *ngIf="event.placeData?.name">
-            {{ event.placeData?.name }}
+          <p
+            class="text-xs text-gray-600 pt-4"
+            *ngIf="event.placeData && event.placeData.name"
+          >
+            {{ event.placeData.name }}
           </p>
           <p class="text-xs text-gray-600" *ngIf="event.town">
-            <span *ngIf="event.placeData?.address"
-              >{{ event.placeData?.address }},
+            <span *ngIf="event.placeData && event.placeData.address">
+              {{ event.placeData.address }},
             </span>
             {{ event.town }}
           </p>

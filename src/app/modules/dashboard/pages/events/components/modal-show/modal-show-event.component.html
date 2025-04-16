@@ -89,12 +89,12 @@
       asociacionmujerescallosa&#64;gmail.com
     </p>
     <app-text-background
-      *ngIf="item.status === 'Cancelado'"
+      *ngIf="item.status === enumStatusEnum.CANCELADO"
       [text]="'Evento ' + item.status"
       [colorBack]="'#de7a71'"
     ></app-text-background>
     <app-text-background
-      *ngIf="item.status === 'Agotadas'"
+      *ngIf="item.status === enumStatusEnum.AGOTADO"
       [text]="'Inscripciones ' + item.status"
       [colorBack]="'#de7a71'"
       [colorText]="'white'"

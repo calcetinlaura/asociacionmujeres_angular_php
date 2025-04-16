@@ -1,7 +1,8 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { FormGroup } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { throwError } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 import { Filter } from 'src/app/core/models/general.model';
 
 @Injectable({
@@ -86,38 +87,46 @@ export class GeneralService {
       }
     });
 
+    // ⬇️ Este bloque es la clave
     if (selectedImageFile) {
       formData.append('img', selectedImageFile, selectedImageFile.name);
+    } else if (item.img && item.img !== '') {
+      formData.append('img', item.img); // solo si hay una imagen previa
     }
 
-    if (itemId) {
+    if (itemId && itemId !== 0) {
       formData.append('_method', 'PATCH');
       formData.append('id', itemId.toString());
     }
 
     return formData;
   }
-  handleHttpError(error: HttpErrorResponse) {
-    let message = 'Error desconocido';
 
-    if (error.error instanceof ProgressEvent) {
-      message = 'No se pudo conectar con el servidor.';
-    } else if (typeof error.error === 'string') {
-      message = error.error;
-    } else if (error.error?.message) {
-      message = error.error.message;
-    } else {
-      message = `Error ${error.status}: ${error.statusText}`;
+  handleHttpError(error: any): Observable<never> {
+    let errorMessage = 'Ha ocurrido un error desconocido.';
+
+    if (error instanceof HttpErrorResponse) {
+      if (error.status === 0) {
+        errorMessage = 'No se pudo conectar con el servidor.';
+      } else if (error.error?.message) {
+        errorMessage = error.error.message;
+      } else {
+        errorMessage = `Error ${error.status}: ${error.statusText}`;
+      }
     }
 
-    this.snackBar.open(message, 'Cerrar', {
-      duration: 4000,
-      horizontalPosition: 'end',
-      verticalPosition: 'bottom',
-      panelClass: ['bg-red-500', 'text-white'],
-    });
+    console.error('Error capturado:', error);
+    return throwError(() => new Error(errorMessage));
+  }
 
-    console.error('❌ Error HTTP:', message);
-    return throwError(() => new Error(message));
+  enableInputControls(form: FormGroup, controls: string[]) {
+    controls.forEach((name) => form.controls[name]?.enable());
+  }
+
+  disableInputControls(form: FormGroup, controls: string[]) {
+    controls.forEach((name) => form.controls[name]?.disable());
+  }
+  getYearFromDate(dateString: string | Date): number {
+    return new Date(dateString).getFullYear();
   }
 }

@@ -47,7 +47,7 @@ export class FormAgentComponent {
   @Input() itemId!: number;
   @Output() sendFormAgent = new EventEmitter<{
     itemId: number;
-    newAgentData: FormData;
+    formData: FormData;
   }>();
   selectedImageFile: File | null = null;
   agentData: any;
@@ -78,8 +78,6 @@ export class FormAgentComponent {
   }[] = [];
   municipios: { label: string; code: string }[] = [];
 
-  private agent_id!: number;
-
   ngOnInit(): void {
     this.provincias = townsData
       .flatMap((region) => region.provinces)
@@ -101,7 +99,6 @@ export class FormAgentComponent {
               // 🔹 Luego seteamos los valores del formulario
               this.formAgent.patchValue(agent);
 
-              this.agent_id = agent.id;
               this.titleForm = 'Editar Acreedor/a';
               this.buttonAction = 'Guardar cambios';
               if (agent.img) {
@@ -140,6 +137,6 @@ export class FormAgentComponent {
       this.itemId
     );
 
-    this.sendFormAgent.emit({ itemId: this.itemId, newAgentData: formData });
+    this.sendFormAgent.emit({ itemId: this.itemId, formData: formData });
   }
 }

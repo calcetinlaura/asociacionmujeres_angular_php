@@ -70,13 +70,13 @@ export class AgentsPageComponent implements OnInit {
   typeList = TypeList.Agents;
 
   headerListAgents: ColumnModel[] = [
-    { title: 'Imagen', key: 'img' },
-    { title: 'Nombre', key: 'name' },
-    { title: 'Contacto', key: 'contact' },
-    { title: 'Teléfono', key: 'phone' },
-    { title: 'Email', key: 'email' },
-    { title: 'Municipio', key: 'town' },
-    { title: 'Categoría', key: 'category' },
+    { title: 'Imagen', key: 'img', sortable: false },
+    { title: 'Nombre', key: 'name', sortable: true },
+    { title: 'Contacto', key: 'contact', sortable: true },
+    { title: 'Teléfono', key: 'phone', sortable: true },
+    { title: 'Email', key: 'email', sortable: true },
+    { title: 'Municipio', key: 'town', sortable: true },
+    { title: 'Categoría', key: 'category', sortable: true },
   ];
 
   @ViewChild(InputSearchComponent)
@@ -136,10 +136,10 @@ export class AgentsPageComponent implements OnInit {
     this.onCloseModal();
   }
 
-  sendFormAgent(event: { itemId: number; newAgentData: FormData }): void {
+  sendFormAgent(event: { itemId: number; formData: FormData }): void {
     const request$ = event.itemId
-      ? this.agentsFacade.editAgent(event.itemId, event.newAgentData)
-      : this.agentsFacade.addAgent(event.newAgentData);
+      ? this.agentsFacade.editAgent(event.itemId, event.formData)
+      : this.agentsFacade.addAgent(event.formData);
 
     request$
       .pipe(

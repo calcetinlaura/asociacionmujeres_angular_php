@@ -12,15 +12,23 @@
   overflow-y: auto;
 }
 .modal_body {
-  min-width: 40%;
-  max-width: 70%;
+  width: 50%; /* valor por defecto si ninguna clase extra se aplica */
   max-height: 95%;
   display: flex;
   flex-direction: column;
-  background-color: white;
-  padding: 2% 2% 2% 2%;
+  padding: 2%;
   overflow-x: hidden;
   overflow-y: auto;
+  background-color: white;
+}
+.modal-delete {
+  width: 20%;
+}
+.modal-show {
+  width: 50%;
+}
+.modal-edit {
+  width: 60%;
 }
 .iconClose {
   font-size: 24px;

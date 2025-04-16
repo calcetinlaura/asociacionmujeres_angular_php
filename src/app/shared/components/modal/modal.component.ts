@@ -1,3 +1,4 @@
+// modal.component.ts
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CreditorModel } from 'src/app/core/interfaces/creditor.interface';
@@ -14,7 +15,10 @@ import { FormPiteraComponent } from 'src/app/modules/dashboard/pages/piteras/com
 import { FormPlaceComponent } from 'src/app/modules/dashboard/pages/places/components/form/form-place.component';
 import { FormRecipeComponent } from 'src/app/modules/dashboard/pages/recipes/components/form/form-recipe.component';
 import { FormSubsidyComponent } from 'src/app/modules/dashboard/pages/subsidies/components/form/form-subsidy.component';
+import { FormArticleComponent } from '../../../modules/dashboard/pages/articles/components/form/form-article.component';
 import { FormMacroeventComponent } from '../../../modules/dashboard/pages/macroevents/components/form/form-macroevent.component';
+import { FormPodcastComponent } from '../../../modules/dashboard/pages/podcasts/components/form/form-podcast.component';
+import { FormProjectComponent } from '../../../modules/dashboard/pages/projects/components/form/form-project.component';
 import { ModalDeleteComponent } from './pages/modal-delete/modal-delete.component';
 import { ModalShowComponent } from './pages/modal-show/modal-show.component';
 
@@ -36,6 +40,9 @@ import { ModalShowComponent } from './pages/modal-show/modal-show.component';
     ModalShowComponent,
     ModalDeleteComponent,
     FormMacroeventComponent,
+    FormPodcastComponent,
+    FormArticleComponent,
+    FormProjectComponent,
   ],
   selector: 'app-modal',
   templateUrl: './modal.component.html',
@@ -46,36 +53,36 @@ export class ModalComponent implements OnInit {
   @Output() confirmDelete = new EventEmitter<number>();
   @Output() sendFormBookData = new EventEmitter<{
     itemId: number;
-    newBookData: FormData;
+    formData: FormData;
   }>();
 
   @Output() sendFormEventData = new EventEmitter<{
     itemId: number;
-    newEventData: FormData;
+    formData: FormData;
   }>();
   @Output() sendFormMacroeventData = new EventEmitter<{
     itemId: number;
-    newMacroeventData: FormData;
+    formData: FormData;
   }>();
   @Output() sendFormMovieData = new EventEmitter<{
     itemId: number;
-    newMovieData: FormData;
+    formData: FormData;
   }>();
   @Output() sendFormRecipeData = new EventEmitter<{
     itemId: number;
-    newRecipeData: FormData;
+    formData: FormData;
   }>();
   @Output() sendFormPiteraData = new EventEmitter<{
     itemId: number;
-    newPiteraData: FormData;
+    formData: FormData;
   }>();
   @Output() sendFormPartnerData = new EventEmitter<{
     itemId: number;
-    newPartnerData: FormData;
+    formData: FormData;
   }>();
   @Output() sendFormInvoiceData = new EventEmitter<{
     itemId: number;
-    newInvoiceData: FormData;
+    formData: FormData;
   }>();
   @Output() sendFormSubsidyData = new EventEmitter<{
     itemId: number;
@@ -87,11 +94,23 @@ export class ModalComponent implements OnInit {
   }>();
   @Output() sendFormAgentData = new EventEmitter<{
     itemId: number;
-    newAgentData: FormData;
+    formData: FormData;
   }>();
   @Output() sendFormPlaceData = new EventEmitter<{
     itemId: number;
-    newPlaceData: FormData;
+    formData: FormData;
+  }>();
+  @Output() sendFormArticleData = new EventEmitter<{
+    itemId: number;
+    formData: FormData;
+  }>();
+  @Output() sendFormProjectData = new EventEmitter<{
+    itemId: number;
+    formData: FormData;
+  }>();
+  @Output() sendFormPodcastData = new EventEmitter<{
+    itemId: number;
+    formData: FormData;
   }>();
 
   @Input() item?: any;
@@ -127,58 +146,58 @@ export class ModalComponent implements OnInit {
     }
   }
 
-  onSendFormBook(event: { itemId: number; newBookData: FormData }) {
+  onSendFormBook(event: { itemId: number; formData: FormData }) {
     this.sendFormBookData.emit({
       itemId: event.itemId,
-      newBookData: event.newBookData,
+      formData: event.formData,
     });
   }
 
-  onSendFormEvent(event: { itemId: number; newEventData: FormData }) {
+  onSendFormEvent(event: { itemId: number; formData: FormData }) {
     this.sendFormEventData.emit({
       itemId: event.itemId,
-      newEventData: event.newEventData,
+      formData: event.formData,
     });
   }
-  onSendFormMacroevent(event: { itemId: number; newMacroeventData: FormData }) {
+  onSendFormMacroevent(event: { itemId: number; formData: FormData }) {
     this.sendFormMacroeventData.emit({
       itemId: event.itemId,
-      newMacroeventData: event.newMacroeventData,
+      formData: event.formData,
     });
   }
 
-  onSendFormRecipe(event: { itemId: number; newRecipeData: FormData }) {
+  onSendFormRecipe(event: { itemId: number; formData: FormData }) {
     this.sendFormRecipeData.emit({
       itemId: event.itemId,
-      newRecipeData: event.newRecipeData,
+      formData: event.formData,
     });
   }
 
-  onSendFormMovie(event: { itemId: number; newMovieData: FormData }) {
+  onSendFormMovie(event: { itemId: number; formData: FormData }) {
     this.sendFormMovieData.emit({
       itemId: event.itemId,
-      newMovieData: event.newMovieData,
+      formData: event.formData,
     });
   }
 
-  onSendFormPitera(event: { itemId: number; newPiteraData: FormData }) {
+  onSendFormPitera(event: { itemId: number; formData: FormData }) {
     this.sendFormPiteraData.emit({
       itemId: event.itemId,
-      newPiteraData: event.newPiteraData,
+      formData: event.formData,
     });
   }
 
-  onSendFormPartner(event: { itemId: number; newPartnerData: FormData }) {
+  onSendFormPartner(event: { itemId: number; formData: FormData }) {
     this.sendFormPartnerData.emit({
       itemId: event.itemId,
-      newPartnerData: event.newPartnerData,
+      formData: event.formData,
     });
   }
 
-  onSendFormInvoice(event: { itemId: number; newInvoiceData: FormData }) {
+  onSendFormInvoice(event: { itemId: number; formData: FormData }) {
     this.sendFormInvoiceData.emit({
       itemId: event.itemId,
-      newInvoiceData: event.newInvoiceData,
+      formData: event.formData,
     });
   }
 
@@ -198,17 +217,36 @@ export class ModalComponent implements OnInit {
     });
   }
 
-  onSendFormAgent(event: { itemId: number; newAgentData: FormData }) {
+  onSendFormAgent(event: { itemId: number; formData: FormData }) {
     this.sendFormAgentData.emit({
       itemId: event.itemId,
-      newAgentData: event.newAgentData,
+      formData: event.formData,
     });
   }
 
-  onSendFormPlace(event: { itemId: number; newPlaceData: FormData }) {
+  onSendFormPlace(event: { itemId: number; formData: FormData }) {
     this.sendFormPlaceData.emit({
       itemId: event.itemId,
-      newPlaceData: event.newPlaceData,
+      formData: event.formData,
+    });
+  }
+
+  onSendFormProject(event: { itemId: number; formData: FormData }) {
+    this.sendFormProjectData.emit({
+      itemId: event.itemId,
+      formData: event.formData,
+    });
+  }
+  onSendFormPodcast(event: { itemId: number; formData: FormData }) {
+    this.sendFormPodcastData.emit({
+      itemId: event.itemId,
+      formData: event.formData,
+    });
+  }
+  onSendFormArticle(event: { itemId: number; formData: FormData }) {
+    this.sendFormArticleData.emit({
+      itemId: event.itemId,
+      formData: event.formData,
     });
   }
 }

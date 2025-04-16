@@ -1,6 +1,8 @@
+import { Filter } from '../models/general.model';
 import { AgentAutocompleteModel } from './agent.interface';
 import { MacroeventModel } from './macroevent.interface';
 import { PlaceModel, SalaModel } from './place.interface';
+import { ProjectModel } from './project.interface';
 
 export interface EventModel {
   id: number;
@@ -16,12 +18,25 @@ export interface EventModel {
   capacity?: number;
   price?: string;
   img?: string;
-  status?: string;
+  status?: EnumStatusEvent;
   status_reason?: string;
   inscription?: boolean;
   isPast?: boolean;
   macroevent_id?: number;
+  project_id?: number;
 }
+export enum EnumStatusEvent {
+  EJECUCION = 'EJECUCION',
+  CANCELADO = 'CANCELADO',
+  APLAZADO = 'APLAZADO',
+  AGOTADO = 'AGOTADO',
+}
+export const statusEvent: Filter[] = [
+  { code: 'EJECUCION', name: 'En ejecución' },
+  { code: 'CANCELADO', name: 'Cancelado' },
+  { code: 'APLAZADO', name: 'Aplazado' },
+  { code: 'AGOTADO', name: 'Agotado' },
+];
 
 export interface EventModelFullData extends EventModel {
   placeData?: PlaceModel;
@@ -30,4 +45,5 @@ export interface EventModelFullData extends EventModel {
   collaborator?: AgentAutocompleteModel[];
   sponsor?: AgentAutocompleteModel[];
   macroeventData?: MacroeventModel;
+  projectData?: ProjectModel;
 }

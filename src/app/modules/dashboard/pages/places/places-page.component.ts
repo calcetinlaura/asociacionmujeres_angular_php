@@ -1,20 +1,20 @@
-import { Component, DestroyRef, inject, OnInit } from '@angular/core';
-import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
-import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
-import { ColumnModel } from 'src/app/core/interfaces/column.interface';
-import { TableComponent } from 'src/app/modules/dashboard/components/table/table.component';
-import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
 import { CommonModule } from '@angular/common';
+import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
 import { tap } from 'rxjs';
+import { PlacesFacade } from 'src/app/application/places.facade';
+import { ColumnModel } from 'src/app/core/interfaces/column.interface';
+import { PlaceModel } from 'src/app/core/interfaces/place.interface';
+import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
+import { PlacesService } from 'src/app/core/services/places.services';
+import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
+import { TableComponent } from 'src/app/modules/dashboard/components/table/table.component';
 import { AddButtonComponent } from 'src/app/shared/components/buttons/button-add/button-add.component';
 import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
+import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
-import { PlaceModel } from 'src/app/core/interfaces/place.interface';
-import { PlacesFacade } from 'src/app/application/places.facade';
-import { PlacesService } from 'src/app/core/services/places.services';
 
 @Component({
   selector: 'app-places-page',
@@ -51,14 +51,14 @@ export class PlacesPageComponent implements OnInit {
   typeList = TypeList.Places;
 
   headerListPlaces: ColumnModel[] = [
-    { title: 'Imagen', key: 'img' },
-    { title: 'Nombre', key: 'name' },
-    { title: 'Municipio', key: 'town' },
-    { title: 'Dirección', key: 'address' },
-    { title: 'Salas', key: 'salasCount' },
-    { title: 'Latitud', key: 'lat' },
-    { title: 'Longitud', key: 'lon' },
-    { title: 'Gestión', key: 'management' },
+    { title: 'Imagen', key: 'img', sortable: false },
+    { title: 'Nombre', key: 'name', sortable: true },
+    { title: 'Municipio', key: 'town', sortable: true },
+    { title: 'Dirección', key: 'address', sortable: true },
+    { title: 'Salas', key: 'salasCount', sortable: true },
+    { title: 'Latitud', key: 'lat', sortable: true },
+    { title: 'Longitud', key: 'lon', sortable: true },
+    { title: 'Gestión', key: 'management', sortable: true },
   ];
 
   ngOnInit(): void {
@@ -112,10 +112,10 @@ export class PlacesPageComponent implements OnInit {
     this.onCloseModal();
   }
 
-  sendFormPlace(event: { itemId: number; newPlaceData: FormData }): void {
+  sendFormPlace(event: { itemId: number; formData: FormData }): void {
     const save$ = event.itemId
-      ? this.placesFacade.editPlace(event.itemId, event.newPlaceData)
-      : this.placesFacade.addPlace(event.newPlaceData);
+      ? this.placesFacade.editPlace(event.itemId, event.formData)
+      : this.placesFacade.addPlace(event.formData);
 
     save$
       .pipe(

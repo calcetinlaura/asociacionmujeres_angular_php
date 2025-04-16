@@ -71,7 +71,7 @@ export class PartnersPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.filters = [
-      { code: '', name: 'Histórico socias' },
+      { code: 'ALL', name: 'Histórico' },
       ...this.generalService.getYearFilters(1995, this.currentYear),
     ];
 
@@ -93,13 +93,13 @@ export class PartnersPageComponent implements OnInit {
   }
 
   filterSelected(filter: string): void {
-    const year = Number(filter);
-    this.selectedFilter = !isNaN(year) && year > 0 ? year : null;
+    this.selectedFilter = filter === 'ALL' ? null : Number(filter);
+
     this.generalService.clearSearchInput(this.inputSearchComponent);
-    if (this.selectedFilter) {
-      this.partnersFacade.loadPartnersByYear(this.selectedFilter);
-    } else {
+    if (filter === 'ALL') {
       this.partnersFacade.loadAllPartners();
+    } else {
+      this.partnersFacade.loadPartnersByYear(Number(filter));
     }
   }
 
@@ -131,10 +131,10 @@ export class PartnersPageComponent implements OnInit {
     this.onCloseModal();
   }
 
-  sendFormPartner(event: { itemId: number; newPartnerData: FormData }): void {
+  sendFormPartner(event: { itemId: number; formData: FormData }): void {
     const save$ = event.itemId
-      ? this.partnersFacade.editPartner(event.itemId, event.newPartnerData)
-      : this.partnersFacade.addPartner(event.newPartnerData);
+      ? this.partnersFacade.editPartner(event.itemId, event.formData)
+      : this.partnersFacade.addPartner(event.formData);
 
     save$
       .pipe(
