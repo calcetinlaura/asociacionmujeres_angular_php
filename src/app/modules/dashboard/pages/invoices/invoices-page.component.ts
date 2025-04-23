@@ -11,7 +11,10 @@ import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatTabChangeEvent, MatTabsModule } from '@angular/material/tabs';
 import { combineLatest, tap } from 'rxjs';
 import { InvoicesFacade } from 'src/app/application/invoices.facade';
-import { ColumnModel } from 'src/app/core/interfaces/column.interface';
+import {
+  ColumnModel,
+  ColumnWidth,
+} from 'src/app/core/interfaces/column.interface';
 import { InvoiceModelFullData } from 'src/app/core/interfaces/invoice.interface';
 import {
   Filter,
@@ -55,25 +58,30 @@ export class InvoicesPageComponent implements OnInit {
   private readonly generalService = inject(GeneralService);
 
   headerListInvoices: ColumnModel[] = [
-    { title: 'Tipo', key: 'type_invoice', sortable: true, minWidth: true },
+    {
+      title: 'Tipo',
+      key: 'type_invoice',
+      sortable: true,
+      width: ColumnWidth.XS,
+    },
     {
       title: 'Nº Factura',
       key: 'number_invoice',
-      minWidth: true,
+      width: ColumnWidth.XS,
       showIndicatorOnEmpty: true,
     },
     {
       title: 'Fecha factura',
       key: 'date_invoice',
       sortable: true,
-      minWidth: true,
+      width: ColumnWidth.XS,
       pipe: 'date : dd MMM yyyy',
     },
     {
       title: 'Fecha cuentas',
       key: 'date_accounting',
       sortable: true,
-      minWidth: true,
+      width: ColumnWidth.XS,
       pipe: 'date : dd MMM yyyy',
       showIndicatorOnEmpty: true,
     },
@@ -81,7 +89,7 @@ export class InvoicesPageComponent implements OnInit {
       title: 'Fecha pago',
       key: 'date_payment',
       sortable: true,
-      minWidth: true,
+      width: ColumnWidth.XS,
       pipe: 'date : dd MMM yyyy',
       showIndicatorOnEmpty: true,
     },
@@ -92,16 +100,16 @@ export class InvoicesPageComponent implements OnInit {
     },
     {
       title: 'Descripción',
-      key: ' description',
+      key: 'description',
       sortable: true,
       booleanIndicator: true,
-      minWidth: true,
+      width: ColumnWidth.SM,
     },
     {
       title: 'Cantidad',
       key: 'amount',
       sortable: true,
-      minWidth: true,
+      width: ColumnWidth.XS,
       pipe: 'eurosFormat',
       footerTotal: true,
     },
@@ -109,14 +117,14 @@ export class InvoicesPageComponent implements OnInit {
       title: 'IVA',
       key: 'iva',
       sortable: true,
-      minWidth: true,
+      width: ColumnWidth.XS,
       pipe: 'eurosFormat',
     },
     {
       title: 'IRPF',
       key: 'irpf',
       sortable: true,
-      minWidth: true,
+      width: ColumnWidth.XS,
       pipe: 'eurosFormat',
       footerTotal: true,
     },
@@ -124,7 +132,7 @@ export class InvoicesPageComponent implements OnInit {
       title: 'TOTAL',
       key: 'total_amount',
       sortable: true,
-      minWidth: true,
+      width: ColumnWidth.XS,
       pipe: 'eurosFormat',
       footerTotal: true,
     },
@@ -132,14 +140,14 @@ export class InvoicesPageComponent implements OnInit {
       title: 'Subvención',
       key: 'subsidy_name',
       sortable: true,
-      minWidth: true,
+      width: ColumnWidth.XS,
       showIndicatorOnEmpty: true,
     },
     {
       title: 'Proyecto',
       key: 'project_title',
       sortable: true,
-      minWidth: true,
+      width: ColumnWidth.XS,
       showIndicatorOnEmpty: true,
     },
   ];

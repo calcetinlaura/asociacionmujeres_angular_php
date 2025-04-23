@@ -4,7 +4,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { tap } from 'rxjs';
 import { PlacesFacade } from 'src/app/application/places.facade';
-import { ColumnModel } from 'src/app/core/interfaces/column.interface';
+import {
+  ColumnModel,
+  ColumnWidth,
+} from 'src/app/core/interfaces/column.interface';
 import { PlaceModel } from 'src/app/core/interfaces/place.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { PlacesService } from 'src/app/core/services/places.services';
@@ -52,13 +55,19 @@ export class PlacesPageComponent implements OnInit {
 
   headerListPlaces: ColumnModel[] = [
     { title: 'Imagen', key: 'img', sortable: false },
-    { title: 'Nombre', key: 'name', sortable: true },
-    { title: 'Dirección', key: 'town', sortable: true },
+    { title: 'Nombre', key: 'name', sortable: true, width: ColumnWidth.FULL },
+    {
+      title: 'Dirección',
+      key: 'town',
+      sortable: true,
+      width: ColumnWidth.FULL,
+      showIndicatorOnEmpty: true,
+    },
     {
       title: 'Salas',
       key: 'salas',
       sortable: true,
-      minWidth: true,
+      width: ColumnWidth.XS,
       showLengthOnly: true,
     },
     {
@@ -66,16 +75,22 @@ export class PlacesPageComponent implements OnInit {
       key: 'lat',
       sortable: true,
       booleanIndicator: true,
-      minWidth: true,
+      width: ColumnWidth.XS,
     },
     {
       title: 'Longitud',
       key: 'lon',
       sortable: true,
       booleanIndicator: true,
-      minWidth: true,
+      width: ColumnWidth.XS,
     },
-    { title: 'Gestión', key: 'management', sortable: true },
+    {
+      title: 'Gestión',
+      key: 'management',
+      sortable: true,
+      width: ColumnWidth.SM,
+      showIndicatorOnEmpty: true,
+    },
   ];
 
   ngOnInit(): void {

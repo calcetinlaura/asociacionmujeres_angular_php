@@ -5,7 +5,10 @@ import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { tap } from 'rxjs';
 import { ArticlesFacade } from 'src/app/application/articles.facade';
 import { ArticleModel } from 'src/app/core/interfaces/article.interface';
-import { ColumnModel } from 'src/app/core/interfaces/column.interface';
+import {
+  ColumnModel,
+  ColumnWidth,
+} from 'src/app/core/interfaces/column.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { ArticlesService } from 'src/app/core/services/articles.services';
 import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
@@ -51,7 +54,7 @@ export class ArticlesPageComponent implements OnInit {
   typeList = TypeList.Articles;
 
   headerListArticles: ColumnModel[] = [
-    { title: 'Portada', key: 'img', sortable: false, minWidth: true },
+    { title: 'Portada', key: 'img', sortable: false, width: ColumnWidth.XS },
     { title: 'Título', key: 'title', sortable: true },
     { title: 'Fecha', key: 'date', sortable: true },
     {
@@ -59,7 +62,7 @@ export class ArticlesPageComponent implements OnInit {
       key: 'description',
       sortable: true,
       booleanIndicator: true,
-      minWidth: true,
+      width: ColumnWidth.SM,
     },
   ];
 

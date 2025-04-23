@@ -43,25 +43,17 @@
         mat-header-cell
         *matHeaderCellDef
         mat-sort-header="{{ column.key }}"
-        [ngClass]="{ 'min-width': column.minWidth }"
+        [ngClass]="column.width"
       >
         {{ column.title }}
       </th>
     </ng-container>
     <ng-template #noSort>
-      <th
-        mat-header-cell
-        *matHeaderCellDef
-        [ngClass]="{ 'min-width': column.minWidth }"
-      >
+      <th mat-header-cell *matHeaderCellDef [ngClass]="column.width">
         {{ column.title }}
       </th>
     </ng-template>
-    <td
-      mat-cell
-      *matCellDef="let element"
-      [ngClass]="{ 'min-width': column.minWidth }"
-    >
+    <td mat-cell *matCellDef="let element" [ngClass]="column.width">
       <ng-container [ngSwitch]="true">
         <ng-container *ngSwitchCase="column.booleanIndicator === true">
           <app-circle-indicator

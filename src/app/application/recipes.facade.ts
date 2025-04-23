@@ -25,7 +25,7 @@ export class RecipesFacade {
   selectedRecipe$ = this.selectedRecipeSubject.asObservable();
   filteredRecipes$ = this.filteredRecipesSubject.asObservable();
 
-  currentFilter: string = 'TODOS';
+  currentFilter: string = 'ALL';
 
   constructor() {}
 
@@ -36,7 +36,7 @@ export class RecipesFacade {
 
   loadRecipesByFilter(filter: string): void {
     const loaders: Record<string, () => void> = {
-      TODOS: () => this.loadAllRecipes(),
+      ALL: () => this.loadAllRecipes(),
       NOVEDADES: () => this.loadRecipesByLatest(),
     };
 

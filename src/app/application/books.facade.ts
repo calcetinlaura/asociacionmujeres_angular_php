@@ -23,7 +23,7 @@ export class BooksFacade {
   books$ = this.booksSubject.asObservable();
   selectedBook$ = this.selectedBookSubject.asObservable();
   filteredBooks$ = this.filteredBooksSubject.asObservable();
-  currentFilter: string = 'TODOS';
+  currentFilter: string = 'ALL';
 
   constructor() {}
 
@@ -34,7 +34,7 @@ export class BooksFacade {
 
   loadBooksByFilter(filter: string): void {
     const loaders: Record<string, () => void> = {
-      TODOS: () => this.loadAllBooks(),
+      ALL: () => this.loadAllBooks(),
       NOVEDADES: () => this.loadBooksByLatest(),
     };
 

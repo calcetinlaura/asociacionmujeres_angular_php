@@ -10,7 +10,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { tap } from 'rxjs';
 import { RecipesFacade } from 'src/app/application/recipes.facade';
-import { ColumnModel } from 'src/app/core/interfaces/column.interface';
+import {
+  ColumnModel,
+  ColumnWidth,
+} from 'src/app/core/interfaces/column.interface';
 import {
   categoryFilterRecipes,
   RecipeModel,
@@ -72,23 +75,28 @@ export class RecipesPageComponent implements OnInit {
   headerListRecipes: ColumnModel[] = [
     { title: 'Portada', key: 'img', sortable: false },
     { title: 'Titulo', key: 'title', sortable: true },
-    { title: 'Categoria', key: 'category', sortable: true, minWidth: true },
+    {
+      title: 'Categoria',
+      key: 'category',
+      sortable: true,
+      width: ColumnWidth.SM,
+    },
     { title: 'Autor/a', key: 'owner', sortable: true },
     {
       title: 'Ingredientes',
       key: 'ingredients',
       sortable: true,
       booleanIndicator: true,
-      minWidth: true,
+      width: ColumnWidth.SM,
     },
     {
       title: 'Receta',
       key: 'recipe',
       sortable: true,
       booleanIndicator: true,
-      minWidth: true,
+      width: ColumnWidth.XS,
     },
-    { title: 'Año', key: 'year', sortable: true, minWidth: true },
+    { title: 'Año', key: 'year', sortable: true, width: ColumnWidth.XS },
   ];
 
   @ViewChild(InputSearchComponent)

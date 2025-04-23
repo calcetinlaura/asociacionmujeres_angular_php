@@ -13,7 +13,6 @@ export interface BookModel {
 export type GenderBooks =
   | 'ENSAY0'
   | 'NOVEDADES'
-  | 'TODOS'
   | 'MASCULINIDADES'
   | 'MATERNIDAD'
   | 'COMIC'

@@ -14,7 +14,10 @@ import {
   AgentModel,
   categoryFilterAgents,
 } from 'src/app/core/interfaces/agent.interface';
-import { ColumnModel } from 'src/app/core/interfaces/column.interface';
+import {
+  ColumnModel,
+  ColumnWidth,
+} from 'src/app/core/interfaces/column.interface';
 import {
   Filter,
   TypeActionModal,
@@ -72,24 +75,41 @@ export class AgentsPageComponent implements OnInit {
   headerListAgents: ColumnModel[] = [
     { title: 'Imagen', key: 'img', sortable: false },
     { title: 'Nombre', key: 'name', sortable: true },
-    { title: 'Contacto', key: 'contact', sortable: true },
+    {
+      title: 'Contacto',
+      key: 'contact',
+      sortable: true,
+      showIndicatorOnEmpty: true,
+    },
     {
       title: 'Teléfono',
       key: 'phone',
       sortable: true,
-      minWidth: true,
+      showIndicatorOnEmpty: true,
+      width: ColumnWidth.XS,
       pipe: 'phoneFormat',
     },
-    { title: 'Email', key: 'email', sortable: true },
+    {
+      title: 'Email',
+      key: 'email',
+      sortable: true,
+      showIndicatorOnEmpty: true,
+      width: ColumnWidth.LG,
+    },
     { title: 'Municipio', key: 'town', sortable: true },
-    { title: 'Categoría', key: 'category', sortable: true, minWidth: true },
+    {
+      title: 'Categoría',
+      key: 'category',
+      sortable: true,
+      width: ColumnWidth.XS,
+    },
   ];
 
   @ViewChild(InputSearchComponent)
   private inputSearchComponent!: InputSearchComponent;
 
   ngOnInit(): void {
-    this.filters = [{ code: 'TODOS', name: 'Todos' }, ...categoryFilterAgents];
+    this.filters = [{ code: 'ALL', name: 'Todos' }, ...categoryFilterAgents];
 
     this.modalService.modalVisibility$
       .pipe(
@@ -98,7 +118,7 @@ export class AgentsPageComponent implements OnInit {
       )
       .subscribe();
 
-    this.filterSelected('TODOS');
+    this.filterSelected('ALL');
 
     this.agentsFacade.filteredAgents$
       .pipe(

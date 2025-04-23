@@ -25,7 +25,7 @@ export class MoviesFacade {
   selectedMovie$ = this.selectedMovieSubject.asObservable();
   filteredMovies$ = this.filteredMoviesSubject.asObservable();
 
-  currentFilter: string = 'TODOS';
+  currentFilter: string = 'ALL';
 
   constructor() {}
 
@@ -36,7 +36,7 @@ export class MoviesFacade {
 
   loadMoviesByFilter(filter: string): void {
     const loaders: Record<string, () => void> = {
-      TODOS: () => this.loadAllMovies(),
+      ALL: () => this.loadAllMovies(),
       NOVEDADES: () => this.loadMoviesByLatest(),
     };
 

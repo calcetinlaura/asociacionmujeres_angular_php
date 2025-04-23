@@ -10,7 +10,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { tap } from 'rxjs';
 import { PartnersFacade } from 'src/app/application/partners.facade';
-import { ColumnModel } from 'src/app/core/interfaces/column.interface';
+import {
+  ColumnModel,
+  ColumnWidth,
+} from 'src/app/core/interfaces/column.interface';
 import { PartnerModel } from 'src/app/core/interfaces/partner.interface';
 import {
   Filter,
@@ -69,29 +72,47 @@ export class PartnersPageComponent implements OnInit {
   headerListPartners: ColumnModel[] = [
     { title: 'Imagen', key: 'img', sortable: false },
     { title: 'Nombre', key: 'name', sortable: true },
-    { title: 'Apellidos', key: 'surname', sortable: true },
+    {
+      title: 'Apellidos',
+      key: 'surname',
+      sortable: true,
+      width: ColumnWidth.XL,
+    },
     {
       title: 'Fecha nacimiento',
       key: 'birthday',
       sortable: true,
+      width: ColumnWidth.LG,
     },
-    { title: 'Dirección', key: 'town', sortable: true },
+    { title: 'Dirección', key: 'town', sortable: true, width: ColumnWidth.XL },
     {
       title: 'Teléfono',
       key: 'phone',
       sortable: true,
-      minWidth: true,
+      showIndicatorOnEmpty: true,
+      width: ColumnWidth.XS,
       pipe: 'phoneFormat',
     },
-    { title: 'Email', key: 'email', sortable: true },
+    {
+      title: 'Email',
+      key: 'email',
+      sortable: true,
+      showIndicatorOnEmpty: true,
+      width: ColumnWidth.LG,
+    },
     {
       title: 'Última cuota',
       key: 'lastCuotaPaid',
       sortable: true,
       booleanIndicator: true,
-      minWidth: true,
+      width: ColumnWidth.XS,
     },
-    { title: 'Tiempo socia', key: 'years', sortable: true, minWidth: true },
+    {
+      title: 'Tiempo socia',
+      key: 'years',
+      sortable: true,
+      width: ColumnWidth.XS,
+    },
   ];
 
   @ViewChild(InputSearchComponent)

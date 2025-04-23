@@ -14,7 +14,10 @@ import {
   BookModel,
   genderFilterBooks,
 } from 'src/app/core/interfaces/book.interface';
-import { ColumnModel } from 'src/app/core/interfaces/column.interface';
+import {
+  ColumnModel,
+  ColumnWidth,
+} from 'src/app/core/interfaces/column.interface';
 import {
   Filter,
   TypeActionModal,
@@ -69,15 +72,15 @@ export class BooksPageComponent implements OnInit {
       key: 'description',
       sortable: true,
       booleanIndicator: true,
-      minWidth: true,
+      width: ColumnWidth.SM,
     },
-    { title: 'Género', key: 'gender', sortable: true, minWidth: true },
-    { title: 'Año compra', key: 'year', sortable: true, minWidth: true },
+    { title: 'Género', key: 'gender', sortable: true, width: ColumnWidth.XS },
+    { title: 'Año compra', key: 'year', sortable: true, width: ColumnWidth.XS },
   ];
   books: BookModel[] = [];
   filteredBooks: BookModel[] = [];
   filters: Filter[] = [];
-  selectedFilter = 'TODOS';
+  selectedFilter = 'ALL';
 
   isLoading = true;
   isModalVisible = false;
@@ -94,7 +97,7 @@ export class BooksPageComponent implements OnInit {
   ngOnInit(): void {
     this.filters = [
       { code: 'NOVEDADES', name: 'Novedades' },
-      { code: 'TODOS', name: 'Todos' },
+      { code: 'ALL', name: 'Todos' },
       ...genderFilterBooks,
     ];
 

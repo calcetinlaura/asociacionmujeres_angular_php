@@ -39,62 +39,28 @@
       ></app-table>
     </div>
   </ng-container>
-  <ng-container *ngIf="!showAllSubsidies">
+  <ng-container
+    *ngIf="!showAllSubsidies && !isLoading && visibleTabs.length > 0"
+  >
     <mat-tab-group
       (selectedTabChange)="tabActive($event)"
       [selectedIndex]="selectedIndex"
-      ><mat-tab
-        label="Sub. Ministerio"
-        *ngIf="filteredSubsidiesByType['MINISTERIO'].length > 0"
-      >
+    >
+      <mat-tab *ngFor="let tab of visibleTabs" [label]="tab.label">
         <app-tab-subsidy
-          [item]="filteredSubsidiesByType['MINISTERIO'][0]"
-          (openModal)="onOpenModal($event)"
+          [item]="tab.item"
           [loadInvoices]="true"
+          (openModal)="onOpenModal($event)"
         ></app-tab-subsidy>
       </mat-tab>
-      <mat-tab
-        label="Sub. Generalitat"
-        *ngIf="filteredSubsidiesByType['GENERALITAT'].length > 0"
-      >
-        <app-tab-subsidy
-          [item]="filteredSubsidiesByType['GENERALITAT'][0]"
-          (openModal)="onOpenModal($event)"
-          [loadInvoices]="true"
-        ></app-tab-subsidy>
-      </mat-tab>
-      <mat-tab
-        label="Sub. Diputación"
-        *ngIf="filteredSubsidiesByType['DIPUTACION'].length > 0"
-      >
-        <app-tab-subsidy
-          [item]="filteredSubsidiesByType['DIPUTACION'][0]"
-          (openModal)="onOpenModal($event)"
-          [loadInvoices]="true"
-        ></app-tab-subsidy>
-      </mat-tab>
-
-      <mat-tab
-        label="Sub. Ayuntamiento actividades"
-        *ngIf="filteredSubsidiesByType['AYUNT_ACTIVIDADES'].length > 0"
-      >
-        <app-tab-subsidy
-          [item]="filteredSubsidiesByType['AYUNT_ACTIVIDADES'][0]"
-          (openModal)="onOpenModal($event)"
-          [loadInvoices]="true"
-        ></app-tab-subsidy>
-      </mat-tab>
-      <mat-tab
-        label="Sub. Ayuntamiento equipamiento"
-        *ngIf="filteredSubsidiesByType['AYUNT_EQUIPAMIENTO'].length > 0"
-      >
-        <app-tab-subsidy
-          [item]="filteredSubsidiesByType['AYUNT_EQUIPAMIENTO'][0]"
-          (openModal)="onOpenModal($event)"
-          [loadInvoices]="true"
-        ></app-tab-subsidy>
-      </mat-tab>
-    </mat-tab-group>
+    </mat-tab-group> </ng-container
+  ><!-- Mensaje cuando no hay subvenciones -->
+  <ng-container
+    *ngIf="!showAllSubsidies && !isLoading && visibleTabs.length === 0"
+  >
+    <div class="text-center text-gray-600 my-12 text-lg">
+      No hay subvenciones registradas en este año.
+    </div>
   </ng-container>
 </div>
 <!-- Modal -->

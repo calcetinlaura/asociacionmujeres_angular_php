@@ -10,7 +10,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { tap } from 'rxjs';
 import { MacroeventsFacade } from 'src/app/application/macroevents.facade';
-import { ColumnModel } from 'src/app/core/interfaces/column.interface';
+import {
+  ColumnModel,
+  ColumnWidth,
+} from 'src/app/core/interfaces/column.interface';
 import { MacroeventModelFullData } from 'src/app/core/interfaces/macroevent.interface';
 import {
   Filter,
@@ -70,16 +73,16 @@ export class MacroeventsPageComponent implements OnInit {
   headerListMacroevents: ColumnModel[] = [
     { title: 'Cartel', key: 'img', sortable: false },
     { title: 'Título', key: 'title', sortable: true },
-    { title: 'Fecha', key: 'start', sortable: true },
+    { title: 'Fecha', key: 'start', sortable: true, width: ColumnWidth.SM },
     { title: 'Eventos', key: 'events', sortable: true },
     {
       title: 'Descripción',
       key: 'description',
       sortable: true,
       booleanIndicator: true,
-      minWidth: true,
+      width: ColumnWidth.SM,
     },
-    { title: 'Municipio', key: 'town', sortable: true },
+    { title: 'Municipio', key: 'town', sortable: true, width: ColumnWidth.SM },
   ];
 
   @ViewChild(InputSearchComponent)

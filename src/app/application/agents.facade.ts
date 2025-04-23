@@ -24,7 +24,7 @@ export class AgentsFacade {
   agents$ = this.agentsSubject.asObservable();
   filteredAgents$ = this.filteredAgentsSubject.asObservable();
   selectedAgent$ = this.selectedAgentSubject.asObservable();
-  currentFilter: string = 'TODOS';
+  currentFilter: string = 'ALL';
 
   constructor() {}
 
@@ -35,7 +35,7 @@ export class AgentsFacade {
 
   loadAgentsByFilter(filter: string): void {
     const loaders: Record<string, () => void> = {
-      TODOS: () => this.loadAllAgents(),
+      ALL: () => this.loadAllAgents(),
     };
 
     (loaders[filter] || (() => this.loadAgentsByCategory(filter)))();

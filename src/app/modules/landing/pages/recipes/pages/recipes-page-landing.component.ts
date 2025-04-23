@@ -48,7 +48,7 @@ export class RecipesPageLandingComponent implements OnInit {
   areThereResults = false;
   typeList = TypeList;
   number = 0;
-  selectedFilter = 'TODOS';
+  selectedFilter = 'ALL';
 
   @ViewChild(InputSearchComponent)
   private inputSearchComponent!: InputSearchComponent;
@@ -56,7 +56,7 @@ export class RecipesPageLandingComponent implements OnInit {
   ngOnInit(): void {
     this.filters = [
       { code: 'NOVEDADES', name: 'Novedades' },
-      { code: 'TODOS', name: 'Todos' },
+      { code: 'ALL', name: 'Todos' },
       ...categoryFilterRecipes,
     ];
 

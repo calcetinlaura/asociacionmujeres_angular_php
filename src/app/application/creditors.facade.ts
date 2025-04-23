@@ -30,7 +30,7 @@ export class CreditorsFacade {
   creditors$ = this.creditorsSubject.asObservable();
   filteredCreditors$ = this.filteredCreditorsSubject.asObservable();
   selectedCreditor$ = this.selectedCreditorSubject.asObservable();
-  currentFilter: string = 'TODOS';
+  currentFilter: string = 'ALL';
 
   constructor() {}
 
@@ -46,7 +46,7 @@ export class CreditorsFacade {
 
   loadCreditorsByFilter(filter: string): void {
     const loaders: Record<string, () => void> = {
-      TODOS: () => this.loadAllCreditors(),
+      ALL: () => this.loadAllCreditors(),
     };
 
     (loaders[filter] || (() => this.loadCreditorsByCategory(filter)))();

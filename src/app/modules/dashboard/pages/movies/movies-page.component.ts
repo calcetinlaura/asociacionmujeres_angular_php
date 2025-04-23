@@ -10,7 +10,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { tap } from 'rxjs';
 import { MoviesFacade } from 'src/app/application/movies.facade';
-import { ColumnModel } from 'src/app/core/interfaces/column.interface';
+import {
+  ColumnModel,
+  ColumnWidth,
+} from 'src/app/core/interfaces/column.interface';
 import {
   genderFilterMovies,
   MovieModel,
@@ -58,7 +61,7 @@ export class MoviesPageComponent implements OnInit {
   movies: MovieModel[] = [];
   filteredMovies: MovieModel[] = [];
   filters: Filter[] = [];
-  selectedFilter = 'TODOS';
+  selectedFilter = 'ALL';
 
   isLoading = true;
   isModalVisible = false;
@@ -83,10 +86,10 @@ export class MoviesPageComponent implements OnInit {
       key: 'description',
       sortable: true,
       booleanIndicator: true,
-      minWidth: true,
+      width: ColumnWidth.SM,
     },
-    { title: 'Género', key: 'gender', sortable: true, minWidth: true },
-    { title: 'Año compra', key: 'year', sortable: true, minWidth: true },
+    { title: 'Género', key: 'gender', sortable: true, width: ColumnWidth.XS },
+    { title: 'Año compra', key: 'year', sortable: true, width: ColumnWidth.XS },
   ];
 
   @ViewChild(InputSearchComponent)
@@ -95,7 +98,7 @@ export class MoviesPageComponent implements OnInit {
   ngOnInit(): void {
     this.filters = [
       { code: 'NOVEDADES', name: 'Novedades' },
-      { code: 'TODOS', name: 'Todos' },
+      { code: 'ALL', name: 'Todos' },
       ...genderFilterMovies,
     ];
 
@@ -119,7 +122,7 @@ export class MoviesPageComponent implements OnInit {
 
   private loadByFilter(filter: string): void {
     const loaders: Record<string, () => void> = {
-      TODOS: () => this.moviesFacade.loadAllMovies(),
+      ALL: () => this.moviesFacade.loadAllMovies(),
       NOVEDADES: () => this.moviesFacade.loadMoviesByLatest(),
     };
 

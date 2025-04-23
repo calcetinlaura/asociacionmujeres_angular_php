@@ -4,7 +4,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { tap } from 'rxjs';
 import { PodcastsFacade } from 'src/app/application/podcasts.facade';
-import { ColumnModel } from 'src/app/core/interfaces/column.interface';
+import {
+  ColumnModel,
+  ColumnWidth,
+} from 'src/app/core/interfaces/column.interface';
 import { PodcastModel } from 'src/app/core/interfaces/podcast.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { PodcastsService } from 'src/app/core/services/podcasts.services';
@@ -59,7 +62,7 @@ export class PodcastsPageComponent implements OnInit {
       key: 'description',
       sortable: true,
       booleanIndicator: true,
-      minWidth: true,
+      width: ColumnWidth.SM,
     },
   ];
 

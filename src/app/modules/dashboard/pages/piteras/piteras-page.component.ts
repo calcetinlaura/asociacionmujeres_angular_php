@@ -4,7 +4,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { tap } from 'rxjs';
 import { PiterasFacade } from 'src/app/application/piteras.facade';
-import { ColumnModel } from 'src/app/core/interfaces/column.interface';
+import {
+  ColumnModel,
+  ColumnWidth,
+} from 'src/app/core/interfaces/column.interface';
 import { PiteraModel } from 'src/app/core/interfaces/pitera.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { PiterasService } from 'src/app/core/services/piteras.services';
@@ -53,7 +56,7 @@ export class PiterasPageComponent implements OnInit {
   headerListPiteras: ColumnModel[] = [
     { title: 'Portada', key: 'img', sortable: false },
     { title: 'Título', key: 'title', sortable: true },
-    { title: 'Año', key: 'year', sortable: true, minWidth: true },
+    { title: 'Año', key: 'year', sortable: true, width: ColumnWidth.XS },
     { title: 'Temática', key: 'theme', sortable: true },
     { title: 'Url', key: 'url', sortable: true },
   ];

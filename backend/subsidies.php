@@ -18,155 +18,195 @@ $resource = array_pop($uriParts);
 switch ($method) {
   case 'GET':
     if (is_numeric($resource)) {
-        // Obtener una subvención por ID con invoices y projects
-        $stmt = $connection->prepare("SELECT * FROM subsidies WHERE id = ?");
-        $stmt->bind_param("i", $resource);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $subsidy = $result->fetch_assoc();
+      // Obtener una subvención por ID con invoices y projects
+      $stmt = $connection->prepare("SELECT * FROM subsidies WHERE id = ?");
+      $stmt->bind_param("i", $resource);
+      $stmt->execute();
+      $result = $stmt->get_result();
+      $subsidy = $result->fetch_assoc();
 
-        if ($subsidy) {
-            // Invoices relacionados
-            $stmtInvoices = $connection->prepare("
-                SELECT invoices.*,
-                       creditors.company AS creditor_company,
-                       creditors.contact AS creditor_contact,
-                       projects.title AS project_title
-                FROM invoices
-                LEFT JOIN creditors ON invoices.creditor_id = creditors.id
-                LEFT JOIN projects ON invoices.project_id = projects.id
-                WHERE invoices.subsidy_id = ?
-                ORDER BY invoices.date_invoice ASC
-            ");
-            $stmtInvoices->bind_param("i", $subsidy['id']);
-            $stmtInvoices->execute();
-            $resultInvoices = $stmtInvoices->get_result();
-            $subsidy['invoices'] = $resultInvoices->fetch_all(MYSQLI_ASSOC);
+      if ($subsidy) {
+        $id = $subsidy['id'];
 
-            // Projects con actividades
-            $stmtProjects = $connection->prepare("SELECT * FROM projects WHERE subsidy_id = ?");
-            $stmtProjects->bind_param("i", $subsidy['id']);
-            $stmtProjects->execute();
-            $resultProjects = $stmtProjects->get_result();
-            $projects = [];
+        // Invoices
+        $stmtInvoices = $connection->prepare("
+          SELECT invoices.*, creditors.company AS creditor_company, creditors.contact AS creditor_contact, projects.title AS project_title
+          FROM invoices
+          LEFT JOIN creditors ON invoices.creditor_id = creditors.id
+          LEFT JOIN projects ON invoices.project_id = projects.id
+          WHERE invoices.subsidy_id = ?
+          ORDER BY invoices.date_invoice ASC
+        ");
+        $stmtInvoices->bind_param("i", $id);
+        $stmtInvoices->execute();
+        $subsidy['invoices'] = $stmtInvoices->get_result()->fetch_all(MYSQLI_ASSOC);
 
-            while ($project = $resultProjects->fetch_assoc()) {
-                $stmtActivities = $connection->prepare("SELECT * FROM activities WHERE project_id = ?");
-                $stmtActivities->bind_param("i", $project['id']);
-                $stmtActivities->execute();
-                $resultActivities = $stmtActivities->get_result();
-                $project['activities'] = $resultActivities->fetch_all(MYSQLI_ASSOC);
-                $projects[] = $project;
-            }
+        // Projects + Activities
+        $stmtProjects = $connection->prepare("SELECT * FROM projects WHERE subsidy_id = ?");
+        $stmtProjects->bind_param("i", $id);
+        $stmtProjects->execute();
+        $projectsResult = $stmtProjects->get_result()->fetch_all(MYSQLI_ASSOC);
 
-            $subsidy['projects'] = $projects;
+        $projectIds = array_column($projectsResult, 'id');
+        $projectsById = [];
+        foreach ($projectsResult as $p) {
+          $projectsById[$p['id']] = $p;
+          $projectsById[$p['id']]['activities'] = [];
         }
 
-        echo json_encode($subsidy ? $subsidy : []);
-    }
+        if (!empty($projectIds)) {
+          $ph = implode(',', array_fill(0, count($projectIds), '?'));
+          $types = str_repeat('i', count($projectIds));
+          $stmtActivities = $connection->prepare("SELECT * FROM activities WHERE project_id IN ($ph)");
+          $stmtActivities->bind_param($types, ...$projectIds);
+          $stmtActivities->execute();
+          $activities = $stmtActivities->get_result()->fetch_all(MYSQLI_ASSOC);
 
-    elseif (isset($_GET['year']) && is_numeric($_GET['year'])) {
-        // Obtener subvenciones por año
-        $year = $_GET['year'];
-        $stmt = $connection->prepare("SELECT * FROM subsidies WHERE year = ?");
-        $stmt->bind_param("i", $year);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $subsidies = [];
-
-        while ($row = $result->fetch_assoc()) {
-            // Invoices
-            $stmtInvoices = $connection->prepare("
-                SELECT invoices.*,
-                       creditors.company AS creditor_company,
-                       creditors.contact AS creditor_contact,
-                       projects.title AS project_title
-                FROM invoices
-                LEFT JOIN creditors ON invoices.creditor_id = creditors.id
-                LEFT JOIN projects ON invoices.project_id = projects.id
-                WHERE invoices.subsidy_id = ?
-                ORDER BY invoices.date_invoice ASC
-            ");
-            $stmtInvoices->bind_param("i", $row['id']);
-            $stmtInvoices->execute();
-            $resultInvoices = $stmtInvoices->get_result();
-            $row['invoices'] = $resultInvoices->fetch_all(MYSQLI_ASSOC);
-
-            // Projects con actividades
-            $stmtProjects = $connection->prepare("SELECT * FROM projects WHERE subsidy_id = ?");
-            $stmtProjects->bind_param("i", $row['id']);
-            $stmtProjects->execute();
-            $resultProjects = $stmtProjects->get_result();
-            $projects = [];
-
-            while ($project = $resultProjects->fetch_assoc()) {
-                $stmtActivities = $connection->prepare("SELECT * FROM activities WHERE project_id = ?");
-                $stmtActivities->bind_param("i", $project['id']);
-                $stmtActivities->execute();
-                $resultActivities = $stmtActivities->get_result();
-                $project['activities'] = $resultActivities->fetch_all(MYSQLI_ASSOC);
-                $projects[] = $project;
-            }
-
-            $row['projects'] = $projects;
-
-            $subsidies[] = $row;
+          foreach ($activities as $activity) {
+            $projectsById[$activity['project_id']]['activities'][] = $activity;
+          }
         }
 
-        echo json_encode($subsidies);
-    }
+        $subsidy['projects'] = array_values($projectsById);
+      }
 
-    else {
-        // Obtener todas las subvenciones
-        $stmt = $connection->prepare("SELECT * FROM subsidies");
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $subsidies = [];
+      echo json_encode($subsidy ?: []);
+      exit;
 
-        while ($row = $result->fetch_assoc()) {
-            // Invoices
-            $stmtInvoices = $connection->prepare("
-                SELECT invoices.*,
-                       creditors.company AS creditor_company,
-                       creditors.contact AS creditor_contact,
-                       projects.title AS project_title
-                FROM invoices
-                LEFT JOIN creditors ON invoices.creditor_id = creditors.id
-                LEFT JOIN projects ON invoices.project_id = projects.id
-                WHERE invoices.subsidy_id = ?
-                ORDER BY invoices.date_invoice ASC
-            ");
-            $stmtInvoices->bind_param("i", $row['id']);
-            $stmtInvoices->execute();
-            $resultInvoices = $stmtInvoices->get_result();
-            $row['invoices'] = $resultInvoices->fetch_all(MYSQLI_ASSOC);
+    } elseif (isset($_GET['year']) && is_numeric($_GET['year'])) {
+      $year = $_GET['year'];
 
-            // Projects con actividades
-            $stmtProjects = $connection->prepare("SELECT * FROM projects WHERE subsidy_id = ?");
-            $stmtProjects->bind_param("i", $row['id']);
-            $stmtProjects->execute();
-            $resultProjects = $stmtProjects->get_result();
-            $projects = [];
+      $stmt = $connection->prepare("SELECT * FROM subsidies WHERE year = ?");
+      $stmt->bind_param("i", $year);
+      $stmt->execute();
+      $subsidies = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
-            while ($project = $resultProjects->fetch_assoc()) {
-                $stmtActivities = $connection->prepare("SELECT * FROM activities WHERE project_id = ?");
-                $stmtActivities->bind_param("i", $project['id']);
-                $stmtActivities->execute();
-                $resultActivities = $stmtActivities->get_result();
-                $project['activities'] = $resultActivities->fetch_all(MYSQLI_ASSOC);
-                $projects[] = $project;
-            }
+      $subsidyIds = array_column($subsidies, 'id');
+      $subsidiesById = [];
+      foreach ($subsidies as $sub) {
+        $subsidiesById[$sub['id']] = $sub;
+        $subsidiesById[$sub['id']]['invoices'] = [];
+        $subsidiesById[$sub['id']]['projects'] = [];
+      }
 
-            $row['projects'] = $projects;
+      if (!empty($subsidyIds)) {
+        $placeholders = implode(',', array_fill(0, count($subsidyIds), '?'));
+        $types = str_repeat('i', count($subsidyIds));
 
-            $subsidies[] = $row;
+        // Invoices
+        $stmtInvoices = $connection->prepare("
+          SELECT invoices.*, creditors.company AS creditor_company, creditors.contact AS creditor_contact, projects.title AS project_title
+          FROM invoices
+          LEFT JOIN creditors ON invoices.creditor_id = creditors.id
+          LEFT JOIN projects ON invoices.project_id = projects.id
+          WHERE invoices.subsidy_id IN ($placeholders)
+          ORDER BY invoices.date_invoice ASC
+        ");
+        $stmtInvoices->bind_param($types, ...$subsidyIds);
+        $stmtInvoices->execute();
+        $invoices = $stmtInvoices->get_result()->fetch_all(MYSQLI_ASSOC);
+
+        foreach ($invoices as $invoice) {
+          $subsidiesById[$invoice['subsidy_id']]['invoices'][] = $invoice;
         }
 
-        echo json_encode($subsidies);
-    }
-    break;
+        // Projects
+        $stmtProjects = $connection->prepare("SELECT * FROM projects WHERE subsidy_id IN ($placeholders)");
+        $stmtProjects->bind_param($types, ...$subsidyIds);
+        $stmtProjects->execute();
+        $projects = $stmtProjects->get_result()->fetch_all(MYSQLI_ASSOC);
 
-  case 'POST':
+        $projectIds = array_column($projects, 'id');
+        $projectsById = [];
+        foreach ($projects as $proj) {
+          $projectsById[$proj['id']] = $proj;
+          $projectsById[$proj['id']]['activities'] = [];
+          $subsidiesById[$proj['subsidy_id']]['projects'][] = &$projectsById[$proj['id']];
+        }
+
+        // Activities
+        if (!empty($projectIds)) {
+          $ph = implode(',', array_fill(0, count($projectIds), '?'));
+          $t = str_repeat('i', count($projectIds));
+          $stmtActivities = $connection->prepare("SELECT * FROM activities WHERE project_id IN ($ph)");
+          $stmtActivities->bind_param($t, ...$projectIds);
+          $stmtActivities->execute();
+          $activities = $stmtActivities->get_result()->fetch_all(MYSQLI_ASSOC);
+
+          foreach ($activities as $act) {
+            $projectsById[$act['project_id']]['activities'][] = $act;
+          }
+        }
+      }
+
+      echo json_encode(array_values($subsidiesById));
+      exit;
+
+    } else {
+      // ALL
+      $stmt = $connection->prepare("SELECT * FROM subsidies");
+      $stmt->execute();
+      $subsidies = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+
+      $subsidyIds = array_column($subsidies, 'id');
+      $subsidiesById = [];
+      foreach ($subsidies as $sub) {
+        $subsidiesById[$sub['id']] = $sub;
+        $subsidiesById[$sub['id']]['invoices'] = [];
+        $subsidiesById[$sub['id']]['projects'] = [];
+      }
+
+      if (!empty($subsidyIds)) {
+        $placeholders = implode(',', array_fill(0, count($subsidyIds), '?'));
+        $types = str_repeat('i', count($subsidyIds));
+
+        $stmtInvoices = $connection->prepare("
+          SELECT invoices.*, creditors.company AS creditor_company, creditors.contact AS creditor_contact, projects.title AS project_title
+          FROM invoices
+          LEFT JOIN creditors ON invoices.creditor_id = creditors.id
+          LEFT JOIN projects ON invoices.project_id = projects.id
+          WHERE invoices.subsidy_id IN ($placeholders)
+          ORDER BY invoices.date_invoice ASC
+        ");
+        $stmtInvoices->bind_param($types, ...$subsidyIds);
+        $stmtInvoices->execute();
+        $invoices = $stmtInvoices->get_result()->fetch_all(MYSQLI_ASSOC);
+
+        foreach ($invoices as $invoice) {
+          $subsidiesById[$invoice['subsidy_id']]['invoices'][] = $invoice;
+        }
+
+        $stmtProjects = $connection->prepare("SELECT * FROM projects WHERE subsidy_id IN ($placeholders)");
+        $stmtProjects->bind_param($types, ...$subsidyIds);
+        $stmtProjects->execute();
+        $projects = $stmtProjects->get_result()->fetch_all(MYSQLI_ASSOC);
+
+        $projectIds = array_column($projects, 'id');
+        $projectsById = [];
+        foreach ($projects as $proj) {
+          $projectsById[$proj['id']] = $proj;
+          $projectsById[$proj['id']]['activities'] = [];
+          $subsidiesById[$proj['subsidy_id']]['projects'][] = &$projectsById[$proj['id']];
+        }
+
+        if (!empty($projectIds)) {
+          $ph = implode(',', array_fill(0, count($projectIds), '?'));
+          $t = str_repeat('i', count($projectIds));
+          $stmtActivities = $connection->prepare("SELECT * FROM activities WHERE project_id IN ($ph)");
+          $stmtActivities->bind_param($t, ...$projectIds);
+          $stmtActivities->execute();
+          $activities = $stmtActivities->get_result()->fetch_all(MYSQLI_ASSOC);
+
+          foreach ($activities as $act) {
+            $projectsById[$act['project_id']]['activities'][] = $act;
+          }
+        }
+      }
+
+      echo json_encode(array_values($subsidiesById));
+      exit;
+    }
+ case 'POST':
     error_reporting(E_ALL);
     ini_set('display_errors', 1);
 

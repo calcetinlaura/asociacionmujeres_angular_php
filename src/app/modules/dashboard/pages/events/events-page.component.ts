@@ -10,7 +10,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { tap } from 'rxjs';
 import { EventsFacade } from 'src/app/application/events.facade';
-import { ColumnModel } from 'src/app/core/interfaces/column.interface';
+import {
+  ColumnModel,
+  ColumnWidth,
+} from 'src/app/core/interfaces/column.interface';
 import {
   EventModel,
   EventModelFullData,
@@ -73,46 +76,50 @@ export class EventsPageComponent implements OnInit {
   headerListEvents: ColumnModel[] = [
     { title: 'Cartel', key: 'img', sortable: false },
     { title: 'Título', key: 'titleEvent', sortable: true },
-    { title: 'Fecha', key: 'start', sortable: true },
+    { title: 'Fecha', key: 'start', sortable: true, width: ColumnWidth.SM },
     {
       title: 'Descripción',
       key: 'description',
       sortable: true,
       booleanIndicator: true,
-      minWidth: true,
+      width: ColumnWidth.SM,
     },
     {
       title: 'Espacio',
       key: 'espacioTable',
       sortable: true,
+      width: ColumnWidth.LG,
     },
-    { title: 'Aforo', key: 'capacity', sortable: false, minWidth: true },
-    { title: 'Precio', key: 'price', sortable: true, minWidth: true },
-    { title: 'Estado', key: 'status', sortable: true, minWidth: true },
+    { title: 'Aforo', key: 'capacity', sortable: false, width: ColumnWidth.XS },
+    { title: 'Precio', key: 'price', sortable: true, width: ColumnWidth.XS },
+    { title: 'Estado', key: 'status', sortable: true, width: ColumnWidth.XS },
     {
       title: 'Inscripción',
       key: 'inscription',
       sortable: true,
       booleanIndicator: true,
-      minWidth: true,
+      width: ColumnWidth.SM,
     },
     {
       title: 'Organizador',
       key: 'organizer',
       sortable: false,
       showIndicatorOnEmpty: true,
+      width: ColumnWidth.SM,
     },
     {
       title: 'Colaborador',
       key: 'collaborator',
       sortable: false,
       showIndicatorOnEmpty: true,
+      width: ColumnWidth.SM,
     },
     {
       title: 'Patrocinador',
       key: 'sponsor',
       sortable: false,
       showIndicatorOnEmpty: true,
+      width: ColumnWidth.SM,
     },
   ];
 

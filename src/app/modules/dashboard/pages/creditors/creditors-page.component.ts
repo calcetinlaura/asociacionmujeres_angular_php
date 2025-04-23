@@ -10,7 +10,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { tap } from 'rxjs';
 import { CreditorsFacade } from 'src/app/application/creditors.facade';
-import { ColumnModel } from 'src/app/core/interfaces/column.interface';
+import {
+  ColumnModel,
+  ColumnWidth,
+} from 'src/app/core/interfaces/column.interface';
 import {
   categoryFilterCreditors,
   CreditorModel,
@@ -72,25 +75,42 @@ export class CreditorsPageComponent implements OnInit {
 
   headerListCreditors: ColumnModel[] = [
     { title: 'Compañía', key: 'company', sortable: true },
-    { title: 'Cif', key: 'cif', sortable: true },
-    { title: 'Contacto', key: 'contact', sortable: true },
+    { title: 'Cif', key: 'cif', sortable: true, showIndicatorOnEmpty: true },
+    {
+      title: 'Contacto',
+      key: 'contact',
+      sortable: true,
+      showIndicatorOnEmpty: true,
+    },
     {
       title: 'Teléfono',
       key: 'phone',
       sortable: true,
-      minWidth: true,
+      showIndicatorOnEmpty: true,
+      width: ColumnWidth.XS,
       pipe: 'phoneFormat',
     },
-    { title: 'Email', key: 'email', sortable: true },
+    {
+      title: 'Email',
+      key: 'email',
+      sortable: true,
+      showIndicatorOnEmpty: true,
+      width: ColumnWidth.LG,
+    },
     { title: 'Municipio', key: 'town', sortable: true },
     {
       title: 'Nº Facturas',
       key: 'invoices',
       sortable: true,
-      minWidth: true,
+      width: ColumnWidth.XS,
       showLengthOnly: true,
     },
-    { title: 'Categoría', key: 'category', sortable: true, minWidth: true },
+    {
+      title: 'Categoría',
+      key: 'category',
+      sortable: true,
+      width: ColumnWidth.XS,
+    },
     { title: 'Palabras clave', key: 'key_words', sortable: true },
   ];
 
@@ -98,10 +118,7 @@ export class CreditorsPageComponent implements OnInit {
   private inputSearchComponent!: InputSearchComponent;
 
   ngOnInit(): void {
-    this.filters = [
-      { code: 'TODOS', name: 'Todos' },
-      ...categoryFilterCreditors,
-    ];
+    this.filters = [{ code: 'ALL', name: 'Todos' }, ...categoryFilterCreditors];
 
     this.modalService.modalVisibility$
       .pipe(
@@ -110,7 +127,7 @@ export class CreditorsPageComponent implements OnInit {
       )
       .subscribe();
 
-    this.filterSelected('TODOS');
+    this.filterSelected('ALL');
 
     this.creditorsFacade.filteredCreditors$
       .pipe(

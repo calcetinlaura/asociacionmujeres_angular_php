@@ -3,14 +3,19 @@ import {
   Component,
   DestroyRef,
   EventEmitter,
-  inject,
   Input,
+  OnChanges,
   Output,
+  SimpleChanges,
+  inject,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatIconModule } from '@angular/material/icon';
 import { catchError, of, tap } from 'rxjs';
-import { ColumnModel } from 'src/app/core/interfaces/column.interface';
+import {
+  ColumnModel,
+  ColumnWidth,
+} from 'src/app/core/interfaces/column.interface';
 import { InvoiceModelFullData } from 'src/app/core/interfaces/invoice.interface';
 import { ProjectModelFullData } from 'src/app/core/interfaces/project.interface';
 import { SubsidyModelFullData } from 'src/app/core/interfaces/subsidy.interface';
@@ -38,7 +43,7 @@ import { TableComponent } from '../../../../components/table/table.component';
   templateUrl: './tab-subsidies.component.html',
   styleUrls: ['./tab-subsidies.component.css'],
 })
-export class ModalShowSubsidyComponent {
+export class ModalShowSubsidyComponent implements OnChanges {
   private subsidiesService = inject(SubsidiesService);
   private invoicesService = inject(InvoicesService);
   private destroyRef = inject(DestroyRef);
@@ -50,39 +55,48 @@ export class ModalShowSubsidyComponent {
     action: TypeActionModal;
     item: any;
   }>();
+
   itemInvoice?: InvoiceModelFullData;
   typeList = TypeList;
   type: TypeList = TypeList.Subsidies;
   filteredInvoices: InvoiceModelFullData[] = [];
   number_invoices: number = 0;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
-  loading: boolean = true;
+  loading = true;
   amount_justified = 0;
   amountIrpf = 0;
   amount_association = 0;
   nameSubsidy = this.subsidiesService.subsidiesMap;
   typeActionModal = TypeActionModal;
-  isModalVisible: boolean = false;
+  isModalVisible = false;
+
+  private previousKey: string | null = null;
+
   headerListInvoices: ColumnModel[] = [
-    { title: 'Tipo', key: 'type_invoice', sortable: true, minWidth: true },
+    {
+      title: 'Tipo',
+      key: 'type_invoice',
+      sortable: true,
+      width: ColumnWidth.XS,
+    },
     {
       title: 'Nº Factura',
       key: 'number_invoice',
-      minWidth: true,
+      width: ColumnWidth.XS,
       showIndicatorOnEmpty: true,
     },
     {
       title: 'Fecha factura',
       key: 'date_invoice',
       sortable: true,
-      minWidth: true,
+      width: ColumnWidth.XS,
       pipe: 'date : dd MMM yyyy',
     },
     {
       title: 'Fecha cuentas',
       key: 'date_accounting',
       sortable: true,
-      minWidth: true,
+      width: ColumnWidth.XS,
       pipe: 'date : dd MMM yyyy',
       showIndicatorOnEmpty: true,
     },
@@ -90,27 +104,23 @@ export class ModalShowSubsidyComponent {
       title: 'Fecha pago',
       key: 'date_payment',
       sortable: true,
-      minWidth: true,
+      width: ColumnWidth.XS,
       pipe: 'date : dd MMM yyyy',
       showIndicatorOnEmpty: true,
     },
-    {
-      title: 'Acreedor',
-      key: 'creditor_company',
-      sortable: true,
-    },
+    { title: 'Acreedor', key: 'creditor_company', sortable: true },
     {
       title: 'Descripción',
-      key: ' description',
+      key: 'description',
       sortable: true,
       booleanIndicator: true,
-      minWidth: true,
+      width: ColumnWidth.SM,
     },
     {
       title: 'Cantidad',
       key: 'amount',
       sortable: true,
-      minWidth: true,
+      width: ColumnWidth.XS,
       pipe: 'eurosFormat',
       footerTotal: true,
     },
@@ -118,14 +128,14 @@ export class ModalShowSubsidyComponent {
       title: 'IVA',
       key: 'iva',
       sortable: true,
-      minWidth: true,
+      width: ColumnWidth.XS,
       pipe: 'eurosFormat',
     },
     {
       title: 'IRPF',
       key: 'irpf',
       sortable: true,
-      minWidth: true,
+      width: ColumnWidth.XS,
       pipe: 'eurosFormat',
       footerTotal: true,
     },
@@ -133,7 +143,7 @@ export class ModalShowSubsidyComponent {
       title: 'TOTAL',
       key: 'total_amount',
       sortable: true,
-      minWidth: true,
+      width: ColumnWidth.XS,
       pipe: 'eurosFormat',
       footerTotal: true,
     },
@@ -141,23 +151,40 @@ export class ModalShowSubsidyComponent {
       title: 'Subvención',
       key: 'subsidy_name',
       sortable: true,
-      minWidth: true,
+      width: ColumnWidth.XS,
       showIndicatorOnEmpty: true,
     },
     {
       title: 'Proyecto',
       key: 'project_title',
       sortable: true,
-      minWidth: true,
+      width: ColumnWidth.XS,
       showIndicatorOnEmpty: true,
     },
   ];
-  private hasLoaded = false;
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['item']) {
+      const newItem = changes['item'].currentValue as SubsidyModelFullData;
+
+      const key = newItem?.name + '_' + newItem?.year;
+      if (
+        key &&
+        key !== this.previousKey &&
+        newItem?.name &&
+        newItem?.year &&
+        newItem.name.trim() !== '' &&
+        newItem.year !== 0
+      ) {
+        this.previousKey = key;
+        this.load();
+      }
+    }
+  }
 
   load(): void {
-    if (this.hasLoaded || !this.item?.year || !this.item?.name) return;
+    if (!this.item?.name || !this.item?.year) return;
 
-    this.hasLoaded = true;
     this.loading = true;
 
     this.invoicesService

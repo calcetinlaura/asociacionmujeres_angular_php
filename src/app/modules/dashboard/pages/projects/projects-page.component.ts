@@ -10,7 +10,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { tap } from 'rxjs';
 import { ProjectsFacade } from 'src/app/application/projects.facade';
-import { ColumnModel } from 'src/app/core/interfaces/column.interface';
+import {
+  ColumnModel,
+  ColumnWidth,
+} from 'src/app/core/interfaces/column.interface';
 import { ProjectModel } from 'src/app/core/interfaces/project.interface';
 import {
   Filter,
@@ -69,20 +72,20 @@ export class ProjectsPageComponent implements OnInit {
 
   headerListProjects: ColumnModel[] = [
     { title: 'Título', key: 'title', sortable: true },
-    { title: 'Año', key: 'year', sortable: true, minWidth: true },
+    { title: 'Año', key: 'year', sortable: true, width: ColumnWidth.XS },
     {
       title: 'Descripción',
       key: 'description',
       sortable: true,
       booleanIndicator: true,
-      minWidth: true,
+      width: ColumnWidth.SM,
     },
 
     {
       title: 'Subvención',
       key: 'subsidy_name',
       sortable: true,
-      minWidth: true,
+      width: ColumnWidth.XS,
     },
     {
       title: 'Actividades',
