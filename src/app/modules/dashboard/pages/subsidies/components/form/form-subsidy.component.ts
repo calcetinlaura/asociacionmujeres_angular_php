@@ -5,6 +5,7 @@ import {
   EventEmitter,
   inject,
   Input,
+  OnInit,
   Output,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -31,6 +32,7 @@ import {
   categoryFilterSubsidies,
   SubsidyModel,
 } from 'src/app/core/interfaces/subsidy.interface';
+import { TypeList } from 'src/app/core/models/general.model';
 import { SubsidiesService } from 'src/app/core/services/subsidies.services';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
@@ -52,27 +54,13 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
   styleUrls: ['../../../../components/form/form.component.css'],
   providers: [SubsidiesService],
 })
-export class FormSubsidyComponent {
-  private destroyRef = inject(DestroyRef);
-  private subsidiesFacade = inject(SubsidiesFacade);
-  private generalService = inject(GeneralService);
+export class FormSubsidyComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly subsidiesFacade = inject(SubsidiesFacade);
+  private readonly generalService = inject(GeneralService);
 
   @Input() itemId!: number;
   @Output() sendFormSubsidy = new EventEmitter<SubsidyModel>();
-  imageSrc: string = '';
-  errorSession: boolean = false;
-  submitted: boolean = false;
-  titleForm: string = 'Registrar subvención';
-  buttonAction: string = 'Guardar';
-  years: number[] = [];
-  FilterSubsidies = categoryFilterSubsidies;
-  creditors: CreditorModel[] = [];
-  selectedCreditor?: CreditorModel;
-  filteredCreditors: CreditorModel[] = [];
-  searchControl = new FormControl();
-  showSuggestions: boolean = false;
-  searchInput = new FormControl();
-
   formSubsidy = new FormGroup({
     name: new FormControl(''),
     year: new FormControl(0, [
@@ -82,10 +70,8 @@ export class FormSubsidyComponent {
     ]),
     date_presentation: new FormControl<Date | null>(null),
     date_justification: new FormControl<Date | null>(null),
-    period_start: new FormControl<Date | null>(null),
-    period_end: new FormControl<Date | null>(null),
-    activities: new FormControl(''),
-    invoices: new FormControl(''),
+    start: new FormControl<Date | null>(null),
+    end: new FormControl<Date | null>(null),
     url_presentation: new FormControl(''),
     url_justification: new FormControl(''),
     amount_requested: new FormControl(),
@@ -94,6 +80,21 @@ export class FormSubsidyComponent {
     amount_association: new FormControl(),
     observations: new FormControl(''),
   });
+
+  errorSession = false;
+  submitted = false;
+  titleForm = 'Guarda subvención';
+  buttonAction = 'Guardar';
+  typeList = TypeList.Subsidies;
+  years: number[] = [];
+  FilterSubsidies = categoryFilterSubsidies;
+  creditors: CreditorModel[] = [];
+  selectedCreditor?: CreditorModel;
+  filteredCreditors: CreditorModel[] = [];
+  searchControl = new FormControl();
+  showSuggestions: boolean = false;
+  searchInput = new FormControl();
+
   currentYear = this.generalService.currentYear;
 
   ngOnInit(): void {
@@ -136,21 +137,20 @@ export class FormSubsidyComponent {
 
   onSendFormInvoice(): void {
     if (this.formSubsidy.invalid) {
-      this.submitted = true; // Marcar como enviado
+      this.submitted = true;
+      console.log('Formulario inválido', this.formSubsidy.errors);
       return;
     }
 
-    const formValue: SubsidyModel = {
+    const formValue: SubsidyModel & { _method?: string; id?: number } = {
       name: this.formSubsidy.get('name')?.value || '',
       year: this.formSubsidy.get('year')?.value || 0,
       date_justification:
         this.formSubsidy.get('date_justification')?.value || null,
       date_presentation:
         this.formSubsidy.get('date_presentation')?.value || null,
-      period_start: this.formSubsidy.get('period_start')?.value || null,
-      period_end: this.formSubsidy.get('period_end')?.value || null,
-      activities: this.formSubsidy.get('activities')?.value || '',
-      invoices: this.formSubsidy.get('invoices')?.value || '',
+      start: this.formSubsidy.get('start')?.value || null,
+      end: this.formSubsidy.get('end')?.value || null,
       url_presentation: this.formSubsidy.get('url_presentation')?.value || '',
       url_justification: this.formSubsidy.get('url_justification')?.value || '',
       amount_requested: this.formSubsidy.get('amount_requested')?.value || null,
@@ -160,6 +160,12 @@ export class FormSubsidyComponent {
         this.formSubsidy.get('amount_association')?.value || null,
       observations: this.formSubsidy.get('observations')?.value || '',
     };
+
+    if (this.itemId) {
+      formValue._method = 'PATCH'; // Indica que es edición
+      formValue.id = this.itemId;
+    }
+
     this.sendFormSubsidy.emit(formValue);
   }
 }

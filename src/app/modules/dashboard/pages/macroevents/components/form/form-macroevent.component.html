@@ -29,50 +29,48 @@
               </div>
             </div>
           </div>
-          <div class="flex justify-between gap-x-4">
-            <!-- Provincia -->
-            <div class="box-input gap-x-4 flex flex-1">
-              <label for="province">Provincia</label>
-              <select
-                formControlName="province"
-                (change)="onProvinceChange()"
-                [ngClass]="{
-                  'is-invalid':
-                    submitted && formMacroevent.get('province')?.invalid
-                }"
-              >
-                <option value="">Seleccione una provincia</option>
-                <option *ngFor="let prov of provincias" [value]="prov.label">
-                  {{ prov.label }}
-                </option>
-              </select>
-              <div
-                *ngIf="submitted && formMacroevent.get('town')?.invalid"
-                class="is-invalid-text"
-              >
-                Campo requerido
-              </div>
+          <!-- Provincia -->
+          <div class="box-input gap-x-4 flex flex-1">
+            <label for="province">Provincia</label>
+            <select
+              formControlName="province"
+              (change)="onProvinceChange()"
+              [ngClass]="{
+                'is-invalid':
+                  submitted && formMacroevent.get('province')?.invalid
+              }"
+            >
+              <option value="">Seleccione una provincia</option>
+              <option *ngFor="let prov of provincias" [value]="prov.label">
+                {{ prov.label }}
+              </option>
+            </select>
+            <div
+              *ngIf="submitted && formMacroevent.get('town')?.invalid"
+              class="is-invalid-text"
+            >
+              Campo requerido
             </div>
-            <!-- Municipio -->
-            <div class="box-input flex flex-1">
-              <label for="town">Municipio</label>
-              <select
-                formControlName="town"
-                [ngClass]="{
-                  'is-invalid': submitted && formMacroevent.get('town')?.invalid
-                }"
-              >
-                <option value="">Seleccione un municipio</option>
-                <option *ngFor="let mun of municipios" [value]="mun.label">
-                  {{ mun.label }}
-                </option>
-              </select>
-              <div
-                *ngIf="submitted && formMacroevent.get('town')?.invalid"
-                class="is-invalid-text"
-              >
-                Campo requerido
-              </div>
+          </div>
+          <!-- Municipio -->
+          <div class="box-input gap-x-4 flex flex-1">
+            <label for="town">Municipio</label>
+            <select
+              formControlName="town"
+              [ngClass]="{
+                'is-invalid': submitted && formMacroevent.get('town')?.invalid
+              }"
+            >
+              <option value="">Seleccione un municipio</option>
+              <option *ngFor="let mun of municipios" [value]="mun.label">
+                {{ mun.label }}
+              </option>
+            </select>
+            <div
+              *ngIf="submitted && formMacroevent.get('town')?.invalid"
+              class="is-invalid-text"
+            >
+              Campo requerido
             </div>
           </div>
         </div>

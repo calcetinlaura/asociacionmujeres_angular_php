@@ -2,8 +2,8 @@ export interface InvoiceModel {
   id: number;
   number_invoice?: string;
   type_invoice: string;
-  date_invoice?: string; // Cambiar a string
-  date_accounting?: string; // Cambiar a string
+  date_invoice: string;
+  date_accounting?: string;
   date_payment?: string;
   creditor_id?: number | null;
   description: string;

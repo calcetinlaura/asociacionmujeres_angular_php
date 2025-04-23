@@ -51,10 +51,16 @@ export class ArticlesPageComponent implements OnInit {
   typeList = TypeList.Articles;
 
   headerListArticles: ColumnModel[] = [
-    { title: 'Portada', key: 'img', sortable: false },
+    { title: 'Portada', key: 'img', sortable: false, minWidth: true },
     { title: 'Título', key: 'title', sortable: true },
     { title: 'Fecha', key: 'date', sortable: true },
-    { title: 'Descripción', key: 'description', sortable: true },
+    {
+      title: 'Descripción',
+      key: 'description',
+      sortable: true,
+      booleanIndicator: true,
+      minWidth: true,
+    },
   ];
 
   ngOnInit(): void {

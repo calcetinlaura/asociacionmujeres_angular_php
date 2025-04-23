@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
+  FormArray,
   FormControl,
   FormGroup,
   ReactiveFormsModule,
@@ -20,12 +21,13 @@ import { EditorModule } from '@tinymce/tinymce-angular';
 import { filter, Observable, tap } from 'rxjs';
 import { ProjectsFacade } from 'src/app/application/projects.facade';
 import { ProjectModel } from 'src/app/core/interfaces/project.interface';
-import { SubsidyModel } from 'src/app/core/interfaces/subsidy.interface';
+import { SubsidyModelFullData } from 'src/app/core/interfaces/subsidy.interface';
 import { TypeList } from 'src/app/core/models/general.model';
 import { SubsidiesService } from 'src/app/core/services/subsidies.services';
 import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { dateRangeValidator } from 'src/app/shared/utils/validators.utils';
+import { AddButtonComponent } from '../../../../../../shared/components/buttons/button-add/button-add.component';
 
 @Component({
   selector: 'app-form-project',
@@ -36,6 +38,7 @@ import { dateRangeValidator } from 'src/app/shared/utils/validators.utils';
     EditorModule,
     MatCardModule,
     ImageControlComponent,
+    AddButtonComponent,
   ],
   templateUrl: './form-project.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],
@@ -65,6 +68,7 @@ export class FormProjectComponent implements OnInit {
         disabled: true,
       }),
       img: new FormControl(''),
+      activities: new FormArray([]),
     },
     { validators: dateRangeValidator }
   );
@@ -77,7 +81,7 @@ export class FormProjectComponent implements OnInit {
   buttonAction = 'Guardar';
   typeList = TypeList.Projects;
   years: number[] = [];
-  subsidies: SubsidyModel[] = [];
+  subsidies: SubsidyModelFullData[] = [];
   currentYear = this.generalService.currentYear;
 
   ngOnInit(): void {
@@ -115,6 +119,7 @@ export class FormProjectComponent implements OnInit {
               subsidy_id: project.subsidy_id,
               img: project.img,
             });
+            this.setActivities(project.activities || []);
             if (typeof project.year === 'number') {
               this.loadSubisidiesByYear(project.year).subscribe(() => {
                 this.formProject.controls.subsidy_id.enable();
@@ -132,8 +137,32 @@ export class FormProjectComponent implements OnInit {
         .subscribe();
     }
   }
+  setActivities(activities: any[]): void {
+    this.activities.clear();
+    activities.forEach((act) => this.addActivity(act));
+  }
 
-  loadSubisidiesByYear(year: number): Observable<SubsidyModel[]> {
+  get activities(): FormArray {
+    return this.formProject.get('activities') as FormArray;
+  }
+
+  addActivity(activityData: any = {}): void {
+    const activityGroup = new FormGroup({
+      activity_id: new FormControl(activityData.activity_id ?? null),
+      name: new FormControl(activityData.name || '', Validators.required),
+      budget: new FormControl(activityData.budget || 0),
+      attendant: new FormControl(activityData.attendant || ''),
+      observations: new FormControl(activityData.observations || ''),
+    });
+
+    this.activities.push(activityGroup);
+  }
+
+  removeActivity(index: number): void {
+    this.activities.removeAt(index);
+  }
+
+  loadSubisidiesByYear(year: number): Observable<SubsidyModelFullData[]> {
     return this.subsidiesService.getSubsidiesByYear(year).pipe(
       tap((subsidies) => {
         this.subsidies = subsidies;
@@ -156,6 +185,7 @@ export class FormProjectComponent implements OnInit {
 
     const formData = this.generalService.createFormData(
       this.formProject.value,
+
       this.selectedImageFile,
       this.itemId
     );

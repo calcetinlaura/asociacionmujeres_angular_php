@@ -10,69 +10,49 @@
     <div class="flex flex-col gap-y-4">
       <div class="flex justify-between gap-x-4">
         <div class="flex flex-col w-3/4 gap-y-4">
-          <div class="box-input gap-x-4">
-            <label for="email">Título</label>
-            <div class="flex flex-col flex-1">
-              <input
-                formControlName="title"
-                type="text"
-                [ngClass]="{
-                  'is-invalid': submitted && formEvent.get('title')?.invalid
-                }"
-              />
-              <div
-                *ngIf="submitted && formEvent.get('title')?.invalid"
-                class="is-invalid-text"
-              >
-                Campo requerido
+          <div class="bg-lilaMuyClaro p-4 flex flex-col gap-y-4">
+            <div class="box-input gap-x-4 flex flex-1">
+              <label for="province">Macroevento</label>
+              <div class="flex flex-col flex-1">
+                <select formControlName="macroevent_id">
+                  <option [ngValue]="null">Seleccione un macroevento</option>
+                  <option
+                    *ngFor="let macro of macroevents"
+                    [ngValue]="macro.id"
+                  >
+                    {{ macro.title }} - {{ macro.start | date : "yyyy" }}
+                  </option>
+                </select>
+                <div *ngIf="formEvent.controls.macroevent_id.disabled">
+                  <small class="text-gray-500 italic">
+                    Selecciona una fecha de inicio para habilitar los
+                    macroeventos de ese año
+                  </small>
+                </div>
+              </div>
+            </div>
+            <div class="box-input gap-x-4 flex flex-1">
+              <label for="province">Proyecto</label>
+              <div class="flex flex-col flex-1">
+                <select formControlName="project_id">
+                  <option [ngValue]="null">
+                    Seleccione una subvención si el proyecto pertenece a alguna
+                  </option>
+                  <option *ngFor="let project of projects" [value]="project.id">
+                    {{ project.title }} - {{ project.year }}
+                  </option>
+                </select>
+                <div *ngIf="formEvent.controls.project_id.disabled">
+                  <small class="text-gray-500 italic">
+                    Selecciona una fecha de inicio para habilitar los proyectos
+                    de ese año
+                  </small>
+                </div>
               </div>
             </div>
           </div>
+
           <!-- <div class="flex justify-between gap-x-4"> -->
-          <!-- Provincia -->
-          <div class="box-input gap-x-4 flex flex-1">
-            <label for="province">Provincia</label>
-            <select
-              formControlName="province"
-              (change)="onProvinceChange()"
-              [ngClass]="{
-                'is-invalid': submitted && formEvent.get('province')?.invalid
-              }"
-            >
-              <option value="">Seleccione una provincia</option>
-              <option *ngFor="let prov of provincias" [value]="prov.label">
-                {{ prov.label }}
-              </option>
-            </select>
-            <div
-              *ngIf="submitted && formEvent.get('town')?.invalid"
-              class="is-invalid-text"
-            >
-              Campo requerido
-            </div>
-          </div>
-          <!-- Municipio -->
-          <div class="box-input flex flex-1">
-            <label for="town">Municipio</label>
-            <select
-              formControlName="town"
-              [ngClass]="{
-                'is-invalid': submitted && formEvent.get('town')?.invalid
-              }"
-              (change)="onTownChange()"
-            >
-              <option value="">Seleccione un municipio</option>
-              <option *ngFor="let mun of municipios" [value]="mun.label">
-                {{ mun.label }}
-              </option>
-            </select>
-            <div
-              *ngIf="submitted && formEvent.get('town')?.invalid"
-              class="is-invalid-text"
-            >
-              Campo requerido
-            </div>
-          </div>
         </div>
 
         <!-- Select de Espacio -->
@@ -140,6 +120,69 @@
         </div>
       </div>
       <div class="box-input gap-x-4">
+        <label for="email">Título</label>
+        <div class="flex flex-col flex-1">
+          <input
+            formControlName="title"
+            type="text"
+            [ngClass]="{
+              'is-invalid': submitted && formEvent.get('title')?.invalid
+            }"
+          />
+          <div
+            *ngIf="submitted && formEvent.get('title')?.invalid"
+            class="is-invalid-text"
+          >
+            Campo requerido
+          </div>
+        </div>
+      </div>
+      <hr />
+      <!-- Provincia -->
+      <div class="box-input gap-x-4 flex flex-1">
+        <label for="province">Provincia</label>
+        <select
+          formControlName="province"
+          (change)="onProvinceChange()"
+          [ngClass]="{
+            'is-invalid': submitted && formEvent.get('province')?.invalid
+          }"
+        >
+          <option value="">Seleccione una provincia</option>
+          <option *ngFor="let prov of provincias" [value]="prov.label">
+            {{ prov.label }}
+          </option>
+        </select>
+        <div
+          *ngIf="submitted && formEvent.get('town')?.invalid"
+          class="is-invalid-text"
+        >
+          Campo requerido
+        </div>
+      </div>
+      <!-- Municipio -->
+      <div class="box-input flex flex-1">
+        <label for="town">Municipio</label>
+        <select
+          formControlName="town"
+          [ngClass]="{
+            'is-invalid': submitted && formEvent.get('town')?.invalid
+          }"
+          (change)="onTownChange()"
+        >
+          <option value="">Seleccione un municipio</option>
+          <option *ngFor="let mun of municipios" [value]="mun.label">
+            {{ mun.label }}
+          </option>
+        </select>
+        <div
+          *ngIf="submitted && formEvent.get('town')?.invalid"
+          class="is-invalid-text"
+        >
+          Campo requerido
+        </div>
+      </div>
+      <div class="box-input gap-x-4">
         <label for="place">Espacio</label>
         <select formControlName="place_id" (change)="onPlaceChange()">
           <option [ngValue]="null" disabled>Selecciona un espacio</option>
@@ -163,6 +206,7 @@
         <label for="status">Aforo</label>
         <input formControlName="capacity" type="number" />
       </div>
+      <hr />
       <div class="box-input gap-y-2 gap-x-4">
         <label for="price">Precio</label>
         <input formControlName="price" type="text" />
@@ -216,44 +260,7 @@
           ></app-image-control>
         </div>
       </div>
-      <div class="bg-lilaMuyClaro p-4 flex flex-col gap-y-4">
-        <div class="box-input gap-x-4 flex flex-1">
-          <label for="province">Macroevento</label>
-          <div class="flex flex-col flex-1">
-            <select formControlName="macroevent_id">
-              <option [ngValue]="null">Seleccione un macroevento</option>
-              <option *ngFor="let macro of macroevents" [ngValue]="macro.id">
-                {{ macro.title }} - {{ macro.start | date : "yyyy" }}
-              </option>
-            </select>
-            <div *ngIf="formEvent.controls.macroevent_id.disabled">
-              <small class="text-gray-500 italic">
-                Selecciona una fecha de inicio para habilitar los macroeventos
-                de ese año
-              </small>
-            </div>
-          </div>
-        </div>
-        <div class="box-input gap-x-4 flex flex-1">
-          <label for="province">Proyecto</label>
-          <div class="flex flex-col flex-1">
-            <select formControlName="project_id">
-              <option [ngValue]="null">
-                Seleccione una subvención si el proyecto pertenece a alguna
-              </option>
-              <option *ngFor="let project of projects" [value]="project.id">
-                {{ project.title }} - {{ project.year }}
-              </option>
-            </select>
-            <div *ngIf="formEvent.controls.project_id.disabled">
-              <small class="text-gray-500 italic">
-                Selecciona una fecha de inicio para habilitar los proyectos de
-                ese año
-              </small>
-            </div>
-          </div>
-        </div>
-      </div>
+
       <!-- ORGANIZADORES -->
       <div class="pt-6">
         <!-- BOTONES -->

@@ -138,6 +138,7 @@ export class BooksFacade {
       this.filteredBooksSubject.next(allBooks);
       return;
     }
+
     const search = keyword.trim().toLowerCase();
     const filteredBooks = allBooks.filter(
       (book) =>

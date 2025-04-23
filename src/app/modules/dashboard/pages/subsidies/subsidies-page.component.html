@@ -8,7 +8,7 @@
   <div class="flex flex-1 flex-col justify-start p-8 gap-y-8">
     <app-filters
       [filters]="filtersYears"
-      (filterClicked)="filterYearSelected($event)"
+      (filterClicked)="filterSelected($event)"
     ></app-filters>
     <ng-container *ngIf="showAllSubsidies">
       <div class="flex gap-x-4">
@@ -29,18 +29,17 @@
   <!-- Spinner Loading -->
   <app-spinner-loading *ngIf="isLoading" />
   <!-- Tabla -->
-  <ng-container *ngIf="!isLoading && showAllSubsidies">
+  <ng-container *ngIf="showAllSubsidies">
     <div class="pb-4 flex">
-      <app-table-subsidy
-        [data]="filteredAllSubsidies"
-        [type]="typeList.Subsidies"
+      <app-table
+        [data]="filteredSubsidies"
+        [headerColumns]="headerListSubsidies"
+        [type]="typeListModal"
         (openModal)="onOpenModal($event)"
-      />
+      ></app-table>
     </div>
   </ng-container>
-  <ng-container
-    *ngIf="!isLoadingFromFacade && !showAllSubsidies && hasTabsToShow()"
-  >
+  <ng-container *ngIf="!showAllSubsidies">
     <mat-tab-group
       (selectedTabChange)="tabActive($event)"
       [selectedIndex]="selectedIndex"

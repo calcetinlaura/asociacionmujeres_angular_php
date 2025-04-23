@@ -17,7 +17,6 @@ export interface CreditorModel {
   observations?: string;
 }
 export interface CreditorWithInvoices extends CreditorModel {
-  numInvoices: number;
   invoiceIds: number[]; // Lista de IDs de facturas
   invoices: InvoiceModelFullData[];
 }

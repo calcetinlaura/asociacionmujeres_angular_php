@@ -32,7 +32,9 @@ export class ProjectsFacade {
   setCurrentFilter(year: number | null): void {
     this.currentFilter = year;
   }
-
+  setCurrentYear(year: number): void {
+    this.currentYear = year;
+  }
   private reloadCurrentFilteredYear(): void {
     if (this.currentFilter !== null) {
       this.loadProjectsByYear(this.currentFilter);
@@ -52,10 +54,6 @@ export class ProjectsFacade {
         catchError((err) => this.generalService.handleHttpError(err))
       )
       .subscribe();
-  }
-
-  setCurrentYear(year: number): void {
-    this.currentYear = year;
   }
 
   loadProjectsByYear(year: number): void {

@@ -58,7 +58,7 @@ export class RecipesPageComponent implements OnInit {
   recipes: RecipeModel[] = [];
   filteredRecipes: RecipeModel[] = [];
   filters: Filter[] = [];
-  selectedFilter = 'TODOS';
+  selectedFilter = 'ALL';
 
   isLoading = true;
   isModalVisible = false;
@@ -72,11 +72,23 @@ export class RecipesPageComponent implements OnInit {
   headerListRecipes: ColumnModel[] = [
     { title: 'Portada', key: 'img', sortable: false },
     { title: 'Titulo', key: 'title', sortable: true },
-    { title: 'Categoria', key: 'category', sortable: true },
+    { title: 'Categoria', key: 'category', sortable: true, minWidth: true },
     { title: 'Autor/a', key: 'owner', sortable: true },
-    { title: 'Ingredientes', key: 'ingredients', sortable: true },
-    { title: 'Receta', key: 'recipe', sortable: true },
-    { title: 'Año', key: 'year', sortable: true },
+    {
+      title: 'Ingredientes',
+      key: 'ingredients',
+      sortable: true,
+      booleanIndicator: true,
+      minWidth: true,
+    },
+    {
+      title: 'Receta',
+      key: 'recipe',
+      sortable: true,
+      booleanIndicator: true,
+      minWidth: true,
+    },
+    { title: 'Año', key: 'year', sortable: true, minWidth: true },
   ];
 
   @ViewChild(InputSearchComponent)
@@ -85,7 +97,7 @@ export class RecipesPageComponent implements OnInit {
   ngOnInit(): void {
     this.filters = [
       { code: 'NOVEDADES', name: 'Novedades' },
-      { code: 'TODOS', name: 'Todos' },
+      { code: 'ALL', name: 'Histórico' },
       ...categoryFilterRecipes,
     ];
 

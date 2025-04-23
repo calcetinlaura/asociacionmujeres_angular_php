@@ -26,8 +26,10 @@
   <!-- Tabla -->
   <ng-template #results>
     <div class="pb-4 flex">
-      <app-table-partners
+      <app-table
         [data]="filteredPartners"
+        [type]="typeList"
+        [headerColumns]="headerListPartners"
         (openModal)="onOpenModal($event)"
       />
     </div>

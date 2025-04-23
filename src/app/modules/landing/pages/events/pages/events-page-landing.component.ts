@@ -80,6 +80,11 @@ export class EventsPageLandingComponent implements OnInit {
     if (!events) return;
 
     const now = new Date();
+    const truncateTime = (date: Date): Date => {
+      return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    };
+
+    const today = truncateTime(now);
     const currentYear = this.generalService.currentYear;
 
     const futureEvents: EventModel[] = [];
@@ -90,7 +95,7 @@ export class EventsPageLandingComponent implements OnInit {
 
       // Solo clasifica si es del año actual
       if (startDate.getFullYear() === currentYear) {
-        if (startDate >= now) {
+        if (truncateTime(startDate) >= today) {
           futureEvents.push({ ...event, isPast: false });
         } else {
           pastEvents.push({ ...event, isPast: true });

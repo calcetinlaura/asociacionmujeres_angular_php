@@ -19,21 +19,49 @@ $basePath = "../uploads/img/MACROEVENTS/";
 
 switch ($method) {
   case 'GET':
+
+    function enrichEventRow($row, $connection) {
+      $row['placeData'] = !empty($row['place_id']) ? [
+        'id' => $row['place_id'],
+        'name' => $row['place_name'] ?? '',
+        'address' => $row['place_address'] ?? '',
+        'lat' => $row['place_lat'] ?? '',
+        'lon' => $row['place_lon'] ?? ''
+      ] : null;
+
+      $row['salaData'] = !empty($row['sala_id']) ? [
+        'id' => $row['sala_id'],
+        'name' => $row['sala_name'] ?? '',
+        'location' => $row['sala_location'] ?? ''
+      ] : null;
+
+      return $row;
+    }
+
     if (is_numeric($resource)) {
-      // Primero obtenemos el macroevento
+      // Obtener macroevento específico
       $stmt = $connection->prepare("SELECT * FROM macroevents WHERE id = ?");
       $stmt->bind_param("i", $resource);
       $stmt->execute();
       $macroevent = $stmt->get_result()->fetch_assoc();
 
       if ($macroevent) {
-        // Luego obtenemos los eventos asociados
-        $stmt = $connection->prepare("SELECT * FROM events WHERE macroevent_id = ?");
+        $stmt = $connection->prepare("
+          SELECT e.*,
+                 p.name AS place_name, p.address AS place_address, p.lat AS place_lat, p.lon AS place_lon,
+                 s.name AS sala_name, s.location AS sala_location
+          FROM events e
+          LEFT JOIN places p ON e.place_id = p.id
+          LEFT JOIN salas s ON e.sala_id = s.sala_id
+          WHERE e.macroevent_id = ?
+          ORDER BY e.start ASC
+        ");
         $stmt->bind_param("i", $resource);
         $stmt->execute();
         $events = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
-        // Añadimos los eventos al macroevento
+        $events = array_map(fn($e) => enrichEventRow($e, $connection), $events);
+
         $macroevent['events'] = $events;
         echo json_encode($macroevent);
       } else {
@@ -42,24 +70,44 @@ switch ($method) {
 
     } elseif (isset($_GET['year']) && is_numeric($_GET['year'])) {
       $year = $_GET['year'];
-      $stmt = $connection->prepare("
-        SELECT * FROM macroevents
-        WHERE YEAR(start) = ?
-      ");
+
+      $stmt = $connection->prepare("SELECT * FROM macroevents WHERE YEAR(start) = ?");
       $stmt->bind_param("i", $year);
       $stmt->execute();
       $result = $stmt->get_result();
-      $macroevents = [];
+      $macroevents = $result->fetch_all(MYSQLI_ASSOC);
 
-      while ($row = $result->fetch_assoc()) {
-        // Para cada macroevento, buscamos sus eventos
-        $stmt2 = $connection->prepare("SELECT * FROM events WHERE macroevent_id = ?");
-        $stmt2->bind_param("i", $row['id']);
+      $macroeventIds = array_column($macroevents, 'id');
+
+      if (!empty($macroeventIds)) {
+        $placeholders = implode(',', array_fill(0, count($macroeventIds), '?'));
+        $types = str_repeat('i', count($macroeventIds));
+
+        $stmt2 = $connection->prepare("
+          SELECT e.*,
+                 p.name AS place_name, p.address AS place_address, p.lat AS place_lat, p.lon AS place_lon,
+                 s.name AS sala_name, s.location AS sala_location
+          FROM events e
+          LEFT JOIN places p ON e.place_id = p.id
+          LEFT JOIN salas s ON e.sala_id = s.sala_id
+          WHERE e.macroevent_id IN ($placeholders)
+          ORDER BY e.start ASC
+        ");
+        $stmt2->bind_param($types, ...$macroeventIds);
         $stmt2->execute();
-        $events = $stmt2->get_result()->fetch_all(MYSQLI_ASSOC);
+        $eventsResult = $stmt2->get_result();
+        $allEvents = $eventsResult->fetch_all(MYSQLI_ASSOC);
 
-        $row['events'] = $events;
-        $macroevents[] = $row;
+        $allEvents = array_map(fn($e) => enrichEventRow($e, $connection), $allEvents);
+
+        $groupedEvents = [];
+        foreach ($allEvents as $event) {
+          $groupedEvents[$event['macroevent_id']][] = $event;
+        }
+
+        foreach ($macroevents as &$macroevent) {
+          $macroevent['events'] = $groupedEvents[$macroevent['id']] ?? [];
+        }
       }
 
       echo json_encode($macroevents);
@@ -68,22 +116,46 @@ switch ($method) {
       $stmt = $connection->prepare("SELECT * FROM macroevents");
       $stmt->execute();
       $result = $stmt->get_result();
-      $macroevents = [];
+      $macroevents = $result->fetch_all(MYSQLI_ASSOC);
 
-      while ($row = $result->fetch_assoc()) {
-        // Buscamos eventos para cada macroevento
-        $stmt2 = $connection->prepare("SELECT * FROM events WHERE macroevent_id = ?");
-        $stmt2->bind_param("i", $row['id']);
+      $macroeventIds = array_column($macroevents, 'id');
+
+      if (!empty($macroeventIds)) {
+        $placeholders = implode(',', array_fill(0, count($macroeventIds), '?'));
+        $types = str_repeat('i', count($macroeventIds));
+
+        $stmt2 = $connection->prepare("
+          SELECT e.*,
+                 p.name AS place_name, p.address AS place_address, p.lat AS place_lat, p.lon AS place_lon,
+                 s.name AS sala_name, s.location AS sala_location
+          FROM events e
+          LEFT JOIN places p ON e.place_id = p.id
+          LEFT JOIN salas s ON e.sala_id = s.sala_id
+          WHERE e.macroevent_id IN ($placeholders)
+          ORDER BY e.start ASC
+        ");
+        $stmt2->bind_param($types, ...$macroeventIds);
         $stmt2->execute();
-        $events = $stmt2->get_result()->fetch_all(MYSQLI_ASSOC);
+        $eventsResult = $stmt2->get_result();
+        $allEvents = $eventsResult->fetch_all(MYSQLI_ASSOC);
 
-        $row['events'] = $events;
-        $macroevents[] = $row;
+        $allEvents = array_map(fn($e) => enrichEventRow($e, $connection), $allEvents);
+
+        $groupedEvents = [];
+        foreach ($allEvents as $event) {
+          $groupedEvents[$event['macroevent_id']][] = $event;
+        }
+
+        foreach ($macroevents as &$macroevent) {
+          $macroevent['events'] = $groupedEvents[$macroevent['id']] ?? [];
+        }
       }
 
       echo json_encode($macroevents);
     }
     break;
+
+
 
   case 'POST':
     error_reporting(E_ALL);

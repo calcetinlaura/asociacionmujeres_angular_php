@@ -1,10 +1,17 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  inject,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatTabChangeEvent, MatTabsModule } from '@angular/material/tabs';
 import { combineLatest, tap } from 'rxjs';
 import { InvoicesFacade } from 'src/app/application/invoices.facade';
+import { ColumnModel } from 'src/app/core/interfaces/column.interface';
 import { InvoiceModelFullData } from 'src/app/core/interfaces/invoice.interface';
 import {
   Filter,
@@ -20,7 +27,7 @@ import { ModalComponent } from 'src/app/shared/components/modal/modal.component'
 import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
-import { TableInvoicesComponent } from './components/table-invoices/table-invoices.component';
+import { TableComponent } from '../../components/table/table.component';
 
 @Component({
   selector: 'app-invoices-page',
@@ -32,39 +39,133 @@ import { TableInvoicesComponent } from './components/table-invoices/table-invoic
     AddButtonComponent,
     ReactiveFormsModule,
     InputSearchComponent,
-    TableInvoicesComponent,
+    SpinnerLoadingComponent,
+    TableComponent,
     FiltersComponent,
     MatTabsModule,
-    SpinnerLoadingComponent,
   ],
-  providers: [InvoicesService],
   templateUrl: './invoices-page.component.html',
   styleUrl: './invoices-page.component.css',
 })
 export class InvoicesPageComponent implements OnInit {
-  private invoicesFacade = inject(InvoicesFacade);
-  private modalService = inject(ModalService);
-  private destroyRef = inject(DestroyRef);
-  private generalService = inject(GeneralService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly modalService = inject(ModalService);
+  private readonly invoicesFacade = inject(InvoicesFacade);
+  private readonly invoicesService = inject(InvoicesService);
+  private readonly generalService = inject(GeneralService);
+
+  headerListInvoices: ColumnModel[] = [
+    { title: 'Tipo', key: 'type_invoice', sortable: true, minWidth: true },
+    {
+      title: 'Nº Factura',
+      key: 'number_invoice',
+      minWidth: true,
+      showIndicatorOnEmpty: true,
+    },
+    {
+      title: 'Fecha factura',
+      key: 'date_invoice',
+      sortable: true,
+      minWidth: true,
+      pipe: 'date : dd MMM yyyy',
+    },
+    {
+      title: 'Fecha cuentas',
+      key: 'date_accounting',
+      sortable: true,
+      minWidth: true,
+      pipe: 'date : dd MMM yyyy',
+      showIndicatorOnEmpty: true,
+    },
+    {
+      title: 'Fecha pago',
+      key: 'date_payment',
+      sortable: true,
+      minWidth: true,
+      pipe: 'date : dd MMM yyyy',
+      showIndicatorOnEmpty: true,
+    },
+    {
+      title: 'Acreedor',
+      key: 'creditor_company',
+      sortable: true,
+    },
+    {
+      title: 'Descripción',
+      key: ' description',
+      sortable: true,
+      booleanIndicator: true,
+      minWidth: true,
+    },
+    {
+      title: 'Cantidad',
+      key: 'amount',
+      sortable: true,
+      minWidth: true,
+      pipe: 'eurosFormat',
+      footerTotal: true,
+    },
+    {
+      title: 'IVA',
+      key: 'iva',
+      sortable: true,
+      minWidth: true,
+      pipe: 'eurosFormat',
+    },
+    {
+      title: 'IRPF',
+      key: 'irpf',
+      sortable: true,
+      minWidth: true,
+      pipe: 'eurosFormat',
+      footerTotal: true,
+    },
+    {
+      title: 'TOTAL',
+      key: 'total_amount',
+      sortable: true,
+      minWidth: true,
+      pipe: 'eurosFormat',
+      footerTotal: true,
+    },
+    {
+      title: 'Subvención',
+      key: 'subsidy_name',
+      sortable: true,
+      minWidth: true,
+      showIndicatorOnEmpty: true,
+    },
+    {
+      title: 'Proyecto',
+      key: 'project_title',
+      sortable: true,
+      minWidth: true,
+      showIndicatorOnEmpty: true,
+    },
+  ];
+  invoices: InvoiceModelFullData[] = [];
+  filteredInvoices: InvoiceModelFullData[] = [];
+  filtersYears: Filter[] = [];
+  selectedFilter: number | null = null;
+
+  isLoading = true;
+  isModalVisible = false;
+  number = 0;
+
+  item: InvoiceModelFullData | null = null;
+  currentModalAction: TypeActionModal = TypeActionModal.Create;
+  searchForm!: FormGroup;
+  typeList = TypeList.Invoices;
 
   selectedIndex: number = 0;
   selectedTypeFilter: string | null = null;
-  typeList = TypeList.Invoices;
-  invoices: InvoiceModelFullData[] = [];
-  filtersYears: Filter[] = [];
-  filteredInvoices: InvoiceModelFullData[] = [];
   currentFilterType: string | null = null;
   currentTab: string | null = null;
-  searchForm!: FormGroup;
-  dataLoaded: boolean = false;
-  number: number = 0;
-  isModalVisible: boolean = false;
-  currentModalAction: TypeActionModal = TypeActionModal.Create;
-  item: any;
-  searchKeywordFilter = new FormControl();
-  isStickyToolbar: boolean = false;
-  selectedFilter: number | null = null;
+  // searchKeywordFilter = new FormControl();
   currentYear = this.generalService.currentYear;
+
+  @ViewChild(InputSearchComponent)
+  private inputSearchComponent!: InputSearchComponent;
 
   ngOnInit(): void {
     (this.filtersYears = this.generalService.getYearFilters(
@@ -88,7 +189,7 @@ export class InvoicesPageComponent implements OnInit {
             this.filteredInvoices = all;
             this.number = all.length;
           }
-          this.dataLoaded = true;
+          this.isLoading = false;
         })
       )
       .subscribe();
@@ -133,7 +234,7 @@ export class InvoicesPageComponent implements OnInit {
             this.filteredInvoices = invoices;
             this.number = invoices.length;
           }
-          this.dataLoaded = true;
+          this.isLoading = false;
         })
       )
       .subscribe();
@@ -175,28 +276,36 @@ export class InvoicesPageComponent implements OnInit {
     this.currentFilterType = null;
     this.filteredInvoices = this.invoices;
   }
-
-  confirmDeleteInvoice(item: any): void {
-    this.invoicesFacade.deleteInvoice(item.id);
-    this.modalService.closeModal();
-  }
-
   addNewInvoiceModal(): void {
     this.currentModalAction = TypeActionModal.Create;
     this.item = null;
     this.modalService.openModal();
   }
 
-  onOpenModal(event: { action: TypeActionModal; item: any }): void {
-    this.currentModalAction = event.action;
-    this.item = event.item;
-    this.modalService.openModal();
+  onOpenModal(event: {
+    action: TypeActionModal;
+    item: InvoiceModelFullData;
+  }): void {
+    this.openModal(event.action, event.item ?? null);
   }
 
+  private openModal(
+    action: TypeActionModal,
+    invoice: InvoiceModelFullData | null
+  ): void {
+    this.currentModalAction = action;
+    this.item = invoice;
+    this.modalService.openModal();
+  }
   onCloseModal(): void {
     this.modalService.closeModal();
   }
 
+  confirmDeleteInvoice(invoice: InvoiceModelFullData | null): void {
+    if (!invoice) return;
+    this.invoicesFacade.deleteInvoice(invoice.id);
+    this.modalService.closeModal();
+  }
   sendFormInvoice(event: { itemId: number; formData: FormData }): void {
     if (event.itemId) {
       this.invoicesFacade
@@ -226,12 +335,10 @@ export class InvoicesPageComponent implements OnInit {
   }
 
   private update_invoiceState(invoices: InvoiceModelFullData[] | null): void {
-    if (invoices === null) {
-      return;
-    }
-    this.invoices = invoices.sort((a, b) => b.id - a.id);
+    if (!invoices) return;
+    this.invoices = this.invoicesService.sortInvoicesByDate(invoices);
     this.filteredInvoices = [...this.invoices];
-    this.number = this.invoices.length;
-    this.dataLoaded = true;
+    this.number = this.invoicesService.countInvoices(invoices);
+    this.isLoading = false;
   }
 }

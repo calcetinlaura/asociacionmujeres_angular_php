@@ -9,7 +9,7 @@
 
 th {
   text-transform: uppercase;
-  font-size: 12px;
+  font-size: 11px;
   padding: 5px 3px;
 }
 
@@ -19,6 +19,17 @@ td {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap; /* Evita que el contenido de las celdas se desborde */
+}
+th.mat-column-actions,
+td.mat-column-actions {
+  position: sticky;
+  right: 0;
+  z-index: 9;
+}
+/* Celdas con el ancho minimo acorde al titulo */
+.min-width {
+  width: 99px;
+  text-align: center;
 }
 .mat-mdc-row .mat-mdc-cell {
   border-bottom: 1px solid transparent;
@@ -75,39 +86,14 @@ th.mat-sort-header-sorted {
 .mat-mdc-row:hover .genderColumn > span {
   background-color: rgb(245, 205, 250);
 }
-/*
-.startColumn {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-}
-.startColumn > div {
-  display: flex;
-  align-items: center;
-}
-.startColumn > div > .calendar-icon {
-  color: gray;
-  font-size: 18px;
-}
 
-.startColumn > div > span {
-  text-transform: capitalize;
-  font-weight: 11px;
-  padding-bottom: 2px;
-  font-size: 11;
-} */
 .mat-column-start {
   text-align: left;
   word-wrap: break-word !important;
   white-space: unset !important;
   width: 130px;
 }
-.mat-column-description {
-  text-align: left;
-  word-wrap: break-word !important;
-  white-space: unset !important;
-  width: 110px;
-}
+
 .mat-column-author,
 .mat-column-director {
   text-align: left;
@@ -118,8 +104,6 @@ th.mat-sort-header-sorted {
 }
 .mat-column-gender,
 .mat-column-category,
-.mat-column-inscription,
-.mat-column-phone,
 .mat-column-status {
   /* text-align: center; */
   word-wrap: break-word !important;
@@ -128,9 +112,7 @@ th.mat-sort-header-sorted {
   width: 120px;
 }
 .mat-column-surname,
-.mat-column-place,
-.mat-column-birthday,
-.mat-column-email {
+.mat-column-place {
   text-align: left;
   word-wrap: break-word !important;
   white-space: unset !important;
@@ -142,8 +124,7 @@ th.mat-sort-header-sorted {
   flex: 0 0 100px !important;
   width: 100px;
 }
-.mat-column-name,
-.mat-column-town {
+.mat-column-name {
   text-align: left;
   word-wrap: break-word !important;
   white-space: unset !important;
@@ -155,68 +136,43 @@ th.mat-sort-header-sorted {
   flex: 0 0 130px !important;
   width: 130px;
 }
-.mat-column-year,
-.mat-column-price,
-.mat-column-img,
-.mat-column-cuotas,
-.mat-column-inscription,
-.mat-column-capacity {
+
+.mat-column-img {
   text-align: center;
   word-wrap: break-word !important;
   white-space: unset !important;
-  flex: 0 0 80px !important;
-  width: 85px !important;
-}
-.mat-column-post_code {
-  text-align: center;
-  word-wrap: break-word !important;
-  white-space: unset !important;
-  width: 100px !important;
+  width: 85px;
 }
 
 .mat-column-img > div,
 .mat-column-cuotas > div,
-.mat-column-inscription > div,
-.mat-column-salasCount > div {
+.mat-column-inscription > div {
   display: flex;
   justify-content: center;
 }
-.mat-column-numInvoices {
-  text-align: center;
+.mat-column-type_invoice > span {
+  border-radius: 5px;
+  padding: 4px;
+  font-size: 10px;
 }
-.mat-column-management {
-  text-align: center;
+.mat-column-type_invoice > .type-ticket {
+  background-color: rgba(245, 178, 178, 0.91);
 }
-.circle {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
+.mat-column-type_invoice > .type-ingreso {
+  background-color: rgba(149, 218, 202, 0.908);
 }
-
-.positive {
-  color: rgb(134, 168, 130);
+.mat-column-type_invoice > .type-factura {
+  background-color: rgba(210, 218, 149, 0.941);
 }
-.mat-mdc-row:hover .positive {
-  background-color: rgb(245, 205, 250);
-}
-
-/* .negative {
-  background-color: rgb(246, 71, 71);
-} */
-.positive {
-  color: rgb(134, 168, 130);
-}
-.negative {
-  color: rgb(233, 158, 158);
+.filterColumns {
+  position: sticky;
+  z-index: 999;
+  background-color: white;
 }
 .custom-header-row {
   position: sticky;
-  top: 270px;
   z-index: 999;
   background-color: #f2ebf2;
-}
-.custom-list-row {
-  top: 800px;
 }
 
 :host ::ng-deep .mat-sort-header-container {
@@ -226,58 +182,63 @@ th.mat-sort-header-sorted {
 .agent-list {
   font-size: 8px;
 }
-.box-events {
-  /* border-left: 3px solid #cb8dd952; */
-  /* background-color: #dbf5ed; */
-  border: 1px solid #cb8dd952;
-  border-radius: 4px;
-  padding: 2px 6px;
-  margin: 0;
+.mat-column-activities {
+  width: 320px;
 }
-.events-list {
-  list-style: none;
-  padding: 2px 2px;
-  margin: 0;
-}
-.events-list span {
-  font-size: 10px;
-  border-radius: 4px;
-  border: 1px solid #cb8dd952;
-  /* background-color: rgb(255, 232, 182); */
-  padding: 1px 4px;
-  text-transform: capitalize;
-}
+.box-activities,
+.box-events,
 .box-invoices {
-  /* border-left: 3px solid #cb8dd952; */
-  /* background-color: #dbf5ed; */
   border: 1px solid #cb8dd952;
   border-radius: 4px;
-  padding: 2px 6px;
+  padding: 4px 6px;
   margin: 0;
 }
-.invoices-list {
+.invoices-list,
+.activities-list,
+.events-list {
+  display: flex;
+  flex-direction: row;
+  font-size: 10px;
   list-style: none;
-  padding: 2px 2px;
-  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.invoices-list span {
+.invoices-list > p:first-child,
+.activities-list > p:first-child,
+.events-list > p:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.invoices-list > p:nth-child(2),
+.activities-list > p:nth-child(2),
+.events-list > p:nth-child(2) {
   font-size: 10px;
   border-radius: 4px;
   border: 1px solid #cb8dd952;
-  /* background-color: rgb(255, 232, 182); */
   padding: 1px 4px;
-  text-transform: capitalize;
-}
-.invoices-totalAmount {
   margin-left: 4px;
+  text-transform: capitalize;
+  display: inline-block;
+}
+.activities-totalAmount,
+.invoices-totalAmount {
+  text-align: center;
+}
+.activities-totalAmount p,
+.invoices-totalAmount p {
+  display: inline-block;
+  padding: 1px 4px;
+  font-size: 10px;
   background-color: rgb(245, 235, 246);
 }
 .dateColumn {
   font-size: 9px;
   border-radius: 4px;
   border: 1px solid #cb8dd952;
-  /* background-color: rgb(238, 210, 193); */
-  padding: 1px 4px;
+  padding: 4px 6px;
   text-transform: uppercase;
   display: inline;
   text-align: center;
@@ -311,4 +272,20 @@ th.mat-sort-header-sorted {
 }
 .type-factura {
   background-color: rgba(210, 218, 149, 0.941);
+}
+.footer {
+  border-top: 2px solid #ddd;
+  border-bottom: 1px solid #ddd;
+}
+.footer {
+  font-weight: 500;
+}
+.top-200 {
+  top: 200px;
+}
+.top-266 {
+  top: 266px;
+}
+.top-326 {
+  top: 326px;
 }

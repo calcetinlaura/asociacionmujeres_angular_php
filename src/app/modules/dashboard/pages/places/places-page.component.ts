@@ -53,11 +53,28 @@ export class PlacesPageComponent implements OnInit {
   headerListPlaces: ColumnModel[] = [
     { title: 'Imagen', key: 'img', sortable: false },
     { title: 'Nombre', key: 'name', sortable: true },
-    { title: 'Municipio', key: 'town', sortable: true },
-    { title: 'Dirección', key: 'address', sortable: true },
-    { title: 'Salas', key: 'salasCount', sortable: true },
-    { title: 'Latitud', key: 'lat', sortable: true },
-    { title: 'Longitud', key: 'lon', sortable: true },
+    { title: 'Dirección', key: 'town', sortable: true },
+    {
+      title: 'Salas',
+      key: 'salas',
+      sortable: true,
+      minWidth: true,
+      showLengthOnly: true,
+    },
+    {
+      title: 'Latitud',
+      key: 'lat',
+      sortable: true,
+      booleanIndicator: true,
+      minWidth: true,
+    },
+    {
+      title: 'Longitud',
+      key: 'lon',
+      sortable: true,
+      booleanIndicator: true,
+      minWidth: true,
+    },
     { title: 'Gestión', key: 'management', sortable: true },
   ];
 
@@ -145,7 +162,6 @@ export class PlacesPageComponent implements OnInit {
 
       return {
         ...place,
-        salasCount: salasArray.length, // ✅ Ahora cuenta correctamente
       };
     });
 

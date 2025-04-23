@@ -55,6 +55,25 @@ export class BooksPageComponent implements OnInit {
   private readonly booksService = inject(BooksService);
   private readonly generalService = inject(GeneralService);
 
+  headerListBooks: ColumnModel[] = [
+    { title: 'Portada', key: 'img', sortable: false },
+    { title: 'Título', key: 'title', sortable: true },
+    {
+      title: 'Autor/a',
+      key: 'author',
+      sortable: true,
+      showIndicatorOnEmpty: true,
+    },
+    {
+      title: 'Descripción',
+      key: 'description',
+      sortable: true,
+      booleanIndicator: true,
+      minWidth: true,
+    },
+    { title: 'Género', key: 'gender', sortable: true, minWidth: true },
+    { title: 'Año compra', key: 'year', sortable: true, minWidth: true },
+  ];
   books: BookModel[] = [];
   filteredBooks: BookModel[] = [];
   filters: Filter[] = [];
@@ -68,15 +87,6 @@ export class BooksPageComponent implements OnInit {
   currentModalAction: TypeActionModal = TypeActionModal.Create;
   searchForm!: FormGroup;
   typeList = TypeList.Books;
-
-  headerListBooks: ColumnModel[] = [
-    { title: 'Portada', key: 'img', sortable: false },
-    { title: 'Título', key: 'title', sortable: true },
-    { title: 'Autor/a', key: 'author', sortable: true },
-    { title: 'Descripción', key: 'description', sortable: true },
-    { title: 'Género', key: 'gender', sortable: true },
-    { title: 'Año compra', key: 'year', sortable: true },
-  ];
 
   @ViewChild(InputSearchComponent)
   private inputSearchComponent!: InputSearchComponent;

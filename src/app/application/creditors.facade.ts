@@ -7,7 +7,6 @@ import {
 } from 'src/app/core/interfaces/creditor.interface';
 import { CreditorsService } from 'src/app/core/services/creditors.services';
 import { InvoicesService } from 'src/app/core/services/invoices.services';
-import { InvoiceModelFullData } from '../core/interfaces/invoice.interface';
 import { GeneralService } from '../shared/services/generalService.service';
 
 @Injectable({
@@ -58,7 +57,7 @@ export class CreditorsFacade {
       .getCreditors()
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((creditors) => this.loadInvoicesAndEnrich(creditors)),
+        tap((creditors) => this.updateCreditorState(creditors)),
         catchError((err) => this.generalService.handleHttpError(err))
       )
       .subscribe();
@@ -69,7 +68,7 @@ export class CreditorsFacade {
       .getCreditorsByCategory(category)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((creditors) => this.loadInvoicesAndEnrich(creditors)),
+        tap((creditors) => this.updateCreditorState(creditors)),
         catchError((err) => this.generalService.handleHttpError(err))
       )
       .subscribe();
@@ -84,49 +83,6 @@ export class CreditorsFacade {
         catchError((err) => this.generalService.handleHttpError(err))
       )
       .subscribe();
-  }
-
-  private loadInvoicesAndEnrich(creditors: CreditorWithInvoices[]): void {
-    this.invoicesService
-      .getInvoices()
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((invoices) => {
-          const enriched = this.enrichCreditorsWithInvoices(
-            creditors,
-            invoices
-          );
-          this.updateCreditorState(enriched);
-        }),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-      .subscribe();
-  }
-
-  private enrichCreditorsWithInvoices(
-    creditors: CreditorWithInvoices[],
-    invoices: InvoiceModelFullData[]
-  ): CreditorWithInvoices[] {
-    const invoiceMap: Record<number, InvoiceModelFullData[]> = {};
-
-    invoices.forEach((invoice) => {
-      if (invoice.creditor_id) {
-        if (!invoiceMap[invoice.creditor_id]) {
-          invoiceMap[invoice.creditor_id] = [];
-        }
-        invoiceMap[invoice.creditor_id].push(invoice);
-      }
-    });
-
-    return creditors.map((creditor) => {
-      const creditorInvoices = invoiceMap[creditor.id] || [];
-      return {
-        ...creditor,
-        invoices: creditorInvoices,
-        numInvoices: creditorInvoices.length,
-        invoiceIds: creditorInvoices.map((inv) => inv.id),
-      };
-    });
   }
 
   addCreditor(creditor: CreditorModel): Observable<CreditorModel> {

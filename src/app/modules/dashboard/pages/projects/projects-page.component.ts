@@ -69,9 +69,26 @@ export class ProjectsPageComponent implements OnInit {
 
   headerListProjects: ColumnModel[] = [
     { title: 'Título', key: 'title', sortable: true },
-    { title: 'Año', key: 'year', sortable: true },
-    { title: 'Descripción', key: 'description', sortable: true },
-    { title: 'Subvención', key: 'subsidy_name', sortable: true },
+    { title: 'Año', key: 'year', sortable: true, minWidth: true },
+    {
+      title: 'Descripción',
+      key: 'description',
+      sortable: true,
+      booleanIndicator: true,
+      minWidth: true,
+    },
+
+    {
+      title: 'Subvención',
+      key: 'subsidy_name',
+      sortable: true,
+      minWidth: true,
+    },
+    {
+      title: 'Actividades',
+      key: 'activities',
+      sortable: true,
+    },
     { title: 'Eventos', key: 'events', sortable: true },
     { title: 'Facturas', key: 'invoices', sortable: true },
   ];
@@ -80,6 +97,12 @@ export class ProjectsPageComponent implements OnInit {
   private inputSearchComponent!: InputSearchComponent;
 
   ngOnInit(): void {
+    const prueba = new Intl.NumberFormat('es-ES', {
+      style: 'currency',
+      currency: 'EUR',
+    }).format(1234567.89);
+
+    console.log('Formato de prueba:', prueba);
     this.filters = [
       { code: 'ALL', name: 'Histórico' },
       ...this.generalService.getYearFilters(2018, this.currentYear),

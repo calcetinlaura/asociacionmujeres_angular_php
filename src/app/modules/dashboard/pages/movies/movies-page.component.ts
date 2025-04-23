@@ -72,10 +72,21 @@ export class MoviesPageComponent implements OnInit {
   headerListMovies: ColumnModel[] = [
     { title: 'Portada', key: 'img', sortable: false },
     { title: 'Título', key: 'title', sortable: true },
-    { title: 'Director/a', key: 'director', sortable: true },
-    { title: 'Descripción', key: 'description', sortable: true },
-    { title: 'Género', key: 'gender', sortable: true },
-    { title: 'Año compra', key: 'year', sortable: true },
+    {
+      title: 'Director/a',
+      key: 'director',
+      sortable: true,
+      showIndicatorOnEmpty: true,
+    },
+    {
+      title: 'Descripción',
+      key: 'description',
+      sortable: true,
+      booleanIndicator: true,
+      minWidth: true,
+    },
+    { title: 'Género', key: 'gender', sortable: true, minWidth: true },
+    { title: 'Año compra', key: 'year', sortable: true, minWidth: true },
   ];
 
   @ViewChild(InputSearchComponent)

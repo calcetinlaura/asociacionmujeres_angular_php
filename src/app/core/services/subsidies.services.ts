@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { environments } from 'src/environments/environments';
+import { SubsidyModelFullData } from '../interfaces/subsidy.interface';
 
 @Injectable({
   providedIn: 'root',
@@ -21,7 +22,7 @@ export class SubsidiesService {
     MINISTERIO: 'Ministerio',
   };
 
-  getSubisidies(): Observable<any> {
+  getSubsidies(): Observable<any> {
     return this.http
       .get(this.apiUrl)
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
@@ -71,5 +72,22 @@ export class SubsidiesService {
     return this.http
       .delete(this.apiUrl, { params: { id: id } })
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
+  }
+
+  sortSubsidiesById(subsidies: SubsidyModelFullData[]): SubsidyModelFullData[] {
+    return subsidies.sort((a, b) => (b.id ?? 0) - (a.id ?? 0));
+  }
+  sortSubsidiesByYear(
+    subsidies: SubsidyModelFullData[]
+  ): SubsidyModelFullData[] {
+    return subsidies.sort((a, b) => (b.year ?? 0) - (a.year ?? 0));
+  }
+
+  hasResults(recipes: SubsidyModelFullData[] | null): boolean {
+    return !!recipes && recipes.length > 0;
+  }
+
+  countSubsidies(recipes: SubsidyModelFullData[] | null): number {
+    return recipes?.length ?? 0;
   }
 }

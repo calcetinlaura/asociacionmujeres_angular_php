@@ -12,9 +12,12 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { MatTabChangeEvent, MatTabsModule } from '@angular/material/tabs';
 import { tap } from 'rxjs';
 import { SubsidiesFacade } from 'src/app/application/subsidies.facade';
+import { ColumnModel } from 'src/app/core/interfaces/column.interface';
+import { ProjectModelFullData } from 'src/app/core/interfaces/project.interface';
 import {
   categoryFilterSubsidies,
   SubsidyModel,
+  SubsidyModelFullData,
 } from 'src/app/core/interfaces/subsidy.interface';
 import {
   Filter,
@@ -30,8 +33,8 @@ import { ModalComponent } from 'src/app/shared/components/modal/modal.component'
 import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
+import { TableComponent } from '../../components/table/table.component';
 import { ModalShowSubsidyComponent } from './components/tab-subsidy/tab-subsidies.component';
-import { TableSubsidyComponent } from './components/table-subsidies/table-subsidy.component';
 @Component({
   selector: 'app-subsidies-page',
   standalone: true,
@@ -42,52 +45,146 @@ import { TableSubsidyComponent } from './components/table-subsidies/table-subsid
     AddButtonComponent,
     ReactiveFormsModule,
     InputSearchComponent,
-    TableSubsidyComponent,
     FiltersComponent,
     MatTabsModule,
-    ModalShowSubsidyComponent,
     SpinnerLoadingComponent,
+    TableComponent,
+    ModalShowSubsidyComponent,
   ],
   providers: [SubsidiesService],
   templateUrl: './subsidies-page.component.html',
   styleUrl: './subsidies-page.component.css',
 })
 export class SubsidiesPageComponent implements OnInit {
-  // Injections
-  private subsidiesFacade = inject(SubsidiesFacade);
-  private modalService = inject(ModalService);
-  private destroyRef = inject(DestroyRef);
-  private generalService = inject(GeneralService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly modalService = inject(ModalService);
+  private readonly subsidiesFacade = inject(SubsidiesFacade);
+  private readonly subsidiesService = inject(SubsidiesService);
+  private readonly generalService = inject(GeneralService);
   // ViewChildren
   @ViewChildren(ModalShowSubsidyComponent)
   tabSubsidies!: QueryList<ModalShowSubsidyComponent>;
   // UI & State
   typeList = TypeList;
   typeListModal: TypeList = TypeList.Subsidies;
+  selectedFilter: number | null = null;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
-  subsidies: SubsidyModel[] = [];
+  subsidies: SubsidyModelFullData[] = [];
   filtersYears: Filter[] = [];
-  filteredAllSubsidies: SubsidyModel[] = [];
-  filteredSubsidies: SubsidyModel[] = [];
-  showAllSubsidies: boolean = false;
-  isActiveButtonList: boolean = false;
+  filteredAllSubsidies: SubsidyModelFullData[] = [];
+  filteredSubsidies: SubsidyModelFullData[] = [];
+  showAllSubsidies = false;
+  isActiveButtonList = false;
   selectedIndex: number = 0;
   selectedTypeFilter: string | null = null;
   currentFilterSubsidyType: string | null = null;
   currentTab: string | null = null;
-  isLoading: boolean = false;
-  isLoadingFromFacade = false;
+  isLoading = false;
+  // isLoadingFromFacade = false;
   number: number = 0;
-  isModalVisible: boolean = false;
+  isModalVisible = false;
   item: any;
-  selectedFilter: number | null = null;
   currentYear = this.generalService.currentYear;
+  headerListSubsidies: ColumnModel[] = [
+    {
+      title: 'Nombre',
+      key: 'nameSubsidy',
+      sortable: true,
+      pipe: 'i18nSelect : nameSubsidy',
+    },
+    { title: 'Año', key: 'year', sortable: true, minWidth: true },
+    {
+      title: 'Fecha Max. Presentación',
+      key: 'date_presentation',
+      sortable: true,
+      pipe: 'date : dd MMM yyyy',
+      showIndicatorOnEmpty: true,
+      minWidth: true,
+    },
+    {
+      title: 'Fecha Max. Justificación',
+      key: 'date_justification',
+      sortable: true,
+      pipe: 'date : dd MMM yyyy',
+      minWidth: true,
+      showIndicatorOnEmpty: true,
+    },
+    {
+      title: 'Periodo',
+      key: 'start',
+      sortable: true,
+      showIndicatorOnEmpty: true,
+      minWidth: true,
+    },
+    {
+      title: 'Proyectos',
+      key: 'projects',
+      sortable: true,
+      minWidth: true,
+      showLengthOnly: true,
+    },
+    {
+      title: 'Facturas',
+      key: 'invoices',
+      sortable: true,
+      minWidth: true,
+      showLengthOnly: true,
+    },
+    {
+      title: 'Link Bases',
+      key: 'url_presentation',
+      sortable: true,
+      booleanIndicator: true,
+      minWidth: true,
+    },
+    {
+      title: 'Link Resolución',
+      key: 'url_justification',
+      sortable: true,
+      booleanIndicator: true,
+      minWidth: true,
+    },
+    {
+      title: 'Cant. Solicitada',
+      key: 'amount_requested',
+      sortable: true,
+      minWidth: true,
+      pipe: 'eurosFormat',
+      showIndicatorOnEmpty: true,
+    },
+    {
+      title: 'Cant. Adjudicada',
+      key: 'amount_granted',
+      sortable: true,
+      minWidth: true,
+      pipe: 'eurosFormat',
+      footerTotal: true,
+      showIndicatorOnEmpty: true,
+    },
+    {
+      title: 'Cant. Justificada',
+      key: 'amount_justified',
+      sortable: true,
+      minWidth: true,
+      pipe: 'eurosFormat',
+      showIndicatorOnEmpty: true,
+    },
+    {
+      title: 'Cant. Asociación',
+      key: 'amount_association',
+      sortable: true,
+      minWidth: true,
+      pipe: 'eurosFormat',
+      footerTotal: true,
+      showIndicatorOnEmpty: true,
+    },
+  ];
 
-  filteredSubsidiesByType: { [key: string]: SubsidyModel[] } =
+  filteredSubsidiesByType: { [key: string]: SubsidyModelFullData[] } =
     categoryFilterSubsidies.reduce((acc, filter) => {
       acc[filter.code] = [];
       return acc;
-    }, {} as { [key: string]: SubsidyModel[] });
+    }, {} as { [key: string]: SubsidyModelFullData[] });
 
   ngOnInit(): void {
     this.filtersYears = [
@@ -101,26 +198,14 @@ export class SubsidiesPageComponent implements OnInit {
         tap((isVisible) => (this.isModalVisible = isVisible))
       )
       .subscribe();
-
-    this.subsidiesFacade.isLoadingSubsidies$
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((loading) => (this.isLoadingFromFacade = loading));
+    this.filterSelected('ALL');
 
     this.subsidiesFacade.filteredSubsidies$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((subsidies) => {
-          this.subsidies = subsidies;
-          this.filteredAllSubsidies = subsidies;
-          this.number = subsidies.length;
-          this.classifySubsidies(subsidies);
-          this.isLoading = false;
-        })
+        tap((subsidies) => this.updateSubsidyState(subsidies))
       )
       .subscribe();
-
-    this.showAllSubsidies = true;
-    this.subsidiesFacade.setCurrentFilter('TODOS');
   }
 
   ngAfterViewInit(): void {
@@ -140,57 +225,31 @@ export class SubsidiesPageComponent implements OnInit {
     );
   }
 
-  filterYearSelected(filter: string): void {
-    if (filter === 'all') {
-      this.selectedFilter = null;
+  filterSelected(filter: string): void {
+    this.selectedFilter = filter === 'ALL' ? null : Number(filter);
+
+    if (filter === 'ALL') {
       this.showAllSubsidies = true;
-
-      // Si quieres guardar el texto del filtro activo:
-      this.subsidiesFacade.setCurrentFilter('TODOS');
-
-      this.subsidiesFacade.loadAllSubsidies(); // 👈 carga todos los datos
-
-      this.subsidiesFacade.subsidies$
-        .pipe(
-          takeUntilDestroyed(this.destroyRef),
-          tap((subs) => {
-            this.filteredAllSubsidies = subs;
-            this.classifySubsidies(subs);
-            setTimeout(() => this.tabSubsidies.first?.load());
-          })
-        )
-        .subscribe();
+      this.subsidiesFacade.setCurrentFilter(null);
+      this.subsidiesFacade.loadAllSubsidies();
     } else {
-      const year = Number(filter);
-      if (!isNaN(year) && year > 0) {
-        this.selectedFilter = year;
-        this.showAllSubsidies = false;
-
-        this.subsidiesFacade.setCurrentFilter(year.toString());
-
-        this.subsidiesFacade.loadSubsidiesByYear(year);
-
-        this.subsidiesFacade.subsidies$
-          .pipe(
-            takeUntilDestroyed(this.destroyRef),
-            tap((subs) => {
-              this.filteredAllSubsidies = subs;
-              this.classifySubsidies(subs);
-              setTimeout(() => this.tabSubsidies.first?.load());
-            })
-          )
-          .subscribe();
-      }
+      this.showAllSubsidies = false;
+      this.subsidiesFacade.setCurrentFilter(Number(filter));
+      this.subsidiesFacade.loadSubsidiesByYear(Number(filter));
     }
   }
 
-  classifySubsidies(subsidies: SubsidyModel[]): void {
+  applyFilterWord(keyword: string): void {
+    this.subsidiesFacade.applyFilterWord(keyword);
+  }
+
+  classifySubsidies(subsidies: SubsidyModelFullData[]): void {
     this.filteredSubsidiesByType = categoryFilterSubsidies.reduce(
       (acc, filter) => {
         acc[filter.code] = [];
         return acc;
       },
-      {} as { [key: string]: SubsidyModel[] }
+      {} as { [key: string]: SubsidyModelFullData[] }
     );
 
     subsidies.forEach((subsidy) => {
@@ -206,7 +265,7 @@ export class SubsidiesPageComponent implements OnInit {
     this.currentTab = event.tab?.textLabel || null;
 
     const selectedTab = this.tabSubsidies.toArray()[event.index];
-    selectedTab?.load(); // ⬅️ llama al método `load()` del tab activo
+    selectedTab?.load();
   }
 
   clearFilter(): void {
@@ -214,25 +273,29 @@ export class SubsidiesPageComponent implements OnInit {
     this.filteredSubsidies = this.subsidies;
   }
 
-  confirmDeleteSubsidy(item: any): void {
-    this.subsidiesFacade.deleteSubsidy(item.id);
-    this.modalService.closeModal();
-  }
-
   addNewSubsidyModal(): void {
-    this.currentModalAction = TypeActionModal.Create;
-    this.item = null;
-    this.modalService.openModal();
+    this.openModal(this.typeListModal, TypeActionModal.Create, null);
+    // this.currentModalAction = TypeActionModal.Create;
+    // this.item = null;
+    // this.modalService.openModal();
   }
 
   onOpenModal(event: {
     type: TypeList;
     action: TypeActionModal;
-    item: any;
+    item: SubsidyModel | ProjectModelFullData;
   }): void {
-    this.typeListModal = event.type;
-    this.currentModalAction = event.action;
-    this.item = event.item;
+    this.openModal(event.type, event.action, event.item ?? null);
+  }
+
+  private openModal(
+    type: TypeList,
+    action: TypeActionModal,
+    item: SubsidyModel | ProjectModelFullData | null
+  ): void {
+    this.currentModalAction = action;
+    this.typeListModal = type;
+    this.item = item;
     this.modalService.openModal();
   }
 
@@ -240,15 +303,21 @@ export class SubsidiesPageComponent implements OnInit {
     this.modalService.closeModal();
   }
 
+  confirmDeleteSubsidy(subsidy: SubsidyModel | null): void {
+    if (!subsidy || subsidy.id == null) return;
+    this.subsidiesFacade.deleteSubsidy(subsidy.id);
+    this.modalService.closeModal();
+  }
+
   sendFormSubsidy(event: {
     itemId: number;
     newSubsidyData: SubsidyModel;
   }): void {
-    const request$ = event.itemId
+    const save$ = event.itemId
       ? this.subsidiesFacade.editSubsidy(event.itemId, event.newSubsidyData)
       : this.subsidiesFacade.addSubsidy(event.newSubsidyData);
 
-    request$
+    save$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap(() => this.onCloseModal())
@@ -256,7 +325,22 @@ export class SubsidiesPageComponent implements OnInit {
       .subscribe();
   }
 
-  applyFilterWord(keyword: string): void {
-    this.subsidiesFacade.applyFilterWord(keyword);
+  private updateSubsidyState(subsidies: SubsidyModelFullData[] | null): void {
+    if (!subsidies) return;
+
+    const enrichedSubsidies = subsidies.map((sub) => ({
+      ...sub,
+      nameSubsidy: sub.name,
+    }));
+
+    this.subsidies =
+      this.subsidiesService.sortSubsidiesByYear(enrichedSubsidies);
+    this.filteredSubsidies = [...this.subsidies];
+    this.number = this.subsidiesService.countSubsidies(enrichedSubsidies);
+
+    // ✅ Clasifica por tipo para las pestañas
+    this.classifySubsidies(this.subsidies);
+
+    this.isLoading = false;
   }
 }

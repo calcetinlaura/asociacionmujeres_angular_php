@@ -74,11 +74,23 @@ export class CreditorsPageComponent implements OnInit {
     { title: 'Compañía', key: 'company', sortable: true },
     { title: 'Cif', key: 'cif', sortable: true },
     { title: 'Contacto', key: 'contact', sortable: true },
-    { title: 'Teléfono', key: 'phone', sortable: true },
+    {
+      title: 'Teléfono',
+      key: 'phone',
+      sortable: true,
+      minWidth: true,
+      pipe: 'phoneFormat',
+    },
     { title: 'Email', key: 'email', sortable: true },
     { title: 'Municipio', key: 'town', sortable: true },
-    { title: 'Nº Facturas', key: 'numInvoices', sortable: true },
-    { title: 'Categoría', key: 'category', sortable: true },
+    {
+      title: 'Nº Facturas',
+      key: 'invoices',
+      sortable: true,
+      minWidth: true,
+      showLengthOnly: true,
+    },
+    { title: 'Categoría', key: 'category', sortable: true, minWidth: true },
     { title: 'Palabras clave', key: 'key_words', sortable: true },
   ];
 

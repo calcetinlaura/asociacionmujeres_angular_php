@@ -2,7 +2,7 @@ import { DestroyRef, inject, Injectable } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, catchError, Observable, tap } from 'rxjs';
 import { MacroeventsService } from 'src/app/core/services/macroevents.services';
-import { MacroeventModel } from '../core/interfaces/macroevent.interface';
+import { MacroeventModelFullData } from '../core/interfaces/macroevent.interface';
 import { GeneralService } from '../shared/services/generalService.service';
 
 @Injectable({
@@ -13,13 +13,13 @@ export class MacroeventsFacade {
   private readonly macroeventsService = inject(MacroeventsService);
   private readonly generalService = inject(GeneralService);
   private readonly macroeventsSubject = new BehaviorSubject<
-    MacroeventModel[] | null
+    MacroeventModelFullData[] | null
   >(null);
   private readonly filteredMacroeventsSubject = new BehaviorSubject<
-    MacroeventModel[] | null
+    MacroeventModelFullData[] | null
   >(null);
   private readonly selectedMacroeventSubject =
-    new BehaviorSubject<MacroeventModel | null>(null);
+    new BehaviorSubject<MacroeventModelFullData | null>(null);
 
   macroevents$ = this.macroeventsSubject.asObservable();
   filteredMacroevents$ = this.filteredMacroeventsSubject.asObservable();
@@ -65,7 +65,7 @@ export class MacroeventsFacade {
       .getMacroeventsByYear(year)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((macroevents: MacroeventModel[]) =>
+        tap((macroevents: MacroeventModelFullData[]) =>
           this.updateMacroeventState(macroevents)
         ),
         catchError((err) => this.generalService.handleHttpError(err))
@@ -131,7 +131,7 @@ export class MacroeventsFacade {
     this.filteredMacroeventsSubject.next(filteredMacroevents);
   }
 
-  private updateMacroeventState(macroevents: MacroeventModel[]): void {
+  private updateMacroeventState(macroevents: MacroeventModelFullData[]): void {
     this.macroeventsSubject.next(macroevents);
     this.filteredMacroeventsSubject.next(macroevents);
   }

@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { environments } from 'src/environments/environments';
-import { MacroeventModel } from '../interfaces/macroevent.interface';
+import { MacroeventModelFullData } from '../interfaces/macroevent.interface';
 
 @Injectable({
   providedIn: 'root',
@@ -49,27 +49,33 @@ export class MacroeventsService {
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
-  sortMacroeventsByTitle(macroevents: MacroeventModel[]): MacroeventModel[] {
+  sortMacroeventsByTitle(
+    macroevents: MacroeventModelFullData[]
+  ): MacroeventModelFullData[] {
     return macroevents.sort((a, b) =>
       a.title.toLowerCase().localeCompare(b.title.toLowerCase())
     );
   }
 
-  sortMacroeventsByDate(macroevents: MacroeventModel[]): MacroeventModel[] {
+  sortMacroeventsByDate(
+    macroevents: MacroeventModelFullData[]
+  ): MacroeventModelFullData[] {
     return macroevents.sort(
       (a, b) => new Date(b.start).getTime() - new Date(a.start).getTime()
     );
   }
 
-  sortMacroeventsById(macroevents: MacroeventModel[]): MacroeventModel[] {
+  sortMacroeventsById(
+    macroevents: MacroeventModelFullData[]
+  ): MacroeventModelFullData[] {
     return macroevents.sort((a, b) => b.id - a.id);
   }
 
-  hasResults(macroevents: MacroeventModel[] | null): boolean {
+  hasResults(macroevents: MacroeventModelFullData[] | null): boolean {
     return !!macroevents && macroevents.length > 0;
   }
 
-  countMacroevents(macroevents: MacroeventModel[] | null): number {
+  countMacroevents(macroevents: MacroeventModelFullData[] | null): number {
     return macroevents?.length ?? 0;
   }
 }

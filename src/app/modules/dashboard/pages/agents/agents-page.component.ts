@@ -73,10 +73,16 @@ export class AgentsPageComponent implements OnInit {
     { title: 'Imagen', key: 'img', sortable: false },
     { title: 'Nombre', key: 'name', sortable: true },
     { title: 'Contacto', key: 'contact', sortable: true },
-    { title: 'Teléfono', key: 'phone', sortable: true },
+    {
+      title: 'Teléfono',
+      key: 'phone',
+      sortable: true,
+      minWidth: true,
+      pipe: 'phoneFormat',
+    },
     { title: 'Email', key: 'email', sortable: true },
     { title: 'Municipio', key: 'town', sortable: true },
-    { title: 'Categoría', key: 'category', sortable: true },
+    { title: 'Categoría', key: 'category', sortable: true, minWidth: true },
   ];
 
   @ViewChild(InputSearchComponent)

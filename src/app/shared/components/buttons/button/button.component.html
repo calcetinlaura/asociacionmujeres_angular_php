@@ -1,1 +1,9 @@
-<button (click)="onAddClick()" class="button">{{ buttonText }}</button>
+<button
+  class="custom-button"
+  [attr.aria-haspopup]="true"
+  [attr.aria-controls]="'columnsMenu'"
+  [matMenuTriggerFor]="menu"
+  (click)="onAddClick()"
+>
+  {{ buttonText }}
+</button>

@@ -13,55 +13,83 @@ if ($method === 'OPTIONS') {
 }
 
 switch ($method) {
-    case 'GET':
-        if (isset($_GET['id']) && is_numeric($_GET['id'])) {
-            // Obtener un acreedor por ID
-            $stmt = $connection->prepare("SELECT * FROM creditors WHERE id = ?");
-            $stmt->bind_param("i", $_GET['id']);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            $creditor = $result->fetch_assoc();
+  case 'GET':
+    function attachInvoicesToCreditor($connection, &$creditor) {
+        $invoiceStmt = $connection->prepare("SELECT * FROM invoices WHERE creditor_id = ? ORDER BY date_invoice ASC");
+        $invoiceStmt->bind_param("i", $creditor['id']);
+        $invoiceStmt->execute();
+        $invoiceResult = $invoiceStmt->get_result();
 
-            echo json_encode($creditor ? $creditor : []);
-        } elseif (isset($_GET['category'])) {
-          $category = $_GET['category'];
-          $stmt = $connection->prepare("SELECT * FROM creditors WHERE category = ?");
-          $stmt->bind_param("s", $category);
-          $stmt->execute();
-          $result = $stmt->get_result();
-          $creditors = [];
-          while ($row = $result->fetch_assoc()) {
-              $creditors[] = $row;
-          }
-          echo json_encode($creditors);
-      } elseif  (isset($_GET['q'])) {
-          $query = '%' . $connection->real_escape_string($_GET['q']) . '%';
-
-          $stmt = $connection->prepare("SELECT * FROM creditors WHERE company LIKE ? OR contact LIKE ? LIMIT 10");
-          $stmt->bind_param("ss", $query, $query);
-          $stmt->execute();
-          $result = $stmt->get_result();
-          $creditors = [];
-
-          while ($row = $result->fetch_assoc()) {
-              $creditors[] = $row;
-          }
-
-          echo json_encode($creditors);
-      }
-        else {
-            // Obtener todos los acreedores
-            $stmt = $connection->prepare("SELECT * FROM creditors");
-            $stmt->execute();
-            $result = $stmt->get_result();
-            $creditors = [];
-
-            while ($row = $result->fetch_assoc()) {
-                $creditors[] = $row;
-            }
-            echo json_encode($creditors);
+        $invoices = [];
+        while ($inv = $invoiceResult->fetch_assoc()) {
+            $invoices[] = $inv;
         }
-        break;
+
+        $creditor['invoices'] = $invoices;
+    }
+
+    if (isset($_GET['id']) && is_numeric($_GET['id'])) {
+        $stmt = $connection->prepare("SELECT * FROM creditors WHERE id = ?");
+        $stmt->bind_param("i", $_GET['id']);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $creditor = $result->fetch_assoc();
+
+        if ($creditor) {
+            attachInvoicesToCreditor($connection, $creditor);
+        }
+
+        echo json_encode($creditor ? $creditor : []);
+    }
+
+    elseif (isset($_GET['category'])) {
+        $category = $_GET['category'];
+        $stmt = $connection->prepare("SELECT * FROM creditors WHERE category = ?");
+        $stmt->bind_param("s", $category);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $creditors = [];
+
+        while ($row = $result->fetch_assoc()) {
+            attachInvoicesToCreditor($connection, $row);
+            $creditors[] = $row;
+        }
+
+        echo json_encode($creditors);
+    }
+
+    elseif (isset($_GET['q'])) {
+        // NO incluye invoices
+        $query = '%' . $connection->real_escape_string($_GET['q']) . '%';
+        $stmt = $connection->prepare("SELECT * FROM creditors WHERE company LIKE ? OR contact LIKE ? LIMIT 10");
+        $stmt->bind_param("ss", $query, $query);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $creditors = [];
+
+        while ($row = $result->fetch_assoc()) {
+            $creditors[] = $row;
+        }
+
+        echo json_encode($creditors);
+    }
+
+    else {
+        $stmt = $connection->prepare("SELECT * FROM creditors");
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $creditors = [];
+
+        while ($row = $result->fetch_assoc()) {
+            attachInvoicesToCreditor($connection, $row);
+            $creditors[] = $row;
+        }
+
+        echo json_encode($creditors);
+    }
+
+    break;
+
 
     case 'POST':
         error_reporting(E_ALL);

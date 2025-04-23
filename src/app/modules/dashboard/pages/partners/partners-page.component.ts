@@ -10,6 +10,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { tap } from 'rxjs';
 import { PartnersFacade } from 'src/app/application/partners.facade';
+import { ColumnModel } from 'src/app/core/interfaces/column.interface';
 import { PartnerModel } from 'src/app/core/interfaces/partner.interface';
 import {
   Filter,
@@ -25,7 +26,7 @@ import { ModalComponent } from 'src/app/shared/components/modal/modal.component'
 import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
-import { TablePartnersComponent } from './components/table-partners/table-partners.component';
+import { TableComponent } from '../../components/table/table.component';
 
 @Component({
   selector: 'app-partners-page',
@@ -38,8 +39,8 @@ import { TablePartnersComponent } from './components/table-partners/table-partne
     ReactiveFormsModule,
     InputSearchComponent,
     SpinnerLoadingComponent,
-    TablePartnersComponent,
     FiltersComponent,
+    TableComponent,
   ],
   templateUrl: './partners-page.component.html',
   styleUrl: './partners-page.component.css',
@@ -65,6 +66,33 @@ export class PartnersPageComponent implements OnInit {
   item: PartnerModel | null = null;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
   searchForm!: FormGroup;
+  headerListPartners: ColumnModel[] = [
+    { title: 'Imagen', key: 'img', sortable: false },
+    { title: 'Nombre', key: 'name', sortable: true },
+    { title: 'Apellidos', key: 'surname', sortable: true },
+    {
+      title: 'Fecha nacimiento',
+      key: 'birthday',
+      sortable: true,
+    },
+    { title: 'Dirección', key: 'town', sortable: true },
+    {
+      title: 'Teléfono',
+      key: 'phone',
+      sortable: true,
+      minWidth: true,
+      pipe: 'phoneFormat',
+    },
+    { title: 'Email', key: 'email', sortable: true },
+    {
+      title: 'Última cuota',
+      key: 'lastCuotaPaid',
+      sortable: true,
+      booleanIndicator: true,
+      minWidth: true,
+    },
+    { title: 'Tiempo socia', key: 'years', sortable: true, minWidth: true },
+  ];
 
   @ViewChild(InputSearchComponent)
   private inputSearchComponent!: InputSearchComponent;
@@ -147,7 +175,17 @@ export class PartnersPageComponent implements OnInit {
   private updatePartnerState(partners: PartnerModel[] | null): void {
     if (!partners) return;
 
-    this.partners = this.partnersService.sortPartnersById(partners);
+    this.partners = this.partnersService.sortPartnersById(partners).map((p) => {
+      const allCuotasPaid = p.cuotas || [];
+      const lastCuotaPaid = allCuotasPaid.includes(this.currentYear);
+      const years = allCuotasPaid.length;
+
+      return {
+        ...p,
+        years,
+        lastCuotaPaid,
+      };
+    });
     this.filteredPartners = [...this.partners];
     this.number = this.partnersService.countPartners(partners);
     this.isLoading = false;

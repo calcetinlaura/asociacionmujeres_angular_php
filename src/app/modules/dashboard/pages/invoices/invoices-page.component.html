@@ -5,7 +5,7 @@
     [number]="number"
     [type]="'Cuentas'"
   />
-  <div class="flex flex-1 flex-col justify-start p-8 gap-y-8">
+  <div class="flex flex-1 flex-col justify-center px-8 gap-y-8">
     <app-filters
       [filters]="filtersYears"
       (filterClicked)="filterYearSelected($event)"
@@ -20,41 +20,46 @@
     </div>
   </div>
 </div>
-<mat-tab-group
-  (selectedTabChange)="tabActive($event)"
-  [selectedIndex]="selectedIndex"
->
-  <mat-tab label="Contabilidad completa">
-    <ng-container *ngTemplateOutlet="templateTableInvoice"></ng-container>
-  </mat-tab>
-  <!-- Pestaña para Facturas -->
-  <mat-tab label="Facturas">
-    <ng-container *ngTemplateOutlet="templateTableInvoice"></ng-container>
-  </mat-tab>
-  <!-- Pestaña para Tickets -->
-  <mat-tab label="Tickets">
-    <ng-container *ngTemplateOutlet="templateTableInvoice"></ng-container>
-  </mat-tab>
+<div class="flex flex-col px-8">
+  <mat-tab-group
+    (selectedTabChange)="tabActive($event)"
+    [selectedIndex]="selectedIndex"
+  >
+    <mat-tab label="Contabilidad completa">
+      <ng-container *ngTemplateOutlet="templateTableInvoice"></ng-container>
+    </mat-tab>
+    <!-- Pestaña para Facturas -->
+    <mat-tab label="Facturas">
+      <ng-container *ngTemplateOutlet="templateTableInvoice"></ng-container>
+    </mat-tab>
+    <!-- Pestaña para Tickets -->
+    <mat-tab label="Tickets">
+      <ng-container *ngTemplateOutlet="templateTableInvoice"></ng-container>
+    </mat-tab>
 
-  <!-- Pestaña para Ingresos -->
-  <mat-tab label="Ingresos">
-    <ng-container *ngTemplateOutlet="templateTableInvoice"></ng-container>
-  </mat-tab>
-</mat-tab-group>
-<ng-template #templateTableInvoice>
-  <!-- Spinner Loading -->
-  <app-spinner-loading *ngIf="!dataLoaded; else results" />
-  <!-- Tabla -->
-  <ng-template #results>
-    <div class="py-8 px-4">
-      <app-table-invoices
-        [data]="filteredInvoices"
-        [type]="typeList"
-        (openModal)="onOpenModal($event)"
-      />
-    </div>
+    <!-- Pestaña para Ingresos -->
+    <mat-tab label="Ingresos">
+      <ng-container *ngTemplateOutlet="templateTableInvoice"></ng-container>
+    </mat-tab>
+  </mat-tab-group>
+  <ng-template #templateTableInvoice>
+    <!-- Spinner Loading -->
+    <app-spinner-loading *ngIf="isLoading; else results" />
+    <!-- Tabla -->
+    <ng-template #results>
+      <div class="pb-4 flex">
+        <app-table
+          [data]="filteredInvoices"
+          [type]="typeList"
+          [headerColumns]="headerListInvoices"
+          (openModal)="onOpenModal($event)"
+          [topFilter]="0"
+          [topHeader]="60"
+        />
+      </div>
+    </ng-template>
   </ng-template>
-</ng-template>
+</div>
 <!-- Modal -->
 <app-modal
   *ngIf="isModalVisible"

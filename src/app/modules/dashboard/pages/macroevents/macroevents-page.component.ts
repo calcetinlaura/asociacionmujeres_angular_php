@@ -11,7 +11,7 @@ import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { tap } from 'rxjs';
 import { MacroeventsFacade } from 'src/app/application/macroevents.facade';
 import { ColumnModel } from 'src/app/core/interfaces/column.interface';
-import { MacroeventModel } from 'src/app/core/interfaces/macroevent.interface';
+import { MacroeventModelFullData } from 'src/app/core/interfaces/macroevent.interface';
 import {
   Filter,
   TypeActionModal,
@@ -52,8 +52,8 @@ export class MacroeventsPageComponent implements OnInit {
   private readonly macroeventsService = inject(MacroeventsService);
   private readonly generalService = inject(GeneralService);
 
-  macroevents: MacroeventModel[] = [];
-  filteredMacroevents: MacroeventModel[] = [];
+  macroevents: MacroeventModelFullData[] = [];
+  filteredMacroevents: MacroeventModelFullData[] = [];
   filters: Filter[] = [];
 
   selectedFilter: number | null = null;
@@ -63,7 +63,7 @@ export class MacroeventsPageComponent implements OnInit {
   isModalVisible = false;
   number = 0;
 
-  item: MacroeventModel | null = null;
+  item: MacroeventModelFullData | null = null;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
   searchForm!: FormGroup;
 
@@ -72,7 +72,13 @@ export class MacroeventsPageComponent implements OnInit {
     { title: 'Título', key: 'title', sortable: true },
     { title: 'Fecha', key: 'start', sortable: true },
     { title: 'Eventos', key: 'events', sortable: true },
-    { title: 'Descripción', key: 'description', sortable: true },
+    {
+      title: 'Descripción',
+      key: 'description',
+      sortable: true,
+      booleanIndicator: true,
+      minWidth: true,
+    },
     { title: 'Municipio', key: 'town', sortable: true },
   ];
 
@@ -126,14 +132,14 @@ export class MacroeventsPageComponent implements OnInit {
 
   onOpenModal(macroevent: {
     action: TypeActionModal;
-    item?: MacroeventModel;
+    item?: MacroeventModelFullData;
   }): void {
     this.openModal(macroevent.action, macroevent.item ?? null);
   }
 
   private openModal(
     action: TypeActionModal,
-    item: MacroeventModel | null
+    item: MacroeventModelFullData | null
   ): void {
     this.currentModalAction = action;
     this.item = item;
@@ -144,7 +150,7 @@ export class MacroeventsPageComponent implements OnInit {
     this.modalService.closeModal();
   }
 
-  confirmDeleteMacroevent(macroevent: MacroeventModel | null): void {
+  confirmDeleteMacroevent(macroevent: MacroeventModelFullData | null): void {
     if (!macroevent) return;
     this.macroeventsFacade.deleteMacroevent(macroevent.id);
     this.onCloseModal();
@@ -166,7 +172,9 @@ export class MacroeventsPageComponent implements OnInit {
       .subscribe();
   }
 
-  private updateMacroeventState(macroevents: MacroeventModel[] | null): void {
+  private updateMacroeventState(
+    macroevents: MacroeventModelFullData[] | null
+  ): void {
     if (!macroevents) return;
 
     this.macroevents = this.macroeventsService.sortMacroeventsById(macroevents);

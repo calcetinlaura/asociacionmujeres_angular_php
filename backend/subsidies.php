@@ -18,32 +18,150 @@ $resource = array_pop($uriParts);
 switch ($method) {
   case 'GET':
     if (is_numeric($resource)) {
+        // Obtener una subvención por ID con invoices y projects
         $stmt = $connection->prepare("SELECT * FROM subsidies WHERE id = ?");
         $stmt->bind_param("i", $resource);
         $stmt->execute();
         $result = $stmt->get_result();
         $subsidy = $result->fetch_assoc();
+
+        if ($subsidy) {
+            // Invoices relacionados
+            $stmtInvoices = $connection->prepare("
+                SELECT invoices.*,
+                       creditors.company AS creditor_company,
+                       creditors.contact AS creditor_contact,
+                       projects.title AS project_title
+                FROM invoices
+                LEFT JOIN creditors ON invoices.creditor_id = creditors.id
+                LEFT JOIN projects ON invoices.project_id = projects.id
+                WHERE invoices.subsidy_id = ?
+                ORDER BY invoices.date_invoice ASC
+            ");
+            $stmtInvoices->bind_param("i", $subsidy['id']);
+            $stmtInvoices->execute();
+            $resultInvoices = $stmtInvoices->get_result();
+            $subsidy['invoices'] = $resultInvoices->fetch_all(MYSQLI_ASSOC);
+
+            // Projects con actividades
+            $stmtProjects = $connection->prepare("SELECT * FROM projects WHERE subsidy_id = ?");
+            $stmtProjects->bind_param("i", $subsidy['id']);
+            $stmtProjects->execute();
+            $resultProjects = $stmtProjects->get_result();
+            $projects = [];
+
+            while ($project = $resultProjects->fetch_assoc()) {
+                $stmtActivities = $connection->prepare("SELECT * FROM activities WHERE project_id = ?");
+                $stmtActivities->bind_param("i", $project['id']);
+                $stmtActivities->execute();
+                $resultActivities = $stmtActivities->get_result();
+                $project['activities'] = $resultActivities->fetch_all(MYSQLI_ASSOC);
+                $projects[] = $project;
+            }
+
+            $subsidy['projects'] = $projects;
+        }
+
         echo json_encode($subsidy ? $subsidy : []);
-    } elseif (isset($_GET['year']) && is_numeric($_GET['year'])) {
-      // Filtrar subvenciones por año
-      $year = $_GET['year'];
-      $stmt = $connection->prepare("SELECT * FROM subsidies WHERE year = ?");
-      $stmt->bind_param("i", $year);
-      $stmt->execute();
-      $result = $stmt->get_result();
-      $Invoices = [];
-      while ($row = $result->fetch_assoc()) {
-          $Invoices[] = $row;
-      }
-      echo json_encode($Invoices);
-    }else {
+    }
+
+    elseif (isset($_GET['year']) && is_numeric($_GET['year'])) {
+        // Obtener subvenciones por año
+        $year = $_GET['year'];
+        $stmt = $connection->prepare("SELECT * FROM subsidies WHERE year = ?");
+        $stmt->bind_param("i", $year);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $subsidies = [];
+
+        while ($row = $result->fetch_assoc()) {
+            // Invoices
+            $stmtInvoices = $connection->prepare("
+                SELECT invoices.*,
+                       creditors.company AS creditor_company,
+                       creditors.contact AS creditor_contact,
+                       projects.title AS project_title
+                FROM invoices
+                LEFT JOIN creditors ON invoices.creditor_id = creditors.id
+                LEFT JOIN projects ON invoices.project_id = projects.id
+                WHERE invoices.subsidy_id = ?
+                ORDER BY invoices.date_invoice ASC
+            ");
+            $stmtInvoices->bind_param("i", $row['id']);
+            $stmtInvoices->execute();
+            $resultInvoices = $stmtInvoices->get_result();
+            $row['invoices'] = $resultInvoices->fetch_all(MYSQLI_ASSOC);
+
+            // Projects con actividades
+            $stmtProjects = $connection->prepare("SELECT * FROM projects WHERE subsidy_id = ?");
+            $stmtProjects->bind_param("i", $row['id']);
+            $stmtProjects->execute();
+            $resultProjects = $stmtProjects->get_result();
+            $projects = [];
+
+            while ($project = $resultProjects->fetch_assoc()) {
+                $stmtActivities = $connection->prepare("SELECT * FROM activities WHERE project_id = ?");
+                $stmtActivities->bind_param("i", $project['id']);
+                $stmtActivities->execute();
+                $resultActivities = $stmtActivities->get_result();
+                $project['activities'] = $resultActivities->fetch_all(MYSQLI_ASSOC);
+                $projects[] = $project;
+            }
+
+            $row['projects'] = $projects;
+
+            $subsidies[] = $row;
+        }
+
+        echo json_encode($subsidies);
+    }
+
+    else {
+        // Obtener todas las subvenciones
         $stmt = $connection->prepare("SELECT * FROM subsidies");
         $stmt->execute();
         $result = $stmt->get_result();
         $subsidies = [];
+
         while ($row = $result->fetch_assoc()) {
+            // Invoices
+            $stmtInvoices = $connection->prepare("
+                SELECT invoices.*,
+                       creditors.company AS creditor_company,
+                       creditors.contact AS creditor_contact,
+                       projects.title AS project_title
+                FROM invoices
+                LEFT JOIN creditors ON invoices.creditor_id = creditors.id
+                LEFT JOIN projects ON invoices.project_id = projects.id
+                WHERE invoices.subsidy_id = ?
+                ORDER BY invoices.date_invoice ASC
+            ");
+            $stmtInvoices->bind_param("i", $row['id']);
+            $stmtInvoices->execute();
+            $resultInvoices = $stmtInvoices->get_result();
+            $row['invoices'] = $resultInvoices->fetch_all(MYSQLI_ASSOC);
+
+            // Projects con actividades
+            $stmtProjects = $connection->prepare("SELECT * FROM projects WHERE subsidy_id = ?");
+            $stmtProjects->bind_param("i", $row['id']);
+            $stmtProjects->execute();
+            $resultProjects = $stmtProjects->get_result();
+            $projects = [];
+
+            while ($project = $resultProjects->fetch_assoc()) {
+                $stmtActivities = $connection->prepare("SELECT * FROM activities WHERE project_id = ?");
+                $stmtActivities->bind_param("i", $project['id']);
+                $stmtActivities->execute();
+                $resultActivities = $stmtActivities->get_result();
+                $project['activities'] = $resultActivities->fetch_all(MYSQLI_ASSOC);
+                $projects[] = $project;
+            }
+
+            $row['projects'] = $projects;
+
             $subsidies[] = $row;
         }
+
         echo json_encode($subsidies);
     }
     break;
@@ -63,9 +181,8 @@ switch ($method) {
     $year = isset($data['year']) ? (int)$data['year'] : null;
     $date_presentation = $data['date_presentation'] ?? null;
     $date_justification = $data['date_justification'] ?? null;
-    $period_start = $data['period_start'] ?? null;
-    $period_end = $data['period_end'] ?? null;
-    $activities = $data['activities'] ?? null;
+    $start = $data['start'] ?? null;
+    $end = $data['end'] ?? null;
     $invoices = $data['invoices'] ?? null;
     $url_presentation = $data['url_presentation'] ?? null;
     $url_justification = $data['url_justification'] ?? null;
@@ -85,21 +202,19 @@ switch ($method) {
       }
 
       $stmt = $connection->prepare("UPDATE subsidies SET
-        name = ?, year = ?, date_presentation = ?, date_justification = ?, period_start = ?,
-        period_end = ?, activities = ?, invoices = ?, url_presentation = ?, url_justification = ?,
+        name = ?, year = ?, date_presentation = ?, date_justification = ?, start = ?,
+        end = ?, url_presentation = ?, url_justification = ?,
         amount_requested = ?, amount_granted = ?, amount_justified = ?, amount_association = ?, observations = ?
         WHERE id = ?");
 
       $stmt->bind_param(
-        "sissssssssddddsi",
+        "sissssssddddsi",
         $name,
         $year,
         $date_presentation,
         $date_justification,
-        $period_start,
-        $period_end,
-        $activities,
-        $invoices,
+        $start,
+        $end,
         $url_presentation,
         $url_justification,
         $amount_requested,
@@ -120,20 +235,18 @@ switch ($method) {
     } else {
       // POST (create)
       $stmt = $connection->prepare("INSERT INTO subsidies
-        (name, year, date_presentation, date_justification, period_start, period_end, activities, invoices, url_presentation, url_justification,
+        (name, year, date_presentation, date_justification, start, end,  url_presentation, url_justification,
          amount_requested, amount_granted, amount_justified, amount_association, observations)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
       $stmt->bind_param(
-        "sissssssssdddds",
+        "sissssssdddds",
         $name,
         $year,
         $date_presentation,
         $date_justification,
-        $period_start,
-        $period_end,
-        $activities,
-        $invoices,
+        $start,
+        $end,
         $url_presentation,
         $url_justification,
         $amount_requested,

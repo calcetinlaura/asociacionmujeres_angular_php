@@ -3,7 +3,6 @@ import { CommonModule, DatePipe } from '@angular/common';
 import {
   Component,
   EventEmitter,
-  HostListener,
   inject,
   Input,
   Output,
@@ -11,18 +10,25 @@ import {
   ViewChild,
 } from '@angular/core';
 import { FormControl } from '@angular/forms';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatSelectModule } from '@angular/material/select';
 import { MatSort, MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { ColumnModel } from 'src/app/core/interfaces/column.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
+import { SubsidiesService } from 'src/app/core/services/subsidies.services';
 import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
 import { FilterTransformCodePipe } from 'src/app/shared/pipe/filterTransformCode.pipe';
 import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
 import { PhoneFormatPipe } from 'src/app/shared/pipe/phoneFormat.pipe';
+import { ButtonComponent } from '../../../../shared/components/buttons/button/button.component';
+import { CalculateAgePipe } from '../../../../shared/pipe/caculate_age.pipe';
 import { EurosFormatPipe } from '../../../../shared/pipe/eurosFormat.pipe';
+import { HasValuePipe } from '../../../../shared/pipe/hasValue.pipe';
 import { CircleIndicatorComponent } from '../circle-indicator/circle-indicator.component';
-
 @Component({
   standalone: true,
   imports: [
@@ -37,43 +43,62 @@ import { CircleIndicatorComponent } from '../circle-indicator/circle-indicator.c
     PhoneFormatPipe,
     FilterTransformCodePipe,
     EurosFormatPipe,
+    MatCheckboxModule,
+    MatFormFieldModule,
+    MatMenuModule,
+    MatSelectModule,
+    HasValuePipe,
+    CalculateAgePipe,
+    ButtonComponent,
   ],
   selector: 'app-table',
   templateUrl: './table.component.html',
   styleUrls: ['./table.component.css'],
 })
 export class TableComponent {
+  private readonly subsidiesService = inject(SubsidiesService);
   private _liveAnnouncer = inject(LiveAnnouncer);
   @Input() type: TypeList = TypeList.Books;
   @Input() data: any[] = [];
   @Input() headerColumns: ColumnModel[] = [];
+  @Input() topFilter = 270;
+  @Input() topHeader = 326;
   @Output() openModal = new EventEmitter<{
+    type: TypeList;
     action: TypeActionModal;
     item: any;
   }>();
+  nameSubsidy = this.subsidiesService.subsidiesMap;
   displayedColumns: string[] = [];
   dataSource = new MatTableDataSource();
   typeActionModal = TypeActionModal;
   searchKeywordFilter = new FormControl();
   TypeList = TypeList;
+  columnVisibility: { [key: string]: boolean } = {};
+  selectedColumns: string[] = [];
 
   @ViewChild(MatSort) sort!: MatSort;
 
-  @HostListener('window:resize', ['$event'])
-  onResize(event: Event): void {
-    const totalFixedHeight = 800;
+  // @HostListener('window:resize', ['$event'])
+  // onResize(event: Event): void {
+  //   const totalFixedHeight = 800;
 
-    const headerRow: HTMLElement | null =
-      document.querySelector('.custom-list-row');
-    if (headerRow) {
-      headerRow.style.top = `${totalFixedHeight}px`;
-    }
-  }
+  //   const headerRow: HTMLElement | null =
+  //     document.querySelector('.custom-list-row');
+  //   if (headerRow) {
+  //     headerRow.style.top = `${totalFixedHeight}px`;
+  //   }
+  // }
 
   ngOnInit(): void {
-    this.initDisplayedColumns();
+    this.headerColumns.forEach((col) => {
+      this.columnVisibility[col.key] = true; // primero inicializas visibilidad
+    });
+
+    this.initDisplayedColumns(); // luego construyes displayedColumns
+
     this.dataSource = new MatTableDataSource(this.data || []);
-    this.dataSource.sort = this.sort; // Inicializa el sorting
+    this.dataSource.sort = this.sort;
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -106,7 +131,7 @@ export class TableComponent {
   }
 
   initDisplayedColumns(): void {
-    this.displayedColumns = this.headerColumns.map((column) => column.key);
+    this.displayedColumns = this.getVisibleColumns();
     this.displayedColumns.push('actions');
     this.displayedColumns.unshift('number');
   }
@@ -118,10 +143,15 @@ export class TableComponent {
       this._liveAnnouncer.announce('Sorting cleared');
     }
   }
-
-  onOpenModal(action: TypeActionModal, item: any): void {
-    this.openModal.emit({ action, item });
+  toggleColumn(key: string) {
+    this.columnVisibility[key] = !this.columnVisibility[key];
+    this.initDisplayedColumns();
   }
+
+  onOpenModal(type: TypeList, action: TypeActionModal, item: any): void {
+    this.openModal.emit({ type: type, action, item });
+  }
+
   areDatesEqual(date1: string | Date, date2: string | Date): boolean {
     const d1 = new Date(date1);
     const d2 = new Date(date2);
@@ -135,5 +165,45 @@ export class TableComponent {
       const amount = Number(inv?.total_amount);
       return sum + (isNaN(amount) ? 0 : amount);
     }, 0);
+  }
+  getTotalActivitiesAmount(element: any): number {
+    if (!element?.activities || !Array.isArray(element.activities)) {
+      return 0;
+    }
+    return element.activities.reduce((sum: number, act: any) => {
+      const amount = Number(act?.budget);
+      return sum + (isNaN(amount) ? 0 : amount);
+    }, 0);
+  }
+  get visibleHeaderColumns(): ColumnModel[] {
+    return this.headerColumns.filter((col) => this.columnVisibility[col.key]);
+  }
+  getVisibleColumns(): string[] {
+    return this.headerColumns
+      .filter((col) => this.columnVisibility[col.key])
+      .map((col) => col.key);
+  }
+  updateVisibleColumns() {
+    this.headerColumns.forEach((col) => {
+      this.columnVisibility[col.key] = this.selectedColumns.includes(col.key);
+    });
+    this.initDisplayedColumns(); // Recalcula las columnas mostradas
+  }
+
+  trackByKey(index: number, col: ColumnModel) {
+    return col.key;
+  }
+
+  hasValueBoolean(value: any): boolean {
+    if (Array.isArray(value)) return value.length > 0;
+    if (typeof value === 'string') return value.trim() !== '';
+    if (typeof value === 'number') return value !== 0;
+    return !!value;
+  }
+
+  getColumnTotal(key: string): number {
+    return (this.dataSource.data as Record<string, any>[])
+      .map((item) => Number(item[key]) || 0)
+      .reduce((acc, value) => acc + value, 0);
   }
 }

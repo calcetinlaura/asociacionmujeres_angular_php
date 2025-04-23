@@ -54,7 +54,13 @@ export class PodcastsPageComponent implements OnInit {
     { title: 'Portada', key: 'img', sortable: false },
     { title: 'Título', key: 'title', sortable: true },
     { title: 'Fecha', key: 'date', sortable: true },
-    { title: 'Descripción', key: 'description', sortable: true },
+    {
+      title: 'Descripción',
+      key: 'description',
+      sortable: true,
+      booleanIndicator: true,
+      minWidth: true,
+    },
   ];
 
   ngOnInit(): void {

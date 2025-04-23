@@ -1,3 +1,5 @@
+import { EventModelFullData } from './event.interface';
+
 export interface MacroeventModel {
   id: number;
   title: string;
@@ -7,4 +9,7 @@ export interface MacroeventModel {
   province: string;
   town: string;
   img?: string;
+}
+export interface MacroeventModelFullData extends MacroeventModel {
+  events?: EventModelFullData[];
 }

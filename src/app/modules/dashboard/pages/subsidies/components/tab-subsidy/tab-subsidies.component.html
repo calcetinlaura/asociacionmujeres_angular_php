@@ -1,15 +1,16 @@
 <div
   *ngIf="item"
-  class="flex flex-1 flex-col justify-between my-8 mx-40 card-subsidy"
+  class="flex flex-1 flex-col justify-between my-8 mx-20 card-subsidy"
 >
   <h1 class="text-center mb-4">
     Subvención
     <span *ngIf="item?.name">{{ item.name | i18nSelect : nameSubsidy }}</span>
-    <span *ngIf="item?.year">{{ item.year }}</span>
+    <span *ngIf="item?.year"> {{ item.year }}</span>
     <app-icon-action
       [icon]="'uil-edit'"
+      [tooltip]="'Editar'"
       (click)="
-        onOpenModal({
+        openModal.emit({
           type: typeList.Subsidies,
           action: typeActionModal.Edit,
           item: item
@@ -51,17 +52,115 @@
         <mat-icon class="calendar-icon">calendar_today</mat-icon>
         <h2>Periodo subvencionable:</h2>
         <p>
-          {{ item.period_start | date : "dd MMM yyyy" }}
-          <ng-container *ngIf="item.period_end">
-            - {{ item.period_end | date : "dd MMM yyyy" }}
+          {{ item.start | date : "dd MMM yyyy" }}
+          <ng-container *ngIf="item.end">
+            - {{ item.end | date : "dd MMM yyyy" }}
           </ng-container>
         </p>
       </div>
     </div>
   </div>
-  <div class="pt-2 pb-6">
-    <h2>Actividades solicitadas</h2>
-    <app-text-editor *ngIf="item.activities" [text]="item.activities" />
+  <div class="rounded-[4px] border border-[#d0a9d952] px-4 py-4 my-4">
+    <div class="flex items-center justify-between align-middle mb-4">
+      <h2>Proyectos solicitadas</h2>
+
+      <app-button-add
+        [buttonText]="'Añadir proyecto'"
+        [iconClass]="'uil-plus'"
+        (addClicked)="
+          openModal.emit({
+            type: typeList.Projects,
+            action: typeActionModal.Create,
+            item: ''
+          })
+        "
+      />
+    </div>
+    <div class="flex justify-center mx-10">
+      <table [cellPadding]="8" cellspacing="0" width="100%">
+        <ng-container *ngFor="let project of item.projects; let pIndex = index">
+          <tbody [ngClass]="{ 'bg-lilaMuyClaro': pIndex % 2 === 0 }">
+            <tr *ngFor="let activity of project.activities; let i = index">
+              <!-- Columna del título del proyecto e iconos -->
+              <td
+                *ngIf="i === 0"
+                [attr.rowspan]="project.activities?.length"
+                class="align-middle text-left text-[14px] uppercase w-2/6"
+              >
+                {{ project.title }}
+                <div class="flex mt-1 gap-1">
+                  <app-icon-action
+                    [icon]="'uil-edit'"
+                    [tooltip]="'Editar'"
+                    (click)="
+                      openModal.emit({
+                        type: typeList.Projects,
+                        action: typeActionModal.Edit,
+                        item: project
+                      })
+                    "
+                  ></app-icon-action>
+                  <app-icon-action
+                    [icon]="'uil-eye'"
+                    [tooltip]="'Ver'"
+                    (click)="
+                      openModal.emit({
+                        type: typeList.Projects,
+                        action: typeActionModal.Show,
+                        item: project
+                      })
+                    "
+                  ></app-icon-action>
+                  <app-icon-action
+                    [icon]="'uil-trash-alt'"
+                    [tooltip]="'Eliminar'"
+                    (click)="
+                      openModal.emit({
+                        type: typeList.Projects,
+                        action: typeActionModal.Delete,
+                        item: project
+                      })
+                    "
+                  ></app-icon-action>
+                </div>
+              </td>
+
+              <!-- Columna de actividad -->
+              <td class="pl-6 w-2/6">
+                <div>
+                  <p class="text-[13px] text-gray-800">
+                    {{ activity.name }}
+                  </p>
+                  <p
+                    class="text-[12px] text-gray-500 flex items-center gap-1 mt-1"
+                    *ngIf="activity.attendant"
+                  >
+                    <i class="uil uil-user text-[10px]"></i>
+                    {{ activity.attendant }}
+                  </p>
+                </div>
+              </td>
+
+              <!-- Columna de presupuesto individual -->
+              <td class="text-right text-[12px] w-1/6">
+                {{ activity.budget | currency : "EUR" : "symbol" }}
+              </td>
+
+              <!-- Columna de total solo en la primera fila -->
+              <td
+                *ngIf="i === 0"
+                [attr.rowspan]="project.activities?.length"
+                class="align-middle text-right text-[12px] font-bold w-1/6"
+              >
+                {{
+                  getProjectTotalBudget(project) | currency : "EUR" : "symbol"
+                }}
+              </td>
+            </tr>
+          </tbody>
+        </ng-container>
+      </table>
+    </div>
   </div>
   <div *ngIf="item.observations" class="pb-5">
     <h2>Observaciones</h2>
@@ -70,19 +169,22 @@
   <div class="flex flex-row gap-x-4 justify-between">
     <div class="box-amount w-auto box-invoices">
       <p>Nº FACTURAS</p>
-      <p>{{ number_invoices }}</p>
+      <p class="text-center">{{ number_invoices }}</p>
     </div>
     <div class="box-amount w-auto">
       <p>TOTAL SOLICITADO</p>
-      <p>{{ item.amount_requested | eurosFormat }}</p>
+      <p class="text-center">
+        {{ getSubsidyTotalBudget(item) | eurosFormat
+        }}{{ item.amount_requested | eurosFormat }}
+      </p>
     </div>
     <div class="box-amount w-auto">
       <p>TOTAL CONCEDIDO</p>
-      <p>{{ item.amount_granted | eurosFormat }}</p>
+      <p class="text-center">{{ item.amount_granted | eurosFormat }}</p>
     </div>
     <div class="box-amount flex-1">
       <p>IMPORTE NECESARIO JUSTIFICAR</p>
-      <p>{{ item.amount_justified | eurosFormat }}</p>
+      <p class="text-center">{{ item.amount_justified | eurosFormat }}</p>
     </div>
     <div class="box-amount flex-1">
       <p>GASTO ACUMULADO</p>
@@ -123,14 +225,18 @@
       </div>
     </ng-template>
   </div>
-
-  <app-table-invoices
-    *ngIf="!loading"
-    [data]="filteredInvoices"
-    (openModal)="onOpenModal($event)"
-    [delete]="false"
-    [edit]="false"
-    [tableInsideSubsidy]="true"
-    class="flex mt-8"
-  />
+  <div class="py-4 flex">
+    <app-table
+      *ngIf="!loading"
+      [data]="filteredInvoices"
+      [headerColumns]="headerListInvoices"
+      (openModal)="
+        openModal.emit({
+          type: typeList.Invoices,
+          action: $event.action,
+          item: $event.item
+        })
+      "
+    />
+  </div>
 </div>

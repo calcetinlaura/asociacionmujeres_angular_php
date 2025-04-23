@@ -1,8 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, Input, OnInit } from '@angular/core';
-import { tap } from 'rxjs';
-import { EventModelFullData } from 'src/app/core/interfaces/event.interface';
-import { MacroeventModel } from 'src/app/core/interfaces/macroevent.interface';
+import { MacroeventModelFullData } from 'src/app/core/interfaces/macroevent.interface';
 import { TypeList } from 'src/app/core/models/general.model';
 import { EventsService } from 'src/app/core/services/events.services';
 import { TextBackgroundComponent } from 'src/app/shared/components/text/text-background/text-background.component';
@@ -25,27 +23,15 @@ import { TextTitleComponent } from 'src/app/shared/components/text/text-title/te
 })
 export class ModalShowMacroeventComponent implements OnInit {
   private readonly eventsService = inject(EventsService);
-  @Input() item?: MacroeventModel;
+  @Input() item?: MacroeventModelFullData;
   type: TypeList = TypeList.Macroevents;
   datesEquals = false;
-  eventsOfMacro: EventModelFullData[] = [];
 
   ngOnInit(): void {
     if (!this.item) return;
 
     if (this.item.start && this.item.end && this.item.start === this.item.end) {
       this.datesEquals = true;
-    }
-
-    if (this.item.id) {
-      this.eventsService
-        .getEventsByMacroevent(this.item.id)
-        .pipe(
-          tap((events) => {
-            this.eventsOfMacro = this.eventsService.sortEventsByDate(events);
-          })
-        )
-        .subscribe();
     }
   }
 }

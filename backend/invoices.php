@@ -59,7 +59,32 @@ switch ($method) {
             $invoices[] = $row;
         }
         echo json_encode($invoices);
-    } else {
+    }  elseif (isset($_GET['subsidy']) && isset($_GET['subsidy_year'])) {
+      $subsidy = $_GET['subsidy'];
+      $year = $_GET['subsidy_year'];
+
+      $stmt = $connection->prepare("
+          SELECT invoices.*,
+                 creditors.company AS creditor_company,
+                 creditors.contact AS creditor_contact,
+                 subsidies.name AS subsidy_name,
+                 projects.title AS project_title
+          FROM invoices
+          LEFT JOIN creditors ON invoices.creditor_id = creditors.id
+          LEFT JOIN subsidies ON invoices.subsidy_id = subsidies.id
+          LEFT JOIN projects ON invoices.project_id = projects.id
+          WHERE subsidies.name = ? AND YEAR(invoices.date_invoice) = ?
+      ");
+      $stmt->bind_param("si", $subsidy, $year);
+      $stmt->execute();
+      $result = $stmt->get_result();
+      $invoices = [];
+      while ($row = $result->fetch_assoc()) {
+          $invoices[] = $row;
+      }
+      echo json_encode($invoices);
+      }
+  else {
         // Obtener todas las facturas
         $stmt = $connection->prepare("
             SELECT invoices.*,

@@ -8,50 +8,126 @@
     class="login-auth-form"
   >
     <div class="flex flex-col gap-y-4">
-      <div class="flex justify-between gap-x-4 bg-lilaMuyClaro p-4">
-        <div class="flex flex-col w-3/4 gap-y-4">
+      <div class="flex flex-col bg-lilaMuyClaro p-4 gap-y-4">
+        <div class="flex justify-between gap-x-4">
+          <div class="flex flex-col w-3/4 gap-y-4">
+            <div class="box-input gap-x-4">
+              <label for="email">Título</label>
+              <div class="flex flex-col flex-1">
+                <input
+                  formControlName="title"
+                  type="text"
+                  [ngClass]="{
+                    'is-invalid': submitted && formProject.get('title')?.invalid
+                  }"
+                />
+                <div
+                  *ngIf="submitted && formProject.get('title')?.invalid"
+                  class="is-invalid-text"
+                >
+                  Campo requerido
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Año -->
           <div class="box-input gap-x-4">
-            <label for="email">Título</label>
+            <label for="year">Año</label>
             <div class="flex flex-col flex-1">
-              <input
-                formControlName="title"
-                type="text"
+              <select
+                formControlName="year"
                 [ngClass]="{
-                  'is-invalid': submitted && formProject.get('title')?.invalid
+                  'is-invalid': submitted && formProject.get('year')?.invalid
                 }"
-              />
+              >
+                <option [value]="null">Seleccione un año</option>
+                <option *ngFor="let year of years" [ngValue]="year">
+                  {{ year }}
+                </option>
+              </select>
               <div
-                *ngIf="submitted && formProject.get('title')?.invalid"
+                *ngIf="submitted && formProject.get('year')?.invalid"
                 class="is-invalid-text"
               >
-                Campo requerido
+                Selecciona un año
               </div>
             </div>
           </div>
         </div>
-        <!-- Año -->
-        <div class="box-input gap-x-4">
-          <label for="year">Año</label>
+        <div class="box-input gap-x-4 flex flex-1">
+          <label for="province">Subvención</label>
           <div class="flex flex-col flex-1">
-            <select
-              formControlName="year"
-              [ngClass]="{
-                'is-invalid': submitted && formProject.get('year')?.invalid
-              }"
-            >
-              <option [value]="null">Seleccione un año</option>
-              <option *ngFor="let year of years" [ngValue]="year">
-                {{ year }}
+            <select formControlName="subsidy_id">
+              <option [ngValue]="null">
+                Seleccione una subvención si el proyecto pertenece a alguna
+              </option>
+              <option *ngFor="let subsidy of subsidies" [value]="subsidy.id">
+                {{ subsidy.name }} - {{ subsidy.year }}
               </option>
             </select>
-            <div
-              *ngIf="submitted && formProject.get('year')?.invalid"
-              class="is-invalid-text"
-            >
-              Selecciona un año
+            <div *ngIf="formProject.controls.subsidy_id.disabled">
+              <small class="text-gray-500 italic">
+                Selecciona un año para habilitar las subvenciones
+              </small>
             </div>
           </div>
         </div>
+      </div>
+      <!-- ACTIVIDADES -->
+      <div formArrayName="activities" class="flex flex-col gap-y-4">
+        <div
+          *ngFor="let activity of activities.controls; let i = index"
+          [formGroupName]="i"
+          class="flex gap-x-4 px-8"
+        >
+          <input formControlName="id" type="hidden" />
+          <div class="sala_box flex justify-center items-center pr-4">
+            Actividad {{ i + 1 }}
+          </div>
+          <div class="flex flex-col flex-1 gap-y-4 bg-lilaMuyClaro p-4">
+            <div class="box-input gap-x-4">
+              <label>Nombre </label>
+              <input
+                formControlName="name"
+                placeholder="Nombre de la actividad"
+                [ngClass]="{
+                  'is-invalid':
+                    submitted &&
+                    activities.get(i.toString())?.get('name')?.invalid
+                }"
+              />
+            </div>
+            <div class="box-input gap-x-4">
+              <label>Persona a cargo </label>
+              <input formControlName="attendant" />
+            </div>
+            <div class="box-input gap-x-4">
+              <label>Presupuesto</label>
+              <input formControlName="budget" />
+            </div>
+            <div class="box-input gap-x-4">
+              <label>Observaciones</label>
+              <textarea formControlName="observations" rows="3"></textarea>
+            </div>
+          </div>
+          <div class="flex justify-center items-center">
+            <button
+              type="button"
+              class="btn-danger"
+              (click)="removeActivity(i)"
+            >
+              Eliminar
+            </button>
+          </div>
+        </div>
+      </div>
+      <!-- Botón para añadir -->
+      <div class="mt-2">
+        <app-button-add
+          [buttonText]="'Añadir actividad'"
+          [iconClass]="'uil-plus'"
+          (addClicked)="addActivity()"
+        />
       </div>
       <div class="flex gap-x-4">
         <div class="flex-col gap-y-4 w-3/4">
@@ -79,24 +155,7 @@
           ></app-image-control>
         </div>
       </div>
-      <div class="box-input gap-x-4 flex flex-1">
-        <label for="province">Subvención</label>
-        <div class="flex flex-col flex-1">
-          <select formControlName="subsidy_id">
-            <option [ngValue]="null">
-              Seleccione una subvención si el proyecto pertenece a alguna
-            </option>
-            <option *ngFor="let subsidy of subsidies" [value]="subsidy.id">
-              {{ subsidy.name }} - {{ subsidy.year }}
-            </option>
-          </select>
-          <div *ngIf="formProject.controls.subsidy_id.disabled">
-            <small class="text-gray-500 italic">
-              Selecciona un año para habilitar las subvenciones
-            </small>
-          </div>
-        </div>
-      </div>
+
       <div *ngIf="errorSession">Hay algún campo incorrecto</div>
       <div class="flex justify-center">
         <button class="bg-black p-4 text-white" type="submit">

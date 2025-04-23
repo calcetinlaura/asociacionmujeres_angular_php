@@ -34,7 +34,7 @@ import { InvoiceModelFullData } from 'src/app/core/interfaces/invoice.interface'
 import { ProjectModel } from 'src/app/core/interfaces/project.interface';
 import {
   categoryFilterSubsidies,
-  SubsidyModel,
+  SubsidyModelFullData,
 } from 'src/app/core/interfaces/subsidy.interface';
 import { CreditorsService } from 'src/app/core/services/creditors.services';
 import { ProjectsService } from 'src/app/core/services/projects.services';
@@ -110,7 +110,7 @@ export class FormInvoiceComponent {
     }),
     invoice_file: new FormControl<string | File | null>(null), // 🔹 Acepta string, File o null
   });
-  subsidies: SubsidyModel[] = [];
+  subsidies: SubsidyModelFullData[] = [];
   projects: ProjectModel[] = [];
   currentYear = this.generalService.currentYear;
   isCreate = false;
@@ -218,7 +218,7 @@ export class FormInvoiceComponent {
     ]).pipe(map(() => void 0));
   }
 
-  loadSubsidiesByYear(year: number): Observable<SubsidyModel[]> {
+  loadSubsidiesByYear(year: number): Observable<SubsidyModelFullData[]> {
     return this.subsidiesService.getSubsidiesByYear(year).pipe(
       tap((subsidies) => {
         this.subsidies = subsidies;

@@ -5,16 +5,26 @@ import { Pipe, PipeTransform } from '@angular/core';
   standalone: true,
 })
 export class EurosFormatPipe implements PipeTransform {
-  transform(value: number | null | undefined): string | null {
-    if (value === null || value === undefined) {
-      return null; // Retorna null si el valor no es válido
+  transform(value: number | string | null | undefined): string | null {
+    if (value === null || value === undefined) return null;
+
+    let numericValue: number;
+
+    if (typeof value === 'string') {
+      const normalized = value.replace(',', '.');
+      numericValue = parseFloat(normalized);
+    } else {
+      numericValue = value;
     }
 
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: 'EUR',
+    if (isNaN(numericValue)) return value?.toString() ?? null;
+
+    const formatted = new Intl.NumberFormat('es-ES', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }).format(value);
+    }).format(numericValue);
+
+    // Puedes personalizar la posición del símbolo aquí
+    return `${formatted} €`; // o `€ ${formatted}` si prefieres al inicio
   }
 }

@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { environments } from 'src/environments/environments';
+import { InvoiceModelFullData } from '../interfaces/invoice.interface';
 
 @Injectable({
   providedIn: 'root',
@@ -65,5 +66,23 @@ export class InvoicesService {
     return this.http
       .delete(this.apiUrl, { params: { id: id } })
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
+  }
+
+  sortInvoicesByDate(events: InvoiceModelFullData[]): InvoiceModelFullData[] {
+    return events.sort(
+      (a, b) =>
+        new Date(b.date_invoice).getTime() - new Date(a.date_invoice).getTime()
+    );
+  }
+  sortInvoicesById(books: InvoiceModelFullData[]): InvoiceModelFullData[] {
+    return books.sort((a, b) => b.id - a.id);
+  }
+
+  hasResults(books: InvoiceModelFullData[] | null): boolean {
+    return !!books && books.length > 0;
+  }
+
+  countInvoices(books: InvoiceModelFullData[] | null): number {
+    return books?.length ?? 0;
   }
 }
