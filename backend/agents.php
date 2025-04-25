@@ -61,7 +61,7 @@ switch ($method) {
       }
 
         $data = $_POST;
-        $imgName = procesarImagen($basePath, 'img', $data);
+        $imgName = procesarArchivo($basePath, 'img', $data);
 
         // Validación de campos obligatorios
         $campoFaltante = validarCamposRequeridos($data, ['name']);

@@ -28,7 +28,7 @@ import { CreditorsService } from 'src/app/core/services/creditors.services';
 import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
 import { TableComponent } from 'src/app/modules/dashboard/components/table/table.component';
 import { FiltersComponent } from 'src/app/modules/landing/components/filters/filters.component';
-import { AddButtonComponent } from 'src/app/shared/components/buttons/button-add/button-add.component';
+import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
 import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
 import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
 import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
@@ -42,7 +42,7 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
     CommonModule,
     DashboardHeaderComponent,
     ModalComponent,
-    AddButtonComponent,
+    ButtonIconComponent,
     ReactiveFormsModule,
     InputSearchComponent,
     SpinnerLoadingComponent,
@@ -75,7 +75,13 @@ export class CreditorsPageComponent implements OnInit {
 
   headerListCreditors: ColumnModel[] = [
     { title: 'Compañía', key: 'company', sortable: true },
-    { title: 'Cif', key: 'cif', sortable: true, showIndicatorOnEmpty: true },
+    {
+      title: 'Cif',
+      key: 'cif',
+      sortable: true,
+      showIndicatorOnEmpty: true,
+      width: ColumnWidth.SM,
+    },
     {
       title: 'Contacto',
       key: 'contact',
@@ -87,7 +93,7 @@ export class CreditorsPageComponent implements OnInit {
       key: 'phone',
       sortable: true,
       showIndicatorOnEmpty: true,
-      width: ColumnWidth.XS,
+      width: ColumnWidth.SM,
       pipe: 'phoneFormat',
     },
     {
@@ -111,7 +117,12 @@ export class CreditorsPageComponent implements OnInit {
       sortable: true,
       width: ColumnWidth.XS,
     },
-    { title: 'Palabras clave', key: 'key_words', sortable: true },
+    {
+      title: 'Palabras clave',
+      key: 'key_words',
+      sortable: true,
+      width: ColumnWidth.SM,
+    },
   ];
 
   @ViewChild(InputSearchComponent)

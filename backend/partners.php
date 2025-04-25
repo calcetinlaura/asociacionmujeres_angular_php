@@ -77,7 +77,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'deleteImage') {
   exit();
 }
         $data = $_POST;
-        $imgName = procesarImagen($basePath, 'img', $data);
+        $imgName = procesarArchivo($basePath, 'img', $data);
 
         // Validación obligatoria
         $campoFaltante = validarCamposRequeridos($data, ['name', ]);

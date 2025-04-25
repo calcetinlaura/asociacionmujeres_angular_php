@@ -122,9 +122,13 @@ export class FormBookComponent {
       return;
     }
 
+    const rawValues = { ...this.formBook.getRawValue() } as any;
+
     const formData = this.generalService.createFormData(
-      this.formBook.value,
-      this.selectedImageFile,
+      rawValues,
+      {
+        img: this.selectedImageFile,
+      },
       this.itemId
     );
 

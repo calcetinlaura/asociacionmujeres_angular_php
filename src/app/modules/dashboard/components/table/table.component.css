@@ -48,10 +48,13 @@ th.mat-sort-header-sorted {
 }
 .mat-column-number {
   text-align: center;
-  flex: 0 0 30px !important;
-  width: 30px !important;
+  width: 30px;
 }
-
+.mat-column-number,
+.mat-column-invoice_pdf {
+  text-align: center;
+  width: 40px;
+}
 .mat-column-title,
 .mat-column-name {
   text-align: left;

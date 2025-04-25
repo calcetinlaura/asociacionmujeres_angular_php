@@ -25,7 +25,7 @@ import { SubsidiesService } from 'src/app/core/services/subsidies.services';
 import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
 import { TextEditorComponent } from 'src/app/shared/components/text/text-editor/text-editor.component';
 import { EurosFormatPipe } from 'src/app/shared/pipe/eurosFormat.pipe';
-import { AddButtonComponent } from '../../../../../../shared/components/buttons/button-add/button-add.component';
+import { ButtonIconComponent } from '../../../../../../shared/components/buttons/button-icon/button-icon.component';
 import { TableComponent } from '../../../../components/table/table.component';
 
 @Component({
@@ -38,7 +38,7 @@ import { TableComponent } from '../../../../components/table/table.component';
     IconActionComponent,
     EurosFormatPipe,
     TableComponent,
-    AddButtonComponent,
+    ButtonIconComponent,
   ],
   templateUrl: './tab-subsidies.component.html',
   styleUrls: ['./tab-subsidies.component.css'],
@@ -108,13 +108,17 @@ export class ModalShowSubsidyComponent implements OnChanges {
       pipe: 'date : dd MMM yyyy',
       showIndicatorOnEmpty: true,
     },
-    { title: 'Acreedor', key: 'creditor_company', sortable: true },
+    {
+      title: 'Acreedor',
+      key: 'creditor_company',
+      sortable: true,
+      width: ColumnWidth.LG,
+    },
     {
       title: 'Descripción',
       key: 'description',
       sortable: true,
-      booleanIndicator: true,
-      width: ColumnWidth.SM,
+      showIndicatorOnEmpty: true,
     },
     {
       title: 'Cantidad',
@@ -151,14 +155,14 @@ export class ModalShowSubsidyComponent implements OnChanges {
       title: 'Subvención',
       key: 'subsidy_name',
       sortable: true,
-      width: ColumnWidth.XS,
+      width: ColumnWidth.SM,
       showIndicatorOnEmpty: true,
     },
     {
       title: 'Proyecto',
       key: 'project_title',
       sortable: true,
-      width: ColumnWidth.XS,
+      width: ColumnWidth.SM,
       showIndicatorOnEmpty: true,
     },
   ];

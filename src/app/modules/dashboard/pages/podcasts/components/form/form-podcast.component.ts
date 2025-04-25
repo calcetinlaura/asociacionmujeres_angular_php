@@ -101,10 +101,13 @@ export class FormPodcastComponent implements OnInit {
       console.log('Formulario inválido', this.formPodcast.errors);
       return;
     }
+    const rawValues = { ...this.formPodcast.getRawValue() } as any;
 
     const formData = this.generalService.createFormData(
-      this.formPodcast.value,
-      this.selectedImageFile,
+      rawValues,
+      {
+        img: this.selectedImageFile,
+      },
       this.itemId
     );
 

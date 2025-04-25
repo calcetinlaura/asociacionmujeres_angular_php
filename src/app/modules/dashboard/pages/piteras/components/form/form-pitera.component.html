@@ -57,29 +57,28 @@
         <label for="theme">Temática</label>
         <textarea formControlName="theme" rows="3"></textarea>
       </div>
-
-      <!-- Portada (Imagen) -->
-      <div class="box-input gap-x-4 px-4">
-        <label for="img">Portada</label>
-        <app-image-control
-          [previewImg]="
-            formPitera.get('img')?.value ? formPitera.get('img')?.value! : null
-          "
-          [entityId]="itemId"
-          [type]="typeList"
-          (imgSelected)="onImageSelected($event)"
-        ></app-image-control>
+      <div class="flex justify-start gap-x-8 h-[377px] bg-lilaClaro">
+        <div class="w-[200px]">
+          <app-image-control
+            [previewImg]="
+              formPitera.get('img')?.value
+                ? formPitera.get('img')?.value!
+                : null
+            "
+            [entityId]="itemId"
+            [type]="typeList"
+            (imgSelected)="onImageSelected($event)"
+          ></app-image-control>
+        </div>
+        <div class="w-[220px]">
+          <app-pdf-control
+            [type]="typeList"
+            [previewPdf]="getPiteraPdfPreview()"
+            (pdfSelected)="formPitera.patchValue({ url: $event })"
+            [pdfViewerHeight]="383"
+          ></app-pdf-control>
+        </div>
       </div>
-      <!-- Campo para subir un archivo PDF -->
-      <div class="box-input gap-x-4 px-4">
-        <label for="url">Subir Documento (PDF)</label>
-        <input
-          type="file"
-          (change)="onPdfSelected($event)"
-          accept="application/pdf"
-        />
-      </div>
-
       <!-- Mensaje de error global -->
       <div *ngIf="errorSession" class="is-invalid-text">
         Ocurrió un error con el envío del formulario

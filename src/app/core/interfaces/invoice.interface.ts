@@ -14,7 +14,7 @@ export interface InvoiceModel {
   total_amount_irpf?: number;
   subsidy_id?: number;
   project_id?: number;
-  invoice_file?: File;
+  invoice_pdf?: File;
 }
 export interface InvoiceModelFullData extends InvoiceModel {
   creditor_company?: string;

@@ -20,7 +20,12 @@
     (click)="inputField.value = ''"
   />
 
-  <button type="button" mat-raised-button (click)="inputField.click()">
+  <button
+    type="button"
+    mat-raised-button
+    (click)="inputField.click()"
+    class="w-full mb-4"
+  >
     Seleccionar imagen
   </button>
   <button
@@ -33,7 +38,7 @@
     mat-raised-button
     color="warn"
     (click)="removeImage()"
-    style="margin-left: 10px"
+    class="w-full"
   >
     Eliminar imagen
   </button>

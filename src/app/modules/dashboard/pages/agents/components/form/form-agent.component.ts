@@ -131,9 +131,13 @@ export class FormAgentComponent {
       return;
     }
 
+    const rawValues = { ...this.formAgent.getRawValue() } as any;
+
     const formData = this.generalService.createFormData(
-      this.formAgent.value,
-      this.selectedImageFile,
+      rawValues,
+      {
+        img: this.selectedImageFile,
+      },
       this.itemId
     );
 

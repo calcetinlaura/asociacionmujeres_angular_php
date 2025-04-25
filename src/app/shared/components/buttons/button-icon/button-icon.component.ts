@@ -1,17 +1,16 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Output, Input } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 
 @Component({
   standalone: true,
-  selector: 'app-button-add',
-  templateUrl: './button-add.component.html',
-  styleUrls: ['./button-add.component.css'],
+  selector: 'app-button-icon',
+  templateUrl: './button-icon.component.html',
+  styleUrls: ['./button-icon.component.css'],
   imports: [CommonModule],
 })
-export class AddButtonComponent {
+export class ButtonIconComponent {
   @Input() buttonText: string = 'Nuevo Libro';
   @Input() iconClass: string = 'uil-plus';
-
   @Output() addClicked = new EventEmitter<void>();
 
   onAddClick() {

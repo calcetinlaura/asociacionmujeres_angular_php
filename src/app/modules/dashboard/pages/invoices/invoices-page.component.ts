@@ -2,12 +2,11 @@ import { CommonModule } from '@angular/common';
 import {
   Component,
   DestroyRef,
-  inject,
   OnInit,
   ViewChild,
+  inject,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatTabChangeEvent, MatTabsModule } from '@angular/material/tabs';
 import { combineLatest, tap } from 'rxjs';
 import { InvoicesFacade } from 'src/app/application/invoices.facade';
@@ -21,10 +20,9 @@ import {
   TypeActionModal,
   TypeList,
 } from 'src/app/core/models/general.model';
-import { InvoicesService } from 'src/app/core/services/invoices.services';
 import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
 import { FiltersComponent } from 'src/app/modules/landing/components/filters/filters.component';
-import { AddButtonComponent } from 'src/app/shared/components/buttons/button-add/button-add.component';
+import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
 import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
 import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
 import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
@@ -39,8 +37,7 @@ import { TableComponent } from '../../components/table/table.component';
     CommonModule,
     DashboardHeaderComponent,
     ModalComponent,
-    AddButtonComponent,
-    ReactiveFormsModule,
+    ButtonIconComponent,
     InputSearchComponent,
     SpinnerLoadingComponent,
     TableComponent,
@@ -48,13 +45,12 @@ import { TableComponent } from '../../components/table/table.component';
     MatTabsModule,
   ],
   templateUrl: './invoices-page.component.html',
-  styleUrl: './invoices-page.component.css',
+  styleUrls: ['./invoices-page.component.css'],
 })
 export class InvoicesPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly modalService = inject(ModalService);
   private readonly invoicesFacade = inject(InvoicesFacade);
-  private readonly invoicesService = inject(InvoicesService);
   private readonly generalService = inject(GeneralService);
 
   headerListInvoices: ColumnModel[] = [
@@ -93,11 +89,7 @@ export class InvoicesPageComponent implements OnInit {
       pipe: 'date : dd MMM yyyy',
       showIndicatorOnEmpty: true,
     },
-    {
-      title: 'Acreedor',
-      key: 'creditor_company',
-      sortable: true,
-    },
+    { title: 'Acreedor', key: 'creditor_company', sortable: true },
     {
       title: 'Descripción',
       key: 'description',
@@ -151,101 +143,98 @@ export class InvoicesPageComponent implements OnInit {
       showIndicatorOnEmpty: true,
     },
   ];
+
   invoices: InvoiceModelFullData[] = [];
   filteredInvoices: InvoiceModelFullData[] = [];
   filtersYears: Filter[] = [];
   selectedFilter: number | null = null;
-
   isLoading = true;
   isModalVisible = false;
+  hasInvoicesForYear = false;
   number = 0;
-
   item: InvoiceModelFullData | null = null;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
-  searchForm!: FormGroup;
   typeList = TypeList.Invoices;
-
-  selectedIndex: number = 0;
-  selectedTypeFilter: string | null = null;
   currentFilterType: string | null = null;
   currentTab: string | null = null;
-  // searchKeywordFilter = new FormControl();
   currentYear = this.generalService.currentYear;
+  selectedIndex = 0;
 
   @ViewChild(InputSearchComponent)
   private inputSearchComponent!: InputSearchComponent;
 
   ngOnInit(): void {
-    (this.filtersYears = this.generalService.getYearFilters(
+    this.filtersYears = this.generalService.getYearFilters(
       2018,
       this.currentYear
-    )),
-      this.loadInvoicesByYears(this.selectedFilter ?? this.currentYear);
+    );
 
-    // combinar ambos para simplificar y evitar doble carga innecesaria. Suscribirse a los cambios en las facturas filtradas
     combineLatest([
-      this.invoicesFacade.filteredInvoices$,
       this.invoicesFacade.invoices$,
+      this.invoicesFacade.currentFilter$,
+      this.invoicesFacade.tabFilter$,
+      this.invoicesFacade.isLoading$, // AÑADIMOS EL isLoading$
     ])
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap(([filtered, all]) => {
-          if (filtered) {
-            this.filteredInvoices = filtered;
-            this.number = filtered.length;
-          } else if (all) {
-            this.filteredInvoices = all;
-            this.number = all.length;
+        tap(([invoices, selectedYear, tabFilter, loading]) => {
+          if (loading) {
+            this.isLoading = true;
+            return; // 🔥 si sigue cargando, NO hacer nada más
           }
+
           this.isLoading = false;
+
+          let invoicesForYear = invoices;
+
+          if (selectedYear) {
+            invoicesForYear = invoices.filter((invoice) =>
+              invoice.date_invoice
+                ? new Date(invoice.date_invoice).getFullYear().toString() ===
+                  selectedYear
+                : false
+            );
+          }
+
+          this.hasInvoicesForYear = invoicesForYear.length > 0; // ✅ si hay facturas del año o no
+
+          let filtered = invoicesForYear;
+
+          if (tabFilter) {
+            filtered = invoicesForYear.filter(
+              (invoice) => invoice.type_invoice === tabFilter
+            );
+          }
+
+          this.invoices = invoicesForYear;
+          this.filteredInvoices = filtered;
+          this.number = filtered.length;
         })
       )
       .subscribe();
 
-    // Suscripción a los cambios de visibilidad del modal
     this.modalService.modalVisibility$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((isVisible) => {
-          this.isModalVisible = isVisible;
-        })
+        tap((isVisible) => (this.isModalVisible = isVisible))
       )
       .subscribe();
+
+    this.filterSelected(this.currentYear.toString());
   }
 
-  loadInvoicesByYears(filter: number): void {
-    this.invoicesFacade.loadInvoicesByYears(filter);
-    this.invoicesFacade.invoices$
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((invoices) => {
-          this.update_invoiceState(invoices);
-        })
-      )
-      .subscribe();
-  }
-
-  filterYearSelected(filter: string): void {
-    const year = parseInt(filter, 10); // convertir a número
+  filterSelected(filter: string): void {
+    const year = parseInt(filter, 10);
     this.selectedFilter = year;
-    this.invoicesFacade.loadInvoicesByYears(year);
-    this.invoicesFacade.invoices$
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((invoices) => {
-          if (invoices === null) {
-            this.invoices = [];
-            this.filteredInvoices = [];
-            this.number = 0;
-          } else {
-            this.invoices = invoices;
-            this.filteredInvoices = invoices;
-            this.number = invoices.length;
-          }
-          this.isLoading = false;
-        })
-      )
-      .subscribe();
+    this.generalService.clearSearchInput(this.inputSearchComponent);
+
+    this.selectedIndex = 0;
+    this.currentTab = 'Contabilidad completa';
+    this.currentFilterType = null;
+    this.invoicesFacade.clearTabFilter();
+
+    this.invoicesFacade.setCurrentFilter(year.toString());
+    this.invoicesFacade.loadInvoicesByYear(year);
   }
 
   tabActive(event: MatTabChangeEvent): void {
@@ -262,18 +251,14 @@ export class InvoicesPageComponent implements OnInit {
         this.currentFilterType = 'Ingreso';
         break;
       case 'Contabilidad completa':
-        this.currentFilterType = null; // Deja el tipo de filtro en null
+        this.currentFilterType = null;
         break;
       default:
         this.currentFilterType = null;
         break;
     }
 
-    if (this.currentFilterType !== null) {
-      this.invoicesFacade.applyFilterWordTab(this.currentFilterType);
-    } else {
-      this.clearFilter();
-    }
+    this.invoicesFacade.setTabFilter(this.currentFilterType);
   }
 
   applyFilterWord(keyword: string): void {
@@ -281,9 +266,9 @@ export class InvoicesPageComponent implements OnInit {
   }
 
   clearFilter(): void {
-    this.currentFilterType = null;
-    this.filteredInvoices = this.invoices;
+    this.invoicesFacade.clearTabFilter();
   }
+
   addNewInvoiceModal(): void {
     this.currentModalAction = TypeActionModal.Create;
     this.item = null;
@@ -294,19 +279,14 @@ export class InvoicesPageComponent implements OnInit {
     action: TypeActionModal;
     item: InvoiceModelFullData;
   }): void {
-    this.openModal(event.action, event.item ?? null);
-  }
-
-  private openModal(
-    action: TypeActionModal,
-    invoice: InvoiceModelFullData | null
-  ): void {
-    this.currentModalAction = action;
-    this.item = invoice;
+    this.currentModalAction = event.action;
+    this.item = event.item;
     this.modalService.openModal();
   }
+
   onCloseModal(): void {
     this.modalService.closeModal();
+    this.isLoading = false;
   }
 
   confirmDeleteInvoice(invoice: InvoiceModelFullData | null): void {
@@ -314,39 +294,22 @@ export class InvoicesPageComponent implements OnInit {
     this.invoicesFacade.deleteInvoice(invoice.id);
     this.modalService.closeModal();
   }
-  sendFormInvoice(event: { itemId: number; formData: FormData }): void {
-    if (event.itemId) {
-      this.invoicesFacade
-        .editInvoice(event.itemId, event.formData)
-        .pipe(
-          takeUntilDestroyed(this.destroyRef),
-          tap(() => {
-            this.loadInvoicesByYears(this.selectedFilter ?? this.currentYear);
-            this.invoicesFacade.applyFilterWordTab(this.currentFilterType);
-            this.onCloseModal(); // ✅ ahora también cierra al editar
-          })
-        )
-        .subscribe();
-    } else {
-      this.invoicesFacade
-        .addInvoice(event.formData)
-        .pipe(
-          takeUntilDestroyed(this.destroyRef),
-          tap(() => {
-            this.loadInvoicesByYears(this.selectedFilter ?? this.currentYear);
-            this.invoicesFacade.applyFilterWordTab(this.currentFilterType);
-            this.onCloseModal();
-          })
-        )
-        .subscribe();
-    }
-  }
 
-  private update_invoiceState(invoices: InvoiceModelFullData[] | null): void {
-    if (!invoices) return;
-    this.invoices = this.invoicesService.sortInvoicesByDate(invoices);
-    this.filteredInvoices = [...this.invoices];
-    this.number = this.invoicesService.countInvoices(invoices);
-    this.isLoading = false;
+  sendFormInvoice(event: { itemId: number; formData: FormData }): void {
+    const operation = event.itemId
+      ? this.invoicesFacade.editInvoice(event.itemId, event.formData)
+      : this.invoicesFacade.addInvoice(event.formData);
+
+    operation
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap(() => {
+          this.filterSelected(
+            (this.selectedFilter ?? this.currentYear).toString()
+          );
+          this.onCloseModal();
+        })
+      )
+      .subscribe();
   }
 }

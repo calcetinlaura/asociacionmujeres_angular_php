@@ -19,7 +19,7 @@ import {
 } from 'src/app/core/interfaces/place.interface';
 import { TypeList } from 'src/app/core/models/general.model';
 import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
-import { AddButtonComponent } from 'src/app/shared/components/buttons/button-add/button-add.component';
+import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
@@ -31,7 +31,7 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
     EditorModule,
     MatCardModule,
     ImageControlComponent,
-    AddButtonComponent,
+    ButtonIconComponent,
   ],
   templateUrl: './form-place.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],

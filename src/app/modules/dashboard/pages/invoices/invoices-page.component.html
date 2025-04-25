@@ -8,10 +8,10 @@
   <div class="flex flex-1 flex-col justify-center px-8 gap-y-8">
     <app-filters
       [filters]="filtersYears"
-      (filterClicked)="filterYearSelected($event)"
+      (filterClicked)="filterSelected($event)"
     ></app-filters>
     <div class="flex gap-x-4">
-      <app-button-add
+      <app-button-icon
         [buttonText]="'Añadir movimiento'"
         [iconClass]="'uil-plus'"
         (addClicked)="addNewInvoiceModal()"
@@ -20,33 +20,45 @@
     </div>
   </div>
 </div>
-<div class="flex flex-col px-8">
-  <mat-tab-group
-    (selectedTabChange)="tabActive($event)"
-    [selectedIndex]="selectedIndex"
-  >
-    <mat-tab label="Contabilidad completa">
-      <ng-container *ngTemplateOutlet="templateTableInvoice"></ng-container>
-    </mat-tab>
-    <!-- Pestaña para Facturas -->
-    <mat-tab label="Facturas">
-      <ng-container *ngTemplateOutlet="templateTableInvoice"></ng-container>
-    </mat-tab>
-    <!-- Pestaña para Tickets -->
-    <mat-tab label="Tickets">
-      <ng-container *ngTemplateOutlet="templateTableInvoice"></ng-container>
-    </mat-tab>
 
-    <!-- Pestaña para Ingresos -->
-    <mat-tab label="Ingresos">
-      <ng-container *ngTemplateOutlet="templateTableInvoice"></ng-container>
-    </mat-tab>
-  </mat-tab-group>
-  <ng-template #templateTableInvoice>
-    <!-- Spinner Loading -->
-    <app-spinner-loading *ngIf="isLoading; else results" />
-    <!-- Tabla -->
-    <ng-template #results>
+<div class="flex flex-col px-8">
+  <ng-container *ngIf="isLoading; else loadedContent">
+    <div class="flex justify-center items-center py-16">
+      <app-spinner-loading />
+    </div>
+  </ng-container>
+
+  <ng-template #loadedContent>
+    <ng-container *ngIf="hasInvoicesForYear; else noInvoicesTemplate">
+      <mat-tab-group
+        (selectedTabChange)="tabActive($event)"
+        [selectedIndex]="selectedIndex"
+      >
+        <mat-tab label="Contabilidad completa">
+          <ng-container *ngTemplateOutlet="templateTableInvoice"></ng-container>
+        </mat-tab>
+        <mat-tab label="Facturas">
+          <ng-container *ngTemplateOutlet="templateTableInvoice"></ng-container>
+        </mat-tab>
+        <mat-tab label="Tickets">
+          <ng-container *ngTemplateOutlet="templateTableInvoice"></ng-container>
+        </mat-tab>
+        <mat-tab label="Ingresos">
+          <ng-container *ngTemplateOutlet="templateTableInvoice"></ng-container>
+        </mat-tab>
+      </mat-tab-group>
+    </ng-container>
+
+    <ng-template #noInvoicesTemplate>
+      <div class="flex flex-col items-center justify-center py-16">
+        <p class="text-lg text-gray-500 text-center">
+          No hay contabilidad registrada de ese año.
+        </p>
+      </div>
+    </ng-template>
+
+    <!-- Plantilla tabla -->
+    <ng-template #templateTableInvoice>
       <div class="pb-4 flex">
         <app-table
           [data]="filteredInvoices"
@@ -60,7 +72,7 @@
     </ng-template>
   </ng-template>
 </div>
-<!-- Modal -->
+
 <app-modal
   *ngIf="isModalVisible"
   [item]="item"

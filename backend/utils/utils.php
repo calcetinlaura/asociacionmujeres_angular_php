@@ -4,7 +4,7 @@ header("Access-Control-Allow-Methods: GET, POST, PATCH, DELETE");
 header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json; charset=UTF-8");
 //Función para subir imagen
-function procesarImagen(string $basePath, string $inputName, array $postData = []): string {
+function procesarArchivo(string $basePath, string $inputName, array $postData = []): string {
   if (!isset($_FILES[$inputName]) || $_FILES[$inputName]['error'] !== 0) {
     return '';
   }
@@ -35,7 +35,7 @@ function procesarImagen(string $basePath, string $inputName, array $postData = [
   return '';
 }
 
-function procesarImagenPorAnio($basePath, $inputName, $fechaCampo) {
+function procesarArchivoPorAnio($basePath, $inputName, $fechaCampo) {
   if (!isset($_FILES[$inputName]) || $_FILES[$inputName]['error'] !== 0) {
     return $_POST['img'] ?? '';  // 👈 esto soluciona el problema
   }

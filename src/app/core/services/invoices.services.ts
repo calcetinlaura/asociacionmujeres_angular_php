@@ -85,4 +85,10 @@ export class InvoicesService {
   countInvoices(books: InvoiceModelFullData[] | null): number {
     return books?.length ?? 0;
   }
+
+  downloadFilteredPdfs(pdfFiles: string[]): Observable<Blob> {
+    const url = `${environments.api}/backend/utils/zip-download.php`;
+
+    return this.http.post(url, { files: pdfFiles }, { responseType: 'blob' });
+  }
 }

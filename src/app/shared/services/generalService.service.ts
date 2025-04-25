@@ -62,7 +62,23 @@ export class GeneralService {
       reader.readAsDataURL(file);
     });
   }
+  /**  Validar y extraer PDFs */
+  validateAndExtractPdf(event: Event): File | null {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
 
+    if (!file) {
+      console.warn('⚠️ No se seleccionó ningún archivo.');
+      return null;
+    }
+
+    if (file.type !== 'application/pdf') {
+      console.warn('⚠️ Formato incorrecto. Selecciona un archivo PDF.');
+      return null;
+    }
+
+    return file;
+  }
   clearSearchInput(inputComponent?: { clearInput: () => void }): void {
     inputComponent?.clearInput();
   }
@@ -70,29 +86,36 @@ export class GeneralService {
   /** Construye un FormData dinámico a partir de un objeto   */
   createFormData(
     item: any,
-    selectedImageFile: File | null,
+    fileFields: { [key: string]: File | null } = {},
     itemId?: number
   ): FormData {
     const formData = new FormData();
 
     Object.keys(item).forEach((key) => {
       const value = item[key];
-
-      if (value !== null && value !== undefined) {
+      if (value !== undefined && value !== null) {
         if (Array.isArray(value) || typeof value === 'object') {
           formData.append(key, JSON.stringify(value));
         } else {
           formData.append(key, value.toString());
         }
+      } else {
+        formData.append(key, '');
       }
     });
 
-    // ⬇️ Este bloque es la clave
-    if (selectedImageFile) {
-      formData.append('img', selectedImageFile, selectedImageFile.name);
-    } else if (item.img && item.img !== '') {
-      formData.append('img', item.img); // solo si hay una imagen previa
-    }
+    // Manejo flexible de múltiples archivos
+    Object.keys(fileFields).forEach((field) => {
+      const file = fileFields[field];
+      if (file instanceof File) {
+        formData.append(field, file, file.name);
+      } else if (item.existingUrl) {
+        formData.append('existingUrl', item.existingUrl);
+      } else {
+        // Marcar para borrar
+        formData.append(field, '');
+      }
+    });
 
     if (itemId && itemId !== 0) {
       formData.append('_method', 'PATCH');
@@ -100,6 +123,10 @@ export class GeneralService {
     }
 
     return formData;
+  }
+
+  private capitalize(text: string): string {
+    return text.charAt(0).toUpperCase() + text.slice(1);
   }
 
   handleHttpError(error: any): Observable<never> {

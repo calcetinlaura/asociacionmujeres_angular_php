@@ -139,9 +139,13 @@ export class FormMacroeventComponent {
       return;
     }
 
+    const rawValues = { ...this.formMacroevent.getRawValue() } as any;
+
     const formData = this.generalService.createFormData(
-      this.formMacroevent.value,
-      this.selectedImageFile,
+      rawValues,
+      {
+        img: this.selectedImageFile,
+      },
       this.itemId
     );
 

@@ -251,7 +251,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'deleteImage') {
   echo json_encode(["message" => "ID requerido para eliminar imagen"]);
   exit();
 }
-      $imgName = procesarImagenPorAnio($basePath, 'img', 'start');
+      $imgName = procesarArchivoPorAnio($basePath, 'img', 'start');
       $data = $_POST;
       $data['img'] = $imgName;
 

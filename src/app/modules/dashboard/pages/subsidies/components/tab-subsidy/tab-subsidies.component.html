@@ -64,7 +64,7 @@
     <div class="flex items-center justify-between align-middle mb-4">
       <h2>Proyectos solicitadas</h2>
 
-      <app-button-add
+      <app-button-icon
         [buttonText]="'Añadir proyecto'"
         [iconClass]="'uil-plus'"
         (addClicked)="
@@ -228,6 +228,7 @@
   <div class="py-4 flex">
     <app-table
       *ngIf="!loading"
+      [type]="typeList.Invoices"
       [data]="filteredInvoices"
       [headerColumns]="headerListInvoices"
       (openModal)="

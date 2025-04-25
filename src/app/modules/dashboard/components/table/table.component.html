@@ -1,7 +1,18 @@
 <div
-  class="filterColumns flex justify-end h-14 items-center"
+  class="filterColumns flex justify-end h-14 gap-x-1 items-center"
   [ngStyle]="{ top: topFilter + 'px' }"
 >
+  <app-icon-action
+    *ngIf="type === TypeList.Invoices"
+    [icon]="'uil-folder-download'"
+    [tooltip]="'Descargar facturas'"
+    (click)="downloadFilteredPdfs()"
+  ></app-icon-action>
+  <app-icon-action
+    [icon]="'uil-print'"
+    [tooltip]="'Imprimir tabla'"
+    (click)="printTableAsPdf()"
+  ></app-icon-action>
   <app-button
     [buttonText]="'Filtrar columnas'"
     [menu]="columnsMenu"
@@ -104,6 +115,11 @@
             alt=""
             class="cover"
           />
+        </ng-container>
+        <ng-container *ngSwitchCase="column.key === 'invoice_pdf'">
+          <div *ngIf="element['invoice_pdf']">
+            <i class="uil uil-file-alt text-[25px]"></i>
+          </div>
         </ng-container>
         <!-- FECHAS -->
         <ng-container *ngSwitchCase="column.key === 'start'">

@@ -1,0 +1,54 @@
+<div class="relative w-full" [style.height]="pdfViewerHeight + 'px'">
+  <ng-container *ngIf="previewUrl && isPdfAvailable; else errorDisplay">
+    <object
+      [data]="previewUrl"
+      type="application/pdf"
+      width="100%"
+      [style.height]="pdfHeight + 'px'"
+    ></object>
+
+    <div
+      class="absolute top-0 left-0 w-full h-full cursor-pointer"
+      (click)="openPdfNewWindow()"
+      style="z-index: 10"
+      [style.height]="pdfHeight + 'px'"
+    ></div>
+  </ng-container>
+
+  <ng-template #errorDisplay>
+    <img
+      [src]="placeholder"
+      alt="No se pudo cargar el PDF"
+      class="w-full h-full"
+    />
+  </ng-template>
+
+  <input
+    #pdfInput
+    type="file"
+    accept="application/pdf"
+    hidden
+    (change)="onFileSelected($event)"
+    (click)="pdfInput.value = ''"
+  />
+
+  <button
+    mat-raised-button
+    type="button"
+    (click)="pdfInput.click()"
+    class="w-full my-4"
+  >
+    Seleccionar PDF
+  </button>
+
+  <button
+    *ngIf="isPdfAvailable"
+    mat-raised-button
+    color="warn"
+    type="button"
+    (click)="removePdf()"
+    class="w-full"
+  >
+    Eliminar PDF
+  </button>
+</div>

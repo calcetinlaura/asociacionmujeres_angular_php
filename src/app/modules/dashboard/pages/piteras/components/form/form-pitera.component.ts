@@ -14,6 +14,7 @@ import { PiteraModel } from 'src/app/core/interfaces/pitera.interface';
 import { TypeList } from 'src/app/core/models/general.model';
 import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
+import { PdfControlComponent } from '../../../../components/pdf-control/pdf-control.component';
 
 @Component({
   selector: 'app-form-pitera',
@@ -24,6 +25,7 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
     EditorModule,
     MatCardModule,
     ImageControlComponent,
+    PdfControlComponent,
   ],
   templateUrl: './form-pitera.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],
@@ -98,56 +100,49 @@ export class FormPiteraComponent {
   }
 
   onPdfSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files.length > 0) {
-      const file = input.files[0];
-
-      if (file.type === 'application/pdf') {
-        this.formPitera.patchValue({ url: file });
-      } else {
-        console.warn('⚠️ Formato incorrecto. Selecciona un archivo PDF.');
-      }
-    } else {
-      console.warn('⚠️ No se seleccionó ningún archivo.');
+    const file = this.generalService.validateAndExtractPdf(event);
+    if (file) {
+      this.formPitera.patchValue({ url: file }); // o url, si es en `formPitera`
     }
+  }
+
+  getPiteraPdfPreview(): string | null {
+    const val = this.formPitera.get('url')?.value;
+    return typeof val === 'string' ? val : null;
   }
 
   onSendFormPitera(): void {
     if (this.formPitera.invalid) {
       this.submitted = true;
-      console.log('⚠️ Formulario inválido', this.formPitera.errors);
+      console.warn('⚠️ Formulario inválido', this.formPitera.errors);
       return;
     }
 
-    const formData = new FormData();
-    formData.append('title', this.formPitera.value.title!);
-    formData.append('theme', this.formPitera.value.theme || '');
-    formData.append('year', this.formPitera.value.year!.toString());
+    const rawValues = { ...this.formPitera.getRawValue() } as any;
 
-    // 🔹 Si `url` es un archivo, añadirlo al `FormData`
-    if (this.formPitera.value.url instanceof File) {
-      formData.append('url', this.formPitera.value.url);
-    } else if (typeof this.formPitera.value.url === 'string') {
-      formData.append('existingUrl', this.formPitera.value.url); // 🔹 Enviar URL como string si ya existe
+    const pdf = rawValues.url;
+    const selectedPdf = pdf instanceof File ? pdf : null;
+    if (typeof pdf === 'string') {
+      rawValues.existingUrl = pdf;
+    }
+    delete rawValues.url;
+
+    if (this.imageSrc && !this.selectedImageFile) {
+      rawValues.existingImg = this.imageSrc;
     }
 
-    // 🔹 Si hay imagen seleccionada, agregarla
-    if (this.selectedImageFile) {
-      formData.append('img', this.selectedImageFile);
-    } else if (this.imageSrc) {
-      formData.append('existingImg', this.imageSrc);
-    }
-
-    if (this.itemId) {
-      formData.append('_method', 'PATCH');
-      formData.append('id', this.itemId.toString());
-    }
-
-    console.log(
-      '📤 Enviando FormData:',
-      Object.fromEntries((formData as any).entries())
+    const formData = this.generalService.createFormData(
+      rawValues,
+      {
+        url: selectedPdf,
+        img: this.selectedImageFile,
+      },
+      this.itemId
     );
 
-    this.sendFormPitera.emit({ itemId: this.itemId, formData: formData });
+    this.sendFormPitera.emit({
+      itemId: this.itemId,
+      formData: formData,
+    });
   }
 }

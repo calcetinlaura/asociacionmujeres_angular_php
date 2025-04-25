@@ -54,10 +54,6 @@
         [text]="item.total_amount | eurosFormat"
       ></app-text-border>
     </div>
-    <app-text-border
-      *ngIf="item.total_amount_irpf"
-      [text]="'Total + IRPF = ' + (item.total_amount_irpf | eurosFormat)"
-    ></app-text-border>
   </div>
   <app-text-background [text]="'Subvención'"></app-text-background>
   <app-text-icon

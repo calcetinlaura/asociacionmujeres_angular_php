@@ -107,7 +107,7 @@ switch ($method) {
       }
 
       // 🔁 Lógica normal de crear o actualizar libro
-      $imgName = procesarImagen($basePath, "img");
+      $imgName = procesarArchivo($basePath, "img");
       $data = $_POST;
       $data['img'] = $imgName;
 

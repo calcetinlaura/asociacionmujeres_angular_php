@@ -27,7 +27,7 @@ import { SubsidiesService } from 'src/app/core/services/subsidies.services';
 import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { dateRangeValidator } from 'src/app/shared/utils/validators.utils';
-import { AddButtonComponent } from '../../../../../../shared/components/buttons/button-add/button-add.component';
+import { ButtonIconComponent } from '../../../../../../shared/components/buttons/button-icon/button-icon.component';
 
 @Component({
   selector: 'app-form-project',
@@ -38,7 +38,7 @@ import { AddButtonComponent } from '../../../../../../shared/components/buttons/
     EditorModule,
     MatCardModule,
     ImageControlComponent,
-    AddButtonComponent,
+    ButtonIconComponent,
   ],
   templateUrl: './form-project.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],
@@ -183,10 +183,13 @@ export class FormProjectComponent implements OnInit {
       return;
     }
 
-    const formData = this.generalService.createFormData(
-      this.formProject.value,
+    const rawValues = { ...this.formProject.getRawValue() } as any;
 
-      this.selectedImageFile,
+    const formData = this.generalService.createFormData(
+      rawValues,
+      {
+        img: this.selectedImageFile,
+      },
       this.itemId
     );
 

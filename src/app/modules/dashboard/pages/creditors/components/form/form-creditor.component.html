@@ -17,12 +17,12 @@
               formControlName="company"
               type="text"
               [ngClass]="{
-                'is-invalid': submitted && formCreditor.get('name')?.invalid
+                'is-invalid': submitted && formCreditor.get('company')?.invalid
               }"
             />
 
             <div
-              *ngIf="submitted && formCreditor.get('name')?.invalid"
+              *ngIf="submitted && formCreditor.get('company')?.invalid"
               class="is-invalid-text"
             >
               Campo requerido

@@ -30,6 +30,7 @@
     "mssql": "^10.0.1",
     "ngx-cookie-service": "^17.0.1",
     "ngx-image-cropper": "^8.1.1",
+    "pdf-thumbnail": "^1.0.6",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.14.2"

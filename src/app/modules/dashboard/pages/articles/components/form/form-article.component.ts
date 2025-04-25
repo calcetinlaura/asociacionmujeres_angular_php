@@ -105,9 +105,13 @@ export class FormArticleComponent {
       return;
     }
 
+    const rawValues = { ...this.formArticle.getRawValue() } as any;
+
     const formData = this.generalService.createFormData(
-      this.formArticle.value,
-      this.selectedImageFile,
+      rawValues,
+      {
+        img: this.selectedImageFile,
+      },
       this.itemId
     );
 

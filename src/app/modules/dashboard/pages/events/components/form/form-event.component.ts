@@ -33,7 +33,7 @@ import { TypeList } from 'src/app/core/models/general.model';
 import { AgentsService } from 'src/app/core/services/agents.services';
 import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
-import { AddButtonComponent } from '../../../../../../shared/components/buttons/button-add/button-add.component';
+import { ButtonIconComponent } from '../../../../../../shared/components/buttons/button-icon/button-icon.component';
 import { AgentArrayControlComponent } from '../array-agents/array-agents.component';
 // Importaciones...
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -54,7 +54,7 @@ import { dateRangeValidator } from 'src/app/shared/utils/validators.utils';
     EditorModule,
     MatCardModule,
     ImageControlComponent,
-    AddButtonComponent,
+    ButtonIconComponent,
     AgentArrayControlComponent,
   ],
   templateUrl: './form-event.component.html',
@@ -490,7 +490,9 @@ export class FormEventComponent implements OnInit, OnChanges {
 
     const formData = this.generalService.createFormData(
       dataToSend,
-      this.selectedImageFile,
+      {
+        img: this.selectedImageFile,
+      },
       this.itemId
     );
 

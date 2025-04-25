@@ -107,9 +107,13 @@ export class FormMovieComponent {
       return;
     }
 
+    const rawValues = { ...this.formMovie.getRawValue() } as any;
+
     const formData = this.generalService.createFormData(
-      this.formMovie.value,
-      this.selectedImageFile,
+      rawValues,
+      {
+        img: this.selectedImageFile,
+      },
       this.itemId
     );
 

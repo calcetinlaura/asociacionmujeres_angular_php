@@ -75,3 +75,50 @@ p {
   font-size: 14px !important;
   padding-right: 2px;
 }
+
+@media print {
+  .custom-header-row {
+    position: static !important;
+    top: auto !important;
+    background-color: #fff !important;
+    z-index: auto !important;
+  }
+
+  .mat-elevation-z8 {
+    box-shadow: none !important;
+  }
+
+  th.mat-column-actions,
+  td.mat-column-actions {
+    position: static !important;
+    top: auto !important;
+    z-index: auto !important;
+  }
+
+  .table {
+    width: 100% !important;
+    table-layout: auto !important;
+  }
+
+  .mat-table {
+    width: 100% !important;
+  }
+
+  .mat-header-row,
+  .mat-row,
+  .mat-footer-row {
+    break-inside: avoid !important;
+  }
+
+  @page {
+    size: A4 landscape;
+    margin: 1cm;
+  }
+
+  html,
+  body {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+}

@@ -111,9 +111,13 @@ export class FormRecipeComponent {
       return;
     }
 
+    const rawValues = { ...this.formRecipe.getRawValue() } as any;
+
     const formData = this.generalService.createFormData(
-      this.formRecipe.value,
-      this.selectedImageFile,
+      rawValues,
+      {
+        img: this.selectedImageFile,
+      },
       this.itemId
     );
 
