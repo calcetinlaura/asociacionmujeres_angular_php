@@ -55,6 +55,12 @@ export class InvoicesPageComponent implements OnInit {
 
   headerListInvoices: ColumnModel[] = [
     {
+      title: 'Factura',
+      key: 'invoice_pdf',
+      sortable: true,
+      showIndicatorOnEmpty: true,
+    },
+    {
       title: 'Tipo',
       key: 'type_invoice',
       sortable: true,
