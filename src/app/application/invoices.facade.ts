@@ -48,8 +48,11 @@ export class InvoicesFacade {
       .subscribe();
   }
 
-  loadInvoicesByYear(year: number): void {
-    this.isLoadingSubject.next(true);
+  loadInvoicesByYear(year: number, showLoading = true): void {
+    if (showLoading) {
+      this.isLoadingSubject.next(true); // 🔥 Solo activar spinner
+    }
+
     this.invoicesService
       .getInvoicesByYear(year)
       .pipe(
@@ -139,7 +142,7 @@ export class InvoicesFacade {
 
   private reloadCurrentFilter(): void {
     const filter = this.currentFilterSubject.getValue();
-    if (filter) this.loadInvoicesByYear(+filter);
+    if (filter) this.loadInvoicesByYear(+filter, false); // 🔥 NO spinner cuando recargas tras borrar
   }
 
   private updateInvoiceState(invoices: InvoiceModelFullData[] | null): void {
@@ -165,5 +168,8 @@ export class InvoicesFacade {
 
   get currentTabFilter(): string | null {
     return this.tabFilterSubject.value;
+  }
+  clearInvoices(): void {
+    this.invoicesSubject.next([]);
   }
 }

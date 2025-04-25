@@ -170,6 +170,7 @@ export class InvoicesPageComponent implements OnInit {
   private inputSearchComponent!: InputSearchComponent;
 
   ngOnInit(): void {
+    this.invoicesFacade.clearInvoices();
     this.filtersYears = this.generalService.getYearFilters(
       2018,
       this.currentYear
