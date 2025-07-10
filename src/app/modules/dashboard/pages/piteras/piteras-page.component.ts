@@ -20,20 +20,19 @@ import { ModalService } from 'src/app/shared/components/modal/services/modal.ser
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 
 @Component({
-  selector: 'app-piteras-page',
-  standalone: true,
-  imports: [
-    CommonModule,
-    DashboardHeaderComponent,
-    ModalComponent,
-    ButtonIconComponent,
-    ReactiveFormsModule,
-    InputSearchComponent,
-    SpinnerLoadingComponent,
-    TableComponent,
-  ],
-  templateUrl: './piteras-page.component.html',
-  styleUrl: './piteras-page.component.css',
+    selector: 'app-piteras-page',
+    imports: [
+        CommonModule,
+        DashboardHeaderComponent,
+        ModalComponent,
+        ButtonIconComponent,
+        ReactiveFormsModule,
+        InputSearchComponent,
+        SpinnerLoadingComponent,
+        TableComponent,
+    ],
+    templateUrl: './piteras-page.component.html',
+    styleUrl: './piteras-page.component.css'
 })
 export class PiterasPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);

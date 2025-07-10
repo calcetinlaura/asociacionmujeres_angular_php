@@ -23,30 +23,29 @@ import { ModalDeleteComponent } from './pages/modal-delete/modal-delete.componen
 import { ModalShowComponent } from './pages/modal-show/modal-show.component';
 
 @Component({
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormPartnerComponent,
-    FormEventComponent,
-    FormRecipeComponent,
-    FormBookComponent,
-    FormMovieComponent,
-    FormPiteraComponent,
-    FormInvoiceComponent,
-    FormSubsidyComponent,
-    FormCreditorComponent,
-    FormAgentComponent,
-    FormPlaceComponent,
-    ModalShowComponent,
-    ModalDeleteComponent,
-    FormMacroeventComponent,
-    FormPodcastComponent,
-    FormArticleComponent,
-    FormProjectComponent,
-  ],
-  selector: 'app-modal',
-  templateUrl: './modal.component.html',
-  styleUrls: ['./modal.component.css'],
+    imports: [
+        CommonModule,
+        FormPartnerComponent,
+        FormEventComponent,
+        FormRecipeComponent,
+        FormBookComponent,
+        FormMovieComponent,
+        FormPiteraComponent,
+        FormInvoiceComponent,
+        FormSubsidyComponent,
+        FormCreditorComponent,
+        FormAgentComponent,
+        FormPlaceComponent,
+        ModalShowComponent,
+        ModalDeleteComponent,
+        FormMacroeventComponent,
+        FormPodcastComponent,
+        FormArticleComponent,
+        FormProjectComponent,
+    ],
+    selector: 'app-modal',
+    templateUrl: './modal.component.html',
+    styleUrls: ['./modal.component.css']
 })
 export class ModalComponent implements OnInit {
   @Output() closeModal = new EventEmitter<boolean>();

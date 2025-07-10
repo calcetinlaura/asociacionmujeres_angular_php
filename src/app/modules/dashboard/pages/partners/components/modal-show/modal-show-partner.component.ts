@@ -11,20 +11,19 @@ import { TextSubTitleComponent } from 'src/app/shared/components/text/text-subTi
 import { TextIconComponent } from 'src/app/shared/components/text/text-icon/text-icon.component';
 import { PhoneFormatPipe } from 'src/app/shared/pipe/phoneFormat.pipe';
 @Component({
-  selector: 'app-modal-show-partner',
-  standalone: true,
-  imports: [
-    CommonModule,
-    CalculateAgePipe,
-    MatIconModule,
-    TextBackgroundComponent,
-    TextTitleComponent,
-    TextBorderComponent,
-    TextSubTitleComponent,
-    TextIconComponent,
-    PhoneFormatPipe,
-  ],
-  templateUrl: './modal-show-partner.component.html',
+    selector: 'app-modal-show-partner',
+    imports: [
+        CommonModule,
+        CalculateAgePipe,
+        MatIconModule,
+        TextBackgroundComponent,
+        TextTitleComponent,
+        TextBorderComponent,
+        TextSubTitleComponent,
+        TextIconComponent,
+        PhoneFormatPipe,
+    ],
+    templateUrl: './modal-show-partner.component.html'
 })
 export class ModalShowPartnerComponent {
   @Input() item!: PartnerModel;

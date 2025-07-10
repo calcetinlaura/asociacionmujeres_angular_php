@@ -19,17 +19,15 @@ import { ImageControlComponent } from 'src/app/modules/dashboard/components/imag
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
-  selector: 'app-form-recipe',
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-
-    MatCardModule,
-    ImageControlComponent,
-  ],
-  templateUrl: './form-recipe.component.html',
-  styleUrls: ['../../../../components/form/form.component.css'],
+    selector: 'app-form-recipe',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        MatCardModule,
+        ImageControlComponent,
+    ],
+    templateUrl: './form-recipe.component.html',
+    styleUrls: ['../../../../components/form/form.component.css']
 })
 export class FormRecipeComponent {
   private recipesFacade = inject(RecipesFacade);

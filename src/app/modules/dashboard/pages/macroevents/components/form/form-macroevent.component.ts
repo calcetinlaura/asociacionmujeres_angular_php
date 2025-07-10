@@ -26,17 +26,15 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { dateRangeValidator } from 'src/app/shared/utils/validators.utils';
 
 @Component({
-  selector: 'app-form-macroevent',
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-
-    MatCardModule,
-    ImageControlComponent,
-  ],
-  templateUrl: './form-macroevent.component.html',
-  styleUrls: ['../../../../components/form/form.component.css'],
+    selector: 'app-form-macroevent',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        MatCardModule,
+        ImageControlComponent,
+    ],
+    templateUrl: './form-macroevent.component.html',
+    styleUrls: ['../../../../components/form/form.component.css']
 })
 export class FormMacroeventComponent {
   private readonly destroyRef = inject(DestroyRef);

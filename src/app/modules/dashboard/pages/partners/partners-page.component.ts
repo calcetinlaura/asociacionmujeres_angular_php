@@ -32,21 +32,20 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { TableComponent } from '../../components/table/table.component';
 
 @Component({
-  selector: 'app-partners-page',
-  standalone: true,
-  imports: [
-    CommonModule,
-    DashboardHeaderComponent,
-    ModalComponent,
-    ButtonIconComponent,
-    ReactiveFormsModule,
-    InputSearchComponent,
-    SpinnerLoadingComponent,
-    FiltersComponent,
-    TableComponent,
-  ],
-  templateUrl: './partners-page.component.html',
-  styleUrl: './partners-page.component.css',
+    selector: 'app-partners-page',
+    imports: [
+        CommonModule,
+        DashboardHeaderComponent,
+        ModalComponent,
+        ButtonIconComponent,
+        ReactiveFormsModule,
+        InputSearchComponent,
+        SpinnerLoadingComponent,
+        FiltersComponent,
+        TableComponent,
+    ],
+    templateUrl: './partners-page.component.html',
+    styleUrl: './partners-page.component.css'
 })
 export class PartnersPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);

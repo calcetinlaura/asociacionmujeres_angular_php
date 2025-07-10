@@ -31,21 +31,20 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { TableComponent } from '../../components/table/table.component';
 
 @Component({
-  selector: 'app-invoices-page',
-  standalone: true,
-  imports: [
-    CommonModule,
-    DashboardHeaderComponent,
-    ModalComponent,
-    ButtonIconComponent,
-    InputSearchComponent,
-    SpinnerLoadingComponent,
-    TableComponent,
-    FiltersComponent,
-    MatTabsModule,
-  ],
-  templateUrl: './invoices-page.component.html',
-  styleUrls: ['./invoices-page.component.css'],
+    selector: 'app-invoices-page',
+    imports: [
+        CommonModule,
+        DashboardHeaderComponent,
+        ModalComponent,
+        ButtonIconComponent,
+        InputSearchComponent,
+        SpinnerLoadingComponent,
+        TableComponent,
+        FiltersComponent,
+        MatTabsModule,
+    ],
+    templateUrl: './invoices-page.component.html',
+    styleUrls: ['./invoices-page.component.css']
 })
 export class InvoicesPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);

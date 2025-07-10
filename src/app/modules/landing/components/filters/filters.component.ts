@@ -4,11 +4,10 @@ import { Filter } from 'src/app/core/models/general.model';
 import { ButtonFilterComponent } from 'src/app/shared/components/buttons/button-filter/button-filter.component';
 
 @Component({
-  selector: 'app-filters',
-  standalone: true,
-  imports: [CommonModule, ButtonFilterComponent],
-  templateUrl: './filters.component.html',
-  styleUrl: './filters.component.css',
+    selector: 'app-filters',
+    imports: [CommonModule, ButtonFilterComponent],
+    templateUrl: './filters.component.html',
+    styleUrl: './filters.component.css'
 })
 export class FiltersComponent implements OnInit {
   @Output() filterClicked: EventEmitter<string> = new EventEmitter<string>();

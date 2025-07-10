@@ -13,10 +13,9 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { TypeList } from 'src/app/core/models/general.model';
 
 @Component({
-  standalone: true,
-  selector: 'app-pdf-control',
-  templateUrl: './pdf-control.component.html',
-  imports: [CommonModule, MatButtonModule],
+    selector: 'app-pdf-control',
+    templateUrl: './pdf-control.component.html',
+    imports: [CommonModule, MatButtonModule]
 })
 export class PdfControlComponent implements OnChanges {
   @Input() previewPdf: string | File | null = null;

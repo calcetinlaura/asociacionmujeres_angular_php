@@ -36,21 +36,20 @@ import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loadi
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
-  selector: 'app-creditors-page',
-  standalone: true,
-  imports: [
-    CommonModule,
-    DashboardHeaderComponent,
-    ModalComponent,
-    ButtonIconComponent,
-    ReactiveFormsModule,
-    InputSearchComponent,
-    SpinnerLoadingComponent,
-    TableComponent,
-    FiltersComponent,
-  ],
-  templateUrl: './creditors-page.component.html',
-  styleUrl: './creditors-page.component.css',
+    selector: 'app-creditors-page',
+    imports: [
+        CommonModule,
+        DashboardHeaderComponent,
+        ModalComponent,
+        ButtonIconComponent,
+        ReactiveFormsModule,
+        InputSearchComponent,
+        SpinnerLoadingComponent,
+        TableComponent,
+        FiltersComponent,
+    ],
+    templateUrl: './creditors-page.component.html',
+    styleUrl: './creditors-page.component.css'
 })
 export class CreditorsPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);

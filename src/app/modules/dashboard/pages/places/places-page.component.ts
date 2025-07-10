@@ -20,20 +20,19 @@ import { ModalService } from 'src/app/shared/components/modal/services/modal.ser
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 
 @Component({
-  selector: 'app-places-page',
-  standalone: true,
-  imports: [
-    CommonModule,
-    DashboardHeaderComponent,
-    ModalComponent,
-    ButtonIconComponent,
-    ReactiveFormsModule,
-    InputSearchComponent,
-    SpinnerLoadingComponent,
-    TableComponent,
-  ],
-  templateUrl: './places-page.component.html',
-  styleUrl: './places-page.component.css',
+    selector: 'app-places-page',
+    imports: [
+        CommonModule,
+        DashboardHeaderComponent,
+        ModalComponent,
+        ButtonIconComponent,
+        ReactiveFormsModule,
+        InputSearchComponent,
+        SpinnerLoadingComponent,
+        TableComponent,
+    ],
+    templateUrl: './places-page.component.html',
+    styleUrl: './places-page.component.css'
 })
 export class PlacesPageComponent implements OnInit {
   private readonly placesFacade = inject(PlacesFacade);

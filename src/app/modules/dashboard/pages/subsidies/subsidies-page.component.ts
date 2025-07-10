@@ -39,24 +39,23 @@ import { TableComponent } from '../../components/table/table.component';
 import { ModalShowSubsidyComponent } from './components/tab-subsidy/tab-subsidies.component';
 
 @Component({
-  selector: 'app-subsidies-page',
-  standalone: true,
-  imports: [
-    CommonModule,
-    DashboardHeaderComponent,
-    ModalComponent,
-    ButtonIconComponent,
-    ReactiveFormsModule,
-    InputSearchComponent,
-    FiltersComponent,
-    MatTabsModule,
-    SpinnerLoadingComponent,
-    TableComponent,
-    ModalShowSubsidyComponent,
-  ],
-  providers: [SubsidiesService],
-  templateUrl: './subsidies-page.component.html',
-  styleUrl: './subsidies-page.component.css',
+    selector: 'app-subsidies-page',
+    imports: [
+        CommonModule,
+        DashboardHeaderComponent,
+        ModalComponent,
+        ButtonIconComponent,
+        ReactiveFormsModule,
+        InputSearchComponent,
+        FiltersComponent,
+        MatTabsModule,
+        SpinnerLoadingComponent,
+        TableComponent,
+        ModalShowSubsidyComponent,
+    ],
+    providers: [SubsidiesService],
+    templateUrl: './subsidies-page.component.html',
+    styleUrl: './subsidies-page.component.css'
 })
 export class SubsidiesPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);

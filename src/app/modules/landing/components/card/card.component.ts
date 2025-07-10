@@ -8,18 +8,17 @@ import { ImgBrokenDirective } from 'src/app/shared/directives/img-broken.directi
 import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
 
 @Component({
-  selector: 'app-card-player',
-  standalone: true,
-  templateUrl: './card.component.html',
-  styleUrls: ['./card.component.css'],
-  imports: [
-    CommonModule,
-    ImgBrokenDirective,
-    ItemImagePipe,
-    TextBorderComponent,
-    TextBackgroundComponent,
-    TextLinkComponent,
-  ],
+    selector: 'app-card-player',
+    templateUrl: './card.component.html',
+    styleUrls: ['./card.component.css'],
+    imports: [
+        CommonModule,
+        ImgBrokenDirective,
+        ItemImagePipe,
+        TextBorderComponent,
+        TextBackgroundComponent,
+        TextLinkComponent,
+    ]
 })
 export class CardPlayerComponent implements OnInit {
   @Input() type: TypeList = TypeList.Books;

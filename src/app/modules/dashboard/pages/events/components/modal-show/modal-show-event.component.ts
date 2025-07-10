@@ -13,19 +13,18 @@ import { TextSubTitleComponent } from 'src/app/shared/components/text/text-subTi
 import { TextTitleComponent } from 'src/app/shared/components/text/text-title/text-title.component';
 
 @Component({
-  selector: 'app-modal-show-event',
-  standalone: true,
-  imports: [
-    CommonModule,
-    TextBackgroundComponent,
-    TextBorderComponent,
-    TextTitleComponent,
-    TextSubTitleComponent,
-    TextEditorComponent,
-    MapComponent,
-  ],
-  templateUrl: './modal-show-event.component.html',
-  styleUrls: ['./modal-show-event.component.css'],
+    selector: 'app-modal-show-event',
+    imports: [
+        CommonModule,
+        TextBackgroundComponent,
+        TextBorderComponent,
+        TextTitleComponent,
+        TextSubTitleComponent,
+        TextEditorComponent,
+        MapComponent,
+    ],
+    templateUrl: './modal-show-event.component.html',
+    styleUrls: ['./modal-show-event.component.css']
 })
 export class ModalShowEventComponent {
   @Input() item!: EventModelFullData;

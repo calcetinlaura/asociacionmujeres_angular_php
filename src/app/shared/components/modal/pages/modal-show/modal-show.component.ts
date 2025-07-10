@@ -21,11 +21,10 @@ import { ModalShowSubsidyComponent } from 'src/app/modules/dashboard/pages/subsi
 import { ImagenModal } from 'src/app/shared/components/modal/components/img-modal/img-modal.components';
 
 @Component({
-  standalone: true,
-  selector: 'app-modal-show',
-  templateUrl: './modal-show.component.html',
-  styleUrls: ['./modal-show.component.css'],
-  imports: [CommonModule, ImagenModal],
+    selector: 'app-modal-show',
+    templateUrl: './modal-show.component.html',
+    styleUrls: ['./modal-show.component.css'],
+    imports: [CommonModule, ImagenModal]
 })
 export class ModalShowComponent {
   @Input() item: any;

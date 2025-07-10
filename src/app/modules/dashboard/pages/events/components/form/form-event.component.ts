@@ -46,19 +46,17 @@ import { ProjectsService } from 'src/app/core/services/projects.services';
 import { dateRangeValidator } from 'src/app/shared/utils/validators.utils';
 
 @Component({
-  selector: 'app-form-event',
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-
-    MatCardModule,
-    ImageControlComponent,
-    ButtonIconComponent,
-    AgentArrayControlComponent,
-  ],
-  templateUrl: './form-event.component.html',
-  styleUrls: ['../../../../components/form/form.component.css'],
+    selector: 'app-form-event',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        MatCardModule,
+        ImageControlComponent,
+        ButtonIconComponent,
+        AgentArrayControlComponent,
+    ],
+    templateUrl: './form-event.component.html',
+    styleUrls: ['../../../../components/form/form.component.css']
 })
 export class FormEventComponent implements OnInit, OnChanges {
   private readonly destroyRef = inject(DestroyRef);

@@ -9,17 +9,16 @@ import { TextSubTitleComponent } from 'src/app/shared/components/text/text-subTi
 import { TextTitleComponent } from 'src/app/shared/components/text/text-title/text-title.component';
 
 @Component({
-  selector: 'app-modal-show-macroevent',
-  standalone: true,
-  imports: [
-    CommonModule,
-    TextBackgroundComponent,
-    TextTitleComponent,
-    TextEditorComponent,
-    TextSubTitleComponent,
-  ],
-  templateUrl: './modal-show-macroevent.component.html',
-  styleUrls: ['./modal-show-macroevent.component.css'],
+    selector: 'app-modal-show-macroevent',
+    imports: [
+        CommonModule,
+        TextBackgroundComponent,
+        TextTitleComponent,
+        TextEditorComponent,
+        TextSubTitleComponent,
+    ],
+    templateUrl: './modal-show-macroevent.component.html',
+    styleUrls: ['./modal-show-macroevent.component.css']
 })
 export class ModalShowMacroeventComponent implements OnInit {
   private readonly eventsService = inject(EventsService);

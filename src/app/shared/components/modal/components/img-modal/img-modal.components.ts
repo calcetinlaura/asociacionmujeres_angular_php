@@ -5,11 +5,10 @@ import { ImgBrokenDirective } from 'src/app/shared/directives/img-broken.directi
 import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
 
 @Component({
-  selector: 'app-img-modal',
-  standalone: true,
-  templateUrl: './img-modal.component.html',
-  styleUrls: ['./img-modal.component.css'],
-  imports: [CommonModule, ItemImagePipe, ImgBrokenDirective],
+    selector: 'app-img-modal',
+    templateUrl: './img-modal.component.html',
+    styleUrls: ['./img-modal.component.css'],
+    imports: [CommonModule, ItemImagePipe, ImgBrokenDirective]
 })
 export class ImagenModal {
   @Input() img?: string = '';

@@ -4,11 +4,10 @@ import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 type DeleteMessageFormatter = (item: any) => { label: string; value: string };
 
 @Component({
-  standalone: true,
-  imports: [CommonModule],
-  selector: 'app-modal-delete',
-  templateUrl: './modal-delete.component.html',
-  styleUrls: ['./modal-delete.component.css'],
+    imports: [CommonModule],
+    selector: 'app-modal-delete',
+    templateUrl: './modal-delete.component.html',
+    styleUrls: ['./modal-delete.component.css']
 })
 export class ModalDeleteComponent implements OnInit {
   @Output() closeModal = new EventEmitter<boolean>();

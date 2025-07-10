@@ -10,19 +10,18 @@ import { TextTitleComponent } from 'src/app/shared/components/text/text-title/te
 import { PhoneFormatPipe } from 'src/app/shared/pipe/phoneFormat.pipe';
 
 @Component({
-  selector: 'app-modal-show-agent',
-  standalone: true,
-  imports: [
-    CommonModule,
-    TextBackgroundComponent,
-    TextTitleComponent,
-    TextSubTitleComponent,
-    TextIconComponent,
-    TextEditorComponent,
-    PhoneFormatPipe,
-  ],
-  templateUrl: './modal-show-agent.component.html',
-  styleUrl: './modal-show-agent.component.css',
+    selector: 'app-modal-show-agent',
+    imports: [
+        CommonModule,
+        TextBackgroundComponent,
+        TextTitleComponent,
+        TextSubTitleComponent,
+        TextIconComponent,
+        TextEditorComponent,
+        PhoneFormatPipe,
+    ],
+    templateUrl: './modal-show-agent.component.html',
+    styleUrl: './modal-show-agent.component.css'
 })
 export class ModalShowAgentComponent {
   @Input() item!: AgentModel;

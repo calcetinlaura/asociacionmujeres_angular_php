@@ -7,15 +7,14 @@ import { TextEditorComponent } from 'src/app/shared/components/text/text-editor/
 import { TextTitleComponent } from 'src/app/shared/components/text/text-title/text-title.component';
 
 @Component({
-  selector: 'app-modal-show-subsidy',
-  standalone: true,
-  imports: [
-    CommonModule,
-    TextBackgroundComponent,
-    TextTitleComponent,
-    TextEditorComponent,
-  ],
-  templateUrl: './modal-show-subsidy.component.html',
+    selector: 'app-modal-show-subsidy',
+    imports: [
+        CommonModule,
+        TextBackgroundComponent,
+        TextTitleComponent,
+        TextEditorComponent,
+    ],
+    templateUrl: './modal-show-subsidy.component.html'
 })
 export class ModalShowSubsidyComponent {
   @Input() item!: SubsidyModel;

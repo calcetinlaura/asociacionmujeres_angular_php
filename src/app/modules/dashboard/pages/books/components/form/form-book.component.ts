@@ -27,17 +27,15 @@ import { ImageControlComponent } from 'src/app/modules/dashboard/components/imag
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
-  selector: 'app-form-book',
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-
-    MatCardModule,
-    ImageControlComponent,
-  ],
-  templateUrl: './form-book.component.html',
-  styleUrls: ['../../../../components/form/form.component.css'],
+    selector: 'app-form-book',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        MatCardModule,
+        ImageControlComponent,
+    ],
+    templateUrl: './form-book.component.html',
+    styleUrls: ['../../../../components/form/form.component.css']
 })
 export class FormBookComponent {
   private booksFacade = inject(BooksFacade);

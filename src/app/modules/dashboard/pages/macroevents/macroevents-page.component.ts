@@ -32,21 +32,20 @@ import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loadi
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
-  selector: 'app-macroevents-page',
-  standalone: true,
-  imports: [
-    CommonModule,
-    DashboardHeaderComponent,
-    ModalComponent,
-    ButtonIconComponent,
-    ReactiveFormsModule,
-    InputSearchComponent,
-    SpinnerLoadingComponent,
-    TableComponent,
-    FiltersComponent,
-  ],
-  templateUrl: './macroevents-page.component.html',
-  styleUrl: './macroevents-page.component.css',
+    selector: 'app-macroevents-page',
+    imports: [
+        CommonModule,
+        DashboardHeaderComponent,
+        ModalComponent,
+        ButtonIconComponent,
+        ReactiveFormsModule,
+        InputSearchComponent,
+        SpinnerLoadingComponent,
+        TableComponent,
+        FiltersComponent,
+    ],
+    templateUrl: './macroevents-page.component.html',
+    styleUrl: './macroevents-page.component.css'
 })
 export class MacroeventsPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);

@@ -3,10 +3,9 @@ import { Component, Input, OnChanges } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 @Component({
-  standalone: true,
-  selector: 'app-map',
-  templateUrl: './map.component.html',
-  imports: [CommonModule],
+    selector: 'app-map',
+    templateUrl: './map.component.html',
+    imports: [CommonModule]
 })
 export class MapComponent implements OnChanges {
   @Input() lat!: number;

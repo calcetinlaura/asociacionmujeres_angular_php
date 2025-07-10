@@ -3,11 +3,10 @@ import { Component, inject, Input, OnInit } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 @Component({
-  selector: 'app-text-editor',
-  standalone: true,
-  templateUrl: './text-editor.component.html',
-  styleUrls: ['./text-editor.component.css'],
-  imports: [CommonModule],
+    selector: 'app-text-editor',
+    templateUrl: './text-editor.component.html',
+    styleUrls: ['./text-editor.component.css'],
+    imports: [CommonModule]
 })
 export class TextEditorComponent implements OnInit {
   sanitizer = inject(DomSanitizer);

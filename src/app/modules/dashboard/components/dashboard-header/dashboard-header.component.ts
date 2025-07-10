@@ -2,11 +2,10 @@ import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 
 @Component({
-  selector: 'app-dashboard-header',
-  standalone: true,
-  templateUrl: './dashboard-header.component.html',
-  styleUrls: ['./dashboard-header.component.css'],
-  imports: [CommonModule],
+    selector: 'app-dashboard-header',
+    templateUrl: './dashboard-header.component.html',
+    styleUrls: ['./dashboard-header.component.css'],
+    imports: [CommonModule]
 })
 export class DashboardHeaderComponent {
   @Input() icon: string = '';

@@ -10,15 +10,14 @@ import { TextTitleComponent } from 'src/app/shared/components/text/text-title/te
 import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
 
 @Component({
-  selector: 'app-modal-show-pitera',
-  standalone: true,
-  imports: [
-    CommonModule,
-    TextLinkComponent,
-    TextTitleComponent,
-    TextSubTitleComponent,
-  ],
-  templateUrl: './modal-show-pitera.component.html',
+    selector: 'app-modal-show-pitera',
+    imports: [
+        CommonModule,
+        TextLinkComponent,
+        TextTitleComponent,
+        TextSubTitleComponent,
+    ],
+    templateUrl: './modal-show-pitera.component.html'
 })
 export class ModalShowPiteraComponent {
   @Input() item!: PiteraModel;

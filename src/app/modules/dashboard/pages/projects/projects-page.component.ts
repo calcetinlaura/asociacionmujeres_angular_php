@@ -32,21 +32,20 @@ import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loadi
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
-  selector: 'app-projects-page',
-  standalone: true,
-  imports: [
-    CommonModule,
-    DashboardHeaderComponent,
-    ModalComponent,
-    ButtonIconComponent,
-    ReactiveFormsModule,
-    InputSearchComponent,
-    SpinnerLoadingComponent,
-    TableComponent,
-    FiltersComponent,
-  ],
-  templateUrl: './projects-page.component.html',
-  styleUrl: './projects-page.component.css',
+    selector: 'app-projects-page',
+    imports: [
+        CommonModule,
+        DashboardHeaderComponent,
+        ModalComponent,
+        ButtonIconComponent,
+        ReactiveFormsModule,
+        InputSearchComponent,
+        SpinnerLoadingComponent,
+        TableComponent,
+        FiltersComponent,
+    ],
+    templateUrl: './projects-page.component.html',
+    styleUrl: './projects-page.component.css'
 })
 export class ProjectsPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);

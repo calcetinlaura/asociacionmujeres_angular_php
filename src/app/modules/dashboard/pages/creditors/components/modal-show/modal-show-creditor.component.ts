@@ -11,20 +11,19 @@ import { EurosFormatPipe } from 'src/app/shared/pipe/eurosFormat.pipe';
 import { PhoneFormatPipe } from 'src/app/shared/pipe/phoneFormat.pipe';
 
 @Component({
-  selector: 'app-modal-show-creditor',
-  standalone: true,
-  imports: [
-    CommonModule,
-    TextBackgroundComponent,
-    TextTitleComponent,
-    TextSubTitleComponent,
-    TextIconComponent,
-    TextEditorComponent,
-    EurosFormatPipe,
-    PhoneFormatPipe,
-  ],
-  templateUrl: './modal-show-creditor.component.html',
-  styleUrl: './modal-show-creditor.component.css',
+    selector: 'app-modal-show-creditor',
+    imports: [
+        CommonModule,
+        TextBackgroundComponent,
+        TextTitleComponent,
+        TextSubTitleComponent,
+        TextIconComponent,
+        TextEditorComponent,
+        EurosFormatPipe,
+        PhoneFormatPipe,
+    ],
+    templateUrl: './modal-show-creditor.component.html',
+    styleUrl: './modal-show-creditor.component.css'
 })
 export class ModalShowCreditorComponent {
   @Input() item!: CreditorWithInvoices;

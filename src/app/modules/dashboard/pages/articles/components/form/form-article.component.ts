@@ -24,17 +24,15 @@ import { ImageControlComponent } from 'src/app/modules/dashboard/components/imag
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
-  selector: 'app-form-article',
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-
-    MatCardModule,
-    ImageControlComponent,
-  ],
-  templateUrl: './form-article.component.html',
-  styleUrls: ['../../../../components/form/form.component.css'],
+    selector: 'app-form-article',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        MatCardModule,
+        ImageControlComponent,
+    ],
+    templateUrl: './form-article.component.html',
+    styleUrls: ['../../../../components/form/form.component.css']
 })
 export class FormArticleComponent {
   private articlesFacade = inject(ArticlesFacade);

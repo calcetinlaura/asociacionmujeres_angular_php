@@ -27,17 +27,15 @@ import { TypeList } from 'src/app/core/models/general.model';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { ImageControlComponent } from '../../../../components/image-control/image-control.component';
 @Component({
-  selector: 'app-form-agent',
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-
-    ImageControlComponent,
-    MatCardModule,
-  ],
-  templateUrl: './form-agent.component.html',
-  styleUrls: ['../../../../components/form/form.component.css'],
+    selector: 'app-form-agent',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        ImageControlComponent,
+        MatCardModule,
+    ],
+    templateUrl: './form-agent.component.html',
+    styleUrls: ['../../../../components/form/form.component.css']
 })
 export class FormAgentComponent {
   private agentsFacade = inject(AgentsFacade);

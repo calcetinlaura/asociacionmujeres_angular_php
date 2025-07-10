@@ -23,17 +23,16 @@ import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loadi
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
-  selector: 'app-movies-page-landing',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FiltersComponent,
-    SectionGenericComponent,
-    InputSearchComponent,
-    NoResultsComponent,
-    SpinnerLoadingComponent,
-  ],
-  templateUrl: './movies-page-landing.component.html',
+    selector: 'app-movies-page-landing',
+    imports: [
+        CommonModule,
+        FiltersComponent,
+        SectionGenericComponent,
+        InputSearchComponent,
+        NoResultsComponent,
+        SpinnerLoadingComponent,
+    ],
+    templateUrl: './movies-page-landing.component.html'
 })
 export class MoviesPageLandingComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);

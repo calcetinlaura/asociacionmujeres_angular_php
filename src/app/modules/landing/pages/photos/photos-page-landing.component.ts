@@ -5,11 +5,10 @@ import { FiltersComponent } from '../../components/filters/filters.component';
 import { filterPhotos } from 'src/app/core/models/general.model';
 
 @Component({
-  selector: 'app-photos-page-landing',
-  standalone: true,
-  imports: [CommonModule, MatGridListModule, FiltersComponent],
-  templateUrl: './photos-page-landing.component.html',
-  providers: [],
+    selector: 'app-photos-page-landing',
+    imports: [CommonModule, MatGridListModule, FiltersComponent],
+    templateUrl: './photos-page-landing.component.html',
+    providers: []
 })
 export class PhotosPageLandingComponent implements OnInit {
   photos: { url: string; text: string }[] = [];

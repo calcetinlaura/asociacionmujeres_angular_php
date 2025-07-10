@@ -37,22 +37,20 @@ import { SubsidiesService } from 'src/app/core/services/subsidies.services';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
-  selector: 'app-form-subsidy',
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    MatCheckboxModule,
-    MatRadioModule,
-    MatAutocompleteModule,
-    MatFormFieldModule,
-    MatInputModule,
-
-    MatCardModule,
-  ],
-  templateUrl: './form-subsidy.component.html',
-  styleUrls: ['../../../../components/form/form.component.css'],
-  providers: [SubsidiesService],
+    selector: 'app-form-subsidy',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        MatCheckboxModule,
+        MatRadioModule,
+        MatAutocompleteModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatCardModule,
+    ],
+    templateUrl: './form-subsidy.component.html',
+    styleUrls: ['../../../../components/form/form.component.css'],
+    providers: [SubsidiesService]
 })
 export class FormSubsidyComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);

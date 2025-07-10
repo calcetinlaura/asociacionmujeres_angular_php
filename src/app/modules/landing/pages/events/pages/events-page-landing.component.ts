@@ -14,17 +14,16 @@ import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loadi
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
-  selector: 'app-events-page-landing',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FiltersComponent,
-    SectionGenericComponent,
-    NoResultsComponent,
-    SpinnerLoadingComponent,
-  ],
-  templateUrl: './events-page-landing.component.html',
-  styleUrl: './events-page-landing.component.css',
+    selector: 'app-events-page-landing',
+    imports: [
+        CommonModule,
+        FiltersComponent,
+        SectionGenericComponent,
+        NoResultsComponent,
+        SpinnerLoadingComponent,
+    ],
+    templateUrl: './events-page-landing.component.html',
+    styleUrl: './events-page-landing.component.css'
 })
 export class EventsPageLandingComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);

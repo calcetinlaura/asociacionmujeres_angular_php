@@ -10,11 +10,10 @@ import { ModalComponent } from 'src/app/shared/components/modal/modal.component'
 import { CardPlayerComponent } from '../card/card.component';
 
 @Component({
-  selector: 'app-section-generic',
-  standalone: true,
-  imports: [CardPlayerComponent, CommonModule, ModalComponent],
-  templateUrl: './section-generic.component.html',
-  styleUrl: './section-generic.component.css',
+    selector: 'app-section-generic',
+    imports: [CardPlayerComponent, CommonModule, ModalComponent],
+    templateUrl: './section-generic.component.html',
+    styleUrl: './section-generic.component.css'
 })
 export class SectionGenericComponent implements OnInit {
   @Input() type: TypeList = TypeList.Books;

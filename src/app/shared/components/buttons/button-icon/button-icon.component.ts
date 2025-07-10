@@ -2,11 +2,10 @@ import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 
 @Component({
-  standalone: true,
-  selector: 'app-button-icon',
-  templateUrl: './button-icon.component.html',
-  styleUrls: ['./button-icon.component.css'],
-  imports: [CommonModule],
+    selector: 'app-button-icon',
+    templateUrl: './button-icon.component.html',
+    styleUrls: ['./button-icon.component.css'],
+    imports: [CommonModule]
 })
 export class ButtonIconComponent {
   @Input() buttonText: string = 'Nuevo Libro';

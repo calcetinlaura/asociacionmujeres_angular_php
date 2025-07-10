@@ -8,17 +8,16 @@ import { TextSubTitleComponent } from 'src/app/shared/components/text/text-subTi
 import { TextTitleComponent } from 'src/app/shared/components/text/text-title/text-title.component';
 
 @Component({
-  selector: 'app-modal-show-movie',
-  standalone: true,
-  imports: [
-    CommonModule,
-    TextBackgroundComponent,
-    TextTitleComponent,
-    TextSubTitleComponent,
-    TextEditorComponent,
-  ],
-  templateUrl: './modal-show-movie.component.html',
-  styleUrls: ['./modal-show-movie.component.css'],
+    selector: 'app-modal-show-movie',
+    imports: [
+        CommonModule,
+        TextBackgroundComponent,
+        TextTitleComponent,
+        TextSubTitleComponent,
+        TextEditorComponent,
+    ],
+    templateUrl: './modal-show-movie.component.html',
+    styleUrls: ['./modal-show-movie.component.css']
 })
 export class ModalShowMovieComponent {
   @Input() item!: MovieModel;

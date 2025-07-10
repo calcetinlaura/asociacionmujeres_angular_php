@@ -16,16 +16,15 @@ import { TypeList } from 'src/app/core/models/general.model';
 import { environments } from 'src/environments/environments';
 
 @Component({
-  selector: 'app-image-control',
-  standalone: true,
-  templateUrl: './image-control.component.html',
-  styleUrls: ['./image-control.component.css'],
-  imports: [
-    CommonModule,
-    MatDialogModule,
-    MatButtonModule,
-    MatProgressSpinnerModule,
-  ],
+    selector: 'app-image-control',
+    templateUrl: './image-control.component.html',
+    styleUrls: ['./image-control.component.css'],
+    imports: [
+        CommonModule,
+        MatDialogModule,
+        MatButtonModule,
+        MatProgressSpinnerModule,
+    ]
 })
 export class ImageControlComponent implements OnInit {
   selectedFile: File | null = null;

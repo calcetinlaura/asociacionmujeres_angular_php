@@ -20,20 +20,19 @@ import { ModalService } from 'src/app/shared/components/modal/services/modal.ser
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 
 @Component({
-  selector: 'app-articles-page',
-  standalone: true,
-  imports: [
-    CommonModule,
-    DashboardHeaderComponent,
-    ModalComponent,
-    ButtonIconComponent,
-    ReactiveFormsModule,
-    InputSearchComponent,
-    SpinnerLoadingComponent,
-    TableComponent,
-  ],
-  templateUrl: './articles-page.component.html',
-  styleUrl: './articles-page.component.css',
+    selector: 'app-articles-page',
+    imports: [
+        CommonModule,
+        DashboardHeaderComponent,
+        ModalComponent,
+        ButtonIconComponent,
+        ReactiveFormsModule,
+        InputSearchComponent,
+        SpinnerLoadingComponent,
+        TableComponent,
+    ],
+    templateUrl: './articles-page.component.html',
+    styleUrl: './articles-page.component.css'
 })
 export class ArticlesPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);

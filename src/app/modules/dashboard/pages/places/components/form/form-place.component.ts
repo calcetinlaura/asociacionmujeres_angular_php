@@ -23,18 +23,16 @@ import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-ic
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
-  selector: 'app-form-place',
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-
-    MatCardModule,
-    ImageControlComponent,
-    ButtonIconComponent,
-  ],
-  templateUrl: './form-place.component.html',
-  styleUrls: ['../../../../components/form/form.component.css'],
+    selector: 'app-form-place',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        MatCardModule,
+        ImageControlComponent,
+        ButtonIconComponent,
+    ],
+    templateUrl: './form-place.component.html',
+    styleUrls: ['../../../../components/form/form.component.css']
 })
 export class FormPlaceComponent {
   private placesFacade = inject(PlacesFacade);

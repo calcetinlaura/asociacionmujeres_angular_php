@@ -12,15 +12,14 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { tap } from 'rxjs';
 
 @Component({
-  selector: 'app-login-page',
-  standalone: true,
-  templateUrl: './login-page.component.html',
-  styleUrls: ['./login-page.component.css'],
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    // RouterOutlet
-  ],
+    selector: 'app-login-page',
+    templateUrl: './login-page.component.html',
+    styleUrls: ['./login-page.component.css'],
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        // RouterOutlet
+    ]
 })
 export class LoginPageComponent implements OnInit {
   private destroyRef = inject(DestroyRef);

@@ -10,11 +10,10 @@ import { SectionGenericComponent } from 'src/app/modules/landing/components/sect
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 
 @Component({
-  selector: 'app-piteras-page-landing',
-  standalone: true,
-  imports: [CommonModule, SectionGenericComponent, SpinnerLoadingComponent],
-  templateUrl: './piteras-page-landing.component.html',
-  providers: [PiterasService],
+    selector: 'app-piteras-page-landing',
+    imports: [CommonModule, SectionGenericComponent, SpinnerLoadingComponent],
+    templateUrl: './piteras-page-landing.component.html',
+    providers: [PiterasService]
 })
 export class PiterasPageLandingComponent {
   private readonly destroyRef = inject(DestroyRef);

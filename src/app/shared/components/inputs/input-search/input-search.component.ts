@@ -12,11 +12,10 @@ import { FormsModule } from '@angular/forms';
 import { debounceTime, Subject, tap } from 'rxjs';
 
 @Component({
-  standalone: true,
-  selector: 'app-input-search',
-  templateUrl: './input-search.component.html',
-  styleUrls: ['./input-search.component.css'],
-  imports: [CommonModule, FormsModule],
+    selector: 'app-input-search',
+    templateUrl: './input-search.component.html',
+    styleUrls: ['./input-search.component.css'],
+    imports: [CommonModule, FormsModule]
 })
 export class InputSearchComponent implements OnInit {
   private destroyRef = inject(DestroyRef);

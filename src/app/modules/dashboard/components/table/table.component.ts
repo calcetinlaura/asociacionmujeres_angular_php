@@ -32,30 +32,29 @@ import { HasValuePipe } from '../../../../shared/pipe/hasValue.pipe';
 import { CircleIndicatorComponent } from '../circle-indicator/circle-indicator.component';
 declare var html2pdf: any;
 @Component({
-  standalone: true,
-  imports: [
-    CommonModule,
-    DatePipe,
-    IconActionComponent,
-    MatTableModule,
-    MatSortModule,
-    MatIconModule,
-    CircleIndicatorComponent,
-    ItemImagePipe,
-    PhoneFormatPipe,
-    FilterTransformCodePipe,
-    EurosFormatPipe,
-    MatCheckboxModule,
-    MatFormFieldModule,
-    MatMenuModule,
-    MatSelectModule,
-    HasValuePipe,
-    CalculateAgePipe,
-    ButtonComponent,
-  ],
-  selector: 'app-table',
-  templateUrl: './table.component.html',
-  styleUrls: ['./table.component.css'],
+    imports: [
+        CommonModule,
+        DatePipe,
+        IconActionComponent,
+        MatTableModule,
+        MatSortModule,
+        MatIconModule,
+        CircleIndicatorComponent,
+        ItemImagePipe,
+        PhoneFormatPipe,
+        FilterTransformCodePipe,
+        EurosFormatPipe,
+        MatCheckboxModule,
+        MatFormFieldModule,
+        MatMenuModule,
+        MatSelectModule,
+        HasValuePipe,
+        CalculateAgePipe,
+        ButtonComponent,
+    ],
+    selector: 'app-table',
+    templateUrl: './table.component.html',
+    styleUrls: ['./table.component.css']
 })
 export class TableComponent {
   private readonly subsidiesService = inject(SubsidiesService);

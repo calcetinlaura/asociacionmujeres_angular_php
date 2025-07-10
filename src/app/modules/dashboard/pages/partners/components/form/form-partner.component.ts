@@ -25,17 +25,16 @@ import { TypeList } from 'src/app/core/models/general.model';
 import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 @Component({
-  selector: 'app-form-partner',
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    MatCheckboxModule,
-    MatCardModule,
-    ImageControlComponent,
-  ],
-  templateUrl: './form-partner.component.html',
-  styleUrls: ['../../../../components/form/form.component.css'],
+    selector: 'app-form-partner',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        MatCheckboxModule,
+        MatCardModule,
+        ImageControlComponent,
+    ],
+    templateUrl: './form-partner.component.html',
+    styleUrls: ['../../../../components/form/form.component.css']
 })
 export class FormPartnerComponent {
   private partnersFacade = inject(PartnersFacade);

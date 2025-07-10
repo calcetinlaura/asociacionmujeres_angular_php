@@ -30,18 +30,16 @@ import { dateRangeValidator } from 'src/app/shared/utils/validators.utils';
 import { ButtonIconComponent } from '../../../../../../shared/components/buttons/button-icon/button-icon.component';
 
 @Component({
-  selector: 'app-form-project',
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-
-    MatCardModule,
-    ImageControlComponent,
-    ButtonIconComponent,
-  ],
-  templateUrl: './form-project.component.html',
-  styleUrls: ['../../../../components/form/form.component.css'],
+    selector: 'app-form-project',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        MatCardModule,
+        ImageControlComponent,
+        ButtonIconComponent,
+    ],
+    templateUrl: './form-project.component.html',
+    styleUrls: ['../../../../components/form/form.component.css']
 })
 export class FormProjectComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);

@@ -23,17 +23,15 @@ import { ImageControlComponent } from 'src/app/modules/dashboard/components/imag
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
-  selector: 'app-form-podcast',
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-
-    MatCardModule,
-    ImageControlComponent,
-  ],
-  templateUrl: './form-podcast.component.html',
-  styleUrls: ['../../../../components/form/form.component.css'],
+    selector: 'app-form-podcast',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        MatCardModule,
+        ImageControlComponent,
+    ],
+    templateUrl: './form-podcast.component.html',
+    styleUrls: ['../../../../components/form/form.component.css']
 })
 export class FormPodcastComponent implements OnInit {
   private podcastsFacade = inject(PodcastsFacade);

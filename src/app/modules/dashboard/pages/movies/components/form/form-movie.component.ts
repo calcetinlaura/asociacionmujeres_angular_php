@@ -19,17 +19,15 @@ import { ImageControlComponent } from 'src/app/modules/dashboard/components/imag
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
-  selector: 'app-form-movie',
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-
-    MatCardModule,
-    ImageControlComponent,
-  ],
-  templateUrl: './form-movie.component.html',
-  styleUrls: ['../../../../components/form/form.component.css'],
+    selector: 'app-form-movie',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        MatCardModule,
+        ImageControlComponent,
+    ],
+    templateUrl: './form-movie.component.html',
+    styleUrls: ['../../../../components/form/form.component.css']
 })
 export class FormMovieComponent {
   private moviesFacade = inject(MoviesFacade);

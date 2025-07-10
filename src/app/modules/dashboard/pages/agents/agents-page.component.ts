@@ -35,21 +35,20 @@ import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loadi
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
-  selector: 'app-agents-page',
-  standalone: true,
-  imports: [
-    CommonModule,
-    DashboardHeaderComponent,
-    ModalComponent,
-    ButtonIconComponent,
-    ReactiveFormsModule,
-    InputSearchComponent,
-    SpinnerLoadingComponent,
-    TableComponent,
-    FiltersComponent,
-  ],
-  templateUrl: './agents-page.component.html',
-  styleUrl: './agents-page.component.css',
+    selector: 'app-agents-page',
+    imports: [
+        CommonModule,
+        DashboardHeaderComponent,
+        ModalComponent,
+        ButtonIconComponent,
+        ReactiveFormsModule,
+        InputSearchComponent,
+        SpinnerLoadingComponent,
+        TableComponent,
+        FiltersComponent,
+    ],
+    templateUrl: './agents-page.component.html',
+    styleUrl: './agents-page.component.css'
 })
 export class AgentsPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);

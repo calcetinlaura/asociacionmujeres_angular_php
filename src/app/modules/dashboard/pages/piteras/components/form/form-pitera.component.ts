@@ -17,18 +17,16 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { PdfControlComponent } from '../../../../components/pdf-control/pdf-control.component';
 
 @Component({
-  selector: 'app-form-pitera',
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-
-    MatCardModule,
-    ImageControlComponent,
-    PdfControlComponent,
-  ],
-  templateUrl: './form-pitera.component.html',
-  styleUrls: ['../../../../components/form/form.component.css'],
+    selector: 'app-form-pitera',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        MatCardModule,
+        ImageControlComponent,
+        PdfControlComponent,
+    ],
+    templateUrl: './form-pitera.component.html',
+    styleUrls: ['../../../../components/form/form.component.css']
 })
 export class FormPiteraComponent {
   private piterasFacade = inject(PiterasFacade);

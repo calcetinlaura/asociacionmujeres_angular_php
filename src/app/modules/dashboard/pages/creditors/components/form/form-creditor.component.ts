@@ -23,11 +23,10 @@ import {
   CreditorModel,
 } from 'src/app/core/interfaces/creditor.interface';
 @Component({
-  selector: 'app-form-creditor',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './form-creditor.component.html',
-  styleUrls: ['../../../../components/form/form.component.css'],
+    selector: 'app-form-creditor',
+    imports: [CommonModule, ReactiveFormsModule],
+    templateUrl: './form-creditor.component.html',
+    styleUrls: ['../../../../components/form/form.component.css']
 })
 export class FormCreditorComponent {
   private creditorsFacade = inject(CreditorsFacade);

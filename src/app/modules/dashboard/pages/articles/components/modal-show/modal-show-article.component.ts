@@ -7,15 +7,14 @@ import { TextSubTitleComponent } from 'src/app/shared/components/text/text-subTi
 import { TextTitleComponent } from 'src/app/shared/components/text/text-title/text-title.component';
 
 @Component({
-  selector: 'app-modal-show-article',
-  standalone: true,
-  imports: [
-    CommonModule,
-    TextTitleComponent,
-    TextSubTitleComponent,
-    TextEditorComponent,
-  ],
-  templateUrl: './modal-show-article.component.html',
+    selector: 'app-modal-show-article',
+    imports: [
+        CommonModule,
+        TextTitleComponent,
+        TextSubTitleComponent,
+        TextEditorComponent,
+    ],
+    templateUrl: './modal-show-article.component.html'
 })
 export class ModalShowArticleComponent {
   @Input() item!: ArticleModel;

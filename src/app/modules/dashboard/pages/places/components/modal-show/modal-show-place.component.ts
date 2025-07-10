@@ -12,19 +12,18 @@ import { TextTitleComponent } from 'src/app/shared/components/text/text-title/te
 import { FilterTransformCodePipe } from 'src/app/shared/pipe/filterTransformCode.pipe';
 
 @Component({
-  selector: 'app-modal-show-place',
-  standalone: true,
-  imports: [
-    CommonModule,
-    TextBackgroundComponent,
-    TextTitleComponent,
-    TextSubTitleComponent,
-    TextIconComponent,
-    TextEditorComponent,
-    FilterTransformCodePipe,
-    MapComponent,
-  ],
-  templateUrl: './modal-show-place.component.html',
+    selector: 'app-modal-show-place',
+    imports: [
+        CommonModule,
+        TextBackgroundComponent,
+        TextTitleComponent,
+        TextSubTitleComponent,
+        TextIconComponent,
+        TextEditorComponent,
+        FilterTransformCodePipe,
+        MapComponent,
+    ],
+    templateUrl: './modal-show-place.component.html'
 })
 export class ModalShowPlaceComponent {
   @Input() item!: PlaceModel;

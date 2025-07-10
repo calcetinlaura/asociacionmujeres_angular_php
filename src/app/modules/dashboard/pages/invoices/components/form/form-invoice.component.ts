@@ -53,22 +53,20 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { PdfControlComponent } from '../../../../components/pdf-control/pdf-control.component';
 
 @Component({
-  selector: 'app-form-invoice',
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    MatCheckboxModule,
-    MatRadioModule,
-    MatAutocompleteModule,
-    MatFormFieldModule,
-    MatInputModule,
-
-    MatCardModule,
-    PdfControlComponent,
-  ],
-  templateUrl: './form-invoice.component.html',
-  styleUrls: ['../../../../components/form/form.component.css'],
+    selector: 'app-form-invoice',
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        MatCheckboxModule,
+        MatRadioModule,
+        MatAutocompleteModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatCardModule,
+        PdfControlComponent,
+    ],
+    templateUrl: './form-invoice.component.html',
+    styleUrls: ['../../../../components/form/form.component.css']
 })
 export class FormInvoiceComponent {
   private destroyRef = inject(DestroyRef);

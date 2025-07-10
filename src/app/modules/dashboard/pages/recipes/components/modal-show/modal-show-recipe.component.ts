@@ -9,17 +9,16 @@ import { TextSubTitleComponent } from 'src/app/shared/components/text/text-subTi
 import { TextTitleComponent } from 'src/app/shared/components/text/text-title/text-title.component';
 
 @Component({
-  selector: 'app-modal-show-recipe',
-  standalone: true,
-  imports: [
-    CommonModule,
-    TextBackgroundComponent,
-    TextBorderComponent,
-    TextTitleComponent,
-    TextSubTitleComponent,
-    TextEditorComponent,
-  ],
-  templateUrl: './modal-show-recipe.component.html',
+    selector: 'app-modal-show-recipe',
+    imports: [
+        CommonModule,
+        TextBackgroundComponent,
+        TextBorderComponent,
+        TextTitleComponent,
+        TextSubTitleComponent,
+        TextEditorComponent,
+    ],
+    templateUrl: './modal-show-recipe.component.html'
 })
 export class ModalShowRecipeComponent {
   @Input() item!: RecipeModel;
