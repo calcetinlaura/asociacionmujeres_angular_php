@@ -6,7 +6,7 @@
     (ngSubmit)="onSendFormProject()"
     [formGroup]="formProject"
     class="login-auth-form"
-  >
+    >
     <div class="flex flex-col gap-y-4">
       <div class="flex flex-col bg-lilaMuyClaro p-4 gap-y-4">
         <div class="flex justify-between gap-x-4">
@@ -20,148 +20,159 @@
                   [ngClass]="{
                     'is-invalid': submitted && formProject.get('title')?.invalid
                   }"
-                />
-                <div
-                  *ngIf="submitted && formProject.get('title')?.invalid"
-                  class="is-invalid-text"
-                >
-                  Campo requerido
+                  />
+                  @if (submitted && formProject.get('title')?.invalid) {
+                    <div
+                      class="is-invalid-text"
+                      >
+                      Campo requerido
+                    </div>
+                  }
                 </div>
               </div>
             </div>
-          </div>
-          <!-- Año -->
-          <div class="box-input gap-x-4">
-            <label for="year">Año</label>
-            <div class="flex flex-col flex-1">
-              <select
-                formControlName="year"
+            <!-- Año -->
+            <div class="box-input gap-x-4">
+              <label for="year">Año</label>
+              <div class="flex flex-col flex-1">
+                <select
+                  formControlName="year"
                 [ngClass]="{
                   'is-invalid': submitted && formProject.get('year')?.invalid
                 }"
-              >
-                <option [value]="null">Seleccione un año</option>
-                <option *ngFor="let year of years" [ngValue]="year">
-                  {{ year }}
-                </option>
-              </select>
-              <div
-                *ngIf="submitted && formProject.get('year')?.invalid"
-                class="is-invalid-text"
-              >
-                Selecciona un año
+                  >
+                  <option [value]="null">Seleccione un año</option>
+                  @for (year of years; track year) {
+                    <option [ngValue]="year">
+                      {{ year }}
+                    </option>
+                  }
+                </select>
+                @if (submitted && formProject.get('year')?.invalid) {
+                  <div
+                    class="is-invalid-text"
+                    >
+                    Selecciona un año
+                  </div>
+                }
               </div>
             </div>
           </div>
-        </div>
-        <div class="box-input gap-x-4 flex flex-1">
-          <label for="province">Subvención</label>
-          <div class="flex flex-col flex-1">
-            <select formControlName="subsidy_id">
-              <option [ngValue]="null">
-                Seleccione una subvención si el proyecto pertenece a alguna
-              </option>
-              <option *ngFor="let subsidy of subsidies" [value]="subsidy.id">
-                {{ subsidy.name }} - {{ subsidy.year }}
-              </option>
-            </select>
-            <div *ngIf="formProject.controls.subsidy_id.disabled">
-              <small class="text-gray-500 italic">
-                Selecciona un año para habilitar las subvenciones
-              </small>
+          <div class="box-input gap-x-4 flex flex-1">
+            <label for="province">Subvención</label>
+            <div class="flex flex-col flex-1">
+              <select formControlName="subsidy_id">
+                <option [ngValue]="null">
+                  Seleccione una subvención si el proyecto pertenece a alguna
+                </option>
+                @for (subsidy of subsidies; track subsidy) {
+                  <option [value]="subsidy.id">
+                    {{ subsidy.name }} - {{ subsidy.year }}
+                  </option>
+                }
+              </select>
+              @if (formProject.controls.subsidy_id.disabled) {
+                <div>
+                  <small class="text-gray-500 italic">
+                    Selecciona un año para habilitar las subvenciones
+                  </small>
+                </div>
+              }
             </div>
           </div>
         </div>
-      </div>
-      <!-- ACTIVIDADES -->
-      <div formArrayName="activities" class="flex flex-col gap-y-4">
-        <div
-          *ngFor="let activity of activities.controls; let i = index"
-          [formGroupName]="i"
-          class="flex gap-x-4 px-8"
-        >
-          <input formControlName="id" type="hidden" />
-          <div class="sala_box flex justify-center items-center pr-4">
-            Actividad {{ i + 1 }}
-          </div>
-          <div class="flex flex-col flex-1 gap-y-4 bg-lilaMuyClaro p-4">
-            <div class="box-input gap-x-4">
-              <label>Nombre </label>
-              <input
-                formControlName="name"
-                placeholder="Nombre de la actividad"
+        <!-- ACTIVIDADES -->
+        <div formArrayName="activities" class="flex flex-col gap-y-4">
+          @for (activity of activities.controls; track activity; let i = $index) {
+            <div
+              [formGroupName]="i"
+              class="flex gap-x-4 px-8"
+              >
+              <input formControlName="id" type="hidden" />
+              <div class="sala_box flex justify-center items-center pr-4">
+                Actividad {{ i + 1 }}
+              </div>
+              <div class="flex flex-col flex-1 gap-y-4 bg-lilaMuyClaro p-4">
+                <div class="box-input gap-x-4">
+                  <label>Nombre </label>
+                  <input
+                    formControlName="name"
+                    placeholder="Nombre de la actividad"
                 [ngClass]="{
                   'is-invalid':
                     submitted &&
                     activities.get(i.toString())?.get('name')?.invalid
                 }"
+                    />
+                  </div>
+                  <div class="box-input gap-x-4">
+                    <label>Persona a cargo </label>
+                    <input formControlName="attendant" />
+                  </div>
+                  <div class="box-input gap-x-4">
+                    <label>Presupuesto</label>
+                    <input formControlName="budget" />
+                  </div>
+                  <div class="box-input gap-x-4">
+                    <label>Observaciones</label>
+                    <textarea formControlName="observations" rows="3"></textarea>
+                  </div>
+                </div>
+                <div class="flex justify-center items-center">
+                  <button
+                    type="button"
+                    class="btn-danger"
+                    (click)="removeActivity(i)"
+                    >
+                    Eliminar
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+          <!-- Botón para añadir -->
+          <div class="mt-2">
+            <app-button-icon
+              [buttonText]="'Añadir actividad'"
+              [iconClass]="'uil-plus'"
+              (addClicked)="addActivity()"
               />
             </div>
-            <div class="box-input gap-x-4">
-              <label>Persona a cargo </label>
-              <input formControlName="attendant" />
-            </div>
-            <div class="box-input gap-x-4">
-              <label>Presupuesto</label>
-              <input formControlName="budget" />
-            </div>
-            <div class="box-input gap-x-4">
-              <label>Observaciones</label>
-              <textarea formControlName="observations" rows="3"></textarea>
-            </div>
-          </div>
-          <div class="flex justify-center items-center">
-            <button
-              type="button"
-              class="btn-danger"
-              (click)="removeActivity(i)"
-            >
-              Eliminar
-            </button>
-          </div>
-        </div>
-      </div>
-      <!-- Botón para añadir -->
-      <div class="mt-2">
-        <app-button-icon
-          [buttonText]="'Añadir actividad'"
-          [iconClass]="'uil-plus'"
-          (addClicked)="addActivity()"
-        />
-      </div>
-      <div class="flex gap-x-4">
-        <div class="flex-col gap-y-4 w-3/4">
-          <div class="box-input gap-x-4">
-            <label for="description">Descripción</label>
-            <textarea
-              formControlName="description"
-              rows="6"
-              class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-200 text-sm"
-              placeholder="Escribe aquí la descripción del proyecto..."
-            ></textarea>
-          </div>
-        </div>
-        <div class="box-input gap-y-2 w-72">
-          <app-image-control
+            <div class="flex gap-x-4">
+              <div class="flex-col gap-y-4 w-3/4">
+                <div class="box-input gap-x-4">
+                  <label for="description">Descripción</label>
+                  <textarea
+                    formControlName="description"
+                    rows="6"
+                    class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-200 text-sm"
+                    placeholder="Escribe aquí la descripción del proyecto..."
+                  ></textarea>
+                </div>
+              </div>
+              <div class="box-input gap-y-2 w-72">
+                <app-image-control
             [previewImg]="
               formProject.get('img')?.value
                 ? formProject.get('img')?.value!
                 : null
             "
-            [entityId]="itemId"
-            [type]="typeList"
-            (imgSelected)="onImageSelected($event)"
-            [imageWidthValue]="'full'"
-          ></app-image-control>
-        </div>
-      </div>
+                  [entityId]="itemId"
+                  [type]="typeList"
+                  (imgSelected)="onImageSelected($event)"
+                  [imageWidthValue]="'full'"
+                ></app-image-control>
+              </div>
+            </div>
 
-      <div *ngIf="errorSession">Hay algún campo incorrecto</div>
-      <div class="flex justify-center">
-        <button class="bg-black p-4 text-white" type="submit">
-          {{ buttonAction }}
-        </button>
+            @if (errorSession) {
+              <div>Hay algún campo incorrecto</div>
+            }
+            <div class="flex justify-center">
+              <button class="bg-black p-4 text-white" type="submit">
+                {{ buttonAction }}
+              </button>
+            </div>
+          </div>
+        </form>
       </div>
-    </div>
-  </form>
-</div>

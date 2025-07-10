@@ -1,53 +1,58 @@
 <div class="side-bar h-full flex flex-col justify-between">
   <div>
     <ul class="side-bar__list">
-      <li
-        *ngFor="let item of mainMenu"
-        [routerLink]="item.router"
-        [queryParams]="item.query"
-      >
-        <div class="list-wrapper-item">
-          <i [ngClass]="['uil', item.icon]"></i>
-          <span class="side-bar__list list-label">{{ item.name }}</span>
-        </div>
-      </li>
+      @for (item of mainMenu; track item) {
+        <li
+          [routerLink]="item.router"
+          [queryParams]="item.query"
+          >
+          <div class="list-wrapper-item">
+            <i [ngClass]="['uil', item.icon]"></i>
+            <span class="side-bar__list list-label">{{ item.name }}</span>
+          </div>
+        </li>
+      }
     </ul>
 
     <div class="side-bar__separator line-separator"></div>
     <ul class="side-bar__list list-three">
-      <li
-        *ngFor="let item of customOptions"
-        [routerLink]="item.router"
-        [queryParams]="item.query"
-      >
-        <div class="list-wrapper-item">
-          <i [ngClass]="['uil', item.icon]"></i>
-          <span class="side-bar__list list-label">{{ item.name }}</span>
-        </div>
-      </li>
+      @for (item of customOptions; track item) {
+        <li
+          [routerLink]="item.router"
+          [queryParams]="item.query"
+          >
+          <div class="list-wrapper-item">
+            <i [ngClass]="['uil', item.icon]"></i>
+            <span class="side-bar__list list-label">{{ item.name }}</span>
+          </div>
+        </li>
+      }
     </ul>
     <div class="side-bar__separator line-separator"></div>
     <ul class="side-bar__list list-three">
-      <li
-        *ngFor="let item of accountingOptions"
-        [routerLink]="item.router"
-        [queryParams]="item.query"
-      >
-        <div class="list-wrapper-item">
-          <i [ngClass]="['uil', item.icon]"></i>
-          <span class="side-bar__list list-label">{{ item.name }}</span>
-        </div>
-      </li>
+      @for (item of accountingOptions; track item) {
+        <li
+          [routerLink]="item.router"
+          [queryParams]="item.query"
+          >
+          <div class="list-wrapper-item">
+            <i [ngClass]="['uil', item.icon]"></i>
+            <span class="side-bar__list list-label">{{ item.name }}</span>
+          </div>
+        </li>
+      }
     </ul>
   </div>
 
   <!-- Footer -->
   <ul class="side-bar__list">
-    <li *ngFor="let item of footerOptions" [routerLink]="item.router">
-      <div class="list-wrapper-item">
-        <i [ngClass]="['uil', item.icon]"></i>
-        <span class="side-bar__list list-label">{{ item.name }}</span>
-      </div>
-    </li>
+    @for (item of footerOptions; track item) {
+      <li [routerLink]="item.router">
+        <div class="list-wrapper-item">
+          <i [ngClass]="['uil', item.icon]"></i>
+          <span class="side-bar__list list-label">{{ item.name }}</span>
+        </div>
+      </li>
+    }
   </ul>
 </div>

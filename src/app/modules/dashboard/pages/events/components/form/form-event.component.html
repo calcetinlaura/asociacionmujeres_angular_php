@@ -6,7 +6,7 @@
     (ngSubmit)="onSendFormEvent()"
     [formGroup]="formEvent"
     class="login-auth-form"
-  >
+    >
     <div class="flex flex-col gap-y-4">
       <div class="flex justify-between gap-x-4">
         <div class="flex flex-col w-3/4 gap-y-4">
@@ -16,19 +16,22 @@
               <div class="flex flex-col flex-1">
                 <select formControlName="macroevent_id">
                   <option [ngValue]="null">Seleccione un macroevento</option>
-                  <option
-                    *ngFor="let macro of macroevents"
-                    [ngValue]="macro.id"
-                  >
-                    {{ macro.title }} - {{ macro.start | date : "yyyy" }}
-                  </option>
+                  @for (macro of macroevents; track macro) {
+                    <option
+                      [ngValue]="macro.id"
+                      >
+                      {{ macro.title }} - {{ macro.start | date : "yyyy" }}
+                    </option>
+                  }
                 </select>
-                <div *ngIf="formEvent.controls.macroevent_id.disabled">
-                  <small class="text-gray-500 italic">
-                    Selecciona una fecha de inicio para habilitar los
-                    macroeventos de ese año
-                  </small>
-                </div>
+                @if (formEvent.controls.macroevent_id.disabled) {
+                  <div>
+                    <small class="text-gray-500 italic">
+                      Selecciona una fecha de inicio para habilitar los
+                      macroeventos de ese año
+                    </small>
+                  </div>
+                }
               </div>
             </div>
             <div class="box-input gap-x-4 flex flex-1">
@@ -38,16 +41,20 @@
                   <option [ngValue]="null">
                     Seleccione una subvención si el proyecto pertenece a alguna
                   </option>
-                  <option *ngFor="let project of projects" [value]="project.id">
-                    {{ project.title }} - {{ project.year }}
-                  </option>
+                  @for (project of projects; track project) {
+                    <option [value]="project.id">
+                      {{ project.title }} - {{ project.year }}
+                    </option>
+                  }
                 </select>
-                <div *ngIf="formEvent.controls.project_id.disabled">
-                  <small class="text-gray-500 italic">
-                    Selecciona una fecha de inicio para habilitar los proyectos
-                    de ese año
-                  </small>
-                </div>
+                @if (formEvent.controls.project_id.disabled) {
+                  <div>
+                    <small class="text-gray-500 italic">
+                      Selecciona una fecha de inicio para habilitar los proyectos
+                      de ese año
+                    </small>
+                  </div>
+                }
               </div>
             </div>
           </div>
@@ -68,251 +75,274 @@
                 [ngClass]="{
                   'is-invalid': submitted && formEvent.get('start')?.invalid
                 }"
-              />
-              <div
-                *ngIf="submitted && formEvent.get('start')?.invalid"
-                class="is-invalid-text"
-              >
-                Campo requerido
+                />
+                @if (submitted && formEvent.get('start')?.invalid) {
+                  <div
+                    class="is-invalid-text"
+                    >
+                    Campo requerido
+                  </div>
+                }
               </div>
             </div>
-          </div>
-          <div class="flex gap-x-4 justify-between">
-            <label for="end">Fin</label>
-            <div class="w-2/3">
-              <input
-                formControlName="end"
-                type="date"
-                class="w-full p-1 border border-gray-300 rounded"
+            <div class="flex gap-x-4 justify-between">
+              <label for="end">Fin</label>
+              <div class="w-2/3">
+                <input
+                  formControlName="end"
+                  type="date"
+                  class="w-full p-1 border border-gray-300 rounded"
                 [ngClass]="{
                   'is-invalid': submitted && (formEvent.get('end')?.invalid || formEvent.errors?.['invalidDateRange'])
                 }"
-              />
+                  />
 
-              <!-- Mensaje de CAMPO REQUERIDO -->
-              <div
-                *ngIf="submitted && formEvent.get('end')?.hasError('required')"
-                class="is-invalid-text"
-              >
-                Campo requerido.
+                  <!-- Mensaje de CAMPO REQUERIDO -->
+                  @if (submitted && formEvent.get('end')?.hasError('required')) {
+                    <div
+                      class="is-invalid-text"
+                      >
+                      Campo requerido.
+                    </div>
+                  }
+
+                  <!-- Mensaje de FECHA INCORRECTA -->
+                  @if (submitted && formEvent.errors?.['invalidDateRange']) {
+                    <div
+                      class="is-invalid-text"
+                      >
+                      Fecha fin no puede ser anterior a fecha inicio.
+                    </div>
+                  }
+                </div>
               </div>
-
-              <!-- Mensaje de FECHA INCORRECTA -->
-              <div
-                *ngIf="submitted && formEvent.errors?.['invalidDateRange']"
-                class="is-invalid-text"
-              >
-                Fecha fin no puede ser anterior a fecha inicio.
+              <div class="flex gap-x-4 justify-between">
+                <label for="time">Hora</label>
+                <div class="w-2/3">
+                  <input
+                    formControlName="time"
+                    class="w-full p-1 border border-gray-300 rounded"
+                    type="time"
+                    placeholder="00:00"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-          <div class="flex gap-x-4 justify-between">
-            <label for="time">Hora</label>
-            <div class="w-2/3">
-              <input
-                formControlName="time"
-                class="w-full p-1 border border-gray-300 rounded"
-                type="time"
-                placeholder="00:00"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="box-input gap-x-4">
-        <label for="email">Título</label>
-        <div class="flex flex-col flex-1">
-          <input
-            formControlName="title"
-            type="text"
+            <div class="box-input gap-x-4">
+              <label for="email">Título</label>
+              <div class="flex flex-col flex-1">
+                <input
+                  formControlName="title"
+                  type="text"
             [ngClass]="{
               'is-invalid': submitted && formEvent.get('title')?.invalid
             }"
-          />
-          <div
-            *ngIf="submitted && formEvent.get('title')?.invalid"
-            class="is-invalid-text"
-          >
-            Campo requerido
-          </div>
-        </div>
-      </div>
-      <hr />
-      <!-- Provincia -->
-      <div class="box-input gap-x-4 flex flex-1">
-        <label for="province">Provincia</label>
-        <select
-          formControlName="province"
-          (change)="onProvinceChange()"
+                  />
+                  @if (submitted && formEvent.get('title')?.invalid) {
+                    <div
+                      class="is-invalid-text"
+                      >
+                      Campo requerido
+                    </div>
+                  }
+                </div>
+              </div>
+              <hr />
+              <!-- Provincia -->
+              <div class="box-input gap-x-4 flex flex-1">
+                <label for="province">Provincia</label>
+                <select
+                  formControlName="province"
+                  (change)="onProvinceChange()"
           [ngClass]="{
             'is-invalid': submitted && formEvent.get('province')?.invalid
           }"
-        >
-          <option value="">Seleccione una provincia</option>
-          <option *ngFor="let prov of provincias" [value]="prov.label">
-            {{ prov.label }}
-          </option>
-        </select>
-        <div
-          *ngIf="submitted && formEvent.get('town')?.invalid"
-          class="is-invalid-text"
-        >
-          Campo requerido
-        </div>
-      </div>
-      <!-- Municipio -->
-      <div class="box-input flex flex-1">
-        <label for="town">Municipio</label>
-        <select
-          formControlName="town"
+                  >
+                  <option value="">Seleccione una provincia</option>
+                  @for (prov of provincias; track prov) {
+                    <option [value]="prov.label">
+                      {{ prov.label }}
+                    </option>
+                  }
+                </select>
+                @if (submitted && formEvent.get('town')?.invalid) {
+                  <div
+                    class="is-invalid-text"
+                    >
+                    Campo requerido
+                  </div>
+                }
+              </div>
+              <!-- Municipio -->
+              <div class="box-input flex flex-1">
+                <label for="town">Municipio</label>
+                <select
+                  formControlName="town"
           [ngClass]="{
             'is-invalid': submitted && formEvent.get('town')?.invalid
           }"
-          (change)="onTownChange()"
-        >
-          <option value="">Seleccione un municipio</option>
-          <option *ngFor="let mun of municipios" [value]="mun.label">
-            {{ mun.label }}
-          </option>
-        </select>
-        <div
-          *ngIf="submitted && formEvent.get('town')?.invalid"
-          class="is-invalid-text"
-        >
-          Campo requerido
-        </div>
-      </div>
-      <div class="box-input gap-x-4">
-        <label for="place">Espacio</label>
-        <select formControlName="place_id" (change)="onPlaceChange()">
-          <option [ngValue]="null" disabled>Selecciona un espacio</option>
-          <option *ngFor="let place of espacios" [ngValue]="place.id">
-            {{ place.name }}
-          </option>
-        </select>
-      </div>
+                  (change)="onTownChange()"
+                  >
+                  <option value="">Seleccione un municipio</option>
+                  @for (mun of municipios; track mun) {
+                    <option [value]="mun.label">
+                      {{ mun.label }}
+                    </option>
+                  }
+                </select>
+                @if (submitted && formEvent.get('town')?.invalid) {
+                  <div
+                    class="is-invalid-text"
+                    >
+                    Campo requerido
+                  </div>
+                }
+              </div>
+              <div class="box-input gap-x-4">
+                <label for="place">Espacio</label>
+                <select formControlName="place_id" (change)="onPlaceChange()">
+                  <option [ngValue]="null" disabled>Selecciona un espacio</option>
+                  @for (place of espacios; track place) {
+                    <option [ngValue]="place.id">
+                      {{ place.name }}
+                    </option>
+                  }
+                </select>
+              </div>
 
-      <!-- Select de Sala -->
-      <div *ngIf="salasDelLugar.length > 0" class="box-input gap-x-4">
-        <label for="sala">Sala</label>
-        <select formControlName="sala_id" (change)="onSalaChange()">
-          <option [ngValue]="null" disabled>Selecciona una sala</option>
-          <option *ngFor="let sala of salasDelLugar" [ngValue]="sala.sala_id">
-            {{ sala.name }} - {{ sala.location }}
-          </option>
-        </select>
-      </div>
-      <div class="box-input gap-y-2 gap-x-4">
-        <label for="status">Aforo</label>
-        <input formControlName="capacity" type="number" />
-      </div>
-      <hr />
-      <div class="box-input gap-y-2 gap-x-4">
-        <label for="price">Precio</label>
-        <input formControlName="price" type="text" />
-      </div>
-      <div class="flex gap-x-4">
-        <div class="flex-col gap-y-4 w-3/4">
-          <div class="box-input gap-x-4">
-            <label for="description">Descripción</label>
-            <textarea
-              formControlName="description"
-              rows="6"
-              class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-200 text-sm"
-              placeholder="Escribe aquí la descripción del evento..."
-            ></textarea>
-          </div>
-          <div class="flex gap-x-4 py-4">
-            <label for="inscription">¿Requiere de incripción previa?</label>
-            <input formControlName="inscription" type="checkbox" />
-          </div>
-          <div class="box-input gap-y-2 gap-x-4">
-            <label for="status">Estado</label>
-            <select formControlName="status">
-              <option *ngFor="let status of statusEvent" [value]="status.code">
-                {{ status.name }}
-              </option>
-            </select>
-          </div>
-          <div
-            class="box-input gap-x-4 pt-4"
-            *ngIf="formEvent.get('status')?.value !== enumStatusEnum.EJECUCION"
-          >
-            <label for="status_reason">Motivos <br />cambio</label>
-
-            <textarea
-              formControlName="status_reason"
-              rows="6"
-              class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-200 text-sm"
-              placeholder="Escribe aquí el motico de cambio en el estado del evento..."
-            ></textarea>
-          </div>
-        </div>
-        <div class="box-input gap-y-2 w-72">
-          <app-image-control
+              <!-- Select de Sala -->
+              @if (salasDelLugar.length > 0) {
+                <div class="box-input gap-x-4">
+                  <label for="sala">Sala</label>
+                  <select formControlName="sala_id" (change)="onSalaChange()">
+                    <option [ngValue]="null" disabled>Selecciona una sala</option>
+                    @for (sala of salasDelLugar; track sala) {
+                      <option [ngValue]="sala.sala_id">
+                        {{ sala.name }} - {{ sala.location }}
+                      </option>
+                    }
+                  </select>
+                </div>
+              }
+              <div class="box-input gap-y-2 gap-x-4">
+                <label for="status">Aforo</label>
+                <input formControlName="capacity" type="number" />
+              </div>
+              <hr />
+              <div class="box-input gap-y-2 gap-x-4">
+                <label for="price">Precio</label>
+                <input formControlName="price" type="text" />
+              </div>
+              <div class="flex gap-x-4">
+                <div class="flex-col gap-y-4 w-3/4">
+                  <div class="box-input gap-x-4">
+                    <label for="description">Descripción</label>
+                    <textarea
+                      formControlName="description"
+                      rows="6"
+                      class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-200 text-sm"
+                      placeholder="Escribe aquí la descripción del evento..."
+                    ></textarea>
+                  </div>
+                  <div class="flex gap-x-4 py-4">
+                    <label for="inscription">¿Requiere de incripción previa?</label>
+                    <input formControlName="inscription" type="checkbox" />
+                  </div>
+                  <div class="box-input gap-y-2 gap-x-4">
+                    <label for="status">Estado</label>
+                    <select formControlName="status">
+                      @for (status of statusEvent; track status) {
+                        <option [value]="status.code">
+                          {{ status.name }}
+                        </option>
+                      }
+                    </select>
+                  </div>
+                  @if (formEvent.get('status')?.value !== enumStatusEnum.EJECUCION) {
+                    <div
+                      class="box-input gap-x-4 pt-4"
+                      >
+                      <label for="status_reason">Motivos <br />cambio</label>
+                      <textarea
+                        formControlName="status_reason"
+                        rows="6"
+                        class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-200 text-sm"
+                        placeholder="Escribe aquí el motico de cambio en el estado del evento..."
+                      ></textarea>
+                    </div>
+                  }
+                </div>
+                <div class="box-input gap-y-2 w-72">
+                  <app-image-control
             [previewImg]="
               formEvent.get('img')?.value ? formEvent.get('img')?.value! : null
             "
-            [entityId]="itemId"
-            [type]="typeList"
-            (imgSelected)="onImageSelected($event)"
-            [imageWidthValue]="'full'"
-          ></app-image-control>
+                    [entityId]="itemId"
+                    [type]="typeList"
+                    (imgSelected)="onImageSelected($event)"
+                    [imageWidthValue]="'full'"
+                  ></app-image-control>
+                </div>
+              </div>
+
+              <!-- ORGANIZADORES -->
+              <div class="pt-6">
+                <!-- BOTONES -->
+                <div class="mb-4 flex gap-x-4 justify-center">
+                  <app-button-icon
+                    [buttonText]="'Añadir organizador'"
+                    [iconClass]="'uil-plus'"
+                    (addClicked)="addOrganizer()"
+                  ></app-button-icon>
+                  <app-button-icon
+                    [buttonText]="'Añadir colaborador'"
+                    [iconClass]="'uil-plus'"
+                    (addClicked)="addCollaborator()"
+                  ></app-button-icon>
+                  <app-button-icon
+                    [buttonText]="'Añadir patrocinador'"
+                    [iconClass]="'uil-plus'"
+                    (addClicked)="addSponsor()"
+                  ></app-button-icon>
+                </div>
+              </div>
+              <!-- ORGANIZADORES -->
+              @if (showOrganizers) {
+                <app-agent-array-control
+                  [formArray]="organizers"
+                  [agents]="agents"
+                  [label]="'Organizador'"
+                  (remove)="removeOrganizer($event)"
+                ></app-agent-array-control>
+              }
+
+              @if (showCollaborators) {
+                <app-agent-array-control
+                  [formArray]="collaborators"
+                  [agents]="agents"
+                  [label]="'Colaborador'"
+                  (remove)="removeCollaborator($event)"
+                ></app-agent-array-control>
+              }
+
+              @if (showSponsors) {
+                <app-agent-array-control
+                  [formArray]="sponsors"
+                  [agents]="agents"
+                  [label]="'Patrocinador'"
+                  (remove)="removeSponsor($event)"
+                ></app-agent-array-control>
+              }
+
+              @if (errorSession) {
+                <div>Hay algún campo incorrecto</div>
+              }
+              <div class="flex justify-center">
+                <button class="bg-black p-4 text-white" type="submit">
+                  {{ buttonAction }}
+                </button>
+              </div>
+            </div>
+          </form>
         </div>
-      </div>
-
-      <!-- ORGANIZADORES -->
-      <div class="pt-6">
-        <!-- BOTONES -->
-        <div class="mb-4 flex gap-x-4 justify-center">
-          <app-button-icon
-            [buttonText]="'Añadir organizador'"
-            [iconClass]="'uil-plus'"
-            (addClicked)="addOrganizer()"
-          ></app-button-icon>
-          <app-button-icon
-            [buttonText]="'Añadir colaborador'"
-            [iconClass]="'uil-plus'"
-            (addClicked)="addCollaborator()"
-          ></app-button-icon>
-          <app-button-icon
-            [buttonText]="'Añadir patrocinador'"
-            [iconClass]="'uil-plus'"
-            (addClicked)="addSponsor()"
-          ></app-button-icon>
-        </div>
-      </div>
-      <!-- ORGANIZADORES -->
-      <app-agent-array-control
-        *ngIf="showOrganizers"
-        [formArray]="organizers"
-        [agents]="agents"
-        [label]="'Organizador'"
-        (remove)="removeOrganizer($event)"
-      ></app-agent-array-control>
-
-      <app-agent-array-control
-        *ngIf="showCollaborators"
-        [formArray]="collaborators"
-        [agents]="agents"
-        [label]="'Colaborador'"
-        (remove)="removeCollaborator($event)"
-      ></app-agent-array-control>
-
-      <app-agent-array-control
-        *ngIf="showSponsors"
-        [formArray]="sponsors"
-        [agents]="agents"
-        [label]="'Patrocinador'"
-        (remove)="removeSponsor($event)"
-      ></app-agent-array-control>
-
-      <div *ngIf="errorSession">Hay algún campo incorrecto</div>
-      <div class="flex justify-center">
-        <button class="bg-black p-4 text-white" type="submit">
-          {{ buttonAction }}
-        </button>
-      </div>
-    </div>
-  </form>
-</div>

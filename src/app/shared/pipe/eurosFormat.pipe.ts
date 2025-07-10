@@ -19,7 +19,7 @@ export class EurosFormatPipe implements PipeTransform {
 
     if (isNaN(numericValue)) return value?.toString() ?? null;
 
-    const formatted = new Intl.NumberFormat('es-ES', {
+    const formatted = new Intl.NumberFormat('es', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(numericValue);

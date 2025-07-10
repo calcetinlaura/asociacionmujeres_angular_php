@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import {
   Component,
   DestroyRef,
@@ -37,16 +37,15 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
 @Component({
     selector: 'app-events-page',
     imports: [
-        CommonModule,
-        DashboardHeaderComponent,
-        ModalComponent,
-        ButtonIconComponent,
-        ReactiveFormsModule,
-        InputSearchComponent,
-        SpinnerLoadingComponent,
-        TableComponent,
-        FiltersComponent,
-    ],
+    DashboardHeaderComponent,
+    ModalComponent,
+    ButtonIconComponent,
+    ReactiveFormsModule,
+    InputSearchComponent,
+    SpinnerLoadingComponent,
+    TableComponent,
+    FiltersComponent
+],
     templateUrl: './events-page.component.html',
     styleUrl: './events-page.component.css'
 })

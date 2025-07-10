@@ -8,17 +8,17 @@ import { ImgBrokenDirective } from 'src/app/shared/directives/img-broken.directi
 import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
 
 @Component({
-    selector: 'app-card-player',
-    templateUrl: './card.component.html',
-    styleUrls: ['./card.component.css'],
-    imports: [
-        CommonModule,
-        ImgBrokenDirective,
-        ItemImagePipe,
-        TextBorderComponent,
-        TextBackgroundComponent,
-        TextLinkComponent,
-    ]
+  selector: 'app-card-player',
+  templateUrl: './card.component.html',
+  styleUrls: ['./card.component.css'],
+  imports: [
+    CommonModule,
+    ImgBrokenDirective,
+    ItemImagePipe,
+    TextBorderComponent,
+    TextBackgroundComponent,
+    TextLinkComponent,
+  ],
 })
 export class CardPlayerComponent implements OnInit {
   @Input() type: TypeList = TypeList.Books;
@@ -43,8 +43,8 @@ export class CardPlayerComponent implements OnInit {
         month: 'long',
         day: 'numeric',
       };
-      this.formattedStartDate = startDate.toLocaleDateString('es-ES', options);
-      this.formattedEndDate = endDate.toLocaleDateString('es-ES', options);
+      this.formattedStartDate = startDate.toLocaleDateString('es', options);
+      this.formattedEndDate = endDate.toLocaleDateString('es', options);
     }
   }
 }

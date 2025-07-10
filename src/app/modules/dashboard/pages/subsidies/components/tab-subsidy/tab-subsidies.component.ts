@@ -29,18 +29,19 @@ import { ButtonIconComponent } from '../../../../../../shared/components/buttons
 import { TableComponent } from '../../../../components/table/table.component';
 
 @Component({
-    selector: 'app-tab-subsidy',
-    imports: [
-        CommonModule,
-        TextEditorComponent,
-        MatIconModule,
-        IconActionComponent,
-        EurosFormatPipe,
-        TableComponent,
-        ButtonIconComponent,
-    ],
-    templateUrl: './tab-subsidies.component.html',
-    styleUrls: ['./tab-subsidies.component.css']
+  selector: 'app-tab-subsidy',
+  standalone: true,
+  imports: [
+    CommonModule,
+    TextEditorComponent,
+    MatIconModule,
+    IconActionComponent,
+    EurosFormatPipe,
+    TableComponent,
+    ButtonIconComponent,
+  ],
+  templateUrl: './tab-subsidies.component.html',
+  styleUrls: ['./tab-subsidies.component.css'],
 })
 export class ModalShowSubsidyComponent implements OnChanges {
   private subsidiesService = inject(SubsidiesService);

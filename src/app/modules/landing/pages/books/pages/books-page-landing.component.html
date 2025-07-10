@@ -3,24 +3,26 @@
     [filters]="filters"
     (filterClicked)="filterSelected($event)"
     [loadFirstFilter]="'NOVEDADES'"
-  />
-  <app-input-search
-    (onDebounce)="applyFilterWord($event)"
-    class="my-4 md:my-6"
-  />
-  <!-- Spinner Loading -->
-  <app-spinner-loading *ngIf="isLoading; else results" />
-  <!-- Sección cards -->
-  <ng-template #results>
-    <app-section-generic
-      *ngIf="areThereResults; else notResults"
-      [type]="typeList.Books"
-      [data]="filteredBooks"
-      [total]="number"
     />
-  </ng-template>
-  <!-- Sección no hay resultados -->
-  <ng-template #notResults
-    ><app-no-results [text]="'libros' | lowercase"
-  /></ng-template>
-</div>
+    <app-input-search
+      (onDebounce)="applyFilterWord($event)"
+      class="my-4 md:my-6"
+      />
+      <!-- Spinner Loading -->
+      @if (isLoading) {
+        <app-spinner-loading />
+      } @else {
+        @if (areThereResults) {
+          <app-section-generic
+            [type]="typeList.Books"
+            [data]="filteredBooks"
+            [total]="number"
+            />
+        } @else {
+          <app-no-results [text]="'libros' | lowercase"
+            />
+        }
+      }
+      <!-- Sección cards -->
+      <!-- Sección no hay resultados -->
+    </div>

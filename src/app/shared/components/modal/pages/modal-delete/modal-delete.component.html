@@ -1,10 +1,10 @@
 <div class="text-center pt-7 pb-16">
   <p class="text-lg">
     ¿Seguro que quieres eliminar
-    <ng-container *ngIf="getDeleteLabel()">
+    @if (getDeleteLabel()) {
       {{ getDeleteLabel() }}
       <br /><span class="font-semibold">{{ getDeleteValue() }}</span> ?
-    </ng-container>
+    }
   </p>
 </div>
 <div class="flex flex-row justify-center buttons">

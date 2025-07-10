@@ -4,24 +4,26 @@
   </div>
   <div class="section--generic--list">
     <ul class="list">
-      <li
-        *ngFor="let item of data"
-        [ngClass]="{ 'opacity-50 grayscale': item.isPast }"
-      >
-        <app-card-player
-          [item]="item"
-          [type]="selectedTypeModal"
-          (click)="type !== TypeList.Piteras ? openModalView(item) : null"
-        ></app-card-player>
-      </li>
+      @for (item of data; track item) {
+        <li
+          [ngClass]="{ 'opacity-50 grayscale': item.isPast }"
+          >
+          <app-card-player
+            [item]="item"
+            [type]="selectedTypeModal"
+            (click)="type !== TypeList.Piteras ? openModalView(item) : null"
+          ></app-card-player>
+        </li>
+      }
     </ul>
   </div>
 </div>
 
-<app-modal
-  *ngIf="showModalView"
-  [item]="selectedItem"
-  [type]="selectedTypeModal"
-  [action]="TypeActionModal.Show"
-  (closeModal)="onCloseModal(TypeActionModal.Show)"
-></app-modal>
+@if (showModalView) {
+  <app-modal
+    [item]="selectedItem"
+    [type]="selectedTypeModal"
+    [action]="TypeActionModal.Show"
+    (closeModal)="onCloseModal(TypeActionModal.Show)"
+  ></app-modal>
+}

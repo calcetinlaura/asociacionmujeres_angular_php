@@ -12,50 +12,63 @@
     ></app-text-icon>
     <div class="flex flex-col gap-y-4 mt-4">
       <app-text-background [text]="'Descripción'"></app-text-background>
-      <app-text-editor *ngIf="item.description" [text]="item.description" />
+      @if (item.description) {
+        <app-text-editor [text]="item.description" />
+      }
     </div>
     <div class="flex flex-col gap-y-4 mt-4">
       <app-text-background [text]="'Observaciones'"></app-text-background>
-      <app-text-editor *ngIf="item.observations" [text]="item.observations" />
+      @if (item.observations) {
+        <app-text-editor [text]="item.observations" />
+      }
     </div>
     <div class="flex flex-col gap-y-4 mt-4">
       <app-text-background [text]="'Gestión'"></app-text-background>
-      <app-text-subtitle
-        *ngIf="item.management"
-        [text]="item.management | filterTransformCode : 'PlaceManagement'"
-      />
+      @if (item.management) {
+        <app-text-subtitle
+          [text]="item.management | filterTransformCode : 'PlaceManagement'"
+          />
+      }
     </div>
-    <div class="mt-4" *ngIf="item.salas!.length > 0">
-      <app-text-background [text]="'Salas'"></app-text-background>
-      <table class="w-full -collapse tableInvoices">
-        <thead>
-          <tr>
-            <th class="p-2 text-left">Sala</th>
-            <th class="p-2 text-center">Ubicación</th>
-            <th class="p-2 text-center">Tipo</th>
-            <th class="p-2 text-center">Aforo</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let sala of item.salas" class="hover:bg-gray-50">
-            <td class="p-2 w-auto text-left">{{ sala.name }}</td>
-            <td class="p-2 text-center">
-              {{ sala.location }}
-            </td>
-            <td class="p-2 text-center">
-              <span *ngIf="sala.type">
-                {{ sala.type | filterTransformCode : "PlaceType" }}</span
-              >
-            </td>
-            <td class="p-2 w-auto text-right">
-              {{ sala.capacity }}
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <div *ngIf="item.lat && item.lon">
-      <app-map [lat]="item.lat" [lon]="item.lon"></app-map>
+    @if (item.salas!.length > 0) {
+      <div class="mt-4">
+        <app-text-background [text]="'Salas'"></app-text-background>
+        <table class="w-full -collapse tableInvoices">
+          <thead>
+            <tr>
+              <th class="p-2 text-left">Sala</th>
+              <th class="p-2 text-center">Ubicación</th>
+              <th class="p-2 text-center">Tipo</th>
+              <th class="p-2 text-center">Aforo</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (sala of item.salas; track sala) {
+              <tr class="hover:bg-gray-50">
+                <td class="p-2 w-auto text-left">{{ sala.name }}</td>
+                <td class="p-2 text-center">
+                  {{ sala.location }}
+                </td>
+                <td class="p-2 text-center">
+                  @if (sala.type) {
+                    <span>
+                      {{ sala.type | filterTransformCode : "PlaceType" }}</span
+                      >
+                    }
+                  </td>
+                  <td class="p-2 w-auto text-right">
+                    {{ sala.capacity }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+      @if (item.lat && item.lon) {
+        <div>
+          <app-map [lat]="item.lat" [lon]="item.lon"></app-map>
+        </div>
+      }
     </div>
   </div>
-</div>

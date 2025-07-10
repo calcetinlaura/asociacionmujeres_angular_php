@@ -2,18 +2,20 @@
   <app-filters [filters]="filters" (filterClicked)="filterSelected($event)" />
   <app-input-search (onDebounce)="applyFilterWord($event)" class="my-8" />
   <!-- Spinner Loading -->
-  <app-spinner-loading *ngIf="isLoading; else results" />
-  <!-- Sección cards -->
-  <ng-template #results>
-    <app-section-generic
-      *ngIf="areThereResults; else notResults"
-      [type]="typeList.Recipes"
-      [data]="filteredRecipes"
-      [total]="number"
-    />
+  @if (isLoading) {
+    <app-spinner-loading />
+  } @else {
+    @if (areThereResults) {
+      <app-section-generic
+        [type]="typeList.Recipes"
+        [data]="filteredRecipes"
+        [total]="number"
+        />
+    } @else {
+      <app-no-results [text]="'recetas' | lowercase"
+        />
+    }
     <!-- Sección no hay resultados -->
-    <ng-template #notResults
-      ><app-no-results [text]="'recetas' | lowercase"
-    /></ng-template>
-  </ng-template>
+  }
+  <!-- Sección cards -->
 </div>

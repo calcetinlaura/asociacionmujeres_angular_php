@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, Input } from '@angular/core';
 import { AgentModel } from 'src/app/core/interfaces/agent.interface';
 import { TypeList } from 'src/app/core/models/general.model';
@@ -12,14 +12,13 @@ import { PhoneFormatPipe } from 'src/app/shared/pipe/phoneFormat.pipe';
 @Component({
     selector: 'app-modal-show-agent',
     imports: [
-        CommonModule,
-        TextBackgroundComponent,
-        TextTitleComponent,
-        TextSubTitleComponent,
-        TextIconComponent,
-        TextEditorComponent,
-        PhoneFormatPipe,
-    ],
+    TextBackgroundComponent,
+    TextTitleComponent,
+    TextSubTitleComponent,
+    TextIconComponent,
+    TextEditorComponent,
+    PhoneFormatPipe
+],
     templateUrl: './modal-show-agent.component.html',
     styleUrl: './modal-show-agent.component.css'
 })

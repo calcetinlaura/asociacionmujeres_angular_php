@@ -1,7 +1,9 @@
 <div class="flex flex-1 flex-col justify-between w-full">
   <div>
     <app-text-title [text]="item.company" />
-    <app-text-subtitle *ngIf="item.cif" [text]="item.cif" />
+    @if (item.cif) {
+      <app-text-subtitle [text]="item.cif" />
+    }
     <app-text-icon
       [icon]="'uil uil-building icon'"
       [text]="
@@ -32,64 +34,70 @@
       <app-text-background [text]="'Área de trabajo'"></app-text-background>
     </div>
     <div class="flex flex-col gap-y-2 ml-4 pt-3">
-      <app-text-subtitle *ngIf="item.category" [text]="item.category" />
-      <app-text-subtitle *ngIf="item.key_words" [text]="item.key_words" />
-      <app-text-editor *ngIf="item.observations" [text]="item.observations" />
+      @if (item.category) {
+        <app-text-subtitle [text]="item.category" />
+      }
+      @if (item.key_words) {
+        <app-text-subtitle [text]="item.key_words" />
+      }
+      @if (item.observations) {
+        <app-text-editor [text]="item.observations" />
+      }
     </div>
     <!-- Contenedor de la tabla de facturas -->
     <div class="mt-4 w-full">
-      <ng-container *ngIf="item.invoices!.length > 0">
-        <ng-container
-          *ngIf="groupInvoicesByYear(item.invoices) as invoicesByYear"
-        >
+      @if (item.invoices!.length > 0) {
+        @if (groupInvoicesByYear(item.invoices); as invoicesByYear) {
           <!-- 🔹 Iterar sobre cada año -->
-          <div *ngFor="let year of invoicesByYear | keyvalue">
-            <div class="mt-6">
-              <app-text-background
-                [text]="'Facturas ' + year.key"
-              ></app-text-background>
+          @for (year of invoicesByYear | keyvalue; track year) {
+            <div>
+              <div class="mt-6">
+                <app-text-background
+                  [text]="'Facturas ' + year.key"
+                ></app-text-background>
+              </div>
+              <!-- <h2 class="header_table"></h2> -->
+              <table class="w-full -collapse tableInvoices my-4">
+                <thead>
+                  <tr>
+                    <th class="p-2 text-center">N°</th>
+                    <th class="p-2 text-center">Fecha</th>
+                    <th class="p-2 text-center">Descripción</th>
+                    <th class="p-2 text-center">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (invoice of year.value; track invoice) {
+                    <tr
+                      class="hover:bg-gray-50 fila"
+                      >
+                      <td class="p-2 w-auto">{{ invoice.number_invoice }}</td>
+                      <td class="p-2 w-auto">
+                        {{ invoice.date_invoice | date : "EEE dd/MM/yyyy" }}
+                      </td>
+                      <td class="p-2">
+                        <span [innerHTML]="invoice.description"></span>
+                      </td>
+                      <td class="p-2 w-auto text-right">
+                        {{ invoice.total_amount | eurosFormat }}
+                      </td>
+                    </tr>
+                  }
+                  <!-- 🔹 Fila de Totales por Año -->
+                  <tr class="total_table">
+                    <td class="p-2 text-right" colspan="3">
+                      TOTAL {{ year.key }}:
+                    </td>
+                    <td class="p-2 text-right font-bold">
+                      <span>{{
+                        getTotalAmountByYear(year.value) | eurosFormat
+                      }}</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-            <!-- <h2 class="header_table"></h2> -->
-            <table class="w-full -collapse tableInvoices my-4">
-              <thead>
-                <tr>
-                  <th class="p-2 text-center">N°</th>
-                  <th class="p-2 text-center">Fecha</th>
-                  <th class="p-2 text-center">Descripción</th>
-                  <th class="p-2 text-center">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  *ngFor="let invoice of year.value"
-                  class="hover:bg-gray-50 fila"
-                >
-                  <td class="p-2 w-auto">{{ invoice.number_invoice }}</td>
-                  <td class="p-2 w-auto">
-                    {{ invoice.date_invoice | date : "EEE dd/MM/yyyy" }}
-                  </td>
-                  <td class="p-2">
-                    <span [innerHTML]="invoice.description"></span>
-                  </td>
-                  <td class="p-2 w-auto text-right">
-                    {{ invoice.total_amount | eurosFormat }}
-                  </td>
-                </tr>
-                <!-- 🔹 Fila de Totales por Año -->
-                <tr class="total_table">
-                  <td class="p-2 text-right" colspan="3">
-                    TOTAL {{ year.key }}:
-                  </td>
-                  <td class="p-2 text-right font-bold">
-                    <span>{{
-                      getTotalAmountByYear(year.value) | eurosFormat
-                    }}</span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
+          }
           <!-- 🔹 Tabla Final con Totales de Todos los Años -->
           <div class="mt-6 mb-4">
             <app-text-background
@@ -105,18 +113,19 @@
               </tr>
             </thead>
             <tbody>
-              <tr
-                *ngFor="let year of invoicesByYear | keyvalue"
-                class="hover:bg-gray-50"
-              >
-                <td class="p-2 w-auto text-left">{{ year.key }}</td>
-                <td class="p-2 text-center">
-                  {{ year.value.length }}
-                </td>
-                <td class="p-2 w-auto text-right">
-                  {{ getTotalAmountByYear(year.value) | eurosFormat }}
-                </td>
-              </tr>
+              @for (year of invoicesByYear | keyvalue; track year) {
+                <tr
+                  class="hover:bg-gray-50"
+                  >
+                  <td class="p-2 w-auto text-left">{{ year.key }}</td>
+                  <td class="p-2 text-center">
+                    {{ year.value.length }}
+                  </td>
+                  <td class="p-2 w-auto text-right">
+                    {{ getTotalAmountByYear(year.value) | eurosFormat }}
+                  </td>
+                </tr>
+              }
               <!-- 🔹 Fila de Total General -->
               <tr class="total_table">
                 <td class="p-2 text-right" colspan="2">TOTAL GENERAL:</td>
@@ -126,16 +135,18 @@
               </tr>
             </tbody>
           </table>
-        </ng-container>
-      </ng-container>
+        }
+      }
 
       <!-- 🔹 Mensaje si no hay facturas -->
-      <div class="mt-6" *ngIf="!item.invoices || item.invoices.length === 0">
-        <app-text-background [text]="'Facturas'"></app-text-background>
-        <p class="text-left text-gray-600 mt-4">
-          No hay facturas registradas de este acreedor.
-        </p>
-      </div>
+      @if (!item.invoices || item.invoices.length === 0) {
+        <div class="mt-6">
+          <app-text-background [text]="'Facturas'"></app-text-background>
+          <p class="text-left text-gray-600 mt-4">
+            No hay facturas registradas de este acreedor.
+          </p>
+        </div>
+      }
     </div>
   </div>
 </div>

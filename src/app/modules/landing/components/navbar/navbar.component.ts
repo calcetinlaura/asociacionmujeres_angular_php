@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, OnInit } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { RouterLinkActive } from '@angular/router';
@@ -6,7 +6,7 @@ import { RouterLinkActive } from '@angular/router';
     selector: 'app-navbar',
     templateUrl: './navbar.component.html',
     styleUrl: './navbar.component.css',
-    imports: [CommonModule, RouterLink, RouterLinkActive]
+    imports: [RouterLink, RouterLinkActive]
 })
 export class NavbarComponent implements OnInit {
   mainMenu: {

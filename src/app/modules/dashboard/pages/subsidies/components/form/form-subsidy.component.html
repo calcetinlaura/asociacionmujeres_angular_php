@@ -6,7 +6,7 @@
     (ngSubmit)="onSendFormInvoice()"
     [formGroup]="formSubsidy"
     class="login-auth-form"
-  >
+    >
     <div class="flex flex-col gap-y-4">
       <div class="flex justify-between gap-x-4">
         <div class="flex flex-col flex-1 gap-y-4">
@@ -16,12 +16,13 @@
               <div class="flex box-input gap-y-2 gap-x-4 flex-1">
                 <label for="name">Subvención</label>
                 <select formControlName="name">
-                  <option
-                    *ngFor="let subsidy of FilterSubsidies"
-                    [value]="subsidy.code"
-                  >
-                    {{ subsidy.name }}
-                  </option>
+                  @for (subsidy of FilterSubsidies; track subsidy) {
+                    <option
+                      [value]="subsidy.code"
+                      >
+                      {{ subsidy.name }}
+                    </option>
+                  }
                 </select>
               </div>
               <!-- AÑO -->
@@ -34,17 +35,20 @@
                       'is-invalid':
                         submitted && formSubsidy.get('year')?.invalid
                     }"
-                  >
-                    <option *ngFor="let year of years" [value]="year">
-                      {{ year }}
-                    </option>
+                    >
+                    @for (year of years; track year) {
+                      <option [value]="year">
+                        {{ year }}
+                      </option>
+                    }
                   </select>
-                  <div
-                    *ngIf="submitted && formSubsidy.get('year')?.invalid"
-                    class="is-invalid-text"
-                  >
-                    Campo requerido si hay subvención
-                  </div>
+                  @if (submitted && formSubsidy.get('year')?.invalid) {
+                    <div
+                      class="is-invalid-text"
+                      >
+                      Campo requerido si hay subvención
+                    </div>
+                  }
                 </div>
               </div>
             </div>
@@ -62,86 +66,88 @@
           <div class="flex box-input gap-x-4">
             <label for="date_presentation" class="flex-1"
               >F. Presentación</label
-            >
-            <input
-              formControlName="date_presentation"
-              type="date"
-              class="w-54"
-            />
-          </div>
-          <!-- Fecha JUSTIFICACIÓN -->
-          <div class="flex box-input gap-x-4">
-            <label for="date_justification" class="flex-1"
-              >F. Justificación</label
-            >
-            <input
-              formControlName="date_justification"
-              type="date"
-              class="w-54"
-            />
-          </div>
-        </div>
-      </div>
-      <!-- URL -->
-      <div class="box-input gap-x-4">
-        <label for="url_presentation">Url subvención</label>
-        <input type="text" formControlName="url_presentation" />
-      </div>
-      <div class="box-input gap-x-4">
-        <label for="url_justification">Url resolución</label>
-        <input type="text" formControlName="url_justification" />
-      </div>
-      <div
-        class="flex justify-between gap-x-4 bg-lilaMuyClaro pt-4 pb-8 px-4 my-4"
-      >
-        <!-- CANTIDAD SOLICITADA -->
-        <div class="flex flex-col flex-1 box-input gap-y-2">
-          <label for="amount_requested">Cantidad solicitada</label>
-          <input formControlName="amount_requested" type="number" />
-        </div>
-        <!-- CANTIDAD ADJUDICADA -->
-        <div class="flex flex-col flex-1 box-input gap-y-2">
-          <label for="amount_granted" class="font-medium"
-            >Cantidad adjudicada</label
-          >
-          <input formControlName="amount_granted" type="number" />
-        </div>
-        <!-- CANTIDAD JUSTIFICADA -->
-        <div class="flex flex-col flex-1 box-input gap-y-2">
-          <label for="amount_justified">Cantidad necesaria justificar</label>
-          <input formControlName="amount_justified" type="number" />
-        </div>
-        <!-- CANTIDAD JUSTIFICADA -->
-        <!-- <div class="flex flex-col box-input gap-x-4">
-          <label for="amount_association">Cantidad aporta asociaión</label>
-          <input formControlName="amount_association" type="number" />
-        </div> -->
-      </div>
+              >
+              <input
+                formControlName="date_presentation"
+                type="date"
+                class="w-54"
+                />
+              </div>
+              <!-- Fecha JUSTIFICACIÓN -->
+              <div class="flex box-input gap-x-4">
+                <label for="date_justification" class="flex-1"
+                  >F. Justificación</label
+                  >
+                  <input
+                    formControlName="date_justification"
+                    type="date"
+                    class="w-54"
+                    />
+                  </div>
+                </div>
+              </div>
+              <!-- URL -->
+              <div class="box-input gap-x-4">
+                <label for="url_presentation">Url subvención</label>
+                <input type="text" formControlName="url_presentation" />
+              </div>
+              <div class="box-input gap-x-4">
+                <label for="url_justification">Url resolución</label>
+                <input type="text" formControlName="url_justification" />
+              </div>
+              <div
+                class="flex justify-between gap-x-4 bg-lilaMuyClaro pt-4 pb-8 px-4 my-4"
+                >
+                <!-- CANTIDAD SOLICITADA -->
+                <div class="flex flex-col flex-1 box-input gap-y-2">
+                  <label for="amount_requested">Cantidad solicitada</label>
+                  <input formControlName="amount_requested" type="number" />
+                </div>
+                <!-- CANTIDAD ADJUDICADA -->
+                <div class="flex flex-col flex-1 box-input gap-y-2">
+                  <label for="amount_granted" class="font-medium"
+                    >Cantidad adjudicada</label
+                    >
+                    <input formControlName="amount_granted" type="number" />
+                  </div>
+                  <!-- CANTIDAD JUSTIFICADA -->
+                  <div class="flex flex-col flex-1 box-input gap-y-2">
+                    <label for="amount_justified">Cantidad necesaria justificar</label>
+                    <input formControlName="amount_justified" type="number" />
+                  </div>
+                  <!-- CANTIDAD JUSTIFICADA -->
+                  <!-- <div class="flex flex-col box-input gap-x-4">
+                  <label for="amount_association">Cantidad aporta asociaión</label>
+                  <input formControlName="amount_association" type="number" />
+                </div> -->
+              </div>
 
-      <!-- OBSERVACIONES -->
-      <div class="flex box-input gap-x-4 mt-4">
-        <label for="observations">Observaciones</label>
-        <div class="flex flex-col flex-1">
-          <textarea
-            formControlName="observations"
-            rows="6"
-            class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-200 text-sm"
-            placeholder="Escribe aquí los ingredientes de la receta..."
-          ></textarea>
+              <!-- OBSERVACIONES -->
+              <div class="flex box-input gap-x-4 mt-4">
+                <label for="observations">Observaciones</label>
+                <div class="flex flex-col flex-1">
+                  <textarea
+                    formControlName="observations"
+                    rows="6"
+                    class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-200 text-sm"
+                    placeholder="Escribe aquí los ingredientes de la receta..."
+                  ></textarea>
+                </div>
+              </div>
+
+              <!-- Mensaje de error global -->
+              @if (errorSession) {
+                <div class="is-invalid-text">
+                  Ocurrió un error con el envío del formulario
+                </div>
+              }
+
+              <!-- Botón de envío -->
+              <div class="flex justify-center">
+                <button class="bg-black p-4 text-white" type="submit">
+                  {{ buttonAction }}
+                </button>
+              </div>
+            </div>
+          </form>
         </div>
-      </div>
-
-      <!-- Mensaje de error global -->
-      <div *ngIf="errorSession" class="is-invalid-text">
-        Ocurrió un error con el envío del formulario
-      </div>
-
-      <!-- Botón de envío -->
-      <div class="flex justify-center">
-        <button class="bg-black p-4 text-white" type="submit">
-          {{ buttonAction }}
-        </button>
-      </div>
-    </div>
-  </form>
-</div>

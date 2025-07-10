@@ -1,107 +1,130 @@
 <div class="flex flex-col justify-between">
   <div>
-    <p *ngIf="item.macroeventData && item.macroeventData?.title" class="macro">
-      {{ item.macroeventData.title }}
-    </p>
+    @if (item.macroeventData && item.macroeventData?.title) {
+      <p class="macro">
+        {{ item.macroeventData.title }}
+      </p>
+    }
     <app-text-title [text]="item.title" />
-    <app-text-subtitle
-      *ngIf="item.placeData?.name"
-      [text]="item.placeData?.name + ' | ' + item.town"
-    />
+    @if (item.placeData?.name) {
+      <app-text-subtitle
+        [text]="item.placeData?.name + ' | ' + item.town"
+        />
+    }
 
-    <p class="text-xs text-gray-500 pl-2" *ngIf="item.salaData?.name">
-      {{ item.salaData?.name }} - {{ item.salaData?.location }}
-    </p>
+    @if (item.salaData?.name) {
+      <p class="text-xs text-gray-500 pl-2">
+        {{ item.salaData?.name }} - {{ item.salaData?.location }}
+      </p>
+    }
     <div class="flex flex-col sm:flex-row gap-4 my-4">
-      <ng-container *ngIf="datesEquals; else dateRange" class="lowercase">
-        <app-text-background
-          *ngIf="item.start"
-          [text]="item.start | date : 'EEEE dd MMMM yyyy'"
-        ></app-text-background>
-      </ng-container>
-      <ng-template #dateRange>
-        <app-text-background
-          *ngIf="item.start && item.end"
+      @if (datesEquals) {
+        <ng-container class="lowercase">
+          @if (item.start) {
+            <app-text-background
+              [text]="item.start | date : 'EEEE dd MMMM yyyy'"
+            ></app-text-background>
+          }
+        </ng-container>
+      } @else {
+        @if (item.start && item.end) {
+          <app-text-background
           [text]="
             (item.start | date : 'EEEE dd MMMM') +
             ' - ' +
             (item.end | date : 'EEEE dd MMMM yyyy')
           "
+          ></app-text-background>
+        }
+      }
+      @if (item.time !== '') {
+        <app-text-border
+          [text]="item.time?.slice(0, 5) + ' h'"
+          >
+        </app-text-border>
+      }
+    </div>
+    <div class="mb-6">
+      @if (item.organizer && item.organizer.length > 0) {
+        <app-text-background
+          [text]="'Organiza'"
         ></app-text-background>
-      </ng-template>
-      <app-text-border
-        *ngIf="item.time !== ''"
-        [text]="item.time?.slice(0, 5) + ' h'"
-      >
-      </app-text-border>
+      }
+      @for (organizer of item.organizer; track organizer) {
+        <p
+          class="text-sm text-gray-700 pl-6 pt-2"
+          >
+          - {{ organizer.name }}
+        </p>
+      }
     </div>
     <div class="mb-6">
-      <app-text-background
-        *ngIf="item.organizer && item.organizer.length > 0"
-        [text]="'Organiza'"
-      ></app-text-background>
-      <p
-        *ngFor="let organizer of item.organizer"
-        class="text-sm text-gray-700 pl-6 pt-2"
-      >
-        - {{ organizer.name }}
-      </p>
+      @if (item.collaborator && item.collaborator.length > 0) {
+        <app-text-background
+          [text]="'Colabora'"
+        ></app-text-background>
+      }
+      @for (colab of item.collaborator; track colab) {
+        <p
+          class="text-sm text-gray-700 pl-6 pt-2"
+          >
+          - {{ colab.name }}
+        </p>
+      }
     </div>
     <div class="mb-6">
-      <app-text-background
-        *ngIf="item.collaborator && item.collaborator.length > 0"
-        [text]="'Colabora'"
-      ></app-text-background>
-      <p
-        *ngFor="let colab of item.collaborator"
-        class="text-sm text-gray-700 pl-6 pt-2"
-      >
-        - {{ colab.name }}
-      </p>
-    </div>
-    <div class="mb-6">
-      <app-text-background
-        *ngIf="item.sponsor && item.sponsor.length > 0"
-        [text]="'Patrocina'"
-      ></app-text-background>
+      @if (item.sponsor && item.sponsor.length > 0) {
+        <app-text-background
+          [text]="'Patrocina'"
+        ></app-text-background>
+      }
 
-      <p
-        *ngFor="let sponsor of item.sponsor"
-        class="text-sm text-gray-700 pl-6 pt-2"
-      >
-        - {{ sponsor.name }}
-      </p>
+      @for (sponsor of item.sponsor; track sponsor) {
+        <p
+          class="text-sm text-gray-700 pl-6 pt-2"
+          >
+          - {{ sponsor.name }}
+        </p>
+      }
     </div>
     <!-- <p class="body-subtitle">Aforo - {{ item.capacity }}</p> -->
     <app-text-editor [text]="item.description"></app-text-editor>
     <div class="my-4">
-      <app-text-border *ngIf="item.price" [text]="item.price"></app-text-border>
+      @if (item.price) {
+        <app-text-border [text]="item.price"></app-text-border>
+      }
     </div>
-    <app-map
-      *ngIf="item.placeData && item.placeData.lat && item.placeData.lon"
-      [lat]="item.placeData.lat"
-      [lon]="item.placeData.lon"
-    ></app-map>
+    @if (item.placeData && item.placeData.lat && item.placeData.lon) {
+      <app-map
+        [lat]="item.placeData.lat"
+        [lon]="item.placeData.lon"
+      ></app-map>
+    }
   </div>
   <div>
-    <p class="body-inscription" *ngIf="item.inscription === true">
-      * Se requiere inscripción previa en el email
-      asociacionmujerescallosa&#64;gmail.com
-    </p>
-    <app-text-background
-      *ngIf="item.status === enumStatusEnum.CANCELADO"
-      [text]="'Evento ' + item.status"
-      [colorBack]="'#de7a71'"
-    ></app-text-background>
-    <app-text-background
-      *ngIf="item.status === enumStatusEnum.AGOTADO"
-      [text]="'Inscripciones ' + item.status"
-      [colorBack]="'#de7a71'"
-      [colorText]="'white'"
-    ></app-text-background>
-    <app-text-editor
-      *ngIf="item.status_reason"
-      [text]="item.status_reason"
-    ></app-text-editor>
+    @if (item.inscription === true) {
+      <p class="body-inscription">
+        * Se requiere inscripción previa en el email
+        asociacionmujerescallosa&#64;gmail.com
+      </p>
+    }
+    @if (item.status === enumStatusEnum.CANCELADO) {
+      <app-text-background
+        [text]="'Evento ' + item.status"
+        [colorBack]="'#de7a71'"
+      ></app-text-background>
+    }
+    @if (item.status === enumStatusEnum.AGOTADO) {
+      <app-text-background
+        [text]="'Inscripciones ' + item.status"
+        [colorBack]="'#de7a71'"
+        [colorText]="'white'"
+      ></app-text-background>
+    }
+    @if (item.status_reason) {
+      <app-text-editor
+        [text]="item.status_reason"
+      ></app-text-editor>
+    }
   </div>
 </div>

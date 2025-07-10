@@ -1,67 +1,86 @@
-<div *ngIf="item" class="flex flex-col justify-between">
-  <div>
-    <app-text-title *ngIf="item.title" [text]="item.title" />
-    <app-text-subtitle *ngIf="item.town" [text]="item.town" />
-    <div class="flex flex-col sm:flex-row gap-4 my-4">
-      <ng-container *ngIf="datesEquals; else dateRange">
-        <app-text-background
-          *ngIf="item.start"
-          [text]="item.start | date : 'EEEE dd MMMM yyyy'"
-        ></app-text-background>
-      </ng-container>
-      <ng-template #dateRange>
-        <app-text-background
-          *ngIf="item.start && item.end"
+@if (item) {
+  <div class="flex flex-col justify-between">
+    <div>
+      @if (item.title) {
+        <app-text-title [text]="item.title" />
+      }
+      @if (item.town) {
+        <app-text-subtitle [text]="item.town" />
+      }
+      <div class="flex flex-col sm:flex-row gap-4 my-4">
+        @if (datesEquals) {
+          @if (item.start) {
+            <app-text-background
+              [text]="item.start | date : 'EEEE dd MMMM yyyy'"
+            ></app-text-background>
+          }
+        } @else {
+          @if (item.start && item.end) {
+            <app-text-background
           [text]="
             (item.start | date : 'EEEE dd MMMM') +
             ' - ' +
             (item.end | date : 'EEEE dd MMMM yyyy')
           "
-        ></app-text-background>
-      </ng-template>
+            ></app-text-background>
+          }
+        }
+      </div>
+      @if (item.description) {
+        <app-text-editor
+          [text]="item.description"
+        ></app-text-editor>
+      }
     </div>
-    <app-text-editor
-      *ngIf="item.description"
-      [text]="item.description"
-    ></app-text-editor>
-  </div>
-
-  <div *ngIf="item.events && item.events.length > 0" class="mt-6">
-    <div class="flex flex-col gap-3 mt-3">
-      <div *ngFor="let event of item.events" class="flex w-full gap-x-4">
-        <div class="w-24 h-32 overflow-hidden flex-shrink-0">
-          <img
-            *ngIf="event.img"
+    @if (item.events && item.events.length > 0) {
+      <div class="mt-6">
+        <div class="flex flex-col gap-3 mt-3">
+          @for (event of item.events; track event) {
+            <div class="flex w-full gap-x-4">
+              <div class="w-24 h-32 overflow-hidden flex-shrink-0">
+                @if (event.img) {
+                  <img
             [src]="
               '/uploads/img/EVENTS/' +
               (event.start | date : 'yyyy') +
               '/' +
               event.img
             "
-            alt="{{ event.title }}"
-            class="object-cover w-full h-full rounded"
-          />
-        </div>
-        <div class="flex-1 bg-gray-100 p-3 rounded-lg shadow-sm">
-          <p class="text-sm font-semibold">{{ event.title }}</p>
-          <p class="text-xs text-gray-600" *ngIf="event.start">
-            {{ event.start | date : "EEEE dd MMMM yyyy" }} |
-            {{ event.time?.slice(0, 5) }}h
-          </p>
-          <p
-            class="text-xs text-gray-600 pt-4"
-            *ngIf="event.placeData && event.placeData.name"
-          >
-            {{ event.placeData.name }}
-          </p>
-          <p class="text-xs text-gray-600" *ngIf="event.town">
-            <span *ngIf="event.placeData && event.placeData.address">
-              {{ event.placeData.address }},
-            </span>
-            {{ event.town }}
-          </p>
+                    alt="{{ event.title }}"
+                    class="object-cover w-full h-full rounded"
+                    />
+                }
+              </div>
+              <div class="flex-1 bg-gray-100 p-3 rounded-lg shadow-sm">
+                <p class="text-sm font-semibold">{{ event.title }}</p>
+                @if (event.start) {
+                  <p class="text-xs text-gray-600">
+                    {{ event.start | date : "EEEE dd MMMM yyyy" }} |
+                    {{ event.time?.slice(0, 5) }}h
+                  </p>
+                }
+                @if (event.placeData && event.placeData.name) {
+                  <p
+                    class="text-xs text-gray-600 pt-4"
+                    >
+                    {{ event.placeData.name }}
+                  </p>
+                }
+                @if (event.town) {
+                  <p class="text-xs text-gray-600">
+                    @if (event.placeData && event.placeData.address) {
+                      <span>
+                        {{ event.placeData.address }},
+                      </span>
+                    }
+                    {{ event.town }}
+                  </p>
+                }
+              </div>
+            </div>
+          }
         </div>
       </div>
-    </div>
+    }
   </div>
-</div>
+}

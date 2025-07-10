@@ -1,13 +1,14 @@
 <div
   class="filterColumns flex justify-end h-14 gap-x-1 items-center"
   [ngStyle]="{ top: topFilter + 'px' }"
->
-  <app-icon-action
-    *ngIf="type === TypeList.Invoices"
-    [icon]="'uil-folder-download'"
-    [tooltip]="'Descargar facturas'"
-    (click)="downloadFilteredPdfs()"
-  ></app-icon-action>
+  >
+  @if (type === TypeList.Invoices) {
+    <app-icon-action
+      [icon]="'uil-folder-download'"
+      [tooltip]="'Descargar facturas'"
+      (click)="downloadFilteredPdfs()"
+    ></app-icon-action>
+  }
   <app-icon-action
     [icon]="'uil-print'"
     [tooltip]="'Imprimir tabla'"
@@ -18,17 +19,18 @@
     [menu]="columnsMenu"
   ></app-button>
   <mat-menu #columnsMenu="matMenu">
-    <button
-      mat-menu-item
-      *ngFor="let column of headerColumns; trackBy: trackByKey"
-    >
-      <mat-checkbox
-        [checked]="columnVisibility[column.key]"
-        (change)="toggleColumn(column.key)"
-      >
-        {{ column.title }}
-      </mat-checkbox>
-    </button>
+    @for (column of headerColumns; track trackByKey($index, column)) {
+      <button
+        mat-menu-item
+        >
+        <mat-checkbox
+          [checked]="columnVisibility[column.key]"
+          (change)="toggleColumn(column.key)"
+          >
+          {{ column.title }}
+        </mat-checkbox>
+      </button>
+    }
   </mat-menu>
 </div>
 <table
@@ -37,7 +39,7 @@
   matSort
   (matSortChange)="announceSortChange($event)"
   class="mat-elevation-z8 table"
->
+  >
   <ng-container matColumnDef="number">
     <th mat-header-cell *matHeaderCellDef>Nº</th>
     <td mat-cell *matCellDef="let element; let i = index">
@@ -45,143 +47,142 @@
     </td>
     <td mat-footer-cell *matFooterCellDef></td>
   </ng-container>
-  <ng-container
-    *ngFor="let column of headerColumns"
-    [matColumnDef]="column.key"
-  >
-    <ng-container *ngIf="column.sortable; else noSort">
-      <th
-        mat-header-cell
-        *matHeaderCellDef
-        mat-sort-header="{{ column.key }}"
-        [ngClass]="column.width"
+  @for (column of headerColumns; track column) {
+    <ng-container
+      [matColumnDef]="column.key"
       >
-        {{ column.title }}
-      </th>
-    </ng-container>
-    <ng-template #noSort>
-      <th mat-header-cell *matHeaderCellDef [ngClass]="column.width">
-        {{ column.title }}
-      </th>
-    </ng-template>
-    <td mat-cell *matCellDef="let element" [ngClass]="column.width">
-      <ng-container [ngSwitch]="true">
-        <ng-container *ngSwitchCase="column.booleanIndicator === true">
-          <app-circle-indicator
-            [item]="hasValueBoolean(element[column.key])"
-          ></app-circle-indicator>
-        </ng-container>
-        <ng-container
-          *ngSwitchCase="
+      @if (column.sortable) {
+        <th
+          mat-header-cell
+          *matHeaderCellDef
+          mat-sort-header="{{ column.key }}"
+          [ngClass]="column.width"
+          >
+          {{ column.title }}
+        </th>
+      } @else {
+        <th mat-header-cell *matHeaderCellDef [ngClass]="column.width">
+          {{ column.title }}
+        </th>
+      }
+      <td mat-cell *matCellDef="let element" [ngClass]="column.width">
+        @switch (true) {
+          @case (column.booleanIndicator === true) {
+            <app-circle-indicator
+              [item]="hasValueBoolean(element[column.key])"
+            ></app-circle-indicator>
+          }
+          @case (
             column.showIndicatorOnEmpty === true &&
             !(element[column.key] | hasValue)
-          "
-        >
-          <app-circle-indicator [item]="false"></app-circle-indicator>
-        </ng-container>
-
-        <ng-container *ngSwitchCase="column.showLengthOnly === true">
-          <div
-            *ngIf="element[column.key]?.length > 0"
-            class="flex justify-center"
-          >
-            <div
-              class="w-8 h-8 flex items-center justify-center rounded-full border border-lilaClaro bg-transparent text-black text-sm"
-            >
-              {{ element[column.key]?.length || 0 }}
-            </div>
-          </div>
-        </ng-container>
-
-        <ng-container *ngSwitchCase="column.pipe === 'eurosFormat'">
-          {{ element[column.key] | eurosFormat }}
-        </ng-container>
-        <ng-container *ngSwitchCase="column.pipe === 'phoneFormat'">
-          {{ element[column.key] | phoneFormat }}
-        </ng-container>
-        <ng-container
-          *ngSwitchCase="column.pipe === 'i18nSelect : nameSubsidy'"
-        >
-          {{ element[column.key] | i18nSelect : nameSubsidy }}
-        </ng-container>
-        <ng-container *ngSwitchCase="column.pipe === 'date : dd MMM yyyy'">
-          <small>{{ element[column.key] | date : "dd MMM yyyy" }}</small>
-        </ng-container>
-        <!-- IMAGEN -->
-        <ng-container *ngSwitchCase="column.key === 'img'">
-          <img
-            appImgBroken
-            [src]="element[column.key] | itemImage : type"
-            alt=""
-            class="cover"
-          />
-        </ng-container>
-        <ng-container *ngSwitchCase="column.key === 'invoice_pdf'">
-          <div *ngIf="element['invoice_pdf']">
-            <i class="uil uil-file-alt text-[25px]"></i>
-          </div>
-        </ng-container>
-        <!-- FECHAS -->
-        <ng-container *ngSwitchCase="column.key === 'start'">
-          <div class="flex justify-center">
-            <p
-              class="dateColumn"
-              *ngIf="element['start'] && element['end'] === element['start']"
-            >
-              {{ element["start"] | date : "EEE dd MMM yyyy" }}
-            </p>
-            <div
-              class="flex flex-col"
-              *ngIf="element['start'] && element['end'] !== element['start']"
-            >
-              <p class="dateColumn">
-                {{ element["start"] | date : "EEE dd MMM yyyy" }}<br />
-                AL<br />
-
-                {{ element["end"] | date : "EEE dd MMM yyyy" }}
-              </p>
-            </div>
-          </div>
-        </ng-container>
-        <!-- Diseño especial para 'espacio en eventos' -->
-        <ng-container *ngSwitchCase="column.key === 'titleEvent'">
-          <div>
-            <ng-container *ngIf="element.title">
-              <div>
-                {{ element.title }}
-              </div>
+            ) {
+            <app-circle-indicator [item]="false"></app-circle-indicator>
+          }
+          @case (column.showLengthOnly === true) {
+            @if (element[column.key]?.length > 0) {
               <div
-                *ngIf="element.macroeventData?.title"
-                class="bg-[#f5d7a9] text-[11px] rounded px-[3px] py-[0px] inline-block"
-              >
-                {{ element.macroeventData.title }}
+                class="flex justify-center"
+                >
+                <div
+                  class="w-8 h-8 flex items-center justify-center rounded-full border border-lilaClaro bg-transparent text-black text-sm"
+                  >
+                  {{ element[column.key]?.length || 0 }}
+                </div>
               </div>
-            </ng-container>
-          </div>
-        </ng-container>
-
-        <!-- Diseño especial para 'gender' -->
-        <ng-container *ngSwitchCase="column.key === 'gender'">
-          <div class="genderColumn">
-            <span>{{ element[column.key] }}</span>
-          </div>
-        </ng-container>
-        <ng-container *ngSwitchCase="column.key === 'birthday'">
-          <div class="text-center" *ngIf="element.birthday">
-            {{ element.birthday | date : "dd MMM yyyy" }}
-            <span class="dateColumn">
-              {{ element.birthday | calculateAge }} años
-            </span>
-          </div>
-        </ng-container>
-        <ng-container *ngSwitchCase="column.key === 'years'">
-          {{ element.years || 0 }} años
-        </ng-container>
-        <ng-container *ngSwitchCase="column.key === 'subsidy_name'">
-          <ng-container *ngIf="element[column.key]">
-            <div class="text-center">
-              <span
-                class="subsidy"
+            }
+          }
+          @case (column.pipe === 'eurosFormat') {
+            {{ element[column.key] | eurosFormat }}
+          }
+          @case (column.pipe === 'phoneFormat') {
+            {{ element[column.key] | phoneFormat }}
+          }
+          @case (column.pipe === 'i18nSelect : nameSubsidy') {
+            {{ element[column.key] | i18nSelect : nameSubsidy }}
+          }
+          @case (column.pipe === 'date : dd MMM yyyy') {
+            <small>{{ element[column.key] | date : "dd MMM yyyy" }}</small>
+          }
+          <!-- IMAGEN -->
+          @case (column.key === 'img') {
+            <img
+              appImgBroken
+              [src]="element[column.key] | itemImage : type"
+              alt=""
+              class="cover"
+              />
+            }
+            @case (column.key === 'invoice_pdf') {
+              @if (element['invoice_pdf']) {
+                <div>
+                  <i class="uil uil-file-alt text-[25px]"></i>
+                </div>
+              }
+            }
+            <!-- FECHAS -->
+            @case (column.key === 'start') {
+              <div class="flex justify-center">
+                @if (element['start'] && element['end'] === element['start']) {
+                  <p
+                    class="dateColumn"
+                    >
+                    {{ element["start"] | date : "EEE dd MMM yyyy" }}
+                  </p>
+                }
+                @if (element['start'] && element['end'] !== element['start']) {
+                  <div
+                    class="flex flex-col"
+                    >
+                    <p class="dateColumn">
+                      {{ element["start"] | date : "EEE dd MMM yyyy" }}<br />
+                      AL<br />
+                      {{ element["end"] | date : "EEE dd MMM yyyy" }}
+                    </p>
+                  </div>
+                }
+              </div>
+            }
+            <!-- Diseño especial para 'espacio en eventos' -->
+            @case (column.key === 'titleEvent') {
+              <div>
+                @if (element.title) {
+                  <div>
+                    {{ element.title }}
+                  </div>
+                  @if (element.macroeventData?.title) {
+                    <div
+                      class="bg-[#f5d7a9] text-[11px] rounded px-[3px] py-[0px] inline-block"
+                      >
+                      {{ element.macroeventData.title }}
+                    </div>
+                  }
+                }
+              </div>
+            }
+            <!-- Diseño especial para 'gender' -->
+            @case (column.key === 'gender') {
+              <div class="genderColumn">
+                <span>{{ element[column.key] }}</span>
+              </div>
+            }
+            @case (column.key === 'birthday') {
+              @if (element.birthday) {
+                <div class="text-center">
+                  {{ element.birthday | date : "dd MMM yyyy" }}
+                  <span class="dateColumn">
+                    {{ element.birthday | calculateAge }} años
+                  </span>
+                </div>
+              }
+            }
+            @case (column.key === 'years') {
+              {{ element.years || 0 }} años
+            }
+            @case (column.key === 'subsidy_name') {
+              @if (element[column.key]) {
+                <div class="text-center">
+                  <span
+                    class="subsidy"
                 [ngClass]="{
                   'subsidy-ayunt-equip':
                     element[column.key] === 'AYUNT_EQUIPAMIENTO',
@@ -191,293 +192,292 @@
                   'subsidy-dipu': element[column.key] === 'DIPUTACION',
                   'subsidy-minis': element[column.key] === 'MINISTERIO'
                 }"
-                >{{ element[column.key] }}
-              </span>
-            </div>
-          </ng-container>
-          <!-- <ng-template #noSubsidy>
-            <app-circle-indicator [item]="false"></app-circle-indicator>
-          </ng-template> -->
-        </ng-container>
-        <ng-container
-          *ngSwitchCase="column.key === 'activities' && !column.showLengthOnly"
-        >
-          <div
-            class="box-activities"
-            *ngIf="element[column.key] | hasValue; else noActivities"
-          >
-            <div class="flex items-center gap-x-2">
+                    >{{ element[column.key] }}
+                  </span>
+                </div>
+              }
+              <!-- <ng-template #noSubsidy>
+              <app-circle-indicator [item]="false"></app-circle-indicator>
+            </ng-template> -->
+          }
+          @case (column.key === 'activities' && !column.showLengthOnly) {
+            @if (element[column.key] | hasValue) {
               <div
-                class="flex flex-col gap-y-4 w-3/4 border-r border-gray-300 pr-3"
-              >
-                <div
-                  class="activities-list"
-                  *ngFor="let activity of element.activities"
+                class="box-activities"
                 >
-                  <p>{{ activity.name }}</p>
-                  <p>{{ activity.budget | eurosFormat }}</p>
+                <div class="flex items-center gap-x-2">
+                  <div
+                    class="flex flex-col gap-y-4 w-3/4 border-r border-gray-300 pr-3"
+                    >
+                    @for (activity of element.activities; track activity) {
+                      <div
+                        class="activities-list"
+                        >
+                        <p>{{ activity.name }}</p>
+                        <p>{{ activity.budget | eurosFormat }}</p>
+                      </div>
+                    }
+                  </div>
+                  <div class="invoices-totalAmount w-1/4">
+                    <p>
+                      {{ getTotalActivitiesAmount(element) | eurosFormat }}
+                    </p>
+                  </div>
                 </div>
               </div>
-              <div class="invoices-totalAmount w-1/4">
-                <p>
-                  {{ getTotalActivitiesAmount(element) | eurosFormat }}
-                </p>
-              </div>
-            </div>
-          </div>
-          <ng-template #noActivities>
-            <app-circle-indicator [item]="false"></app-circle-indicator>
-          </ng-template>
-        </ng-container>
-        <ng-container
-          *ngSwitchCase="column.key === 'events' && !column.showLengthOnly"
-        >
-          <div
-            class="box-events"
-            *ngIf="element[column.key] | hasValue; else noEvents"
-          >
-            <div *ngFor="let event of element.events" class="events-list">
-              <p>
-                {{ event.title }}
-              </p>
-              <p>{{ event.start | date : "EEE dd/MM/yyyy" }}</p>
-            </div>
-          </div>
-          <ng-template #noEvents>
-            <app-circle-indicator [item]="false"></app-circle-indicator>
-          </ng-template>
-        </ng-container>
-        <ng-container
-          *ngSwitchCase="column.key === 'invoices' && !column.showLengthOnly"
-        >
-          <div
-            class="box-invoices"
-            *ngIf="element[column.key] | hasValue; else noInvoices"
-          >
-            <div class="flex items-center gap-x-4">
+            } @else {
+              <app-circle-indicator [item]="false"></app-circle-indicator>
+            }
+          }
+          @case (column.key === 'events' && !column.showLengthOnly) {
+            @if (element[column.key] | hasValue) {
               <div
-                class="flex flex-col gap-y-4 w-3/5 border-r border-gray-300 pr-3"
-              >
-                <div
-                  class="invoices-list"
-                  *ngFor="let invoice of element.invoices"
+                class="box-events"
                 >
-                  <p>{{ invoice.type_invoice }} {{ invoice.number_invoice }}</p>
-
-                  <p>{{ invoice.total_amount | eurosFormat }}</p>
+                @for (event of element.events; track event) {
+                  <div class="events-list">
+                    <p>
+                      {{ event.title }}
+                    </p>
+                    <p>{{ event.start | date : "EEE dd/MM/yyyy" }}</p>
+                  </div>
+                }
+              </div>
+            } @else {
+              <app-circle-indicator [item]="false"></app-circle-indicator>
+            }
+          }
+          @case (column.key === 'invoices' && !column.showLengthOnly) {
+            @if (element[column.key] | hasValue) {
+              <div
+                class="box-invoices"
+                >
+                <div class="flex items-center gap-x-4">
+                  <div
+                    class="flex flex-col gap-y-4 w-3/5 border-r border-gray-300 pr-3"
+                    >
+                    @for (invoice of element.invoices; track invoice) {
+                      <div
+                        class="invoices-list"
+                        >
+                        <p>{{ invoice.type_invoice }} {{ invoice.number_invoice }}</p>
+                        <p>{{ invoice.total_amount | eurosFormat }}</p>
+                      </div>
+                    }
+                  </div>
+                  <div class="px-3 invoices-totalAmount w-2/5">
+                    <p>{{ getTotalInvoiceAmount(element) | eurosFormat }}</p>
+                  </div>
                 </div>
               </div>
-              <div class="px-3 invoices-totalAmount w-2/5">
-                <p>{{ getTotalInvoiceAmount(element) | eurosFormat }}</p>
+            } @else {
+              <app-circle-indicator [item]="false"></app-circle-indicator>
+            }
+          }
+          <!-- STATUS -->
+          @case (column.key === 'status') {
+            @if (element[column.key]) {
+              <div class="statusColumn">
+                <span>{{ element[column.key] }}</span>
               </div>
-            </div>
-          </div>
-          <ng-template #noInvoices>
-            <app-circle-indicator [item]="false"></app-circle-indicator>
-          </ng-template>
-        </ng-container>
-        <!-- STATUS -->
-        <ng-container *ngSwitchCase="column.key === 'status'">
-          <ng-container *ngIf="element[column.key]">
-            <div class="statusColumn">
-              <span>{{ element[column.key] }}</span>
-            </div>
-          </ng-container>
-        </ng-container>
-        <!-- MUNICIPIO -->
-        <ng-container *ngSwitchCase="column.key === 'town'">
-          <div>
-            <ng-container *ngIf="element.town; else noTown">
-              <div>
-                {{ element.town }}
-              </div>
-              <div
-                *ngIf="element.address"
-                style="font-size: 0.75rem; color: #666"
-              >
-                {{ element.address }}
-              </div>
-            </ng-container>
-            <ng-template #noTown>
-              <div class="flex justify-center">
-                <app-circle-indicator [item]="false"></app-circle-indicator>
-              </div>
-            </ng-template>
-          </div>
-        </ng-container>
-
-        <!-- ESPACIO -->
-        <ng-container *ngSwitchCase="column.key === 'espacioTable'">
-          <div>
-            <ng-container *ngIf="element.placeData?.name; else noPlace">
-              <div>
-                {{ element.placeData.name }}
-              </div>
-              <div
-                *ngIf="element.salaData?.name"
-                style="font-size: 0.75rem; color: #666"
-              >
-                {{ element.salaData.name }}
-              </div>
-            </ng-container>
-            <ng-template #noPlace>
-              <div class="flex justify-center">
-                <app-circle-indicator [item]="false"></app-circle-indicator>
-              </div>
-            </ng-template>
-          </div>
-        </ng-container>
-        <!-- Diseño especial para 'capacity' -->
-        <ng-container *ngSwitchCase="column.key === 'capacity'">
-          <ng-container *ngIf="element[column.key] !== 0">
+            }
+          }
+          <!-- MUNICIPIO -->
+          @case (column.key === 'town') {
             <div>
-              {{ element[column.key] }}
+              @if (element.town) {
+                <div>
+                  {{ element.town }}
+                </div>
+                @if (element.address) {
+                  <div
+                    style="font-size: 0.75rem; color: #666"
+                    >
+                    {{ element.address }}
+                  </div>
+                }
+              } @else {
+                <div class="flex justify-center">
+                  <app-circle-indicator [item]="false"></app-circle-indicator>
+                </div>
+              }
             </div>
-          </ng-container>
-        </ng-container>
-        <!-- Diseño especial para 'gestión' -->
-        <ng-container *ngSwitchCase="column.key === 'management'">
-          <ng-container *ngIf="element[column.key]">
-            {{ element[column.key] | filterTransformCode : "PlaceManagement" }}
-          </ng-container>
-        </ng-container>
-
-        <!-- Organizadores -->
-        <ng-container *ngSwitchCase="column.key === 'organizer'">
-          <ng-container
-            *ngIf="element[column.key] | hasValue; else noOrganizers"
-          >
-            <ul class="agent-list">
-              <li *ngFor="let agent of element[column.key]">
-                {{ agent.name }}
-              </li>
-            </ul>
-          </ng-container>
-          <ng-template #noOrganizers>
-            <app-circle-indicator [item]="false"></app-circle-indicator>
-          </ng-template>
-        </ng-container>
-        <!-- Colaboradores -->
-        <ng-container *ngSwitchCase="column.key === 'collaborator'">
-          <ng-container
-            *ngIf="element[column.key] | hasValue; else noCollaborators"
-          >
-            <ul class="agent-list">
-              <li *ngFor="let agent of element[column.key]">
-                {{ agent.name }}
-              </li>
-            </ul>
-          </ng-container>
-          <ng-template #noCollaborators>
-            <app-circle-indicator [item]="false"></app-circle-indicator>
-          </ng-template>
-        </ng-container>
-        <!-- 💰 Patrocinadores -->
-        <ng-container *ngSwitchCase="column.key === 'sponsor'">
-          <ng-container *ngIf="element[column.key]; else noSponsors">
-            <ul class="agent-list">
-              <li *ngFor="let agent of element[column.key]">
-                {{ agent.name }}
-              </li>
-            </ul>
-          </ng-container>
-          <ng-template #noSponsors>
-            <app-circle-indicator [item]="false"></app-circle-indicator>
-          </ng-template>
-        </ng-container>
-        <ng-container *ngSwitchCase="column.key === 'name'">
-          {{ element[column.key] }}</ng-container
-        >
-        <ng-container *ngSwitchCase="column.key === 'type_invoice'">
-          <span
+          }
+          <!-- ESPACIO -->
+          @case (column.key === 'espacioTable') {
+            <div>
+              @if (element.placeData?.name) {
+                <div>
+                  {{ element.placeData.name }}
+                </div>
+                @if (element.salaData?.name) {
+                  <div
+                    style="font-size: 0.75rem; color: #666"
+                    >
+                    {{ element.salaData.name }}
+                  </div>
+                }
+              } @else {
+                <div class="flex justify-center">
+                  <app-circle-indicator [item]="false"></app-circle-indicator>
+                </div>
+              }
+            </div>
+          }
+          <!-- Diseño especial para 'capacity' -->
+          @case (column.key === 'capacity') {
+            @if (element[column.key] !== 0) {
+              <div>
+                {{ element[column.key] }}
+              </div>
+            }
+          }
+          <!-- Diseño especial para 'gestión' -->
+          @case (column.key === 'management') {
+            @if (element[column.key]) {
+              {{ element[column.key] | filterTransformCode : "PlaceManagement" }}
+            }
+          }
+          <!-- Organizadores -->
+          @case (column.key === 'organizer') {
+            @if (element[column.key] | hasValue) {
+              <ul class="agent-list">
+                @for (agent of element[column.key]; track agent) {
+                  <li>
+                    {{ agent.name }}
+                  </li>
+                }
+              </ul>
+            } @else {
+              <app-circle-indicator [item]="false"></app-circle-indicator>
+            }
+          }
+          <!-- Colaboradores -->
+          @case (column.key === 'collaborator') {
+            @if (element[column.key] | hasValue) {
+              <ul class="agent-list">
+                @for (agent of element[column.key]; track agent) {
+                  <li>
+                    {{ agent.name }}
+                  </li>
+                }
+              </ul>
+            } @else {
+              <app-circle-indicator [item]="false"></app-circle-indicator>
+            }
+          }
+          <!-- 💰 Patrocinadores -->
+          @case (column.key === 'sponsor') {
+            @if (element[column.key]) {
+              <ul class="agent-list">
+                @for (agent of element[column.key]; track agent) {
+                  <li>
+                    {{ agent.name }}
+                  </li>
+                }
+              </ul>
+            } @else {
+              <app-circle-indicator [item]="false"></app-circle-indicator>
+            }
+          }
+          @case (column.key === 'name') {
+            {{ element[column.key] }}
+          }
+          @case (column.key === 'type_invoice') {
+            <span
             [ngClass]="{
                 'type-ticket': element.type_invoice === 'Ticket',
                 'type-factura': element.type_invoice === 'Factura',
                 'type-ingreso': element.type_invoice === 'Ingreso',
               }"
-            >{{ element.type_invoice }}</span
-          >
-        </ng-container>
-        <ng-container *ngSwitchCase="column.key === 'creditor_company'">
-          {{ element.creditor_company }}<br />
-          <small *ngIf="element.creditor_contact">{{
-            element.creditor_contact
-          }}</small>
-        </ng-container>
-        <!-- Diseño especial para 'categoría acreedores' -->
-        <ng-container *ngSwitchCase="column.key === 'category'">
-          <div *ngIf="element.category" class="genderColumn">
-            <span>{{ element[column.key] }}</span>
-          </div>
-        </ng-container>
-        <!-- Diseño especial para 'email' -->
-        <ng-container *ngSwitchCase="column.key === 'email'">
-          <small>{{ element[column.key] }}</small>
-        </ng-container>
-
-        <!-- Diseño especial para 'salas' -->
-        <ng-container *ngSwitchCase="column.key === 'salasCount'">
-          <div>
-            <ng-container *ngIf="element[column.key] > 0">
+              >{{ element.type_invoice }}</span
+              >
+            }
+            @case (column.key === 'creditor_company') {
+              {{ element.creditor_company }}<br />
+              @if (element.creditor_contact) {
+                <small>{{
+                  element.creditor_contact
+                }}</small>
+              }
+            }
+            <!-- Diseño especial para 'categoría acreedores' -->
+            @case (column.key === 'category') {
+              @if (element.category) {
+                <div class="genderColumn">
+                  <span>{{ element[column.key] }}</span>
+                </div>
+              }
+            }
+            <!-- Diseño especial para 'email' -->
+            @case (column.key === 'email') {
+              <small>{{ element[column.key] }}</small>
+            }
+            <!-- Diseño especial para 'salas' -->
+            @case (column.key === 'salasCount') {
+              <div>
+                @if (element[column.key] > 0) {
+                  {{ element[column.key] }}
+                }
+              </div>
+            }
+            <!-- Diseño por defecto para otras columnas -->
+            @default {
               {{ element[column.key] }}
-            </ng-container>
-          </div>
-        </ng-container>
-        <!-- Diseño por defecto para otras columnas -->
-        <ng-container *ngSwitchDefault>
-          {{ element[column.key] }}
-        </ng-container>
+            }
+          }
+        </td>
+        <td mat-footer-cell *matFooterCellDef>
+          @if (column.footerTotal) {
+            {{ getColumnTotal(column.key) | eurosFormat }}
+          }
+        </td>
       </ng-container>
-    </td>
-    <td mat-footer-cell *matFooterCellDef>
-      <ng-container *ngIf="column.footerTotal">
-        {{ getColumnTotal(column.key) | eurosFormat }}
-      </ng-container>
-    </td>
-  </ng-container>
+    }
 
-  <!-- Buttons Column -->
-  <ng-container matColumnDef="actions">
-    <th mat-header-cell *matHeaderCellDef></th>
-    <td mat-cell *matCellDef="let element">
-      <app-icon-action
-        *ngIf="type === TypeList.Events"
-        [icon]="'uil-copy'"
-        [tooltip]="'Duplicar'"
-        (click)="onOpenModal(type, typeActionModal.Duplicate, element)"
-      ></app-icon-action>
-      <app-icon-action
-        [icon]="'uil-eye'"
-        [tooltip]="'Ver'"
-        (click)="onOpenModal(type, typeActionModal.Show, element)"
-      ></app-icon-action>
-      <app-icon-action
-        [icon]="'uil-edit'"
-        [tooltip]="'Editar'"
-        (click)="onOpenModal(type, typeActionModal.Edit, element)"
-      ></app-icon-action>
-      <app-icon-action
-        [icon]="'uil-trash-alt'"
-        [tooltip]="'Eliminar'"
-        (click)="onOpenModal(type, typeActionModal.Delete, element)"
-      ></app-icon-action>
-    </td>
-    <td mat-footer-cell *matFooterCellDef></td>
-  </ng-container>
-  <tr
-    mat-header-row
-    *matHeaderRowDef="displayedColumns"
-    class="custom-header-row"
+    <!-- Buttons Column -->
+    <ng-container matColumnDef="actions">
+      <th mat-header-cell *matHeaderCellDef></th>
+      <td mat-cell *matCellDef="let element">
+        @if (type === TypeList.Events) {
+          <app-icon-action
+            [icon]="'uil-copy'"
+            [tooltip]="'Duplicar'"
+            (click)="onOpenModal(type, typeActionModal.Duplicate, element)"
+          ></app-icon-action>
+        }
+        <app-icon-action
+          [icon]="'uil-eye'"
+          [tooltip]="'Ver'"
+          (click)="onOpenModal(type, typeActionModal.Show, element)"
+        ></app-icon-action>
+        <app-icon-action
+          [icon]="'uil-edit'"
+          [tooltip]="'Editar'"
+          (click)="onOpenModal(type, typeActionModal.Edit, element)"
+        ></app-icon-action>
+        <app-icon-action
+          [icon]="'uil-trash-alt'"
+          [tooltip]="'Eliminar'"
+          (click)="onOpenModal(type, typeActionModal.Delete, element)"
+        ></app-icon-action>
+      </td>
+      <td mat-footer-cell *matFooterCellDef></td>
+    </ng-container>
+    <tr
+      mat-header-row
+      *matHeaderRowDef="displayedColumns"
+      class="custom-header-row"
     [ngClass]="{
       'top-266': topHeader === 266,
       'top-326': topHeader === 326,
       'top-200': topHeader === 200
     }"
-  ></tr>
-  <tr
-    mat-row
-    *matRowDef="let row; columns: displayedColumns"
-    class="custom-list-row"
-  ></tr>
-  <tr mat-footer-row *matFooterRowDef="displayedColumns" class="footer"></tr>
-</table>
+    ></tr>
+    <tr
+      mat-row
+      *matRowDef="let row; columns: displayedColumns"
+      class="custom-list-row"
+    ></tr>
+    <tr mat-footer-row *matFooterRowDef="displayedColumns" class="footer"></tr>
+  </table>

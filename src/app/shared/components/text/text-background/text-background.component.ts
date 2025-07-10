@@ -1,11 +1,11 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, Input } from '@angular/core';
 
 @Component({
     selector: 'app-text-background',
     templateUrl: './text-background.component.html',
     styleUrls: ['./text-background.component.css'],
-    imports: [CommonModule]
+    imports: []
 })
 export class TextBackgroundComponent {
   @Input() text: string | null = '';

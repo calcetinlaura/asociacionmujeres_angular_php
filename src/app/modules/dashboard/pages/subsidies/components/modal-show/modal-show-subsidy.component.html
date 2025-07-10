@@ -1,56 +1,60 @@
 <div class="flex flex-1 flex-col justify-between">
-  <app-text-title *ngIf="item.name" [text]="item.name" />
+  @if (item.name) {
+    <app-text-title [text]="item.name" />
+  }
   <app-text-background [text]="'Fechas'"></app-text-background>
-  <app-text-editor *ngIf="item.observations" [text]="item.observations" />
+  @if (item.observations) {
+    <app-text-editor [text]="item.observations" />
+  }
   <div class="ml-4 pt-2 gap-y-2">
     <!-- <p *ngIf="item.date_invoice">
-      Fecha factura:
-      <span class="body-border">{{
-        item.date_invoice | date : "dd MMM yyyy"
-      }}</span>
-    </p>
-    <p *ngIf="item.date_accounting">
-      Feche contabilidad:
-      <span class="body-border">{{
-        item.date_accounting | date : "dd MMM yyyy"
-      }}</span>
-    </p>
-    <p *ngIf="item.date_payment">
-      Fecha pago:
-      <span class="body-border">{{
-        item.date_payment | date : "dd MMM yyyy"
-      }}</span>
-    </p> -->
-  </div>
-  <app-text-background [text]="'Cantidad'"></app-text-background>
-  <div class="flex flex-col gap-y-2 ml-4 py-3">
-    <div class="body-description flex flex-row gap-4 align-middle">
-      <!-- <app-text-border
-        *ngIf="item.amount"
-        [text]="'(Total) ' + item.amount + ' €'"
-      ></app-text-border>
-      <app-text-border
-        *ngIf="item.iva"
-        [text]="'(IVA) ' + item.iva + ' €'"
-      ></app-text-border>
-      <app-text-border
-        *ngIf="item.irpf"
-        [text]="'(IRPF) ' + item.irpf + ' €'"
-      ></app-text-border>
-      =
-      <app-text-border
-        *ngIf="item.total_amount"
-        [text]="'(IRPF) ' + item.total_amount + ' €'"
-      ></app-text-border> -->
-    </div>
+    Fecha factura:
+    <span class="body-border">{{
+      item.date_invoice | date : "dd MMM yyyy"
+    }}</span>
+  </p>
+  <p *ngIf="item.date_accounting">
+    Feche contabilidad:
+    <span class="body-border">{{
+      item.date_accounting | date : "dd MMM yyyy"
+    }}</span>
+  </p>
+  <p *ngIf="item.date_payment">
+    Fecha pago:
+    <span class="body-border">{{
+      item.date_payment | date : "dd MMM yyyy"
+    }}</span>
+  </p> -->
+</div>
+<app-text-background [text]="'Cantidad'"></app-text-background>
+<div class="flex flex-col gap-y-2 ml-4 py-3">
+  <div class="body-description flex flex-row gap-4 align-middle">
     <!-- <app-text-border
-      *ngIf="item.total_amount_irpf"
-      [text]="'Total + IRPF = ' + item.total_amount_irpf + ' €'"
-    ></app-text-border> -->
-  </div>
-  <app-text-background [text]="'Subvención'"></app-text-background>
-  <!-- <app-text-icon
-    [icon]="'uil uil-building icon'"
-    [text]="item.subsidy + ' - ' + item.subsidy_year"
-  ></app-text-icon> -->
+    *ngIf="item.amount"
+    [text]="'(Total) ' + item.amount + ' €'"
+  ></app-text-border>
+  <app-text-border
+    *ngIf="item.iva"
+    [text]="'(IVA) ' + item.iva + ' €'"
+  ></app-text-border>
+  <app-text-border
+    *ngIf="item.irpf"
+    [text]="'(IRPF) ' + item.irpf + ' €'"
+  ></app-text-border>
+  =
+  <app-text-border
+    *ngIf="item.total_amount"
+    [text]="'(IRPF) ' + item.total_amount + ' €'"
+  ></app-text-border> -->
+</div>
+<!-- <app-text-border
+*ngIf="item.total_amount_irpf"
+[text]="'Total + IRPF = ' + item.total_amount_irpf + ' €'"
+></app-text-border> -->
+</div>
+<app-text-background [text]="'Subvención'"></app-text-background>
+<!-- <app-text-icon
+[icon]="'uil uil-building icon'"
+[text]="item.subsidy + ' - ' + item.subsidy_year"
+></app-text-icon> -->
 </div>

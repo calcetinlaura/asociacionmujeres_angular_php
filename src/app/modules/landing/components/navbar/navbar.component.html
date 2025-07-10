@@ -4,17 +4,19 @@
   </div>
   <div>
     <ul class="nav-bar_list">
-      <li *ngFor="let item of mainMenu.defaultOptions">
-        <a
-          [routerLink]="item.router"
-          [queryParams]="item.query"
-          [routerLinkActive]="['active-link']"
-          (click)="setSelectedMenuItem(item.title)"
-          [routerLinkActiveOptions]="{ exact: true }"
-        >
-          {{ item.title }}
-        </a>
-      </li>
+      @for (item of mainMenu.defaultOptions; track item) {
+        <li>
+          <a
+            [routerLink]="item.router"
+            [queryParams]="item.query"
+            [routerLinkActive]="['active-link']"
+            (click)="setSelectedMenuItem(item.title)"
+            [routerLinkActiveOptions]="{ exact: true }"
+            >
+            {{ item.title }}
+          </a>
+        </li>
+      }
     </ul>
   </div>
 </div>

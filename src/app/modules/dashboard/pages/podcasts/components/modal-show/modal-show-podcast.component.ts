@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, Input } from '@angular/core';
 import { PodcastModel } from 'src/app/core/interfaces/podcast.interface';
 import { TypeList } from 'src/app/core/models/general.model';
@@ -7,7 +7,7 @@ import { TextTitleComponent } from 'src/app/shared/components/text/text-title/te
 
 @Component({
     selector: 'app-modal-show-podcast',
-    imports: [CommonModule, TextTitleComponent, TextSubTitleComponent],
+    imports: [TextTitleComponent, TextSubTitleComponent],
     templateUrl: './modal-show-podcast.component.html'
 })
 export class ModalShowPodcastComponent {

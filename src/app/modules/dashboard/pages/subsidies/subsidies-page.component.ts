@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import {
   Component,
   DestroyRef,
@@ -41,18 +41,17 @@ import { ModalShowSubsidyComponent } from './components/tab-subsidy/tab-subsidie
 @Component({
     selector: 'app-subsidies-page',
     imports: [
-        CommonModule,
-        DashboardHeaderComponent,
-        ModalComponent,
-        ButtonIconComponent,
-        ReactiveFormsModule,
-        InputSearchComponent,
-        FiltersComponent,
-        MatTabsModule,
-        SpinnerLoadingComponent,
-        TableComponent,
-        ModalShowSubsidyComponent,
-    ],
+    DashboardHeaderComponent,
+    ModalComponent,
+    ButtonIconComponent,
+    ReactiveFormsModule,
+    InputSearchComponent,
+    FiltersComponent,
+    MatTabsModule,
+    SpinnerLoadingComponent,
+    TableComponent,
+    ModalShowSubsidyComponent
+],
     providers: [SubsidiesService],
     templateUrl: './subsidies-page.component.html',
     styleUrl: './subsidies-page.component.css'

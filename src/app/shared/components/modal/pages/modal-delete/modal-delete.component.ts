@@ -1,10 +1,10 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 type DeleteMessageFormatter = (item: any) => { label: string; value: string };
 
 @Component({
-    imports: [CommonModule],
+    imports: [],
     selector: 'app-modal-delete',
     templateUrl: './modal-delete.component.html',
     styleUrls: ['./modal-delete.component.css']

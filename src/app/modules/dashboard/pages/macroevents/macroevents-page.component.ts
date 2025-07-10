@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import {
   Component,
   DestroyRef,
@@ -34,16 +34,15 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
 @Component({
     selector: 'app-macroevents-page',
     imports: [
-        CommonModule,
-        DashboardHeaderComponent,
-        ModalComponent,
-        ButtonIconComponent,
-        ReactiveFormsModule,
-        InputSearchComponent,
-        SpinnerLoadingComponent,
-        TableComponent,
-        FiltersComponent,
-    ],
+    DashboardHeaderComponent,
+    ModalComponent,
+    ButtonIconComponent,
+    ReactiveFormsModule,
+    InputSearchComponent,
+    SpinnerLoadingComponent,
+    TableComponent,
+    FiltersComponent
+],
     templateUrl: './macroevents-page.component.html',
     styleUrl: './macroevents-page.component.css'
 })

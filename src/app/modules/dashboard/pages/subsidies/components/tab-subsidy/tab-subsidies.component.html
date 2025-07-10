@@ -1,11 +1,11 @@
-<div
-  *ngIf="item"
-  class="flex flex-1 flex-col justify-between my-8 mx-20 card-subsidy"
->
+@if (item) {
+<div class="flex flex-1 flex-col justify-between my-8 mx-20 card-subsidy">
   <h1 class="text-center mb-4">
-    Subvención
-    <span *ngIf="item?.name">{{ item.name | i18nSelect : nameSubsidy }}</span>
-    <span *ngIf="item?.year"> {{ item.year }}</span>
+    Subvención @if (item?.name) {
+    <span>{{ item.name | i18nSelect : nameSubsidy }}</span>
+    } @if (item?.year) {
+    <span> {{ item.year }}</span>
+    }
     <app-icon-action
       [icon]="'uil-edit'"
       [tooltip]="'Editar'"
@@ -53,9 +53,8 @@
         <h2>Periodo subvencionable:</h2>
         <p>
           {{ item.start | date : "dd MMM yyyy" }}
-          <ng-container *ngIf="item.end">
-            - {{ item.end | date : "dd MMM yyyy" }}
-          </ng-container>
+          @if (item.end) { - {{ item.end | date : "dd MMM yyyy" }}
+          }
         </p>
       </div>
     </div>
@@ -63,7 +62,6 @@
   <div class="rounded-[4px] border border-[#d0a9d952] px-4 py-4 my-4">
     <div class="flex items-center justify-between align-middle mb-4">
       <h2>Proyectos solicitadas</h2>
-
       <app-button-icon
         [buttonText]="'Añadir proyecto'"
         [iconClass]="'uil-plus'"
@@ -78,94 +76,99 @@
     </div>
     <div class="flex justify-center mx-10">
       <table [cellPadding]="8" cellspacing="0" width="100%">
-        <ng-container *ngFor="let project of item.projects; let pIndex = index">
-          <tbody [ngClass]="{ 'bg-lilaMuyClaro': pIndex % 2 === 0 }">
-            <tr *ngFor="let activity of project.activities; let i = index">
-              <!-- Columna del título del proyecto e iconos -->
-              <td
-                *ngIf="i === 0"
-                [attr.rowspan]="project.activities?.length"
-                class="align-middle text-left text-[14px] uppercase w-2/6"
-              >
-                {{ project.title }}
-                <div class="flex mt-1 gap-1">
-                  <app-icon-action
-                    [icon]="'uil-edit'"
-                    [tooltip]="'Editar'"
-                    (click)="
-                      openModal.emit({
-                        type: typeList.Projects,
-                        action: typeActionModal.Edit,
-                        item: project
-                      })
-                    "
-                  ></app-icon-action>
-                  <app-icon-action
-                    [icon]="'uil-eye'"
-                    [tooltip]="'Ver'"
-                    (click)="
-                      openModal.emit({
-                        type: typeList.Projects,
-                        action: typeActionModal.Show,
-                        item: project
-                      })
-                    "
-                  ></app-icon-action>
-                  <app-icon-action
-                    [icon]="'uil-trash-alt'"
-                    [tooltip]="'Eliminar'"
-                    (click)="
-                      openModal.emit({
-                        type: typeList.Projects,
-                        action: typeActionModal.Delete,
-                        item: project
-                      })
-                    "
-                  ></app-icon-action>
-                </div>
-              </td>
-
-              <!-- Columna de actividad -->
-              <td class="pl-6 w-2/6">
-                <div>
-                  <p class="text-[13px] text-gray-800">
-                    {{ activity.name }}
-                  </p>
-                  <p
-                    class="text-[12px] text-gray-500 flex items-center gap-1 mt-1"
-                    *ngIf="activity.attendant"
-                  >
-                    <i class="uil uil-user text-[10px]"></i>
-                    {{ activity.attendant }}
-                  </p>
-                </div>
-              </td>
-
-              <!-- Columna de presupuesto individual -->
-              <td class="text-right text-[12px] w-1/6">
-                {{ activity.budget | currency : "EUR" : "symbol" }}
-              </td>
-
-              <!-- Columna de total solo en la primera fila -->
-              <td
-                *ngIf="i === 0"
-                [attr.rowspan]="project.activities?.length"
-                class="align-middle text-right text-[12px] font-bold w-1/6"
-              >
-                {{
-                  getProjectTotalBudget(project) | currency : "EUR" : "symbol"
-                }}
-              </td>
-            </tr>
-          </tbody>
-        </ng-container>
+        @for (project of item.projects; track project; let pIndex = $index) {
+        <tbody [ngClass]="{ 'bg-lilaMuyClaro': pIndex % 2 === 0 }">
+          @for (activity of project.activities; track activity; let i = $index)
+          {
+          <tr>
+            <!-- Columna del título del proyecto e iconos -->
+            @if (i === 0) {
+            <td
+              [attr.rowspan]="project.activities?.length"
+              class="align-middle text-left text-[14px] uppercase w-2/6"
+            >
+              {{ project.title }}
+              <div class="flex mt-1 gap-1">
+                <app-icon-action
+                  [icon]="'uil-edit'"
+                  [tooltip]="'Editar'"
+                  (click)="
+                    openModal.emit({
+                      type: typeList.Projects,
+                      action: typeActionModal.Edit,
+                      item: project
+                    })
+                  "
+                ></app-icon-action>
+                <app-icon-action
+                  [icon]="'uil-eye'"
+                  [tooltip]="'Ver'"
+                  (click)="
+                    openModal.emit({
+                      type: typeList.Projects,
+                      action: typeActionModal.Show,
+                      item: project
+                    })
+                  "
+                ></app-icon-action>
+                <app-icon-action
+                  [icon]="'uil-trash-alt'"
+                  [tooltip]="'Eliminar'"
+                  (click)="
+                    openModal.emit({
+                      type: typeList.Projects,
+                      action: typeActionModal.Delete,
+                      item: project
+                    })
+                  "
+                ></app-icon-action>
+              </div>
+            </td>
+            }
+            <!-- Columna de actividad -->
+            <td class="pl-6 w-2/6">
+              <div>
+                <p class="text-[13px] text-gray-800">
+                  {{ activity.name }}
+                </p>
+                @if (activity.attendant) {
+                <p
+                  class="text-[12px] text-gray-500 flex items-center gap-1 mt-1"
+                >
+                  <i class="uil uil-user text-[10px]"></i>
+                  {{ activity.attendant }}
+                </p>
+                }
+              </div>
+            </td>
+            <!-- Columna de presupuesto individual -->
+            <td class="text-right text-[12px] w-1/6">
+              {{ activity.budget | currency : "EUR" : "symbol" }}
+            </td>
+            <!-- Columna de total solo en la primera fila -->
+            @if (i === 0) {
+            <td
+              [attr.rowspan]="project.activities?.length"
+              class="align-middle text-right text-[12px] font-bold w-1/6"
+            >
+              {{ getProjectTotalBudget(project) | currency : "EUR" : "symbol" }}
+            </td>
+            }
+          </tr>
+          }
+        </tbody>
+        }
       </table>
     </div>
   </div>
-  <div *ngIf="item.observations" class="pb-5">
+  @if (item.observations) {
+  <div class="pb-5">
     <h2>Observaciones</h2>
-    <app-text-editor *ngIf="item.observations" [text]="item.observations" />
+    @if (item.observations) {
+    <app-text-editor [text]="item.observations" />
+    }
   </div>
+  }
   <div class="flex flex-row gap-x-4 justify-between">
     <div class="box-amount w-auto box-invoices">
       <p>Nº FACTURAS</p>
@@ -189,10 +192,9 @@
     <div class="box-amount flex-1">
       <p>GASTO ACUMULADO</p>
       <p>
-        <span>Total </span
-        ><span *ngIf="amount_justified">{{
-          amount_justified | eurosFormat
-        }}</span>
+        <span>Total </span>@if (amount_justified) {
+        <span>{{ amount_justified | eurosFormat }}</span>
+        }
       </p>
       <p>
         <span
@@ -202,32 +204,29 @@
         {{ amount_justified + amountIrpf | eurosFormat }}
       </p>
     </div>
-    <ng-container
-      *ngIf="amount_association + amountIrpf > 0; else elseTemplate"
-    >
-      <div class="box-amount flex-1 positive">
-        <p>APORTE ASOCIACIÓN</p>
-        <p><span>Total </span>{{ amount_association | eurosFormat }}</p>
-        <p>
-          <span>Total + IRPF </span
-          >{{ amount_association + amountIrpf | eurosFormat }}
-        </p>
-      </div>
-    </ng-container>
-    <ng-template #elseTemplate>
-      <div class="box-amount flex-1 negative">
-        <p>FALTAN POR FACTURAR</p>
-        <p><span>Total </span>{{ amount_association | eurosFormat }}</p>
-        <p>
-          <span>Total + IRPF </span
-          >{{ amount_association - amountIrpf | eurosFormat }}
-        </p>
-      </div>
-    </ng-template>
+    @if (amount_association + amountIrpf > 0) {
+    <div class="box-amount flex-1 positive">
+      <p>APORTE ASOCIACIÓN</p>
+      <p><span>Total </span>{{ amount_association | eurosFormat }}</p>
+      <p>
+        <span>Total + IRPF </span
+        >{{ amount_association + amountIrpf | eurosFormat }}
+      </p>
+    </div>
+    } @else {
+    <div class="box-amount flex-1 negative">
+      <p>FALTAN POR FACTURAR</p>
+      <p><span>Total </span>{{ amount_association | eurosFormat }}</p>
+      <p>
+        <span>Total + IRPF </span
+        >{{ amount_association - amountIrpf | eurosFormat }}
+      </p>
+    </div>
+    }
   </div>
   <div class="py-4 flex">
+    @if (!loading) {
     <app-table
-      *ngIf="!loading"
       [type]="typeList.Invoices"
       [data]="filteredInvoices"
       [headerColumns]="headerListInvoices"
@@ -239,5 +238,7 @@
         })
       "
     />
+    }
   </div>
 </div>
+}

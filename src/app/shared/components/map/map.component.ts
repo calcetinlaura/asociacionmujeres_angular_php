@@ -1,11 +1,11 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, Input, OnChanges } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 @Component({
     selector: 'app-map',
     templateUrl: './map.component.html',
-    imports: [CommonModule]
+    imports: []
 })
 export class MapComponent implements OnChanges {
   @Input() lat!: number;

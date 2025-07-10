@@ -1,11 +1,11 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, Input } from '@angular/core';
 
 @Component({
     selector: 'app-text-border',
     templateUrl: './text.border.component.html',
     styleUrls: ['./text-border.component.css'],
-    imports: [CommonModule]
+    imports: []
 })
 export class TextBorderComponent {
   @Input() text?: string | null | number = '';

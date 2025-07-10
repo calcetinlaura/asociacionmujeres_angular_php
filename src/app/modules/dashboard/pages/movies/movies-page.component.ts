@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import {
   Component,
   DestroyRef,
@@ -37,16 +37,15 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
 @Component({
     selector: 'app-movies-page',
     imports: [
-        CommonModule,
-        DashboardHeaderComponent,
-        ModalComponent,
-        ButtonIconComponent,
-        ReactiveFormsModule,
-        InputSearchComponent,
-        FiltersComponent,
-        SpinnerLoadingComponent,
-        TableComponent,
-    ],
+    DashboardHeaderComponent,
+    ModalComponent,
+    ButtonIconComponent,
+    ReactiveFormsModule,
+    InputSearchComponent,
+    FiltersComponent,
+    SpinnerLoadingComponent,
+    TableComponent
+],
     templateUrl: './movies-page.component.html',
     styleUrl: './movies-page.component.css'
 })

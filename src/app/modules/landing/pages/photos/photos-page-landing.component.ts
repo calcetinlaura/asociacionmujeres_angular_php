@@ -1,12 +1,12 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { MatGridListModule } from '@angular/material/grid-list';
 import { FiltersComponent } from '../../components/filters/filters.component';
 import { filterPhotos } from 'src/app/core/models/general.model';
 
 @Component({
     selector: 'app-photos-page-landing',
-    imports: [CommonModule, MatGridListModule, FiltersComponent],
+    imports: [MatGridListModule, FiltersComponent],
     templateUrl: './photos-page-landing.component.html',
     providers: []
 })

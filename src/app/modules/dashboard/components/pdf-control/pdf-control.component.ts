@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { HttpClient } from '@angular/common/http';
 import {
   Component,
@@ -15,7 +15,7 @@ import { TypeList } from 'src/app/core/models/general.model';
 @Component({
     selector: 'app-pdf-control',
     templateUrl: './pdf-control.component.html',
-    imports: [CommonModule, MatButtonModule]
+    imports: [MatButtonModule]
 })
 export class PdfControlComponent implements OnChanges {
   @Input() previewPdf: string | File | null = null;

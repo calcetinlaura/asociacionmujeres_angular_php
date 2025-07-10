@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -22,15 +22,14 @@ import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loadi
 @Component({
     selector: 'app-articles-page',
     imports: [
-        CommonModule,
-        DashboardHeaderComponent,
-        ModalComponent,
-        ButtonIconComponent,
-        ReactiveFormsModule,
-        InputSearchComponent,
-        SpinnerLoadingComponent,
-        TableComponent,
-    ],
+    DashboardHeaderComponent,
+    ModalComponent,
+    ButtonIconComponent,
+    ReactiveFormsModule,
+    InputSearchComponent,
+    SpinnerLoadingComponent,
+    TableComponent
+],
     templateUrl: './articles-page.component.html',
     styleUrl: './articles-page.component.css'
 })

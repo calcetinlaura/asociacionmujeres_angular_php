@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, Input } from '@angular/core';
 import { MovieModel } from 'src/app/core/interfaces/movie.interface';
 import { TypeList } from 'src/app/core/models/general.model';
@@ -10,12 +10,11 @@ import { TextTitleComponent } from 'src/app/shared/components/text/text-title/te
 @Component({
     selector: 'app-modal-show-movie',
     imports: [
-        CommonModule,
-        TextBackgroundComponent,
-        TextTitleComponent,
-        TextSubTitleComponent,
-        TextEditorComponent,
-    ],
+    TextBackgroundComponent,
+    TextTitleComponent,
+    TextSubTitleComponent,
+    TextEditorComponent
+],
     templateUrl: './modal-show-movie.component.html',
     styleUrls: ['./modal-show-movie.component.css']
 })

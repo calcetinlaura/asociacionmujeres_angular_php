@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, Input } from '@angular/core';
 import { SubsidyModel } from 'src/app/core/interfaces/subsidy.interface';
 import { TypeList } from 'src/app/core/models/general.model';
@@ -9,11 +9,10 @@ import { TextTitleComponent } from 'src/app/shared/components/text/text-title/te
 @Component({
     selector: 'app-modal-show-subsidy',
     imports: [
-        CommonModule,
-        TextBackgroundComponent,
-        TextTitleComponent,
-        TextEditorComponent,
-    ],
+    TextBackgroundComponent,
+    TextTitleComponent,
+    TextEditorComponent
+],
     templateUrl: './modal-show-subsidy.component.html'
 })
 export class ModalShowSubsidyComponent {

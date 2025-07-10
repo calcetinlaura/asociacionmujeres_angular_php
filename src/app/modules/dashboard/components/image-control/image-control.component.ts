@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { HttpClient } from '@angular/common/http';
 import {
   Component,
@@ -20,11 +20,10 @@ import { environments } from 'src/environments/environments';
     templateUrl: './image-control.component.html',
     styleUrls: ['./image-control.component.css'],
     imports: [
-        CommonModule,
-        MatDialogModule,
-        MatButtonModule,
-        MatProgressSpinnerModule,
-    ]
+    MatDialogModule,
+    MatButtonModule,
+    MatProgressSpinnerModule
+]
 })
 export class ImageControlComponent implements OnInit {
   selectedFile: File | null = null;

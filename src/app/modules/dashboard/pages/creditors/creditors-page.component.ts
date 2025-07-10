@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import {
   Component,
   DestroyRef,
@@ -38,16 +38,15 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
 @Component({
     selector: 'app-creditors-page',
     imports: [
-        CommonModule,
-        DashboardHeaderComponent,
-        ModalComponent,
-        ButtonIconComponent,
-        ReactiveFormsModule,
-        InputSearchComponent,
-        SpinnerLoadingComponent,
-        TableComponent,
-        FiltersComponent,
-    ],
+    DashboardHeaderComponent,
+    ModalComponent,
+    ButtonIconComponent,
+    ReactiveFormsModule,
+    InputSearchComponent,
+    SpinnerLoadingComponent,
+    TableComponent,
+    FiltersComponent
+],
     templateUrl: './creditors-page.component.html',
     styleUrl: './creditors-page.component.css'
 })

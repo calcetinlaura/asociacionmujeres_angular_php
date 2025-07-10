@@ -4,46 +4,48 @@
     [title]="'Programación'"
     [number]="number"
     [type]="'eventos'"
-  />
-  <div class="flex flex-1 flex-col justify-center px-8 gap-y-8">
-    <app-filters
-      [filters]="filters"
-      (filterClicked)="filterSelected($event)"
-      [loadFirstFilter]="currentYear"
-    ></app-filters>
-    <div class="flex gap-x-4">
-      <app-button-icon
-        [buttonText]="'Nueva evento'"
-        [iconClass]="'uil-plus'"
-        (addClicked)="addNewEventModal()"
-      />
-      <app-input-search (onDebounce)="applyFilterWord($event)" class="flex-1" />
+    />
+    <div class="flex flex-1 flex-col justify-center px-8 gap-y-8">
+      <app-filters
+        [filters]="filters"
+        (filterClicked)="filterSelected($event)"
+        [loadFirstFilter]="currentYear"
+      ></app-filters>
+      <div class="flex gap-x-4">
+        <app-button-icon
+          [buttonText]="'Nueva evento'"
+          [iconClass]="'uil-plus'"
+          (addClicked)="addNewEventModal()"
+          />
+          <app-input-search (onDebounce)="applyFilterWord($event)" class="flex-1" />
+        </div>
+      </div>
     </div>
-  </div>
-</div>
-<div class="flex flex-col px-8">
-  <!-- Spinner Loading -->
-  <app-spinner-loading *ngIf="isLoading; else results" />
-  <!-- Tabla -->
-  <ng-template #results>
-    <div class="pb-4 flex">
-      <app-table
-        [data]="filteredEvents"
-        [type]="typeList"
-        [headerColumns]="headerListEvents"
-        (openModal)="onOpenModal($event)"
-      />
-    </div>
-  </ng-template>
-</div>
+    <div class="flex flex-col px-8">
+      <!-- Spinner Loading -->
+      @if (isLoading) {
+        <app-spinner-loading />
+      } @else {
+        <div class="pb-4 flex">
+          <app-table
+            [data]="filteredEvents"
+            [type]="typeList"
+            [headerColumns]="headerListEvents"
+            (openModal)="onOpenModal($event)"
+            />
+          </div>
+        }
+        <!-- Tabla -->
+      </div>
 
-<!-- Modal -->
-<app-modal
-  *ngIf="isModalVisible"
-  [item]="item"
-  [type]="typeList"
-  [action]="currentModalAction"
-  (closeModal)="onCloseModal()"
-  (confirmDelete)="confirmDeleteEvent(item)"
-  (sendFormEventData)="sendFormEvent($event)"
-></app-modal>
+      <!-- Modal -->
+      @if (isModalVisible) {
+        <app-modal
+          [item]="item"
+          [type]="typeList"
+          [action]="currentModalAction"
+          (closeModal)="onCloseModal()"
+          (confirmDelete)="confirmDeleteEvent(item)"
+          (sendFormEventData)="sendFormEvent($event)"
+        ></app-modal>
+      }

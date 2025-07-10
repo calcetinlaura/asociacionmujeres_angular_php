@@ -1,8 +1,9 @@
 <div class="container_filters">
-  <app-button-filter
-    *ngFor="let item of filters"
-    [name]="item.name"
-    [isActive]="item.code === selectedFilter"
-    (filterClick)="filterSelected(item.code)"
-  ></app-button-filter>
+  @for (item of filters; track item) {
+    <app-button-filter
+      [name]="item.name"
+      [isActive]="item.code === selectedFilter"
+      (filterClick)="filterSelected(item.code)"
+    ></app-button-filter>
+  }
 </div>

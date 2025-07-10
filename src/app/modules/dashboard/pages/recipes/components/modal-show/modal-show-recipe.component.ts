@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, Input } from '@angular/core';
 import { RecipeModel } from 'src/app/core/interfaces/recipe.interface';
 import { TypeList } from 'src/app/core/models/general.model';
@@ -11,13 +11,12 @@ import { TextTitleComponent } from 'src/app/shared/components/text/text-title/te
 @Component({
     selector: 'app-modal-show-recipe',
     imports: [
-        CommonModule,
-        TextBackgroundComponent,
-        TextBorderComponent,
-        TextTitleComponent,
-        TextSubTitleComponent,
-        TextEditorComponent,
-    ],
+    TextBackgroundComponent,
+    TextBorderComponent,
+    TextTitleComponent,
+    TextSubTitleComponent,
+    TextEditorComponent
+],
     templateUrl: './modal-show-recipe.component.html'
 })
 export class ModalShowRecipeComponent {

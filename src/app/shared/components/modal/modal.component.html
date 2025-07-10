@@ -11,41 +11,38 @@
         TypeActionModal.Duplicate
       ].includes(action)
     "
-  >
+    >
     <div
       class="absolute top-3 right-3 block text-gray-500 cursor-pointer hover:text-black"
       (click)="onCloseModal()"
-    >
+      >
       <i class="uil uil-multiply iconClose"></i>
     </div>
-    <ng-container [ngSwitch]="action">
-      <ng-container *ngSwitchCase="TypeActionModal.Show">
+    @switch (action) {
+      @case (TypeActionModal.Show) {
         <ng-container
           *ngTemplateOutlet="templateView; context: { item: item }"
         ></ng-container>
-      </ng-container>
-
-      <ng-container *ngSwitchCase="TypeActionModal.Edit">
+      }
+      @case (TypeActionModal.Edit) {
         <ng-container
           *ngTemplateOutlet="templateForm; context: { item: item }"
         ></ng-container>
-      </ng-container>
-      <ng-container *ngSwitchCase="TypeActionModal.Duplicate">
+      }
+      @case (TypeActionModal.Duplicate) {
         <ng-container
           *ngTemplateOutlet="templateForm; context: { item: item }"
         ></ng-container>
-      </ng-container>
-
-      <ng-container *ngSwitchCase="TypeActionModal.Delete">
+      }
+      @case (TypeActionModal.Delete) {
         <ng-container
           *ngTemplateOutlet="templateDelete; context: { item: item }"
         ></ng-container>
-      </ng-container>
-
-      <ng-container *ngSwitchCase="TypeActionModal.Create">
+      }
+      @case (TypeActionModal.Create) {
         <ng-container *ngTemplateOutlet="templateForm"></ng-container>
-      </ng-container>
-    </ng-container>
+      }
+    }
   </div>
 </div>
 
@@ -61,84 +58,99 @@
     [item]="item"
     (closeModal)="onCloseModal()"
     (confirmDelete)="onConfirmDelete($event)"
-  />
-</ng-template>
+    />
+  </ng-template>
 
-<ng-template #templateForm let-item="item">
-  <app-form-book
-    *ngIf="type === TypeList.Books"
-    [itemId]="item?.id"
-    (sendFormBook)="onSendFormBook($event)"
-  />
-  <app-form-movie
-    *ngIf="type === TypeList.Movies"
-    [itemId]="item?.id"
-    (sendFormMovie)="onSendFormMovie($event)"
-  />
-  <app-form-event
-    *ngIf="type === TypeList.Events"
-    [itemId]="item?.id || 0"
-    [item]="item"
-    (sendFormEvent)="onSendFormEvent($event)"
-  />
-  <app-form-macroevent
-    *ngIf="type === TypeList.Macroevents"
-    [itemId]="item?.id"
-    (sendFormMacroevent)="onSendFormMacroevent($event)"
-  />
-  <app-form-recipe
-    *ngIf="type === TypeList.Recipes"
-    [itemId]="item?.id"
-    (sendFormRecipe)="onSendFormRecipe($event)"
-  />
-  <app-form-pitera
-    *ngIf="type === TypeList.Piteras"
-    [itemId]="item?.id"
-    (sendFormPitera)="onSendFormPitera($event)"
-  />
-  <app-form-partner
-    *ngIf="type === TypeList.Partners"
-    [itemId]="item?.id"
-    (sendFormPartner)="onSendFormPartner($event)"
-  />
-  <app-form-invoice
-    *ngIf="type === TypeList.Invoices"
-    [itemId]="item?.id"
-    (sendFormInvoice)="onSendFormInvoice($event)"
-  />
-  <app-form-subsidy
-    *ngIf="type === TypeList.Subsidies"
-    [itemId]="item?.id"
-    (sendFormSubsidy)="onSendFormSubsidy($event)"
-  />
-  <app-form-creditor
-    *ngIf="type === TypeList.Creditors"
-    [itemId]="item?.id"
-    (sendFormCreditor)="onSendFormCreditor($event)"
-  />
-  <app-form-agent
-    *ngIf="type === TypeList.Agents"
-    [itemId]="item?.id"
-    (sendFormAgent)="onSendFormAgent($event)"
-  />
-  <app-form-place
-    *ngIf="type === TypeList.Places"
-    [itemId]="item?.id"
-    (sendFormPlace)="onSendFormPlace($event)"
-  />
-  <app-form-podcast
-    *ngIf="type === TypeList.Podcasts"
-    [itemId]="item?.id"
-    (sendFormPodcast)="onSendFormPodcast($event)"
-  />
-  <app-form-project
-    *ngIf="type === TypeList.Projects"
-    [itemId]="item?.id"
-    (sendFormProject)="onSendFormProject($event)"
-  />
-  <app-form-article
-    *ngIf="type === TypeList.Articles"
-    [itemId]="item?.id"
-    (sendFormArticle)="onSendFormArticle($event)"
-  />
-</ng-template>
+  <ng-template #templateForm let-item="item">
+    @if (type === TypeList.Books) {
+      <app-form-book
+        [itemId]="item?.id"
+        (sendFormBook)="onSendFormBook($event)"
+        />
+    }
+    @if (type === TypeList.Movies) {
+      <app-form-movie
+        [itemId]="item?.id"
+        (sendFormMovie)="onSendFormMovie($event)"
+        />
+    }
+    @if (type === TypeList.Events) {
+      <app-form-event
+        [itemId]="item?.id || 0"
+        [item]="item"
+        (sendFormEvent)="onSendFormEvent($event)"
+        />
+    }
+    @if (type === TypeList.Macroevents) {
+      <app-form-macroevent
+        [itemId]="item?.id"
+        (sendFormMacroevent)="onSendFormMacroevent($event)"
+        />
+    }
+    @if (type === TypeList.Recipes) {
+      <app-form-recipe
+        [itemId]="item?.id"
+        (sendFormRecipe)="onSendFormRecipe($event)"
+        />
+    }
+    @if (type === TypeList.Piteras) {
+      <app-form-pitera
+        [itemId]="item?.id"
+        (sendFormPitera)="onSendFormPitera($event)"
+        />
+    }
+    @if (type === TypeList.Partners) {
+      <app-form-partner
+        [itemId]="item?.id"
+        (sendFormPartner)="onSendFormPartner($event)"
+        />
+    }
+    @if (type === TypeList.Invoices) {
+      <app-form-invoice
+        [itemId]="item?.id"
+        (sendFormInvoice)="onSendFormInvoice($event)"
+        />
+    }
+    @if (type === TypeList.Subsidies) {
+      <app-form-subsidy
+        [itemId]="item?.id"
+        (sendFormSubsidy)="onSendFormSubsidy($event)"
+        />
+    }
+    @if (type === TypeList.Creditors) {
+      <app-form-creditor
+        [itemId]="item?.id"
+        (sendFormCreditor)="onSendFormCreditor($event)"
+        />
+    }
+    @if (type === TypeList.Agents) {
+      <app-form-agent
+        [itemId]="item?.id"
+        (sendFormAgent)="onSendFormAgent($event)"
+        />
+    }
+    @if (type === TypeList.Places) {
+      <app-form-place
+        [itemId]="item?.id"
+        (sendFormPlace)="onSendFormPlace($event)"
+        />
+    }
+    @if (type === TypeList.Podcasts) {
+      <app-form-podcast
+        [itemId]="item?.id"
+        (sendFormPodcast)="onSendFormPodcast($event)"
+        />
+    }
+    @if (type === TypeList.Projects) {
+      <app-form-project
+        [itemId]="item?.id"
+        (sendFormProject)="onSendFormProject($event)"
+        />
+    }
+    @if (type === TypeList.Articles) {
+      <app-form-article
+        [itemId]="item?.id"
+        (sendFormArticle)="onSendFormArticle($event)"
+        />
+    }
+  </ng-template>

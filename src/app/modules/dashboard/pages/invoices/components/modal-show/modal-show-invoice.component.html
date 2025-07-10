@@ -1,63 +1,78 @@
 <div class="flex flex-1 flex-col justify-between">
-  <app-text-title *ngIf="item.number_invoice" [text]="item.number_invoice" />
-  <app-text-editor *ngIf="item.description" [text]="item.description" />
+  @if (item.number_invoice) {
+    <app-text-title [text]="item.number_invoice" />
+  }
+  @if (item.description) {
+    <app-text-editor [text]="item.description" />
+  }
   <app-text-background [text]="'Acreedor'"></app-text-background>
   <div class="ml-4 pt-2 gap-y-2">
     {{ item.creditor_company }}<br />
-    <small
-      *ngIf="
-        item.creditor_contact && item.creditor_contact !== item.creditor_company
-      "
-      >{{ item.creditor_contact }}</small
-    >
-  </div>
-  <app-text-background [text]="'Fechas'"></app-text-background>
-  <div class="ml-4 pt-2 gap-y-2">
-    <p *ngIf="item.date_invoice">
-      Fecha factura:
-      <span class="body-border">{{
-        item.date_invoice | date : "dd MMM yyyy"
-      }}</span>
-    </p>
-    <p *ngIf="item.date_accounting">
-      Feche contabilidad:
-      <span class="body-border">{{
-        item.date_accounting | date : "dd MMM yyyy"
-      }}</span>
-    </p>
-    <p *ngIf="item.date_payment">
-      Fecha pago:
-      <span class="body-border">{{
-        item.date_payment | date : "dd MMM yyyy"
-      }}</span>
-    </p>
-  </div>
-  <app-text-background [text]="'Cantidad'"></app-text-background>
-  <div class="flex flex-col gap-y-2 ml-4 py-3">
-    <div class="body-description flex flex-row gap-4 align-middle">
-      <app-text-border
-        *ngIf="item.amount"
-        [text]="'(BASE) ' + (item.amount | eurosFormat)"
-      ></app-text-border>
-
-      <app-text-border
-        *ngIf="item.iva"
-        [text]="'(IVA) ' + (item.iva | eurosFormat)"
-      ></app-text-border>
-      <app-text-border
-        *ngIf="item.irpf"
-        [text]="'(IRPF) ' + (item.irpf | eurosFormat)"
-      ></app-text-border>
-      =
-      <app-text-border
-        *ngIf="item.total_amount"
-        [text]="item.total_amount | eurosFormat"
-      ></app-text-border>
+    @if (
+      item.creditor_contact && item.creditor_contact !== item.creditor_company
+      ) {
+      <small
+        >{{ item.creditor_contact }}</small
+        >
+      }
     </div>
+    <app-text-background [text]="'Fechas'"></app-text-background>
+    <div class="ml-4 pt-2 gap-y-2">
+      @if (item.date_invoice) {
+        <p>
+          Fecha factura:
+          <span class="body-border">{{
+            item.date_invoice | date : "dd MMM yyyy"
+          }}</span>
+        </p>
+      }
+      @if (item.date_accounting) {
+        <p>
+          Feche contabilidad:
+          <span class="body-border">{{
+            item.date_accounting | date : "dd MMM yyyy"
+          }}</span>
+        </p>
+      }
+      @if (item.date_payment) {
+        <p>
+          Fecha pago:
+          <span class="body-border">{{
+            item.date_payment | date : "dd MMM yyyy"
+          }}</span>
+        </p>
+      }
+    </div>
+    <app-text-background [text]="'Cantidad'"></app-text-background>
+    <div class="flex flex-col gap-y-2 ml-4 py-3">
+      <div class="body-description flex flex-row gap-4 align-middle">
+        @if (item.amount) {
+          <app-text-border
+            [text]="'(BASE) ' + (item.amount | eurosFormat)"
+          ></app-text-border>
+        }
+
+        @if (item.iva) {
+          <app-text-border
+            [text]="'(IVA) ' + (item.iva | eurosFormat)"
+          ></app-text-border>
+        }
+        @if (item.irpf) {
+          <app-text-border
+            [text]="'(IRPF) ' + (item.irpf | eurosFormat)"
+          ></app-text-border>
+        }
+        =
+        @if (item.total_amount) {
+          <app-text-border
+            [text]="item.total_amount | eurosFormat"
+          ></app-text-border>
+        }
+      </div>
+    </div>
+    <app-text-background [text]="'Subvención'"></app-text-background>
+    <app-text-icon
+      [icon]="'uil uil-building icon'"
+      [text]="item.subsidy_id?.toString()"
+    ></app-text-icon>
   </div>
-  <app-text-background [text]="'Subvención'"></app-text-background>
-  <app-text-icon
-    [icon]="'uil uil-building icon'"
-    [text]="item.subsidy_id?.toString()"
-  ></app-text-icon>
-</div>

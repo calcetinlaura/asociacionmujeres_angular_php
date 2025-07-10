@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import {
   Component,
   DestroyRef,
@@ -34,16 +34,15 @@ import { TableComponent } from '../../components/table/table.component';
 @Component({
     selector: 'app-partners-page',
     imports: [
-        CommonModule,
-        DashboardHeaderComponent,
-        ModalComponent,
-        ButtonIconComponent,
-        ReactiveFormsModule,
-        InputSearchComponent,
-        SpinnerLoadingComponent,
-        FiltersComponent,
-        TableComponent,
-    ],
+    DashboardHeaderComponent,
+    ModalComponent,
+    ButtonIconComponent,
+    ReactiveFormsModule,
+    InputSearchComponent,
+    SpinnerLoadingComponent,
+    FiltersComponent,
+    TableComponent
+],
     templateUrl: './partners-page.component.html',
     styleUrl: './partners-page.component.css'
 })

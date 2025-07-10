@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { tap } from 'rxjs';
@@ -11,7 +11,7 @@ import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loadi
 
 @Component({
     selector: 'app-piteras-page-landing',
-    imports: [CommonModule, SectionGenericComponent, SpinnerLoadingComponent],
+    imports: [SectionGenericComponent, SpinnerLoadingComponent],
     templateUrl: './piteras-page-landing.component.html',
     providers: [PiterasService]
 })

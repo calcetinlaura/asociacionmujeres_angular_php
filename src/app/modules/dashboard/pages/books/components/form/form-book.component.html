@@ -6,7 +6,7 @@
     (ngSubmit)="onSendFormBook()"
     [formGroup]="formBook"
     class="login-auth-form"
-  >
+    >
     <div class="flex flex-col gap-y-4">
       <div class="flex flex-col gap-y-4 bg-lilaMuyClaro p-4">
         <!-- Título -->
@@ -19,121 +19,130 @@
               [ngClass]="{
                 'is-invalid': submitted && formBook.get('title')?.invalid
               }"
-            />
-            <div
-              *ngIf="submitted && formBook.get('title')?.invalid"
-              class="is-invalid-text"
-            >
-              Campo requerido
+              />
+              @if (submitted && formBook.get('title')?.invalid) {
+                <div
+                  class="is-invalid-text"
+                  >
+                  Campo requerido
+                </div>
+              }
             </div>
           </div>
-        </div>
 
-        <!-- Autor -->
-        <div class="box-input gap-x-4">
-          <label for="author">Autor/a</label>
-          <div class="flex flex-col flex-1">
-            <input
-              formControlName="author"
-              type="text"
+          <!-- Autor -->
+          <div class="box-input gap-x-4">
+            <label for="author">Autor/a</label>
+            <div class="flex flex-col flex-1">
+              <input
+                formControlName="author"
+                type="text"
               [ngClass]="{
                 'is-invalid': submitted && formBook.get('author')?.invalid
               }"
-            />
-            <div
-              *ngIf="submitted && formBook.get('author')?.invalid"
-              class="is-invalid-text"
-            >
-              Campo requerido
+                />
+                @if (submitted && formBook.get('author')?.invalid) {
+                  <div
+                    class="is-invalid-text"
+                    >
+                    Campo requerido
+                  </div>
+                }
+              </div>
             </div>
-          </div>
-        </div>
-        <!-- Género -->
-        <div class="flex flex-row gap-x-4">
-          <div class="box-input gap-y-2 gap-x-4 flex flex-1">
-            <label for="gender">Género</label>
-            <div class="flex flex-col flex-1">
-              <select
-                formControlName="gender"
+            <!-- Género -->
+            <div class="flex flex-row gap-x-4">
+              <div class="box-input gap-y-2 gap-x-4 flex flex-1">
+                <label for="gender">Género</label>
+                <div class="flex flex-col flex-1">
+                  <select
+                    formControlName="gender"
                 [ngClass]="{
                   'is-invalid': submitted && formBook.get('gender')?.invalid
                 }"
-              >
-                <option
-                  *ngFor="let gender of genderBooks"
-                  [value]="gender.code"
-                >
-                  {{ gender.name }}
-                </option>
-              </select>
-              <div
-                *ngIf="submitted && formBook.get('gender')?.invalid"
-                class="is-invalid-text"
-              >
-                Selecciona un género
+                    >
+                    @for (gender of genderBooks; track gender) {
+                      <option
+                        [value]="gender.code"
+                        >
+                        {{ gender.name }}
+                      </option>
+                    }
+                  </select>
+                  @if (submitted && formBook.get('gender')?.invalid) {
+                    <div
+                      class="is-invalid-text"
+                      >
+                      Selecciona un género
+                    </div>
+                  }
+                </div>
               </div>
-            </div>
-          </div>
-          <!-- Año de compra -->
-          <div class="box-input gap-x-4">
-            <label for="year">Año de compra</label>
-            <div class="flex flex-col flex-1">
-              <select
-                formControlName="year"
+              <!-- Año de compra -->
+              <div class="box-input gap-x-4">
+                <label for="year">Año de compra</label>
+                <div class="flex flex-col flex-1">
+                  <select
+                    formControlName="year"
                 [ngClass]="{
                   'is-invalid': submitted && formBook.get('year')?.invalid
                 }"
-              >
-                <option *ngFor="let year of years" [value]="year">
-                  {{ year }}
-                </option>
-              </select>
-              <div
-                *ngIf="submitted && formBook.get('year')?.invalid"
-                class="is-invalid-text"
-              >
-                Selecciona un año
+                    >
+                    @for (year of years; track year) {
+                      <option [value]="year">
+                        {{ year }}
+                      </option>
+                    }
+                  </select>
+                  @if (submitted && formBook.get('year')?.invalid) {
+                    <div
+                      class="is-invalid-text"
+                      >
+                      Selecciona un año
+                    </div>
+                  }
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
-      <div class="flex gap-4">
-        <!-- Descripción -->
-        <div class="box-input gap-x-4 px-4 w-3/4">
-          <label for="description">Descripción</label>
-          <textarea
-            formControlName="description"
-            rows="6"
-            class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-200 text-sm"
-            placeholder="Escribe aquí la descripción del macroevento..."
-          ></textarea>
-        </div>
-        <!-- Portada (Imagen) -->
-        <div class="box-input gap-x-4 px-4 w-72">
-          <app-image-control
+          <div class="flex gap-4">
+            <!-- Descripción -->
+            <div class="box-input gap-x-4 px-4 w-3/4">
+              <label for="description">Descripción</label>
+              <textarea
+                formControlName="description"
+                rows="6"
+                class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-200 text-sm"
+                placeholder="Escribe aquí la descripción del macroevento..."
+              ></textarea>
+            </div>
+            <!-- Portada (Imagen) -->
+            <div class="box-input gap-x-4 px-4 w-72">
+              <app-image-control
             [previewImg]="
               formBook.get('img')?.value ? formBook.get('img')?.value! : null
             "
-            [entityId]="itemId"
-            [type]="typeList"
-            (imgSelected)="onImageSelected($event)"
-            [imageWidthValue]="'full'"
-          ></app-image-control>
+                [entityId]="itemId"
+                [type]="typeList"
+                (imgSelected)="onImageSelected($event)"
+                [imageWidthValue]="'full'"
+              ></app-image-control>
+            </div>
+          </div>
+
+          <!-- Mensaje de error global -->
+          @if (errorSession) {
+            <div class="is-invalid-text">
+              Ocurrió un error con el envío del formulario
+            </div>
+          }
+
+          <!-- Botón de envío -->
+          <div class="flex justify-center">
+            <button class="bg-black p-4 text-white" type="submit">
+              {{ buttonAction }}
+            </button>
+          </div>
         </div>
-      </div>
-
-      <!-- Mensaje de error global -->
-      <div *ngIf="errorSession" class="is-invalid-text">
-        Ocurrió un error con el envío del formulario
-      </div>
-
-      <!-- Botón de envío -->
-      <div class="flex justify-center">
-        <button class="bg-black p-4 text-white" type="submit">
-          {{ buttonAction }}
-        </button>
-      </div>
+      </form>
     </div>
-  </form>
-</div>

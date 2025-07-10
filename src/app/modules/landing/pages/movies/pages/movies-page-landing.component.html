@@ -3,21 +3,23 @@
     [filters]="filters"
     (filterClicked)="filterSelected($event)"
     [loadFirstFilter]="'NOVEDADES'"
-  />
-  <app-input-search (onDebounce)="applyFilterWord($event)" class="my-8" />
-  <!-- Spinner Loading -->
-  <app-spinner-loading *ngIf="isLoading; else results" />
-  <!-- Sección cards -->
-  <ng-template #results>
-    <app-section-generic
-      *ngIf="areThereResults; else notResults"
-      [type]="typeList.Movies"
-      [data]="filteredMovies"
-      [total]="number"
     />
-  </ng-template>
-  <!-- Sección no hay resultados -->
-  <ng-template #notResults
-    ><app-no-results [text]="'películas' | lowercase"
-  /></ng-template>
-</div>
+    <app-input-search (onDebounce)="applyFilterWord($event)" class="my-8" />
+    <!-- Spinner Loading -->
+    @if (isLoading) {
+      <app-spinner-loading />
+    } @else {
+      @if (areThereResults) {
+        <app-section-generic
+          [type]="typeList.Movies"
+          [data]="filteredMovies"
+          [total]="number"
+          />
+      } @else {
+        <app-no-results [text]="'películas' | lowercase"
+          />
+      }
+    }
+    <!-- Sección cards -->
+    <!-- Sección no hay resultados -->
+  </div>

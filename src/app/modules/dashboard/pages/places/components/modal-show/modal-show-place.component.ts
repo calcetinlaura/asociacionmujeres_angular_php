@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, Input } from '@angular/core';
 import { SafeResourceUrl } from '@angular/platform-browser';
 import { PlaceModel } from 'src/app/core/interfaces/place.interface';
@@ -14,15 +14,14 @@ import { FilterTransformCodePipe } from 'src/app/shared/pipe/filterTransformCode
 @Component({
     selector: 'app-modal-show-place',
     imports: [
-        CommonModule,
-        TextBackgroundComponent,
-        TextTitleComponent,
-        TextSubTitleComponent,
-        TextIconComponent,
-        TextEditorComponent,
-        FilterTransformCodePipe,
-        MapComponent,
-    ],
+    TextBackgroundComponent,
+    TextTitleComponent,
+    TextSubTitleComponent,
+    TextIconComponent,
+    TextEditorComponent,
+    FilterTransformCodePipe,
+    MapComponent
+],
     templateUrl: './modal-show-place.component.html'
 })
 export class ModalShowPlaceComponent {
