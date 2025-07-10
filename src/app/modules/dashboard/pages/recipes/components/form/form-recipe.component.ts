@@ -7,7 +7,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
-import { EditorModule } from '@tinymce/tinymce-angular';
+
 import { filter, tap } from 'rxjs';
 import { RecipesFacade } from 'src/app/application/recipes.facade';
 import {
@@ -24,7 +24,7 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    EditorModule,
+
     MatCardModule,
     ImageControlComponent,
   ],

@@ -1,11 +1,11 @@
-import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ImgBrokenDirective } from 'src/app/shared/directives/img-broken.directive';
+import { Component, Input, OnInit } from '@angular/core';
 import { TypeList } from 'src/app/core/models/general.model';
-import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
 import { TextBackgroundComponent } from 'src/app/shared/components/text/text-background/text-background.component';
 import { TextBorderComponent } from 'src/app/shared/components/text/text-border/text-border.component';
 import { TextLinkComponent } from 'src/app/shared/components/text/text-link/text-link.component';
+import { ImgBrokenDirective } from 'src/app/shared/directives/img-broken.directive';
+import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
 
 @Component({
   selector: 'app-card-player',

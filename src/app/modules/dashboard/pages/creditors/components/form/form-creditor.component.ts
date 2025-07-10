@@ -14,7 +14,7 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { EditorModule } from '@tinymce/tinymce-angular';
+
 import townsData from 'data/towns.json';
 import { filter, tap } from 'rxjs';
 import { CreditorsFacade } from 'src/app/application/creditors.facade';
@@ -25,7 +25,7 @@ import {
 @Component({
   selector: 'app-form-creditor',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, EditorModule],
+  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './form-creditor.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],
 })

@@ -7,7 +7,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
-import { EditorModule } from '@tinymce/tinymce-angular';
+
 import { filter, tap } from 'rxjs';
 import { PiterasFacade } from 'src/app/application/piteras.facade';
 import { PiteraModel } from 'src/app/core/interfaces/pitera.interface';
@@ -22,7 +22,7 @@ import { PdfControlComponent } from '../../../../components/pdf-control/pdf-cont
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    EditorModule,
+
     MatCardModule,
     ImageControlComponent,
     PdfControlComponent,

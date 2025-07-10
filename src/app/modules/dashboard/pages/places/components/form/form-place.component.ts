@@ -8,7 +8,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
-import { EditorModule } from '@tinymce/tinymce-angular';
+
 import townsData from 'data/towns.json';
 import { filter, tap } from 'rxjs';
 import { PlacesFacade } from 'src/app/application/places.facade';
@@ -28,7 +28,7 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    EditorModule,
+
     MatCardModule,
     ImageControlComponent,
     ButtonIconComponent,

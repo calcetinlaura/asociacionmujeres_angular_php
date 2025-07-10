@@ -23,7 +23,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatRadioModule } from '@angular/material/radio';
-import { EditorModule } from '@tinymce/tinymce-angular';
+
 import {
   combineLatest,
   filter,
@@ -63,7 +63,7 @@ import { PdfControlComponent } from '../../../../components/pdf-control/pdf-cont
     MatAutocompleteModule,
     MatFormFieldModule,
     MatInputModule,
-    EditorModule,
+
     MatCardModule,
     PdfControlComponent,
   ],

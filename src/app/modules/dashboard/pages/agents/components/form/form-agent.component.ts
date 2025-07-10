@@ -15,7 +15,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
-import { EditorModule } from '@tinymce/tinymce-angular';
+
 import townsData from 'data/towns.json';
 import { filter, tap } from 'rxjs';
 import { AgentsFacade } from 'src/app/application/agents.facade';
@@ -32,7 +32,7 @@ import { ImageControlComponent } from '../../../../components/image-control/imag
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    EditorModule,
+
     ImageControlComponent,
     MatCardModule,
   ],

@@ -24,7 +24,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatRadioModule } from '@angular/material/radio';
-import { EditorModule } from '@tinymce/tinymce-angular';
+
 import { filter, tap } from 'rxjs';
 import { SubsidiesFacade } from 'src/app/application/subsidies.facade';
 import { CreditorModel } from 'src/app/core/interfaces/creditor.interface';
@@ -47,7 +47,7 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
     MatAutocompleteModule,
     MatFormFieldModule,
     MatInputModule,
-    EditorModule,
+
     MatCardModule,
   ],
   templateUrl: './form-subsidy.component.html',

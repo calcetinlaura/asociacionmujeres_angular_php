@@ -15,7 +15,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
-import { EditorModule } from '@tinymce/tinymce-angular';
+
 import townsData from 'data/towns.json';
 import { filter, tap } from 'rxjs';
 import { MacroeventsFacade } from 'src/app/application/macroevents.facade';
@@ -31,7 +31,7 @@ import { dateRangeValidator } from 'src/app/shared/utils/validators.utils';
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    EditorModule,
+
     MatCardModule,
     ImageControlComponent,
   ],

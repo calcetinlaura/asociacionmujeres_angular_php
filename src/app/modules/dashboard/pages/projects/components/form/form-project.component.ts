@@ -17,7 +17,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
-import { EditorModule } from '@tinymce/tinymce-angular';
+
 import { filter, Observable, tap } from 'rxjs';
 import { ProjectsFacade } from 'src/app/application/projects.facade';
 import { ProjectModel } from 'src/app/core/interfaces/project.interface';
@@ -35,7 +35,7 @@ import { ButtonIconComponent } from '../../../../../../shared/components/buttons
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    EditorModule,
+
     MatCardModule,
     ImageControlComponent,
     ButtonIconComponent,
