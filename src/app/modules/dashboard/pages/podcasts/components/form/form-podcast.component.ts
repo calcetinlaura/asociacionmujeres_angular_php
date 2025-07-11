@@ -14,6 +14,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
+import { QuillModule } from 'ngx-quill';
 
 import { filter, tap } from 'rxjs';
 import { PodcastsFacade } from 'src/app/application/podcasts.facade';
@@ -23,15 +24,16 @@ import { ImageControlComponent } from 'src/app/modules/dashboard/components/imag
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
-    selector: 'app-form-podcast',
-    imports: [
-        CommonModule,
-        ReactiveFormsModule,
-        MatCardModule,
-        ImageControlComponent,
-    ],
-    templateUrl: './form-podcast.component.html',
-    styleUrls: ['../../../../components/form/form.component.css']
+  selector: 'app-form-podcast',
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    MatCardModule,
+    ImageControlComponent,
+    QuillModule,
+  ],
+  templateUrl: './form-podcast.component.html',
+  styleUrls: ['../../../../components/form/form.component.css'],
 })
 export class FormPodcastComponent implements OnInit {
   private podcastsFacade = inject(PodcastsFacade);
@@ -58,7 +60,18 @@ export class FormPodcastComponent implements OnInit {
   typeList = TypeList.Podcasts;
 
   currentYear = this.generalService.currentYear;
-
+  quillModules = {
+    toolbar: [
+      [{ header: [1, 2, false] }],
+      ['bold', 'italic', 'underline'],
+      ['image', 'code-block'],
+      [{ color: [] }, { background: [] }],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      [{ align: [] }],
+      ['link', 'clean'],
+      [{ indent: '-1' }, { indent: '+1' }],
+    ],
+  };
   ngOnInit(): void {
     if (this.itemId) {
       this.podcastsFacade.loadPodcastById(this.itemId);
@@ -100,7 +113,9 @@ export class FormPodcastComponent implements OnInit {
       return;
     }
     const rawValues = { ...this.formPodcast.getRawValue() } as any;
-
+    if (rawValues.description) {
+      rawValues.description = rawValues.description.replace(/&nbsp;/g, ' ');
+    }
     const formData = this.generalService.createFormData(
       rawValues,
       {

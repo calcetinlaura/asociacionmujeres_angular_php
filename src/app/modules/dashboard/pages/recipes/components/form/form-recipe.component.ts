@@ -7,6 +7,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
+import { QuillModule } from 'ngx-quill';
 
 import { filter, tap } from 'rxjs';
 import { RecipesFacade } from 'src/app/application/recipes.facade';
@@ -19,15 +20,16 @@ import { ImageControlComponent } from 'src/app/modules/dashboard/components/imag
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
-    selector: 'app-form-recipe',
-    imports: [
-        CommonModule,
-        ReactiveFormsModule,
-        MatCardModule,
-        ImageControlComponent,
-    ],
-    templateUrl: './form-recipe.component.html',
-    styleUrls: ['../../../../components/form/form.component.css']
+  selector: 'app-form-recipe',
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    MatCardModule,
+    ImageControlComponent,
+    QuillModule,
+  ],
+  templateUrl: './form-recipe.component.html',
+  styleUrls: ['../../../../components/form/form.component.css'],
 })
 export class FormRecipeComponent {
   private recipesFacade = inject(RecipesFacade);
@@ -62,7 +64,18 @@ export class FormRecipeComponent {
     ]),
   });
   currentYear = this.generalService.currentYear;
-
+  quillModules = {
+    toolbar: [
+      [{ header: [1, 2, false] }],
+      ['bold', 'italic', 'underline'],
+      ['image', 'code-block'],
+      [{ color: [] }, { background: [] }],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      [{ align: [] }],
+      ['link', 'clean'],
+      [{ indent: '-1' }, { indent: '+1' }],
+    ],
+  };
   ngOnInit(): void {
     this.years = this.generalService.loadYears(this.currentYear, 2018);
 
@@ -110,7 +123,12 @@ export class FormRecipeComponent {
     }
 
     const rawValues = { ...this.formRecipe.getRawValue() } as any;
-
+    if (rawValues.ingredients) {
+      rawValues.ingredients = rawValues.ingredients.replace(/&nbsp;/g, ' ');
+    }
+    if (rawValues.recipe) {
+      rawValues.recipe = rawValues.recipe.replace(/&nbsp;/g, ' ');
+    }
     const formData = this.generalService.createFormData(
       rawValues,
       {

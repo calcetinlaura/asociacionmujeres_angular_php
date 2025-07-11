@@ -16,6 +16,7 @@ import {
 } from '@angular/forms';
 
 import townsData from 'data/towns.json';
+import { QuillModule } from 'ngx-quill';
 import { filter, tap } from 'rxjs';
 import { CreditorsFacade } from 'src/app/application/creditors.facade';
 import {
@@ -23,10 +24,10 @@ import {
   CreditorModel,
 } from 'src/app/core/interfaces/creditor.interface';
 @Component({
-    selector: 'app-form-creditor',
-    imports: [CommonModule, ReactiveFormsModule],
-    templateUrl: './form-creditor.component.html',
-    styleUrls: ['../../../../components/form/form.component.css']
+  selector: 'app-form-creditor',
+  imports: [CommonModule, ReactiveFormsModule, QuillModule],
+  templateUrl: './form-creditor.component.html',
+  styleUrls: ['../../../../components/form/form.component.css'],
 })
 export class FormCreditorComponent {
   private creditorsFacade = inject(CreditorsFacade);
@@ -66,7 +67,18 @@ export class FormCreditorComponent {
   municipios: { label: string; code: string }[] = [];
 
   private creditor_id!: number;
-
+  quillModules = {
+    toolbar: [
+      [{ header: [1, 2, false] }],
+      ['bold', 'italic', 'underline'],
+      ['image', 'code-block'],
+      [{ color: [] }, { background: [] }],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      [{ align: [] }],
+      ['link', 'clean'],
+      [{ indent: '-1' }, { indent: '+1' }],
+    ],
+  };
   ngOnInit(): void {
     this.provincias = townsData
       .flatMap((region) => region.provinces)
@@ -112,21 +124,26 @@ export class FormCreditorComponent {
       return;
     }
 
-    // Convertimos el formulario a un objeto JSON (CreditorModel)
+    const rawValues = { ...this.formCreditor.getRawValue() } as any;
+
+    if (rawValues.observations) {
+      rawValues.observations = rawValues.observations.replace(/&nbsp;/g, ' ');
+    }
+
     const newCreditorData: CreditorModel = {
-      id: this.creditor_id || 0, // Si es nuevo, se envía 0 o se omite
-      company: this.formCreditor.value.company!,
-      cif: this.formCreditor.value.cif || '',
-      contact: this.formCreditor.value.contact || '',
-      phone: this.formCreditor.value.phone!,
-      email: this.formCreditor.value.email || '',
-      province: this.formCreditor.value.province || '',
-      town: this.formCreditor.value.town || '',
-      address: this.formCreditor.value.address || '',
-      post_code: this.formCreditor.value.post_code || '',
-      category: this.formCreditor.value.category || '',
-      key_words: this.formCreditor.value.key_words || '',
-      observations: this.formCreditor.value.observations || '',
+      id: this.creditor_id || 0,
+      company: rawValues.company!,
+      cif: rawValues.cif || '',
+      contact: rawValues.contact || '',
+      phone: rawValues.phone!,
+      email: rawValues.email || '',
+      province: rawValues.province || '',
+      town: rawValues.town || '',
+      address: rawValues.address || '',
+      post_code: rawValues.post_code || '',
+      category: rawValues.category || '',
+      key_words: rawValues.key_words || '',
+      observations: rawValues.observations || '',
     };
 
     this.sendFormCreditor.emit({

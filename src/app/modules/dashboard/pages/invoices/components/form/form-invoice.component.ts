@@ -24,6 +24,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatRadioModule } from '@angular/material/radio';
 
+import { QuillModule } from 'ngx-quill';
 import {
   combineLatest,
   filter,
@@ -53,20 +54,21 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { PdfControlComponent } from '../../../../components/pdf-control/pdf-control.component';
 
 @Component({
-    selector: 'app-form-invoice',
-    imports: [
-        CommonModule,
-        ReactiveFormsModule,
-        MatCheckboxModule,
-        MatRadioModule,
-        MatAutocompleteModule,
-        MatFormFieldModule,
-        MatInputModule,
-        MatCardModule,
-        PdfControlComponent,
-    ],
-    templateUrl: './form-invoice.component.html',
-    styleUrls: ['../../../../components/form/form.component.css']
+  selector: 'app-form-invoice',
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    MatCheckboxModule,
+    MatRadioModule,
+    MatAutocompleteModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatCardModule,
+    PdfControlComponent,
+    QuillModule,
+  ],
+  templateUrl: './form-invoice.component.html',
+  styleUrls: ['../../../../components/form/form.component.css'],
 })
 export class FormInvoiceComponent {
   private destroyRef = inject(DestroyRef);
@@ -127,7 +129,18 @@ export class FormInvoiceComponent {
   currentYear = this.generalService.currentYear;
   isCreate = false;
   private loadedYearData: number | null = null;
-
+  quillModules = {
+    toolbar: [
+      [{ header: [1, 2, false] }],
+      ['bold', 'italic', 'underline'],
+      ['image', 'code-block'],
+      [{ color: [] }, { background: [] }],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      [{ align: [] }],
+      ['link', 'clean'],
+      [{ indent: '-1' }, { indent: '+1' }],
+    ],
+  };
   ngOnInit(): void {
     this.isCreate = this.itemId !== 0;
     this.years = this.generalService.loadYears(this.currentYear, 2018);
@@ -411,7 +424,9 @@ export class FormInvoiceComponent {
 
     // 🔹 Obtener valores del formulario
     const rawValues = { ...this.formInvoice.getRawValue() } as any;
-
+    if (rawValues.description) {
+      rawValues.description = rawValues.description.replace(/&nbsp;/g, ' ');
+    }
     const pdf = rawValues.invoice_pdf;
     const selectedPdf = pdf instanceof File ? pdf : null;
     delete rawValues.invoice_pdf;

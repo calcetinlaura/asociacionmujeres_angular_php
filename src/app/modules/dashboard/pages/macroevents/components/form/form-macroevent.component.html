@@ -6,7 +6,7 @@
     (ngSubmit)="onSendFormMacroevent()"
     [formGroup]="formMacroevent"
     class="login-auth-form"
-    >
+  >
     <div class="flex flex-col gap-y-4">
       <div class="flex justify-between gap-x-4">
         <div class="flex flex-col w-3/4 gap-y-4">
@@ -20,156 +20,133 @@
                   'is-invalid':
                     submitted && formMacroevent.get('title')?.invalid
                 }"
-                />
-                @if (submitted && formMacroevent.get('title')?.invalid) {
-                  <div
-                    class="is-invalid-text"
-                    >
-                    Campo requerido
-                  </div>
-                }
-              </div>
+              />
+              @if (submitted && formMacroevent.get('title')?.invalid) {
+              <div class="is-invalid-text">Campo requerido</div>
+              }
             </div>
-            <!-- Provincia -->
-            <div class="box-input gap-x-4 flex flex-1">
-              <label for="province">Provincia</label>
-              <select
-                formControlName="province"
-                (change)="onProvinceChange()"
+          </div>
+          <!-- Provincia -->
+          <div class="box-input gap-x-4 flex flex-1">
+            <label for="province">Provincia</label>
+            <select
+              formControlName="province"
+              (change)="onProvinceChange()"
               [ngClass]="{
                 'is-invalid':
                   submitted && formMacroevent.get('province')?.invalid
               }"
-                >
-                <option value="">Seleccione una provincia</option>
-                @for (prov of provincias; track prov) {
-                  <option [value]="prov.label">
-                    {{ prov.label }}
-                  </option>
-                }
-              </select>
-              @if (submitted && formMacroevent.get('town')?.invalid) {
-                <div
-                  class="is-invalid-text"
-                  >
-                  Campo requerido
-                </div>
+            >
+              <option value="">Seleccione una provincia</option>
+              @for (prov of provincias; track prov) {
+              <option [value]="prov.label">
+                {{ prov.label }}
+              </option>
               }
-            </div>
-            <!-- Municipio -->
-            <div class="box-input gap-x-4 flex flex-1">
-              <label for="town">Municipio</label>
-              <select
-                formControlName="town"
+            </select>
+            @if (submitted && formMacroevent.get('town')?.invalid) {
+            <div class="is-invalid-text">Campo requerido</div>
+            }
+          </div>
+          <!-- Municipio -->
+          <div class="box-input gap-x-4 flex flex-1">
+            <label for="town">Municipio</label>
+            <select
+              formControlName="town"
               [ngClass]="{
                 'is-invalid': submitted && formMacroevent.get('town')?.invalid
               }"
-                >
-                <option value="">Seleccione un municipio</option>
-                @for (mun of municipios; track mun) {
-                  <option [value]="mun.label">
-                    {{ mun.label }}
-                  </option>
-                }
-              </select>
-              @if (submitted && formMacroevent.get('town')?.invalid) {
-                <div
-                  class="is-invalid-text"
-                  >
-                  Campo requerido
-                </div>
+            >
+              <option value="">Seleccione un municipio</option>
+              @for (mun of municipios; track mun) {
+              <option [value]="mun.label">
+                {{ mun.label }}
+              </option>
               }
-            </div>
+            </select>
+            @if (submitted && formMacroevent.get('town')?.invalid) {
+            <div class="is-invalid-text">Campo requerido</div>
+            }
           </div>
-          <div class="flex flex-col gap-y-4 w-72 bg-lilaMuyClaro p-4">
-            <div class="flex box-input gap-x-4">
-              <label for="start">Inicio</label>
-              <div class="flex flex-col flex-1">
-                <input
-                  formControlName="start"
-                  type="date"
+        </div>
+        <div class="flex flex-col gap-y-4 w-72 bg-lilaMuyClaro p-4">
+          <div class="flex box-input gap-x-4">
+            <label for="start">Inicio</label>
+            <div class="flex flex-col flex-1">
+              <input
+                formControlName="start"
+                type="date"
                 [ngClass]="{
                   'is-invalid':
                     submitted && formMacroevent.get('start')?.invalid
                 }"
-                  />
-                  @if (submitted && formMacroevent.get('start')?.invalid) {
-                    <div
-                      class="is-invalid-text"
-                      >
-                      Campo requerido
-                    </div>
-                  }
-                </div>
-              </div>
-              <div class="flex box-input gap-x-4">
-                <label for="end">Fin</label>
-                <div class="flex flex-col flex-1">
-                  <input
-                    formControlName="end"
-                    type="date"
+              />
+              @if (submitted && formMacroevent.get('start')?.invalid) {
+              <div class="is-invalid-text">Campo requerido</div>
+              }
+            </div>
+          </div>
+          <div class="flex box-input gap-x-4">
+            <label for="end">Fin</label>
+            <div class="flex flex-col flex-1">
+              <input
+                formControlName="end"
+                type="date"
                 [ngClass]="{
                   'is-invalid': submitted && (formMacroevent.get('end')?.invalid || formMacroevent.errors?.['invalidDateRange'])
                 }"
-                    />
+              />
 
-                    <!-- Mensaje de CAMPO REQUERIDO -->
-                    @if (
-                      submitted && formMacroevent.get('end')?.hasError('required')
-                      ) {
-                      <div
-                        class="is-invalid-text"
-                        >
-                        Campo requerido.
-                      </div>
-                    }
+              <!-- Mensaje de CAMPO REQUERIDO -->
+              @if ( submitted && formMacroevent.get('end')?.hasError('required')
+              ) {
+              <div class="is-invalid-text">Campo requerido.</div>
+              }
 
-                    <!-- Mensaje de FECHA INCORRECTA -->
-                    @if (submitted && formMacroevent.errors?.['invalidDateRange']) {
-                      <div
-                        class="is-invalid-text"
-                        >
-                        Fecha fin no puede ser anterior a fecha inicio.
-                      </div>
-                    }
-                  </div>
-                </div>
+              <!-- Mensaje de FECHA INCORRECTA -->
+              @if (submitted && formMacroevent.errors?.['invalidDateRange']) {
+              <div class="is-invalid-text">
+                Fecha fin no puede ser anterior a fecha inicio.
               </div>
+              }
             </div>
-            <div class="flex gap-x-4">
-              <div class="flex-col gap-y-4 w-3/4 h-48">
-                <div class="box-input gap-x-4">
-                  <label for="description">Descripción</label>
-                  <textarea
-                    formControlName="description"
-                    rows="6"
-                    class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-200 text-sm"
-                    placeholder="Escribe aquí la descripción del macroevento..."
-                  ></textarea>
-                </div>
-              </div>
-              <div class="box-input gap-y-2 w-72">
-                <app-image-control
+          </div>
+        </div>
+      </div>
+      <div class="flex gap-x-4">
+        <div class="flex-col gap-y-4 w-3/4 h-48">
+          <div class="box-input gap-x-4">
+            <label for="description">Descripción</label>
+            <quill-editor
+              formControlName="description"
+              [modules]="quillModules"
+              placeholder="Escribe aquí la descripción del macroevento..."
+              class="rounded-md border border-gray-300 bg-white p-3 text-sm focus:outline-none focus:ring focus:ring-blue-200"
+            />
+          </div>
+        </div>
+        <div class="box-input gap-y-2 w-72">
+          <app-image-control
             [previewImg]="
               formMacroevent.get('img')?.value
                 ? formMacroevent.get('img')?.value!
                 : null
             "
-                  [entityId]="itemId"
-                  [type]="typeList"
-                  (imgSelected)="onImageSelected($event)"
-                  [imageWidthValue]="'full'"
-                ></app-image-control>
-              </div>
-            </div>
-            @if (errorSession) {
-              <div>Hay algún campo incorrecto</div>
-            }
-            <div class="flex justify-center">
-              <button class="bg-black p-4 text-white" type="submit">
-                {{ buttonAction }}
-              </button>
-            </div>
-          </div>
-        </form>
+            [entityId]="itemId"
+            [type]="typeList"
+            (imgSelected)="onImageSelected($event)"
+            [imageWidthValue]="'full'"
+          ></app-image-control>
+        </div>
       </div>
+      @if (errorSession) {
+      <div>Hay algún campo incorrecto</div>
+      }
+      <div class="flex justify-center">
+        <button class="bg-black p-4 text-white" type="submit">
+          {{ buttonAction }}
+        </button>
+      </div>
+    </div>
+  </form>
+</div>

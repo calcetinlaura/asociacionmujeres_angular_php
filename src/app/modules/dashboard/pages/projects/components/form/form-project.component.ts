@@ -18,6 +18,7 @@ import {
 } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 
+import { QuillModule } from 'ngx-quill';
 import { filter, Observable, tap } from 'rxjs';
 import { ProjectsFacade } from 'src/app/application/projects.facade';
 import { ProjectModel } from 'src/app/core/interfaces/project.interface';
@@ -30,16 +31,17 @@ import { dateRangeValidator } from 'src/app/shared/utils/validators.utils';
 import { ButtonIconComponent } from '../../../../../../shared/components/buttons/button-icon/button-icon.component';
 
 @Component({
-    selector: 'app-form-project',
-    imports: [
-        CommonModule,
-        ReactiveFormsModule,
-        MatCardModule,
-        ImageControlComponent,
-        ButtonIconComponent,
-    ],
-    templateUrl: './form-project.component.html',
-    styleUrls: ['../../../../components/form/form.component.css']
+  selector: 'app-form-project',
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    MatCardModule,
+    ImageControlComponent,
+    ButtonIconComponent,
+    QuillModule,
+  ],
+  templateUrl: './form-project.component.html',
+  styleUrls: ['../../../../components/form/form.component.css'],
 })
 export class FormProjectComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
@@ -81,7 +83,18 @@ export class FormProjectComponent implements OnInit {
   years: number[] = [];
   subsidies: SubsidyModelFullData[] = [];
   currentYear = this.generalService.currentYear;
-
+  quillModules = {
+    toolbar: [
+      [{ header: [1, 2, false] }],
+      ['bold', 'italic', 'underline'],
+      ['image', 'code-block'],
+      [{ color: [] }, { background: [] }],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      [{ align: [] }],
+      ['link', 'clean'],
+      [{ indent: '-1' }, { indent: '+1' }],
+    ],
+  };
   ngOnInit(): void {
     this.years = this.generalService.loadYears(this.currentYear, 2018);
 
@@ -182,7 +195,12 @@ export class FormProjectComponent implements OnInit {
     }
 
     const rawValues = { ...this.formProject.getRawValue() } as any;
-
+    if (rawValues.description) {
+      rawValues.description = rawValues.description.replace(/&nbsp;/g, ' ');
+    }
+    if (rawValues.observations) {
+      rawValues.observations = rawValues.observations.replace(/&nbsp;/g, ' ');
+    }
     const formData = this.generalService.createFormData(
       rawValues,
       {

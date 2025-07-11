@@ -5,19 +5,19 @@
   ></app-filters>
   <!-- Spinner Loading -->
   @if (isLoading) {
-    <app-spinner-loading />
+  <app-spinner-loading />
+  } @else { @if(showCalendar && selectedFilter){
+  <app-calendar
+    [events]="filteredEvents"
+    [filterYear]="selectedFilter"
+  ></app-calendar
+  >} @if (areThereResults) {
+  <app-section-generic
+    [type]="typeList.Events"
+    [data]="filteredEvents"
+    [total]="number"
+  />
   } @else {
-    @if (areThereResults) {
-      <app-section-generic
-        [type]="typeList.Events"
-        [data]="filteredEvents"
-        [total]="number"
-        />
-    } @else {
-      <app-no-results [text]="'eventos' | lowercase"
-        />
-    }
-  }
-  <!-- Sección cards -->
-  <!-- Sección no hay resultados -->
+  <app-no-results [text]="'eventos' | lowercase" />
+  } }
 </div>

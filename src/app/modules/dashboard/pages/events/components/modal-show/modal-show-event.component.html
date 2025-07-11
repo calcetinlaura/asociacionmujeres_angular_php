@@ -1,130 +1,91 @@
 <div class="flex flex-col justify-between">
   <div>
-    @if (item.macroeventData && item.macroeventData?.title) {
-      <p class="macro">
-        {{ item.macroeventData.title }}
-      </p>
+    @if (item.macroeventData && item.macroeventData.title) {
+    <p class="macro">
+      {{ item.macroeventData.title }}
+    </p>
     }
     <app-text-title [text]="item.title" />
     @if (item.placeData?.name) {
-      <app-text-subtitle
-        [text]="item.placeData?.name + ' | ' + item.town"
-        />
-    }
-
-    @if (item.salaData?.name) {
-      <p class="text-xs text-gray-500 pl-2">
-        {{ item.salaData?.name }} - {{ item.salaData?.location }}
-      </p>
+    <app-text-subtitle [text]="item.placeData?.name + ' | ' + item.town" />
+    } @if (item.salaData?.name) {
+    <p class="text-xs text-gray-500 pl-2">
+      {{ item.salaData?.name }} - {{ item.salaData?.location }}
+    </p>
     }
     <div class="flex flex-col sm:flex-row gap-4 my-4">
       @if (datesEquals) {
-        <ng-container class="lowercase">
-          @if (item.start) {
-            <app-text-background
-              [text]="item.start | date : 'EEEE dd MMMM yyyy'"
-            ></app-text-background>
-          }
-        </ng-container>
-      } @else {
-        @if (item.start && item.end) {
-          <app-text-background
-          [text]="
-            (item.start | date : 'EEEE dd MMMM') +
-            ' - ' +
-            (item.end | date : 'EEEE dd MMMM yyyy')
-          "
-          ></app-text-background>
+      <ng-container class="lowercase">
+        @if (item.start) {
+        <app-text-background
+          [text]="item.start | date : 'EEEE dd MMMM yyyy'"
+        ></app-text-background>
         }
-      }
-      @if (item.time !== '') {
-        <app-text-border
-          [text]="item.time?.slice(0, 5) + ' h'"
-          >
-        </app-text-border>
+      </ng-container>
+      } @else { @if (item.start && item.end) {
+      <app-text-background
+        [text]="
+          (item.start | date : 'EEEE dd MMMM') +
+          ' - ' +
+          (item.end | date : 'EEEE dd MMMM yyyy')
+        "
+      ></app-text-background>
+      } } @if (item.time !== '') {
+      <app-text-border [text]="item.time?.slice(0, 5) + ' h'">
+      </app-text-border>
       }
     </div>
     <div class="mb-6">
       @if (item.organizer && item.organizer.length > 0) {
-        <app-text-background
-          [text]="'Organiza'"
-        ></app-text-background>
-      }
-      @for (organizer of item.organizer; track organizer) {
-        <p
-          class="text-sm text-gray-700 pl-6 pt-2"
-          >
-          - {{ organizer.name }}
-        </p>
+      <app-text-background [text]="'Organiza'"></app-text-background>
+      } @for (organizer of item.organizer; track organizer) {
+      <p class="text-sm text-gray-700 pl-6 pt-2">- {{ organizer.name }}</p>
       }
     </div>
     <div class="mb-6">
       @if (item.collaborator && item.collaborator.length > 0) {
-        <app-text-background
-          [text]="'Colabora'"
-        ></app-text-background>
-      }
-      @for (colab of item.collaborator; track colab) {
-        <p
-          class="text-sm text-gray-700 pl-6 pt-2"
-          >
-          - {{ colab.name }}
-        </p>
+      <app-text-background [text]="'Colabora'"></app-text-background>
+      } @for (colab of item.collaborator; track colab) {
+      <p class="text-sm text-gray-700 pl-6 pt-2">- {{ colab.name }}</p>
       }
     </div>
     <div class="mb-6">
       @if (item.sponsor && item.sponsor.length > 0) {
-        <app-text-background
-          [text]="'Patrocina'"
-        ></app-text-background>
-      }
-
-      @for (sponsor of item.sponsor; track sponsor) {
-        <p
-          class="text-sm text-gray-700 pl-6 pt-2"
-          >
-          - {{ sponsor.name }}
-        </p>
+      <app-text-background [text]="'Patrocina'"></app-text-background>
+      } @for (sponsor of item.sponsor; track sponsor) {
+      <p class="text-sm text-gray-700 pl-6 pt-2">- {{ sponsor.name }}</p>
       }
     </div>
     <!-- <p class="body-subtitle">Aforo - {{ item.capacity }}</p> -->
     <app-text-editor [text]="item.description"></app-text-editor>
     <div class="my-4">
       @if (item.price) {
-        <app-text-border [text]="item.price"></app-text-border>
+      <app-text-border [text]="item.price"></app-text-border>
       }
     </div>
     @if (item.placeData && item.placeData.lat && item.placeData.lon) {
-      <app-map
-        [lat]="item.placeData.lat"
-        [lon]="item.placeData.lon"
-      ></app-map>
+    <app-map [lat]="item.placeData.lat" [lon]="item.placeData.lon"></app-map>
     }
   </div>
   <div>
     @if (item.inscription === true) {
-      <p class="body-inscription">
-        * Se requiere inscripción previa en el email
-        asociacionmujerescallosa&#64;gmail.com
-      </p>
-    }
-    @if (item.status === enumStatusEnum.CANCELADO) {
-      <app-text-background
-        [text]="'Evento ' + item.status"
-        [colorBack]="'#de7a71'"
-      ></app-text-background>
-    }
-    @if (item.status === enumStatusEnum.AGOTADO) {
-      <app-text-background
-        [text]="'Inscripciones ' + item.status"
-        [colorBack]="'#de7a71'"
-        [colorText]="'white'"
-      ></app-text-background>
-    }
-    @if (item.status_reason) {
-      <app-text-editor
-        [text]="item.status_reason"
-      ></app-text-editor>
+    <p class="body-inscription">
+      * Se requiere inscripción previa en el email
+      asociacionmujerescallosa&#64;gmail.com
+    </p>
+    } @if (item.status === enumStatusEnum.CANCELADO) {
+    <app-text-background
+      [text]="'Evento ' + item.status"
+      [colorBack]="'#de7a71'"
+    ></app-text-background>
+    } @if (item.status === enumStatusEnum.AGOTADO) {
+    <app-text-background
+      [text]="'Inscripciones ' + item.status"
+      [colorBack]="'#de7a71'"
+      [colorText]="'white'"
+    ></app-text-background>
+    } @if (item.status_reason) {
+    <app-text-editor [text]="item.status_reason"></app-text-editor>
     }
   </div>
 </div>

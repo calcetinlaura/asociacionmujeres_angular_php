@@ -17,6 +17,7 @@ import {
 import { MatCardModule } from '@angular/material/card';
 
 import townsData from 'data/towns.json';
+import { QuillModule } from 'ngx-quill';
 import { filter, tap } from 'rxjs';
 import { AgentsFacade } from 'src/app/application/agents.facade';
 import {
@@ -27,15 +28,16 @@ import { TypeList } from 'src/app/core/models/general.model';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { ImageControlComponent } from '../../../../components/image-control/image-control.component';
 @Component({
-    selector: 'app-form-agent',
-    imports: [
-        CommonModule,
-        ReactiveFormsModule,
-        ImageControlComponent,
-        MatCardModule,
-    ],
-    templateUrl: './form-agent.component.html',
-    styleUrls: ['../../../../components/form/form.component.css']
+  selector: 'app-form-agent',
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    ImageControlComponent,
+    MatCardModule,
+    QuillModule,
+  ],
+  templateUrl: './form-agent.component.html',
+  styleUrls: ['../../../../components/form/form.component.css'],
 })
 export class FormAgentComponent {
   private agentsFacade = inject(AgentsFacade);
@@ -75,7 +77,18 @@ export class FormAgentComponent {
     towns: { label: string; code: string }[];
   }[] = [];
   municipios: { label: string; code: string }[] = [];
-
+  quillModules = {
+    toolbar: [
+      [{ header: [1, 2, false] }],
+      ['bold', 'italic', 'underline'],
+      ['image', 'code-block'],
+      [{ color: [] }, { background: [] }],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      [{ align: [] }],
+      ['link', 'clean'],
+      [{ indent: '-1' }, { indent: '+1' }],
+    ],
+  };
   ngOnInit(): void {
     this.provincias = townsData
       .flatMap((region) => region.provinces)
@@ -130,7 +143,9 @@ export class FormAgentComponent {
     }
 
     const rawValues = { ...this.formAgent.getRawValue() } as any;
-
+    if (rawValues.description) {
+      rawValues.description = rawValues.description.replace(/&nbsp;/g, ' ');
+    }
     const formData = this.generalService.createFormData(
       rawValues,
       {

@@ -15,6 +15,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
+import { QuillModule } from 'ngx-quill';
 
 import { filter, tap } from 'rxjs';
 import { BooksFacade } from 'src/app/application/books.facade';
@@ -27,15 +28,16 @@ import { ImageControlComponent } from 'src/app/modules/dashboard/components/imag
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
-    selector: 'app-form-book',
-    imports: [
-        CommonModule,
-        ReactiveFormsModule,
-        MatCardModule,
-        ImageControlComponent,
-    ],
-    templateUrl: './form-book.component.html',
-    styleUrls: ['../../../../components/form/form.component.css']
+  selector: 'app-form-book',
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    MatCardModule,
+    ImageControlComponent,
+    QuillModule,
+  ],
+  templateUrl: './form-book.component.html',
+  styleUrls: ['../../../../components/form/form.component.css'],
 })
 export class FormBookComponent {
   private booksFacade = inject(BooksFacade);
@@ -72,7 +74,18 @@ export class FormBookComponent {
   typeList = TypeList.Books;
 
   currentYear = this.generalService.currentYear;
-
+  quillModules = {
+    toolbar: [
+      [{ header: [1, 2, false] }],
+      ['bold', 'italic', 'underline'],
+      ['image', 'code-block'],
+      [{ color: [] }, { background: [] }],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      [{ align: [] }],
+      ['link', 'clean'],
+      [{ indent: '-1' }, { indent: '+1' }],
+    ],
+  };
   ngOnInit(): void {
     this.years = this.generalService.loadYears(this.currentYear, 2018);
 
@@ -121,7 +134,9 @@ export class FormBookComponent {
     }
 
     const rawValues = { ...this.formBook.getRawValue() } as any;
-
+    if (rawValues.description) {
+      rawValues.description = rawValues.description.replace(/&nbsp;/g, ' ');
+    }
     const formData = this.generalService.createFormData(
       rawValues,
       {

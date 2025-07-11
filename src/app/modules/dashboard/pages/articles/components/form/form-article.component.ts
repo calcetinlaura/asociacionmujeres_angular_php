@@ -15,6 +15,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
+import { QuillModule } from 'ngx-quill';
 
 import { filter, tap } from 'rxjs';
 import { ArticlesFacade } from 'src/app/application/articles.facade';
@@ -24,15 +25,16 @@ import { ImageControlComponent } from 'src/app/modules/dashboard/components/imag
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
-    selector: 'app-form-article',
-    imports: [
-        CommonModule,
-        ReactiveFormsModule,
-        MatCardModule,
-        ImageControlComponent,
-    ],
-    templateUrl: './form-article.component.html',
-    styleUrls: ['../../../../components/form/form.component.css']
+  selector: 'app-form-article',
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    MatCardModule,
+    ImageControlComponent,
+    QuillModule,
+  ],
+  templateUrl: './form-article.component.html',
+  styleUrls: ['../../../../components/form/form.component.css'],
 })
 export class FormArticleComponent {
   private articlesFacade = inject(ArticlesFacade);
@@ -59,7 +61,18 @@ export class FormArticleComponent {
   titleForm = 'Registrar artículo';
   buttonAction = 'Guardar';
   typeList = TypeList.Articles;
-
+  quillModules = {
+    toolbar: [
+      [{ header: [1, 2, false] }],
+      ['bold', 'italic', 'underline'],
+      ['image', 'code-block'],
+      [{ color: [] }, { background: [] }],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      [{ align: [] }],
+      ['link', 'clean'],
+      [{ indent: '-1' }, { indent: '+1' }],
+    ],
+  };
   ngOnInit(): void {
     if (this.itemId) {
       this.articlesFacade.loadArticleById(this.itemId);
@@ -104,7 +117,9 @@ export class FormArticleComponent {
     }
 
     const rawValues = { ...this.formArticle.getRawValue() } as any;
-
+    if (rawValues.description) {
+      rawValues.description = rawValues.description.replace(/&nbsp;/g, ' ');
+    }
     const formData = this.generalService.createFormData(
       rawValues,
       {

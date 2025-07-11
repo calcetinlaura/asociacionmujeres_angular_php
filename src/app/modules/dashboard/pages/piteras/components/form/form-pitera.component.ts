@@ -8,6 +8,7 @@ import {
 } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 
+import { QuillModule } from 'ngx-quill';
 import { filter, tap } from 'rxjs';
 import { PiterasFacade } from 'src/app/application/piteras.facade';
 import { PiteraModel } from 'src/app/core/interfaces/pitera.interface';
@@ -17,16 +18,17 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { PdfControlComponent } from '../../../../components/pdf-control/pdf-control.component';
 
 @Component({
-    selector: 'app-form-pitera',
-    imports: [
-        CommonModule,
-        ReactiveFormsModule,
-        MatCardModule,
-        ImageControlComponent,
-        PdfControlComponent,
-    ],
-    templateUrl: './form-pitera.component.html',
-    styleUrls: ['../../../../components/form/form.component.css']
+  selector: 'app-form-pitera',
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    MatCardModule,
+    ImageControlComponent,
+    PdfControlComponent,
+    QuillModule,
+  ],
+  templateUrl: './form-pitera.component.html',
+  styleUrls: ['../../../../components/form/form.component.css'],
 })
 export class FormPiteraComponent {
   private piterasFacade = inject(PiterasFacade);
@@ -59,7 +61,18 @@ export class FormPiteraComponent {
     ]),
   });
   currentYear = this.generalService.currentYear;
-
+  quillModules = {
+    toolbar: [
+      [{ header: [1, 2, false] }],
+      ['bold', 'italic', 'underline'],
+      ['image', 'code-block'],
+      [{ color: [] }, { background: [] }],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      [{ align: [] }],
+      ['link', 'clean'],
+      [{ indent: '-1' }, { indent: '+1' }],
+    ],
+  };
   ngOnInit(): void {
     this.years = this.generalService.loadYears(this.currentYear, 1995);
 
@@ -117,7 +130,9 @@ export class FormPiteraComponent {
     }
 
     const rawValues = { ...this.formPitera.getRawValue() } as any;
-
+    if (rawValues.theme) {
+      rawValues.theme = rawValues.theme.replace(/&nbsp;/g, ' ');
+    }
     const pdf = rawValues.url;
     const selectedPdf = pdf instanceof File ? pdf : null;
     if (typeof pdf === 'string') {

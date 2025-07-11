@@ -24,6 +24,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatRadioModule } from '@angular/material/radio';
+import { QuillModule } from 'ngx-quill';
 
 import { filter, tap } from 'rxjs';
 import { SubsidiesFacade } from 'src/app/application/subsidies.facade';
@@ -37,20 +38,21 @@ import { SubsidiesService } from 'src/app/core/services/subsidies.services';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
-    selector: 'app-form-subsidy',
-    imports: [
-        CommonModule,
-        ReactiveFormsModule,
-        MatCheckboxModule,
-        MatRadioModule,
-        MatAutocompleteModule,
-        MatFormFieldModule,
-        MatInputModule,
-        MatCardModule,
-    ],
-    templateUrl: './form-subsidy.component.html',
-    styleUrls: ['../../../../components/form/form.component.css'],
-    providers: [SubsidiesService]
+  selector: 'app-form-subsidy',
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    MatCheckboxModule,
+    MatRadioModule,
+    MatAutocompleteModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatCardModule,
+    QuillModule,
+  ],
+  templateUrl: './form-subsidy.component.html',
+  styleUrls: ['../../../../components/form/form.component.css'],
+  providers: [SubsidiesService],
 })
 export class FormSubsidyComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
@@ -94,7 +96,18 @@ export class FormSubsidyComponent implements OnInit {
   searchInput = new FormControl();
 
   currentYear = this.generalService.currentYear;
-
+  quillModules = {
+    toolbar: [
+      [{ header: [1, 2, false] }],
+      ['bold', 'italic', 'underline'],
+      ['image', 'code-block'],
+      [{ color: [] }, { background: [] }],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      [{ align: [] }],
+      ['link', 'clean'],
+      [{ indent: '-1' }, { indent: '+1' }],
+    ],
+  };
   ngOnInit(): void {
     this.years = this.generalService.loadYears(this.currentYear, 2018);
 
@@ -133,34 +146,37 @@ export class FormSubsidyComponent implements OnInit {
     }, 100);
   }
 
-  onSendFormInvoice(): void {
+  onSendFormSubsidy(): void {
     if (this.formSubsidy.invalid) {
       this.submitted = true;
       console.log('Formulario inválido', this.formSubsidy.errors);
       return;
     }
 
+    const rawValues = { ...this.formSubsidy.getRawValue() } as any;
+
+    if (typeof rawValues.observations === 'string') {
+      rawValues.observations = rawValues.observations.replace(/&nbsp;/g, ' ');
+    }
+
     const formValue: SubsidyModel & { _method?: string; id?: number } = {
-      name: this.formSubsidy.get('name')?.value || '',
-      year: this.formSubsidy.get('year')?.value || 0,
-      date_justification:
-        this.formSubsidy.get('date_justification')?.value || null,
-      date_presentation:
-        this.formSubsidy.get('date_presentation')?.value || null,
-      start: this.formSubsidy.get('start')?.value || null,
-      end: this.formSubsidy.get('end')?.value || null,
-      url_presentation: this.formSubsidy.get('url_presentation')?.value || '',
-      url_justification: this.formSubsidy.get('url_justification')?.value || '',
-      amount_requested: this.formSubsidy.get('amount_requested')?.value || null,
-      amount_granted: this.formSubsidy.get('amount_granted')?.value || null,
-      amount_justified: this.formSubsidy.get('amount_justified')?.value || null,
-      amount_association:
-        this.formSubsidy.get('amount_association')?.value || null,
-      observations: this.formSubsidy.get('observations')?.value || '',
+      name: rawValues.name || '',
+      year: rawValues.year || 0,
+      date_justification: rawValues.date_justification || null,
+      date_presentation: rawValues.date_presentation || null,
+      start: rawValues.start || null,
+      end: rawValues.end || null,
+      url_presentation: rawValues.url_presentation || '',
+      url_justification: rawValues.url_justification || '',
+      amount_requested: rawValues.amount_requested || null,
+      amount_granted: rawValues.amount_granted || null,
+      amount_justified: rawValues.amount_justified || null,
+      amount_association: rawValues.amount_association || null,
+      observations: rawValues.observations || '',
     };
 
     if (this.itemId) {
-      formValue._method = 'PATCH'; // Indica que es edición
+      formValue._method = 'PATCH';
       formValue.id = this.itemId;
     }
 

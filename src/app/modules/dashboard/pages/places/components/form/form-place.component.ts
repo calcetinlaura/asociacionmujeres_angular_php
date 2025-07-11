@@ -10,6 +10,7 @@ import {
 import { MatCardModule } from '@angular/material/card';
 
 import townsData from 'data/towns.json';
+import { QuillModule } from 'ngx-quill';
 import { filter, tap } from 'rxjs';
 import { PlacesFacade } from 'src/app/application/places.facade';
 import {
@@ -23,16 +24,17 @@ import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-ic
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
-    selector: 'app-form-place',
-    imports: [
-        CommonModule,
-        ReactiveFormsModule,
-        MatCardModule,
-        ImageControlComponent,
-        ButtonIconComponent,
-    ],
-    templateUrl: './form-place.component.html',
-    styleUrls: ['../../../../components/form/form.component.css']
+  selector: 'app-form-place',
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    MatCardModule,
+    ImageControlComponent,
+    ButtonIconComponent,
+    QuillModule,
+  ],
+  templateUrl: './form-place.component.html',
+  styleUrls: ['../../../../components/form/form.component.css'],
 })
 export class FormPlaceComponent {
   private placesFacade = inject(PlacesFacade);
@@ -79,7 +81,18 @@ export class FormPlaceComponent {
   }[] = [];
 
   municipios: { label: string; code: string }[] = [];
-
+  quillModules = {
+    toolbar: [
+      [{ header: [1, 2, false] }],
+      ['bold', 'italic', 'underline'],
+      ['image', 'code-block'],
+      [{ color: [] }, { background: [] }],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      [{ align: [] }],
+      ['link', 'clean'],
+      [{ indent: '-1' }, { indent: '+1' }],
+    ],
+  };
   ngOnInit(): void {
     this.provincias = townsData
       .flatMap((region) => region.provinces)
@@ -191,6 +204,9 @@ export class FormPlaceComponent {
     }
 
     const formValue = this.formPlace.value;
+    if (formValue.description) {
+      formValue.description = formValue.description.replace(/&nbsp;/g, ' ');
+    }
     const formData = new FormData();
 
     formData.append('name', formValue.name ?? '');

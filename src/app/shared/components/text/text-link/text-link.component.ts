@@ -1,11 +1,11 @@
-
 import { Component, Input } from '@angular/core';
 
 @Component({
-    selector: 'app-text-link',
-    templateUrl: './text-link.component.html',
-    styleUrls: ['./text-link.component.css'],
-    imports: []
+  standalone: true,
+  selector: 'app-text-link',
+  templateUrl: './text-link.component.html',
+  styleUrls: ['./text-link.component.css'],
+  imports: [],
 })
 export class TextLinkComponent {
   @Input() text: string = '';

@@ -1,9 +1,9 @@
 @if (item) {
 <div class="flex flex-1 flex-col justify-between my-8 mx-20 card-subsidy">
   <h1 class="text-center mb-4">
-    Subvención @if (item?.name) {
+    Subvención @if (item.name) {
     <span>{{ item.name | i18nSelect : nameSubsidy }}</span>
-    } @if (item?.year) {
+    } @if (item.year) {
     <span> {{ item.year }}</span>
     }
     <app-icon-action

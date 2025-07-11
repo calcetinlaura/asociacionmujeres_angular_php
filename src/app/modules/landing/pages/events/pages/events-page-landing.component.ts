@@ -12,18 +12,20 @@ import { NoResultsComponent } from 'src/app/modules/landing/components/no-result
 import { SectionGenericComponent } from 'src/app/modules/landing/components/section-generic/section-generic.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
+import { CalendarComponent } from '../components/calendar/calendar.component';
 
 @Component({
-    selector: 'app-events-page-landing',
-    imports: [
-        CommonModule,
-        FiltersComponent,
-        SectionGenericComponent,
-        NoResultsComponent,
-        SpinnerLoadingComponent,
-    ],
-    templateUrl: './events-page-landing.component.html',
-    styleUrl: './events-page-landing.component.css'
+  selector: 'app-events-page-landing',
+  imports: [
+    CommonModule,
+    FiltersComponent,
+    SectionGenericComponent,
+    NoResultsComponent,
+    SpinnerLoadingComponent,
+    CalendarComponent,
+  ],
+  templateUrl: './events-page-landing.component.html',
+  styleUrl: './events-page-landing.component.css',
 })
 export class EventsPageLandingComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
@@ -37,7 +39,8 @@ export class EventsPageLandingComponent implements OnInit {
   filters: Filter[] = [];
 
   isLoading = true;
-  areThereResults: boolean = false;
+  areThereResults = false;
+  showCalendar = false;
   typeList = TypeList;
   number: number = 0;
   selectedFilter: number | null = null;
@@ -116,5 +119,6 @@ export class EventsPageLandingComponent implements OnInit {
     this.number = this.eventsService.countEvents(allEvents);
     this.areThereResults = this.eventsService.hasResults(allEvents);
     this.isLoading = false;
+    this.showCalendar = true;
   }
 }

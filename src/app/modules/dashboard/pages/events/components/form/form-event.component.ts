@@ -37,6 +37,7 @@ import { ButtonIconComponent } from '../../../../../../shared/components/buttons
 import { AgentArrayControlComponent } from '../array-agents/array-agents.component';
 // Importaciones...
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { QuillModule } from 'ngx-quill';
 import { PlacesFacade } from 'src/app/application/places.facade';
 import { MacroeventModel } from 'src/app/core/interfaces/macroevent.interface';
 import { SalaModel } from 'src/app/core/interfaces/place.interface'; // Asegúrate de tener este modelo
@@ -44,19 +45,19 @@ import { ProjectModel } from 'src/app/core/interfaces/project.interface';
 import { MacroeventsService } from 'src/app/core/services/macroevents.services';
 import { ProjectsService } from 'src/app/core/services/projects.services';
 import { dateRangeValidator } from 'src/app/shared/utils/validators.utils';
-
 @Component({
-    selector: 'app-form-event',
-    imports: [
-        CommonModule,
-        ReactiveFormsModule,
-        MatCardModule,
-        ImageControlComponent,
-        ButtonIconComponent,
-        AgentArrayControlComponent,
-    ],
-    templateUrl: './form-event.component.html',
-    styleUrls: ['../../../../components/form/form.component.css']
+  selector: 'app-form-event',
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    MatCardModule,
+    ImageControlComponent,
+    ButtonIconComponent,
+    AgentArrayControlComponent,
+    QuillModule,
+  ],
+  templateUrl: './form-event.component.html',
+  styleUrls: ['../../../../components/form/form.component.css'],
 })
 export class FormEventComponent implements OnInit, OnChanges {
   private readonly destroyRef = inject(DestroyRef);
@@ -130,7 +131,18 @@ export class FormEventComponent implements OnInit, OnChanges {
   agents: AgentModel[] = [];
   selectedPlaceId: number | null = null;
   isCreate = false;
-
+  quillModules = {
+    toolbar: [
+      [{ header: [1, 2, false] }],
+      ['bold', 'italic', 'underline'],
+      ['image', 'code-block'],
+      [{ color: [] }, { background: [] }],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      [{ align: [] }],
+      ['link', 'clean'],
+      [{ indent: '-1' }, { indent: '+1' }],
+    ],
+  };
   ngOnInit(): void {
     this.provincias = townsData
       .flatMap((region) => region.provinces)
@@ -466,7 +478,12 @@ export class FormEventComponent implements OnInit, OnChanges {
     }
 
     const value = this.formEvent.value;
-
+    if (value.description) {
+      value.description = value.description.replace(/&nbsp;/g, ' ');
+    }
+    if (value.status_reason) {
+      value.status_reason = value.status_reason.replace(/&nbsp;/g, ' ');
+    }
     const organizerIds = this.organizers
       .getRawValue()
       .map((a: any) => a.agent_id);

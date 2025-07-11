@@ -6,7 +6,7 @@
     (ngSubmit)="onSendFormPitera()"
     [formGroup]="formPitera"
     class="login-auth-form"
-    >
+  >
     <div class="flex flex-col gap-y-4">
       <div class="flex justify-between gap-x-4 bg-lilaMuyClaro p-4">
         <!-- Título -->
@@ -19,83 +19,80 @@
               [ngClass]="{
                 'is-invalid': submitted && formPitera.get('title')?.invalid
               }"
-              />
-              @if (submitted && formPitera.get('title')?.invalid) {
-                <div
-                  class="is-invalid-text"
-                  >
-                  Campo requerido
-                </div>
-              }
-            </div>
+            />
+            @if (submitted && formPitera.get('title')?.invalid) {
+            <div class="is-invalid-text">Campo requerido</div>
+            }
           </div>
+        </div>
 
-          <!-- Año -->
-          <div class="box-input gap-x-4">
-            <label for="year">Año publicación</label>
-            <div class="flex flex-col flex-1">
-              <select
-                formControlName="year"
+        <!-- Año -->
+        <div class="box-input gap-x-4">
+          <label for="year">Año publicación</label>
+          <div class="flex flex-col flex-1">
+            <select
+              formControlName="year"
               [ngClass]="{
                 'is-invalid': submitted && formPitera.get('year')?.invalid
               }"
-                >
-                @for (year of years; track year) {
-                  <option [value]="year">
-                    {{ year }}
-                  </option>
-                }
-              </select>
-              @if (submitted && formPitera.get('year')?.invalid) {
-                <div
-                  class="is-invalid-text"
-                  >
-                  Selecciona un año
-                </div>
+            >
+              @for (year of years; track year) {
+              <option [value]="year">
+                {{ year }}
+              </option>
               }
-            </div>
+            </select>
+            @if (submitted && formPitera.get('year')?.invalid) {
+            <div class="is-invalid-text">Selecciona un año</div>
+            }
           </div>
         </div>
-        <!-- Descripción -->
-        <div class="box-input gap-x-4 px-4">
-          <label for="theme">Temática</label>
-          <textarea formControlName="theme" rows="3"></textarea>
-        </div>
-        <div class="flex justify-start gap-x-8 h-[377px] bg-lilaClaro">
-          <div class="w-[200px]">
-            <app-image-control
+      </div>
+      <!-- Descripción -->
+      <div class="box-input gap-x-4 px-4">
+        <label for="theme">Temática</label>
+        <quill-editor
+          formControlName="theme"
+          [modules]="quillModules"
+          placeholder="Escribe aquí la descripción del macroevento..."
+          class="rounded-md border border-gray-300 bg-white p-3 text-sm focus:outline-none focus:ring focus:ring-blue-200"
+        />
+      </div>
+      <div class="flex justify-start gap-x-8 h-[377px] bg-lilaClaro">
+        <div class="w-[200px]">
+          <app-image-control
             [previewImg]="
               formPitera.get('img')?.value
                 ? formPitera.get('img')?.value!
                 : null
             "
-              [entityId]="itemId"
-              [type]="typeList"
-              (imgSelected)="onImageSelected($event)"
-            ></app-image-control>
-          </div>
-          <div class="w-[220px]">
-            <app-pdf-control
-              [type]="typeList"
-              [previewPdf]="getPiteraPdfPreview()"
-              (pdfSelected)="formPitera.patchValue({ url: $event })"
-              [pdfViewerHeight]="383"
-            ></app-pdf-control>
-          </div>
+            [entityId]="itemId"
+            [type]="typeList"
+            (imgSelected)="onImageSelected($event)"
+          ></app-image-control>
         </div>
-        <!-- Mensaje de error global -->
-        @if (errorSession) {
-          <div class="is-invalid-text">
-            Ocurrió un error con el envío del formulario
-          </div>
-        }
-
-        <!-- Botón de envío -->
-        <div class="flex justify-center">
-          <button class="bg-black p-4 text-white" type="submit">
-            {{ buttonAction }}
-          </button>
+        <div class="w-[220px]">
+          <app-pdf-control
+            [type]="typeList"
+            [previewPdf]="getPiteraPdfPreview()"
+            (pdfSelected)="formPitera.patchValue({ url: $event })"
+            [pdfViewerHeight]="383"
+          ></app-pdf-control>
         </div>
       </div>
-    </form>
-  </div>
+      <!-- Mensaje de error global -->
+      @if (errorSession) {
+      <div class="is-invalid-text">
+        Ocurrió un error con el envío del formulario
+      </div>
+      }
+
+      <!-- Botón de envío -->
+      <div class="flex justify-center">
+        <button class="bg-black p-4 text-white" type="submit">
+          {{ buttonAction }}
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
