@@ -24,7 +24,14 @@ export interface EventModel {
   isPast?: boolean;
   macroevent_id?: number;
   project_id?: number;
+  ticket_prices: TicketPriceModel[];
 }
+
+export interface TicketPriceModel {
+  type: string;
+  price: number;
+}
+
 export enum EnumStatusEvent {
   EJECUCION = 'EJECUCION',
   CANCELADO = 'CANCELADO',

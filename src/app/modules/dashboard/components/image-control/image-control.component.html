@@ -1,7 +1,7 @@
 <div
   class="control-container"
   [style.width]="imageWidthValue ? imageWidthValue + 'px' : '100%'"
-  >
+>
   <div class="image-container">
     <img
       [src]="imageSource()"
@@ -9,38 +9,35 @@
       [height]="imageHeight()"
       class="mat-elevation-z5"
       [style.opacity]="uploading() ? 0.5 : 1"
-      />
-    </div>
-    <input
-      #inputField
-      hidden
-      type="file"
-      accept="image/*"
-      (change)="imageSelected($event)"
-      (click)="inputField.value = ''"
-      />
+    />
+  </div>
+  <input
+    #inputField
+    hidden
+    type="file"
+    accept="image/*"
+    (change)="imageSelected($event)"
+    (click)="inputField.value = ''"
+  />
 
-      <button
-        type="button"
-        mat-raised-button
-        (click)="inputField.click()"
-        class="w-full mb-4"
-        >
-        Seleccionar imagen
-      </button>
-      @if (
-        previewUrl &&
-        previewUrl !== placeholder &&
-        previewUrl !== placeholderPartner
-        ) {
-        <button
-          type="button"
-          mat-raised-button
-          color="warn"
-          (click)="removeImage()"
-          class="w-full"
-          >
-          Eliminar imagen
-        </button>
-      }
-    </div>
+  <button
+    type="button"
+    mat-raised-button
+    (click)="inputField.click()"
+    class="w-full mb-4"
+  >
+    Seleccionar imagen
+  </button>
+  @if ( previewUrl && previewUrl !== placeholder && previewUrl !==
+  placeholderPartner ) {
+  <button
+    type="button"
+    mat-raised-button
+    color="warn"
+    (click)="removeImage()"
+    class="w-full"
+  >
+    Eliminar imagen
+  </button>
+  }
+</div>

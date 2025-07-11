@@ -99,6 +99,7 @@ export class FormEventComponent implements OnInit, OnChanges {
       place_id: new FormControl<number | null>(null),
       sala_id: new FormControl<number | null>(null),
       capacity: new FormControl(),
+      ticket_prices: new FormArray<FormGroup>([]),
       price: new FormControl(''),
       img: new FormControl(''),
       status: new FormControl(EnumStatusEvent.EJECUCION),
@@ -257,6 +258,27 @@ export class FormEventComponent implements OnInit, OnChanges {
           },
           { emitEvent: false }
         );
+
+        // 🧩 ✅ AÑADE ESTA PARTE
+        this.ticketPrices.clear();
+        let parsedTicketPrices: any[] = [];
+        try {
+          parsedTicketPrices =
+            typeof event.ticket_prices === 'string'
+              ? JSON.parse(event.ticket_prices)
+              : event.ticket_prices;
+        } catch (e) {
+          console.warn('No se pudo parsear ticket_prices:', e);
+          parsedTicketPrices = [];
+        }
+
+        if (Array.isArray(parsedTicketPrices)) {
+          parsedTicketPrices.forEach((ticket) => {
+            this.ticketPrices.push(
+              this.createTicketPriceForm(ticket.type, ticket.price)
+            );
+          });
+        }
         this.generalService.enableInputControls(this.formEvent, [
           'project_id',
           'macroevent_id',
@@ -468,7 +490,26 @@ export class FormEventComponent implements OnInit, OnChanges {
     this.selectedImageFile = result.file;
     this.imageSrc = result.imageSrc;
   }
+  get ticketPrices(): FormArray {
+    return this.formEvent.get('ticket_prices') as FormArray;
+  }
+  createTicketPriceForm(
+    type: string = '',
+    price: number | null = null
+  ): FormGroup {
+    return new FormGroup({
+      type: new FormControl(type, Validators.required),
+      price: new FormControl(price, [Validators.required, Validators.min(0)]),
+    });
+  }
 
+  addTicketPrice(): void {
+    this.ticketPrices.push(this.createTicketPriceForm());
+  }
+
+  removeTicketPrice(index: number): void {
+    this.ticketPrices.removeAt(index);
+  }
   onSendFormEvent(): void {
     this.submitted = true;
 
