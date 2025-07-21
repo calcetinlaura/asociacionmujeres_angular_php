@@ -3,18 +3,21 @@
     [filters]="filters"
     (filterClicked)="filterSelected($event)"
   ></app-filters>
+
   <!-- Spinner Loading -->
   @if (isLoading) {
-  <app-spinner-loading />
-  } @else { @if(showCalendar && selectedFilter){
+  <div class="mt-24">
+    <app-spinner-loading />
+  </div>
+  } @else { @if (showCalendar && selectedFilter) {
   <app-calendar
-    [events]="filteredEvents"
+    [events]="eventsAll"
     [filterYear]="selectedFilter"
-  ></app-calendar
-  >} @if (areThereResults) {
+  ></app-calendar>
+  } @if (areThereResults) {
   <app-section-generic
     [type]="typeList.Events"
-    [data]="filteredEvents"
+    [data]="nonRepeatedEvents"
     [total]="number"
   />
   } @else {

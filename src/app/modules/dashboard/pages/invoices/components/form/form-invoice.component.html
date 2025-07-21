@@ -15,7 +15,7 @@
           <div class="flex flex-col flex-1">
             <select formControlName="subsidy_id">
               <option [ngValue]="null">En casa subvención</option>
-              @for (subsidy of subsidies; track subsidy) {
+              @for (subsidy of subsidies; track subsidy.id) {
               <option [ngValue]="subsidy.id">
                 {{ subsidy.name }} - {{ subsidy.year }}
               </option>
@@ -36,7 +36,7 @@
           <div class="flex flex-col flex-1">
             <select formControlName="project_id">
               <option [ngValue]="null">En casa proyecto</option>
-              @for (project of projects; track project) {
+              @for (project of projects; track project.id) {
               <option [value]="project.id">
                 {{ project.title }} - {{ project.year }}
               </option>
@@ -131,7 +131,7 @@
               style="z-index: 1200; position: fixed"
               (optionSelected)="onSelectedOption($event)"
             >
-              @for (creditor of creditors; track creditor) {
+              @for (creditor of creditors; track creditor.id) {
               <mat-option
                 [value]="creditor"
                 (onSelectionChange)="creditorSelected(creditor)"
@@ -168,7 +168,7 @@
               formControlName="description"
               [modules]="quillModules"
               placeholder="Escribe aquí la descripción..."
-              class="flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
+              class="ql-container-small flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
             />
             @if (submitted && formInvoice.get('description')?.invalid) {
             <div class="is-invalid-text">Campo requerido</div>

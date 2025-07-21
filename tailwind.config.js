@@ -6,7 +6,10 @@ module.exports = {
     colors: {
       lilaClaro: "#cb8dd952",
       lilaMuyClaro: "#ecd6f152",
+      lilaOscuro: "#704f80",
       lilaText: "#46324b",
+      amarilloClaro: "#f5d7a9",
+      naranjaClaro: "rgb(251 225 217)",
       transparent: "transparent",
       current: "currentColor",
       black: colors.black,

@@ -12,6 +12,7 @@ import {
 } from '@angular/core';
 import {
   FormArray,
+  FormBuilder,
   FormControl,
   FormGroup,
   ReactiveFormsModule,
@@ -24,6 +25,7 @@ import { filter, forkJoin, map, Observable, switchMap, tap } from 'rxjs';
 import { EventsFacade } from 'src/app/application/events.facade';
 import { AgentModel } from 'src/app/core/interfaces/agent.interface';
 import {
+  DayEventModel,
   EnumStatusEvent,
   EventModelFullData,
   statusEvent,
@@ -44,7 +46,13 @@ import { SalaModel } from 'src/app/core/interfaces/place.interface'; // Asegúra
 import { ProjectModel } from 'src/app/core/interfaces/project.interface';
 import { MacroeventsService } from 'src/app/core/services/macroevents.services';
 import { ProjectsService } from 'src/app/core/services/projects.services';
-import { dateRangeValidator } from 'src/app/shared/utils/validators.utils';
+import { ButtonSelectComponent } from 'src/app/shared/components/buttons/button-select/button-select.component';
+import {
+  dateRangeValidator,
+  timeRangeValidator,
+  uniqueStartDatesValidator,
+} from 'src/app/shared/utils/validators.utils';
+import { DateArrayControlComponent } from '../array-dates/array-dates.component';
 @Component({
   selector: 'app-form-event',
   imports: [
@@ -55,6 +63,8 @@ import { dateRangeValidator } from 'src/app/shared/utils/validators.utils';
     ButtonIconComponent,
     AgentArrayControlComponent,
     QuillModule,
+    ButtonSelectComponent,
+    DateArrayControlComponent,
   ],
   templateUrl: './form-event.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],
@@ -67,6 +77,8 @@ export class FormEventComponent implements OnInit, OnChanges {
   private readonly projectsService = inject(ProjectsService);
   private readonly agentsService = inject(AgentsService);
   private readonly generalService = inject(GeneralService);
+  private readonly fb = inject(FormBuilder);
+
   @Input() item!: EventModelFullData | null;
   @Input() itemId!: number;
   @Output() sendFormEvent = new EventEmitter<{
@@ -86,25 +98,41 @@ export class FormEventComponent implements OnInit, OnChanges {
   showOrganizers = false;
   showCollaborators = false;
   showSponsors = false;
+  isPeriodicEvent = false;
+  eventTypeMacro: 'event' | 'macro' = 'event';
+  eventTypeProject: 'event' | 'project' = 'event';
+  eventTypePeriod: 'event' | 'single' | 'periodic' = 'event';
+  eventTypeUbication: 'place' | 'online' | 'pending' = 'pending';
+  eventTypeAccess: 'free' | 'tickets' = 'free';
+  eventTypeStatus: 'event' | 'cancel' | 'postpone' | 'sold_out' = 'event';
+  eventTypeInscription: 'unlimited' | 'inscription' = 'unlimited';
 
   formEvent = new FormGroup(
     {
       title: new FormControl('', [Validators.required]),
       start: new FormControl('', [Validators.required]),
-      end: new FormControl('', [Validators.required]),
-      time: new FormControl(''),
+      end: new FormControl(''),
+      time_start: new FormControl(''),
+      time_end: new FormControl(''),
       description: new FormControl('', [Validators.maxLength(2000)]),
+      online_link: new FormControl(''),
       province: new FormControl(''),
       town: new FormControl(''),
       place_id: new FormControl<number | null>(null),
       sala_id: new FormControl<number | null>(null),
       capacity: new FormControl(),
       ticket_prices: new FormArray<FormGroup>([]),
-      price: new FormControl(''),
+      tickets_method: new FormControl(''),
+      periodic: new FormControl(false),
+      periodic_id: new FormControl<number | null>(null),
+      repeated_dates: new FormArray<FormGroup>([], {
+        validators: [uniqueStartDatesValidator],
+      }),
       img: new FormControl(''),
       status: new FormControl(EnumStatusEvent.EJECUCION),
       status_reason: new FormControl(''),
       inscription: new FormControl(false),
+      inscription_method: new FormControl(''),
       organizer: new FormArray([]),
       collaborator: new FormArray([]),
       sponsor: new FormArray([]),
@@ -117,8 +145,9 @@ export class FormEventComponent implements OnInit, OnChanges {
         disabled: true,
       }),
     },
-    { validators: dateRangeValidator }
+    { validators: [dateRangeValidator, timeRangeValidator] }
   );
+
   macroevents: MacroeventModel[] = [];
   projects: ProjectModel[] = [];
   provincias: {
@@ -130,6 +159,8 @@ export class FormEventComponent implements OnInit, OnChanges {
   espacios: PlaceModel[] = [];
   salasDelLugar: SalaModel[] = []; // ← NUEVO
   agents: AgentModel[] = [];
+  dates: DayEventModel[] = [];
+  wasPeriodic = false;
   selectedPlaceId: number | null = null;
   isCreate = false;
   quillModules = {
@@ -222,6 +253,8 @@ export class FormEventComponent implements OnInit, OnChanges {
   }
 
   private populateFormWithEvent(event: EventModelFullData): Observable<void> {
+    this.wasPeriodic = false;
+    this.submitted = false;
     this.organizers.clear();
     this.collaborators.clear();
     this.sponsors.clear();
@@ -229,7 +262,6 @@ export class FormEventComponent implements OnInit, OnChanges {
     const year = this.generalService.getYearFromDate(event.start);
 
     return this.loadYearlyData(year).pipe(
-      // switchMap(() => this.loadMacroeventosByYear(year)),
       tap(() => {
         const province = this.provincias.find(
           (p) => p.label === event.province
@@ -241,26 +273,38 @@ export class FormEventComponent implements OnInit, OnChanges {
             title: event.title,
             start: event.start,
             end: event.end,
-            time: event.time,
+            time_start: event.time_start,
+            time_end: event.time_end,
             description: event.description,
             province: event.province,
             town: event.town,
             place_id: event.place_id,
             sala_id: event.sala_id,
             capacity: event.capacity ?? null,
-            price: event.price,
             img: event.img,
             status: event.status,
             status_reason: event.status_reason,
             inscription: event.inscription ?? false,
+            inscription_method: event.inscription_method,
+            tickets_method: event.tickets_method,
             macroevent_id: event.macroevent_id,
             project_id: event.project_id,
+            online_link: event.online_link ?? '',
+            periodic_id: event.periodic_id ?? null,
           },
           { emitEvent: false }
         );
 
-        // 🧩 ✅ AÑADE ESTA PARTE
-        this.ticketPrices.clear();
+        this.eventTypePeriod = event.periodic ? 'periodic' : 'single';
+
+        if (event.place_id) {
+          this.eventTypeUbication = 'place';
+        } else if (event.online_link) {
+          this.eventTypeUbication = 'online';
+        } else {
+          this.eventTypeUbication = 'pending';
+        }
+
         let parsedTicketPrices: any[] = [];
         try {
           parsedTicketPrices =
@@ -272,17 +316,88 @@ export class FormEventComponent implements OnInit, OnChanges {
           parsedTicketPrices = [];
         }
 
-        if (Array.isArray(parsedTicketPrices)) {
-          parsedTicketPrices.forEach((ticket) => {
-            this.ticketPrices.push(
-              this.createTicketPriceForm(ticket.type, ticket.price)
-            );
-          });
+        if (
+          Array.isArray(parsedTicketPrices) &&
+          parsedTicketPrices.length > 0
+        ) {
+          this.eventTypeAccess = 'tickets';
+        } else {
+          this.eventTypeAccess = 'free';
         }
+
+        this.ticketPrices.clear();
+        parsedTicketPrices.forEach((ticket) => {
+          this.ticketPrices.push(
+            this.createTicketPriceForm(ticket.type, ticket.price)
+          );
+        });
+
+        this.eventTypeInscription = event.inscription
+          ? 'inscription'
+          : 'unlimited';
+
+        switch (event.status) {
+          case EnumStatusEvent.EJECUCION:
+            this.eventTypeStatus = 'event';
+            break;
+          case EnumStatusEvent.CANCELADO:
+            this.eventTypeStatus = 'cancel';
+            break;
+          case EnumStatusEvent.APLAZADO:
+            this.eventTypeStatus = 'postpone';
+            break;
+          case EnumStatusEvent.AGOTADO:
+            this.eventTypeStatus = 'sold_out';
+            break;
+          default:
+            this.eventTypeStatus = 'event';
+            break;
+        }
+
         this.generalService.enableInputControls(this.formEvent, [
           'project_id',
           'macroevent_id',
         ]);
+        if (event.periodic_id) {
+          this.isPeriodicEvent = true;
+          this.eventTypePeriod = 'periodic';
+          this.wasPeriodic = true;
+
+          // Limpia los repeated_dates previos:
+          this.repeatedDates.clear();
+
+          // Aquí deberías cargar **TODOS los eventos con ese periodic_id**
+          this.eventsFacade
+            .loadEventsByPeriodicId(event.periodic_id)
+            .pipe(
+              takeUntilDestroyed(this.destroyRef),
+              tap((events) => {
+                this.repeatedDates.clear();
+
+                // Aquí ordenamos antes de cargar en el FormArray:
+                const sortedEvents = [...events].sort((a, b) =>
+                  a.start.localeCompare(b.start)
+                );
+
+                sortedEvents.forEach((e) => {
+                  this.repeatedDates.push(
+                    this.fb.group({
+                      id: [e.id],
+                      start: [e.start, Validators.required],
+                      end: [e.end],
+                      time_start: [e.time_start],
+                      time_end: [e.time_end],
+                    })
+                  );
+                });
+              })
+            )
+            .subscribe();
+        } else {
+          this.isPeriodicEvent = false;
+          this.eventTypePeriod = 'single';
+        }
+
         if (event.place_id) {
           this.placesFacade
             .loadSalasForPlace(event.place_id, event.sala_id)
@@ -300,10 +415,6 @@ export class FormEventComponent implements OnInit, OnChanges {
         }
 
         if (event.organizer && event.organizer.length > 0) {
-          console.log(
-            'Organizadores desde el backend:',
-            event.organizer.length
-          );
           this.showOrganizers = true;
           event.organizer.forEach((agent) =>
             this.organizers.push(this.createAgentForm(agent.id))
@@ -311,10 +422,6 @@ export class FormEventComponent implements OnInit, OnChanges {
         }
 
         if (event.collaborator && event.collaborator.length > 0) {
-          console.log(
-            'Colaboradores desde el backend:',
-            event.collaborator.length
-          );
           this.showCollaborators = true;
           event.collaborator.forEach((agent) =>
             this.collaborators.push(this.createAgentForm(agent.id))
@@ -322,7 +429,6 @@ export class FormEventComponent implements OnInit, OnChanges {
         }
 
         if (event.sponsor && event.sponsor.length > 0) {
-          console.log('Patrocinadores desde el backend:', event.sponsor.length);
           this.showSponsors = true;
           event.sponsor.forEach((agent) =>
             this.sponsors.push(this.createAgentForm(agent.id))
@@ -339,9 +445,10 @@ export class FormEventComponent implements OnInit, OnChanges {
           this.selectedImageFile = null;
         }
       }),
-      map(() => void 0) // 👈 Aquí está la conversión a Observable<void>
+      map(() => void 0)
     );
   }
+
   private loadYearlyData(year: number): Observable<void> {
     // 🔁 Siempre cargar, aunque sea el mismo año
     return forkJoin([
@@ -429,7 +536,11 @@ export class FormEventComponent implements OnInit, OnChanges {
       });
     }
   }
-
+  get isTypePeriodSelected(): boolean {
+    return (
+      this.eventTypePeriod === 'single' || this.eventTypePeriod === 'periodic'
+    );
+  }
   get organizers(): FormArray {
     return this.formEvent.get('organizer') as FormArray;
   }
@@ -490,6 +601,160 @@ export class FormEventComponent implements OnInit, OnChanges {
     this.selectedImageFile = result.file;
     this.imageSrc = result.imageSrc;
   }
+
+  setEventTypePeriod(type: 'event' | 'single' | 'periodic'): void {
+    this.eventTypePeriod = type;
+
+    const startControl = this.formEvent.get('start');
+
+    if (type === 'single') {
+      this.isPeriodicEvent = false;
+      if (this.wasPeriodic) {
+        this.formEvent.patchValue({
+          start: null,
+          end: null,
+          time_start: null,
+          time_end: null,
+        });
+      }
+      this.repeatedDates.clear();
+      startControl?.setValidators([Validators.required]);
+      startControl?.updateValueAndValidity();
+    } else if (type === 'periodic') {
+      this.isPeriodicEvent = true;
+      this.wasPeriodic = true;
+      this.formEvent.patchValue({
+        start: null,
+        end: null,
+        time_start: null,
+        time_end: null,
+      });
+
+      startControl?.clearValidators();
+      startControl?.updateValueAndValidity();
+
+      if (this.repeatedDates.length === 0) {
+        this.addRepeatedDate();
+      }
+    }
+  }
+
+  setEventTypeUbication(type: 'place' | 'online' | 'pending'): void {
+    this.eventTypeUbication = type;
+    const onlineLinkControl = this.formEvent.get('online_link');
+
+    if (type === 'online') {
+      // Limpiar campos de ubicación si selecciona online
+      this.formEvent.patchValue({
+        province: '',
+        town: '',
+        place_id: null,
+        sala_id: null,
+        capacity: null,
+      });
+
+      // Aplicar validadores dinámicos a online_link
+      onlineLinkControl?.setValidators([
+        Validators.required,
+        Validators.pattern(/^https?:\/\/.+$/),
+      ]);
+    } else {
+      // Quitar validadores a online_link y limpiar valor
+      onlineLinkControl?.clearValidators();
+      onlineLinkControl?.setValue('');
+    }
+    if (type === 'place') {
+    }
+    onlineLinkControl?.updateValueAndValidity();
+  }
+  setEventTypeMacro(type: 'event' | 'macro'): void {
+    this.eventTypeMacro = type;
+
+    if (type === 'macro') {
+      this.formEvent.patchValue({ macroevent_id: null });
+    } else {
+      this.formEvent.patchValue({ macroevent_id: null });
+    }
+  }
+  setEventTypeProject(type: 'event' | 'project'): void {
+    this.eventTypeProject = type;
+
+    if (type === 'project') {
+      this.formEvent.patchValue({ project_id: null });
+    } else {
+      this.formEvent.patchValue({ project_id: null });
+    }
+  }
+  setEventTypeAccess(type: 'free' | 'tickets'): void {
+    this.eventTypeAccess = type;
+
+    if (type === 'tickets') {
+      // Asegúrate de que haya al menos una fila:
+      if (this.ticketPrices.length === 0) {
+        this.addTicketPrice();
+      }
+      this.formEvent.patchValue({ inscription_method: '' });
+    } else {
+      // Opcional: si quieres limpiar cuando cambie a otro tipo
+      this.ticketPrices.clear();
+      this.formEvent.patchValue({ tickets_method: '' });
+    }
+  }
+  setEventTypeInscription(type: 'unlimited' | 'inscription'): void {
+    this.eventTypeInscription = type;
+
+    if (type === 'inscription') {
+      this.formEvent.patchValue({ inscription: true });
+    } else {
+      this.formEvent.patchValue({ inscription: false });
+    }
+  }
+
+  setEventTypeStatus(type: 'event' | 'cancel' | 'postpone' | 'sold_out'): void {
+    this.eventTypeStatus = type;
+
+    const statusMap = {
+      event: EnumStatusEvent.EJECUCION,
+      cancel: EnumStatusEvent.CANCELADO,
+      postpone: EnumStatusEvent.APLAZADO,
+      sold_out: EnumStatusEvent.AGOTADO,
+    };
+
+    const statusReasonRequired = type !== 'event';
+    const newStatus = statusMap[type];
+
+    this.formEvent.patchValue({
+      status: newStatus,
+      status_reason: '',
+    });
+
+    const statusReasonControl = this.formEvent.get('status_reason');
+    if (statusReasonRequired) {
+      statusReasonControl?.enable();
+    } else {
+      statusReasonControl?.disable();
+    }
+  }
+
+  get repeatedDates(): FormArray {
+    return this.formEvent.get('repeated_dates') as FormArray;
+  }
+
+  addRepeatedDate(): void {
+    this.repeatedDates.push(
+      this.fb.group({
+        start: ['', Validators.required],
+        end: [''],
+        time_start: [''],
+        time_end: [''],
+      })
+    );
+  }
+
+  removeRepeatedDate(index: number): void {
+    this.repeatedDates.removeAt(index);
+  }
+
   get ticketPrices(): FormArray {
     return this.formEvent.get('ticket_prices') as FormArray;
   }
@@ -510,21 +775,82 @@ export class FormEventComponent implements OnInit, OnChanges {
   removeTicketPrice(index: number): void {
     this.ticketPrices.removeAt(index);
   }
-  onSendFormEvent(): void {
-    this.submitted = true;
+  generateUUID(): string {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(
+      /[xy]/g,
+      function (c) {
+        const r = (Math.random() * 16) | 0;
+        const v = c === 'x' ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+      }
+    );
+  }
+  trackByLabel(index: number, item: any) {
+    return item.label;
+  }
 
+  trackById(index: number, item: any) {
+    return item.id;
+  }
+
+  trackBySalaId(index: number, item: any) {
+    return item.sala_id;
+  }
+  onSendFormEvent(): void {
     if (this.formEvent.invalid) {
-      console.log('Formulario inválido', this.formEvent.errors);
+      this.submitted = true;
+      if (this.isPeriodicEvent) {
+        const hasAtLeastOneStart = this.repeatedDates.controls.some(
+          (fg) => !!fg.get('start')?.value
+        );
+
+        if (!hasAtLeastOneStart) {
+          console.warn(
+            'Debe añadir al menos una fecha válida en repeated_dates'
+          );
+          return;
+        }
+      }
+      const formGroupErrors = this.formEvent.errors;
+      if (formGroupErrors) {
+        console.log('Errores a nivel de formulario:', formGroupErrors);
+      }
+
+      Object.keys(this.formEvent.controls).forEach((key) => {
+        const control = this.formEvent.get(key);
+        if (control && control.invalid) {
+          console.log(
+            `Campo '${key}' inválido. Errors:`,
+            control.errors,
+            `Valor actual:`,
+            control.value
+          );
+        }
+      });
+
       return;
     }
 
-    const value = this.formEvent.value;
-    if (value.description) {
-      value.description = value.description.replace(/&nbsp;/g, ' ');
+    const formValues = this.formEvent.getRawValue();
+
+    // ✅ Ajuste de fecha fin si está vacío:
+    if (!formValues.end && formValues.start) {
+      formValues.end = formValues.start;
     }
-    if (value.status_reason) {
-      value.status_reason = value.status_reason.replace(/&nbsp;/g, ' ');
+
+    // ✅ Ajuste de time_end si está vacío o es "00:00:00"
+    const isTimeEndEmpty =
+      !formValues.time_end ||
+      formValues.time_end === '00:00' ||
+      formValues.time_end === '00:00:00';
+    if (isTimeEndEmpty) {
+      if (formValues.time_start) {
+        formValues.time_end = this.calcTimeEnd(formValues.time_start);
+      } else {
+        formValues.time_end = '';
+      }
     }
+
     const organizerIds = this.organizers
       .getRawValue()
       .map((a: any) => a.agent_id);
@@ -533,25 +859,95 @@ export class FormEventComponent implements OnInit, OnChanges {
       .map((a: any) => a.agent_id);
     const sponsorIds = this.sponsors.getRawValue().map((a: any) => a.agent_id);
 
-    const dataToSend = {
-      ...value,
-      macroevent_id: value.macroevent_id ? Number(value.macroevent_id) : null,
-      project_id: value.project_id ? Number(value.project_id) : null,
-      place_id: value.place_id ? Number(value.place_id) : null,
-      sala_id: value.sala_id ? Number(value.sala_id) : null,
-      organizer: JSON.stringify(organizerIds),
-      collaborator: JSON.stringify(collaboratorIds),
-      sponsor: JSON.stringify(sponsorIds),
+    const baseEventData = {
+      ...formValues,
+      macroevent_id: formValues.macroevent_id
+        ? Number(formValues.macroevent_id)
+        : null,
+      project_id: formValues.project_id ? Number(formValues.project_id) : null,
+      organizer: organizerIds,
+      collaborator: collaboratorIds,
+      sponsor: sponsorIds,
+      ticket_prices: this.ticketPrices.getRawValue(),
     };
 
-    const formData = this.generalService.createFormData(
-      dataToSend,
-      {
-        img: this.selectedImageFile,
-      },
-      this.itemId
-    );
+    if (this.isPeriodicEvent && formValues.repeated_dates.length > 0) {
+      const groupId = formValues.periodic_id ?? this.generateUUID();
 
-    this.sendFormEvent.emit({ itemId: this.itemId, formData: formData });
+      formValues.repeated_dates.forEach((rd: any) => {
+        if (!rd.start) {
+          // Ignora este registro vacío
+          return;
+        }
+
+        const end = rd.end || rd.start;
+        const timeStart = rd.time_start;
+        let timeEnd = rd.time_end;
+        if (!timeStart) {
+          console.log('ℹ️  No hay time_start, dejar time_end vacío');
+          timeEnd = '';
+        } else if (!timeEnd || timeEnd === '00:00' || timeEnd === '00:00:00') {
+          console.log(
+            `ℹ️  time_end vacío o 00:00, calculando time_end desde time_start ${timeStart}`
+          );
+          timeEnd = this.calcTimeEnd(timeStart);
+        } else {
+          console.log('✅ time_end ya tiene valor correcto:', timeEnd);
+        }
+
+        const eventId = rd.id ?? 0;
+        const eventData = {
+          ...baseEventData,
+          start: rd.start,
+          end,
+          time_start: rd.time_start,
+          time_end: timeEnd,
+          periodic_id: groupId,
+        };
+
+        const formData = this.generalService.createFormData(
+          eventData,
+          { img: this.selectedImageFile },
+          eventId
+        );
+
+        this.sendFormEvent.emit({
+          itemId: eventId,
+          formData,
+        });
+      });
+    } else if (!this.isPeriodicEvent) {
+      const eventData = { ...baseEventData, group_id: null };
+
+      if (eventData.description) {
+        eventData.description = eventData.description.replace(/&nbsp;/g, ' ');
+      }
+
+      const formData = this.generalService.createFormData(
+        eventData,
+        { img: this.selectedImageFile },
+        this.itemId
+      );
+
+      this.sendFormEvent.emit({
+        itemId: this.itemId,
+        formData,
+      });
+    }
+  }
+
+  // Función auxiliar para sumar 3 horas y normalizar formato HH:mm:ss
+  private calcTimeEnd(timeStart: string): string {
+    const [h, m] = timeStart.split(':');
+    const hours = parseInt(h, 10);
+    const minutes = parseInt(m, 10);
+
+    let newHours = hours + 3;
+    if (newHours >= 24) {
+      newHours -= 24;
+    }
+
+    const pad = (n: number) => (n < 10 ? '0' + n : n);
+    return `${pad(newHours)}:${pad(minutes)}:00`; // Normalizamos a HH:mm:ss
   }
 }

@@ -76,9 +76,7 @@ th.mat-sort-header-sorted {
   background-color: rgb(245, 235, 246);
 }
 .statusColumn > span {
-  background-color: rgba(209, 66, 53, 0.847);
-  color: white;
-  font-size: 11px;
+  font-size: 9px;
 }
 .mat-mdc-row:hover .genderColumn > span {
   background-color: rgb(245, 205, 250);
@@ -120,7 +118,7 @@ th.mat-sort-header-sorted {
 .mat-column-actions {
   text-align: right;
   flex: 0 0 130px !important;
-  width: 130px;
+  width: 135px;
 }
 
 .mat-column-img {

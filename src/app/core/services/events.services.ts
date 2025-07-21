@@ -22,9 +22,17 @@ export class EventsService {
       .get(this.apiUrl)
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
-  getEventsByYear(year: number): Observable<any> {
+  getEventsByYear(
+    year: number,
+    periodic: 'all' | 'latest' = 'all'
+  ): Observable<any> {
     return this.http
-      .get(this.apiUrl, { params: { year: year } })
+      .get(this.apiUrl, {
+        params: {
+          year: year.toString(),
+          periodic: periodic,
+        },
+      })
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
   getEventsByMacroevent(macroeventId: number): Observable<any> {
@@ -44,6 +52,14 @@ export class EventsService {
   getEventById(id: number): Observable<any> {
     return this.http
       .get(`${this.apiUrl}/${id}`)
+      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
+  }
+
+  getEventsByPeriodicId(periodicId: number): Observable<any> {
+    return this.http
+      .get(this.apiUrl, {
+        params: { periodic_id: periodicId },
+      })
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 

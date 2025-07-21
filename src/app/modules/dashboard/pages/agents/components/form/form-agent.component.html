@@ -90,19 +90,19 @@
           }
         </select>
       </div>
-      <div class="flex gap-4">
+      <div class="flex gap-x-4 px-4">
         <!-- Descripción -->
-        <div class="box-input gap-x-4 px-4 w-3/4">
+        <div class="box-input gap-x-4 flex-1">
           <label for="observations">Descripción</label>
           <quill-editor
-            formControlName="description"
+            formControlName="observations"
             [modules]="quillModules"
             placeholder="Escribe aquí la descripción..."
             class="flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
           />
         </div>
         <!-- Portada (Imagen) -->
-        <div class="box-input gap-x-4 px-4 w-72">
+        <div class="w-72">
           <app-image-control
             [previewImg]="
               formAgent.get('img')?.value ? formAgent.get('img')?.value! : null
@@ -111,6 +111,7 @@
             [type]="typeList"
             (imgSelected)="onImageSelected($event)"
             [imageWidthValue]="'full'"
+            class="w-full"
           ></app-image-control>
         </div>
       </div>

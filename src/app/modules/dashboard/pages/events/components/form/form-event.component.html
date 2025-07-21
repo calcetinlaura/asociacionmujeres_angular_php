@@ -8,9 +8,354 @@
     class="login-auth-form"
   >
     <div class="flex flex-col gap-y-4">
-      <div class="flex justify-between gap-x-4">
-        <div class="flex flex-col w-3/4 gap-y-4">
-          <div class="bg-lilaMuyClaro p-4 flex flex-col gap-y-4">
+      <div class="flex justify-between gap-x-8 h-[450px]">
+        <div class="flex flex-col flex-1 gap-y-4 bg-lilaMuyClaro p-4">
+          <div class="box-input gap-x-4">
+            <label for="title">Título</label>
+            <div class="flex flex-col flex-1">
+              <input
+                formControlName="title"
+                type="text"
+                [ngClass]="{
+                  'is-invalid': submitted && formEvent.get('title')?.invalid
+                }"
+              />
+              @if (submitted && formEvent.get('title')?.invalid) {
+              <div class="is-invalid-text">Campo requerido</div>
+              }
+            </div>
+          </div>
+
+          <div class="box-input gap-x-4 flex-1">
+            <label for="description">Descripción</label>
+            <quill-editor
+              formControlName="description"
+              [modules]="quillModules"
+              placeholder="Escribe aquí la descripción..."
+              class="ql-container-large text-sm focus:outline-none focus:ring focus:ring-blue-200 bg-white w-full"
+            />
+          </div>
+        </div>
+        <div class="w-72">
+          <app-image-control
+            [previewImg]="
+              formEvent.get('img')?.value ? formEvent.get('img')?.value! : null
+            "
+            [entityId]="itemId"
+            [type]="typeList"
+            (imgSelected)="onImageSelected($event)"
+            [imageWidthValue]="'full'"
+            class="w-full"
+          ></app-image-control>
+        </div>
+      </div>
+      <!-- FECHA -->
+      <div
+        class="border-2 pt-2 px-4 pb-6 mb-6"
+        [ngClass]="{
+          'border-[red]': submitted && !isTypePeriodSelected
+        }"
+      >
+        <h2 class="font-bold text-lilaText mt-4 uppercase">Tipo de evento</h2>
+        <div class="flex justify-center gap-x-4 py-2">
+          <app-button-select
+            [buttonText]="'Evento individual'"
+            subText="Para eventos que ocurren una vez"
+            [active]="eventTypePeriod === 'single'"
+            (addClicked)="setEventTypePeriod('single')"
+            iconClass="uil-calender"
+          >
+          </app-button-select>
+
+          <app-button-select
+            [buttonText]="'Evento recurrente'"
+            subText="Se repite en varias ocasiones"
+            [active]="eventTypePeriod === 'periodic'"
+            (addClicked)="setEventTypePeriod('periodic')"
+            iconClass="uil-calendar-alt"
+          >
+          </app-button-select>
+        </div>
+        @if(submitted && !isTypePeriodSelected){
+        <div class="flex justify-center gap-x-4 py-2">
+          <p class="text-[red] text-[11px]">Debes seleccionar una opción</p>
+        </div>
+        }
+        <!-- Pase único -->
+        <div *ngIf="eventTypePeriod === 'single'" class="pt-4 px-4">
+          <p class="text-[15px] text-center mb-10 text-lilaText px-4">
+            Si el evento es de un solo día, no es necesario indicar una fecha de
+            fin. Además, si no se especifica la hora de finalización, el sistema
+            asignará automáticamente una duración de 3 horas a partir de la hora
+            de inicio.
+          </p>
+          <div class="flex gap-x-4">
+            <div class="flex flex-1 gap-x-4 items-center">
+              <label
+                class="py-2 px-4 rounded-xl text-sm text-lilaText bg-lilaMuyClaro w-auto"
+                for="start"
+                >Fecha Inicio</label
+              >
+              <div class="flex-1">
+                <input
+                  formControlName="start"
+                  type="date"
+                  class="w-full p-1 border rounded"
+                  [ngClass]="{
+                    'is-invalid': submitted && formEvent.get('start')?.invalid
+                  }"
+                />
+                <div
+                  *ngIf="submitted && formEvent.get('start')?.invalid"
+                  class="is-invalid-text"
+                >
+                  Campo requerido
+                </div>
+              </div>
+            </div>
+
+            <div class="flex flex-1 gap-x-4 items-center">
+              <label
+                class="py-2 px-4 rounded-xl text-sm text-lilaText bg-lilaMuyClaro"
+                for="end"
+                >Fecha Fin</label
+              >
+              <div class="flex-1">
+                <input
+                  formControlName="end"
+                  type="date"
+                  class="w-full p-1 border rounded"
+                  [ngClass]="{
+                    'is-invalid': submitted && formEvent.get('end')?.invalid
+                  }"
+                />
+                <div
+                  *ngIf="submitted && formEvent.get('end')?.invalid"
+                  class="is-invalid-text"
+                >
+                  Campo requerido
+                </div>
+                <!-- Error si el rango de fechas es incorrecto -->
+                <div
+                  *ngIf="submitted && formEvent.errors?.['invalidDateRange']"
+                >
+                  <p class="text-[red] text-[11px]">
+                    La fecha fin no puede ser anterior a la fecha de inicio
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex gap-x-4 items-center">
+              <label
+                class="py-2 px-4 rounded-xl text-sm text-lilaText bg-lilaMuyClaro"
+                for="time_start"
+                >Hora Inicio</label
+              >
+              <div class="flex-1">
+                <input
+                  formControlName="time_start"
+                  type="time"
+                  class="w-full p-1 border rounded"
+                  placeholder="00:00"
+                />
+              </div>
+            </div>
+            <div class="flex flex-col">
+              <div class="flex flex-1 gap-x-4 items-center">
+                <label
+                  class="py-2 px-4 rounded-xl text-sm text-lilaText bg-lilaMuyClaro"
+                  for="time_end"
+                  >Hora Fin</label
+                >
+                <div class="flex-1 flex flex-col">
+                  <input
+                    formControlName="time_end"
+                    type="time"
+                    class="w-full p-1 border rounded"
+                    placeholder="00:00"
+                    [ngClass]="{
+                    'is-invalid': submitted && formEvent.errors?.['invalidTimeRange']
+                  }"
+                  />
+                </div>
+              </div>
+              <div *ngIf="submitted && formEvent.errors?.['invalidTimeRange']">
+                <p class="text-[red] text-[11px]">
+                  La hora fin no puede ser anterior a inicio
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Evento periódico -->
+        <div
+          *ngIf="eventTypePeriod === 'periodic'"
+          formArrayName="repeated_dates"
+          class="flex flex-col gap-y-4 pt-8 px-4"
+        >
+          <app-date-array-control
+            [formArray]="repeatedDates"
+            [submitted]="submitted"
+            (remove)="removeRepeatedDate($event)"
+          ></app-date-array-control>
+          <div class="flex justify-center">
+            <app-button-icon
+              [buttonText]="'Añadir fecha'"
+              [iconClass]="'uil-plus'"
+              (addClicked)="addRepeatedDate()"
+            ></app-button-icon>
+          </div>
+        </div>
+      </div>
+
+      <!-- UBICACION -->
+      <div class="border-2 pt-2 px-4 pb-6 mb-6">
+        <h2 class="font-bold text-lilaText mt-4 uppercase">Ubicación</h2>
+
+        <div class="flex justify-center gap-x-4 py-2">
+          <app-button-select
+            [buttonText]="'Lugar'"
+            [active]="eventTypeUbication === 'place'"
+            (addClicked)="setEventTypeUbication('place')"
+            iconClass="uil-map-marker"
+          />
+          <app-button-select
+            [buttonText]="'Evento online'"
+            [active]="eventTypeUbication === 'online'"
+            (addClicked)="setEventTypeUbication('online')"
+            iconClass="uil-presentation-play"
+          />
+          <app-button-select
+            [buttonText]="'Por anunciar'"
+            [active]="eventTypeUbication === 'pending'"
+            (addClicked)="setEventTypeUbication('pending')"
+            iconClass="uil-megaphone"
+          />
+        </div>
+        <!-- 🔹 Todo el bloque de ubicación sólo si NO es online -->
+        @if (eventTypeUbication === 'place') {
+        <div class="flex flex-col px-4 pt-6 gap-y-4">
+          <!-- Provincia -->
+          <div class="box-input gap-x-4 flex flex-1">
+            <label for="province">Provincia</label>
+            <select
+              formControlName="province"
+              (change)="onProvinceChange()"
+              [ngClass]="{
+                'is-invalid': submitted && formEvent.get('province')?.invalid
+              }"
+            >
+              <option value="">Seleccione una provincia</option>
+              @for (prov of provincias; track trackByLabel($index, prov)) {
+              <option [value]="prov.label">{{ prov.label }}</option>
+              }
+            </select>
+            @if (submitted && formEvent.get('province')?.invalid) {
+            <div class="is-invalid-text">Campo requerido</div>
+            }
+          </div>
+
+          <!-- Municipio -->
+          <div class="box-input flex flex-1 gap-x-4">
+            <label for="town">Municipio</label>
+            <select
+              formControlName="town"
+              [ngClass]="{
+                'is-invalid': submitted && formEvent.get('town')?.invalid
+              }"
+              (change)="onTownChange()"
+            >
+              <option value="">Seleccione un municipio</option>
+              @for (mun of municipios; track trackByLabel($index, mun)) {
+              <option [value]="mun.label">{{ mun.label }}</option>
+              }
+            </select>
+            @if (submitted && formEvent.get('town')?.invalid) {
+            <div class="is-invalid-text">Campo requerido</div>
+            }
+          </div>
+
+          <!-- Espacio -->
+          <div class="box-input gap-x-4">
+            <label for="place">Espacio</label>
+            <select formControlName="place_id" (change)="onPlaceChange()">
+              <option [ngValue]="null" disabled>Selecciona un espacio</option>
+              @for (place of espacios; track trackById($index, place)) {
+              <option [ngValue]="place.id">{{ place.name }}</option>
+              }
+            </select>
+          </div>
+
+          <!-- Sala -->
+          @if (salasDelLugar.length > 0) {
+          <div class="box-input gap-x-4">
+            <label for="sala">Sala</label>
+            <select formControlName="sala_id" (change)="onSalaChange()">
+              <option [ngValue]="null" disabled>Selecciona una sala</option>
+              @for (sala of salasDelLugar; track trackBySalaId ($index, sala)) {
+              <option [ngValue]="sala.sala_id">
+                {{ sala.name }} - {{ sala.location }}
+              </option>
+              }
+            </select>
+          </div>
+          }
+
+          <!-- Aforo -->
+          <div class="box-input gap-y-2 gap-x-4">
+            <label for="capacity">Aforo</label>
+            <input formControlName="capacity" type="number" min="0" />
+          </div>
+        </div>
+        }
+        <!-- 🔹 Campo para enlace online si es online -->
+        @if (eventTypeUbication === 'online') {
+        <div class="box-input gap-x-4 flex flex-1 items-center px-4 pt-6">
+          <label for="onlineLink">Enlace del evento online</label>
+          <div class="flex flex-col gap-y-2 flex-1">
+            <input
+              id="onlineLink"
+              type="url"
+              placeholder="https://..."
+              formControlName="online_link"
+              [ngClass]="{
+                'is-invalid': submitted && formEvent.get('online_link')?.invalid
+              }"
+              class="w-full"
+            />
+            @if (submitted && formEvent.get('online_link')?.invalid) {
+            <div class="is-invalid-text">Introduce un enlace válido</div>
+            }
+          </div>
+        </div>
+        }
+      </div>
+      <!-- MACRO -->
+      <div class="border-2 pt-2 px-4 pb-6 mb-6">
+        <h2 class="font-bold text-lilaText mt-4 uppercase">Macroevento</h2>
+        <div class="flex justify-center gap-x-4 py-2">
+          <app-button-select
+            [buttonText]="'No está dentro de un macroevento'"
+            subText="Es un evento único"
+            [active]="eventTypeMacro === 'event'"
+            (addClicked)="setEventTypeMacro('event')"
+            iconClass="uil-calendar-alt"
+          /><app-button-select
+            [buttonText]="'Está dentro de un macroevento'"
+            subText="Está dentro de una programación más amplia"
+            [active]="eventTypeMacro === 'macro'"
+            (addClicked)="setEventTypeMacro('macro')"
+            iconClass="uil-calendar-alt"
+          />
+        </div>
+        <!-- macro -->
+        <div *ngIf="eventTypeMacro === 'macro'" class="pt-4 px-4">
+          <p class="text-[15px] text-center mb-10 text-lilaText px-4">
+            Si el macroevento al que pertenece el evento no aparece se debe
+            añadir previamente el mismo desde la sección de macroeventos.
+          </p>
+          <div class="flex gap-x-8">
             <div class="box-input gap-x-4 flex flex-1">
               <label for="province">Macroevento</label>
               <div class="flex flex-col flex-1">
@@ -32,6 +377,33 @@
                 }
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+      <!-- PROYECTO -->
+      <div class="border-2 pt-2 px-4 pb-6 mb-6">
+        <h2 class="font-bold text-lilaText mt-4 uppercase">Proyecto</h2>
+        <div class="flex justify-center gap-x-4 py-2">
+          <app-button-select
+            [buttonText]="'No está dentro de un proyecto'"
+            subText="Es un evento único"
+            [active]="eventTypeProject === 'event'"
+            (addClicked)="setEventTypeProject('event')"
+            iconClass="uil-calendar-alt"
+          /><app-button-select
+            [buttonText]="'Está dentro de un proyecto'"
+            subText="Está dentro de una programación más amplia"
+            [active]="eventTypeProject === 'project'"
+            (addClicked)="setEventTypeProject('project')"
+            iconClass="uil-calendar-alt"
+          />
+        </div>
+        <div *ngIf="eventTypeProject === 'project'" class="pt-4 px-4">
+          <p class="text-[15px] text-center mb-10 text-lilaText px-4">
+            Si el proyecto al que pertenece el evento no aparece se debe añadir
+            previamente el mismo desde la sección de proyectos.
+          </p>
+          <div class="flex gap-x-8">
             <div class="box-input gap-x-4 flex flex-1">
               <label for="province">Proyecto</label>
               <div class="flex flex-col flex-1">
@@ -55,297 +427,217 @@
                 }
               </div>
             </div>
-            <div class="box-input gap-x-4">
-              <label for="email">Título</label>
-              <div class="flex flex-col flex-1">
-                <input
-                  formControlName="title"
-                  type="text"
-                  [ngClass]="{
-                    'is-invalid': submitted && formEvent.get('title')?.invalid
-                  }"
-                />
-                @if (submitted && formEvent.get('title')?.invalid) {
-                <div class="is-invalid-text">Campo requerido</div>
-                }
-              </div>
-            </div>
-          </div>
-
-          <!-- <div class="flex justify-between gap-x-4"> -->
-        </div>
-
-        <!-- Select de Espacio -->
-
-        <div class="flex flex-col gap-y-4 w-72 bg-lilaMuyClaro p-4">
-          <div class="flex gap-x-4 justify-between">
-            <label for="start">Inicio</label>
-            <div class="w-2/3">
-              <input
-                formControlName="start"
-                class="w-full p-1 border border-gray-300 rounded"
-                type="date"
-                [ngClass]="{
-                  'is-invalid': submitted && formEvent.get('start')?.invalid
-                }"
-              />
-              @if (submitted && formEvent.get('start')?.invalid) {
-              <div class="is-invalid-text">Campo requerido</div>
-              }
-            </div>
-          </div>
-          <div class="flex gap-x-4 justify-between">
-            <label for="end">Fin</label>
-            <div class="w-2/3">
-              <input
-                formControlName="end"
-                type="date"
-                class="w-full p-1 border border-gray-300 rounded"
-                [ngClass]="{
-                  'is-invalid': submitted && (formEvent.get('end')?.invalid || formEvent.errors?.['invalidDateRange'])
-                }"
-              />
-
-              <!-- Mensaje de CAMPO REQUERIDO -->
-              @if (submitted && formEvent.get('end')?.hasError('required')) {
-              <div class="is-invalid-text">Campo requerido.</div>
-              }
-
-              <!-- Mensaje de FECHA INCORRECTA -->
-              @if (submitted && formEvent.errors?.['invalidDateRange']) {
-              <div class="is-invalid-text">
-                Fecha fin no puede ser anterior a fecha inicio.
-              </div>
-              }
-            </div>
-          </div>
-          <div class="flex gap-x-4 justify-between">
-            <label for="time">Hora</label>
-            <div class="w-2/3">
-              <input
-                formControlName="time"
-                class="w-full p-1 border border-gray-300 rounded"
-                type="time"
-                placeholder="00:00"
-              />
-            </div>
           </div>
         </div>
       </div>
-
-      <h2 class="font-bold text-lilaText mt-4 uppercase">Espacio</h2>
-      <!-- Provincia -->
-      <div class="box-input gap-x-4 flex flex-1">
-        <label for="province">Provincia</label>
-        <select
-          formControlName="province"
-          (change)="onProvinceChange()"
-          [ngClass]="{
-            'is-invalid': submitted && formEvent.get('province')?.invalid
-          }"
-        >
-          <option value="">Seleccione una provincia</option>
-          @for (prov of provincias; track prov) {
-          <option [value]="prov.label">
-            {{ prov.label }}
-          </option>
-          }
-        </select>
-        @if (submitted && formEvent.get('town')?.invalid) {
-        <div class="is-invalid-text">Campo requerido</div>
+      <!-- ADMISIÓN -->
+      <div class="border-2 pt-2 px-4 pb-6 mb-6">
+        <h2 class="font-bold text-lilaText mt-4 uppercase">Admisión</h2>
+        <div class="flex justify-center gap-x-4 py-2">
+          <app-button-select
+            [buttonText]="'Evento gratuito'"
+            [active]="eventTypeAccess === 'free'"
+            (addClicked)="setEventTypeAccess('free')"
+            iconClass="uil-social-distancing"
+          />
+          <app-button-select
+            [buttonText]="'Evento de pago'"
+            [active]="eventTypeAccess === 'tickets'"
+            (addClicked)="setEventTypeAccess('tickets')"
+            iconClass="uil-ticket"
+          />
+        </div>
+        @if (eventTypeAccess === 'tickets') {
+        <div class="pt-4 px-4">
+          <p class="text-[15px] text-center mb-10 text-lilaText px-4">
+            Si el evento requiere de variedad de entradas, añade las diferentes
+            categorías de público que mejor se adapten a tu evento (adultxs,
+            niñxs, jubiladxs, socixs…) y especifica su precio. Para categorías
+            gratuitas, introduce 0 como precio.
+          </p>
+          <div formArrayName="ticket_prices">
+            <div
+              *ngFor="let group of ticketPrices.controls; let i = index"
+              [formGroupName]="i"
+              class="box-input gap-x-4 pb-4"
+            >
+              <label
+                class="py-2 px-4 rounded-xl text-sm text-lilaText bg-lilaMuyClaro"
+              >
+                Tipo
+              </label>
+              <input
+                formControlName="type"
+                type="text"
+                placeholder="Adultx, pubertx..."
+              />
+              <label
+                class="py-2 px-4 rounded-xl text-sm text-lilaText bg-lilaMuyClaro"
+              >
+                Precio
+              </label>
+              <input formControlName="price" type="number" placeholder="€" />
+              <button
+                type="button"
+                (click)="removeTicketPrice(i)"
+                class="btn-danger"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+          <div class="mb-4 flex gap-x-4 justify-start">
+            <app-button-icon
+              [buttonText]="'Añadir precio'"
+              [iconClass]="'uil-plus'"
+              (addClicked)="addTicketPrice()"
+            ></app-button-icon>
+          </div>
+        </div>
         }
       </div>
-      <!-- Municipio -->
-      <div class="box-input flex flex-1">
-        <label for="town">Municipio</label>
-        <select
-          formControlName="town"
-          [ngClass]="{
-            'is-invalid': submitted && formEvent.get('town')?.invalid
-          }"
-          (change)="onTownChange()"
-        >
-          <option value="">Seleccione un municipio</option>
-          @for (mun of municipios; track mun) {
-          <option [value]="mun.label">
-            {{ mun.label }}
-          </option>
-          }
-        </select>
-        @if (submitted && formEvent.get('town')?.invalid) {
-        <div class="is-invalid-text">Campo requerido</div>
+      @if (eventTypeAccess === 'free') {
+      <div class="border-2 pt-2 px-4 pb-6 mb-6">
+        <h2 class="font-bold text-lilaText mt-4 uppercase">Inscripción</h2>
+        <div class="flex justify-center gap-x-4 py-2">
+          <app-button-select
+            [buttonText]="'Acceso ilimitado'"
+            [active]="eventTypeInscription === 'unlimited'"
+            (addClicked)="setEventTypeInscription('unlimited')"
+            iconClass="uil-border-clear"
+          /><app-button-select
+            [buttonText]="'Requiere inscripción previa'"
+            [active]="eventTypeInscription === 'inscription'"
+            (addClicked)="setEventTypeInscription('inscription')"
+            iconClass="uil-clipboard-notes"
+          />
+        </div>
+        @if (eventTypeInscription === 'inscription') {
+        <div class="box-input gap-x-4 pt-4 px-4">
+          <label for="inscription_method">Medio de registro</label>
+          <quill-editor
+            formControlName="inscription_method"
+            [modules]="quillModules"
+            placeholder="Escribe aquí..."
+            class="ql-container-small flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
+          />
+        </div>
         }
       </div>
-      <div class="box-input gap-x-4">
-        <label for="place">Espacio</label>
-        <select formControlName="place_id" (change)="onPlaceChange()">
-          <option [ngValue]="null" disabled>Selecciona un espacio</option>
-          @for (place of espacios; track place) {
-          <option [ngValue]="place.id">
-            {{ place.name }}
-          </option>
-          }
-        </select>
-      </div>
+      } @if (eventTypeAccess === 'tickets') {
+      <div class="border-2 pt-2 px-4 pb-6 mb-6">
+        <h2 class="font-bold text-lilaText mt-4 uppercase">
+          Adquirir reserva / entrada
+        </h2>
 
-      <!-- Select de Sala -->
-      @if (salasDelLugar.length > 0) {
-      <div class="box-input gap-x-4">
-        <label for="sala">Sala</label>
-        <select formControlName="sala_id" (change)="onSalaChange()">
-          <option [ngValue]="null" disabled>Selecciona una sala</option>
-          @for (sala of salasDelLugar; track sala) {
-          <option [ngValue]="sala.sala_id">
-            {{ sala.name }} - {{ sala.location }}
-          </option>
-          }
-        </select>
+        <div class="box-input gap-x-4 pt-4 px-4">
+          <label for="inscription_method">¿Cómo hacerlo?</label>
+          <quill-editor
+            formControlName="tickets_method"
+            [modules]="quillModules"
+            placeholder="Escribe aquí..."
+            class="ql-container-small flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
+          />
+        </div>
       </div>
       }
-      <div class="box-input gap-y-2 gap-x-4">
-        <label for="status">Aforo</label>
-        <input formControlName="capacity" type="number" />
-      </div>
-      <hr />
-      <h2 class="font-bold text-lilaText mt-4 uppercase">Acceso</h2>
-      <div class="flex gap-x-4 py-4">
-        <label for="inscription">¿Requiere de incripción previa?</label>
-        <input formControlName="inscription" type="checkbox" />
-      </div>
-      <div class="pt-6">
-        <div class="mb-4 flex gap-x-4 justify-start">
-          <app-button-icon
-            [buttonText]="'Añadir precio entrada'"
-            [iconClass]="'uil-plus'"
-            (addClicked)="addTicketPrice()"
-          ></app-button-icon>
+      <!-- CAMBIOS -->
+      <div class="border-2 pt-2 px-4 pb-6 mb-6">
+        <h2 class="font-bold text-lilaText mt-4 uppercase">
+          Estado del evento
+        </h2>
+
+        <div class="flex justify-center gap-x-4 py-2 mb-6">
+          <app-button-select
+            [buttonText]="'En curso'"
+            subText="Todo sigue según lo provisto"
+            [active]="eventTypeStatus === 'event'"
+            (addClicked)="setEventTypeStatus('event')"
+            iconClass="uil-check-square"
+          />
+          <app-button-select
+            [buttonText]="'Cancelado'"
+            subText="No se puede llevar a cabo"
+            [active]="eventTypeStatus === 'cancel'"
+            (addClicked)="setEventTypeStatus('cancel')"
+            iconClass="uil-time_starts-circle"
+          /><app-button-select
+            [buttonText]="'Aplazado'"
+            subText="Se postpone para otra fecha"
+            [active]="eventTypeStatus === 'postpone'"
+            (addClicked)="setEventTypeStatus('postpone')"
+            iconClass="uil-calendar-slash"
+          /><app-button-select
+            [buttonText]="'Agotado'"
+            subText="No hay más aforo disponible"
+            [active]="eventTypeStatus === 'sold_out'"
+            (addClicked)="setEventTypeStatus('sold_out')"
+            iconClass="uil-exclamation-circle"
+          />
         </div>
 
-        <div formArrayName="ticket_prices">
-          <div
-            *ngFor="let group of ticketPrices.controls; let i = index"
-            [formGroupName]="i"
-            class="box-input gap-x-4 pb-4 px-4"
-          >
-            <label
-              class="py-2 px-4 rounded-xl text-sm text-lilaText bg-lilaMuyClaro"
-            >
-              Tipo
-            </label>
-            <input
-              formControlName="type"
-              type="text"
-              placeholder="Adulto, puberto..."
-            />
-            <label
-              class="py-2 px-4 rounded-xl text-sm text-lilaText bg-lilaMuyClaro"
-            >
-              Precio
-            </label>
-            <input formControlName="price" type="number" placeholder="€" />
-            <button
-              type="button"
-              (click)="removeTicketPrice(i)"
-              class="btn-danger"
-            >
-              Eliminar
-            </button>
+        @if (eventTypeStatus !== 'event') {
+        <div class="box-input gap-x-4 pt-4">
+          <label for="status_reason">Motivos <br />cambio</label>
+          <quill-editor
+            formControlName="status_reason"
+            [modules]="quillModules"
+            placeholder="Escribe aquí..."
+            class="ql-container-small flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
+          />
+        </div>
+        }
+      </div>
+      <!-- GESTIÓN -->
+      <div class="border-2 pt-2 px-4 pb-6 mb-6">
+        <h2 class="font-bold text-lilaText mt-4 uppercase">Gestión</h2>
+        <!-- ORGANIZADORES -->
+        <div class="pt-6">
+          <!-- BOTONES -->
+          <div class="mb-4 flex gap-x-4 justify-center">
+            <app-button-icon
+              [buttonText]="'Añadir organizador'"
+              [iconClass]="'uil-plus'"
+              (addClicked)="addOrganizer()"
+            ></app-button-icon>
+            <app-button-icon
+              [buttonText]="'Añadir colaborador'"
+              [iconClass]="'uil-plus'"
+              (addClicked)="addCollaborator()"
+            ></app-button-icon>
+            <app-button-icon
+              [buttonText]="'Añadir patrocinador'"
+              [iconClass]="'uil-plus'"
+              (addClicked)="addSponsor()"
+            ></app-button-icon>
           </div>
         </div>
-      </div>
-      <hr />
-      <div class="flex gap-x-4">
-        <div class="flex-col gap-y-4 w-3/4">
-          <div class="box-input gap-x-4">
-            <label for="description">Descripción</label>
-            <quill-editor
-              formControlName="description"
-              [modules]="quillModules"
-              placeholder="Escribe aquí la descripción..."
-              class="flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
-            />
-          </div>
-        </div>
-        <div class="box-input gap-y-2 w-72">
-          <app-image-control
-            [previewImg]="
-              formEvent.get('img')?.value ? formEvent.get('img')?.value! : null
-            "
-            [entityId]="itemId"
-            [type]="typeList"
-            (imgSelected)="onImageSelected($event)"
-            [imageWidthValue]="'full'"
-          ></app-image-control>
-        </div>
-      </div>
-      <h2 class="font-bold text-lilaText mt-4 uppercase">Cambios</h2>
-      <div class="box-input gap-y-2 gap-x-4">
-        <label for="status">Estado</label>
-        <select formControlName="status">
-          @for (status of statusEvent; track status) {
-          <option [value]="status.code">
-            {{ status.name }}
-          </option>
-          }
-        </select>
-      </div>
-      @if (formEvent.get('status')?.value !== enumStatusEnum.EJECUCION) {
-      <div class="box-input gap-x-4 pt-4">
-        <label for="status_reason">Motivos <br />cambio</label>
-        <quill-editor
-          formControlName="status_reason"
-          [modules]="quillModules"
-          placeholder="Escribe aquí la descripción..."
-          class="flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
-        />
-      </div>
-      }
-      <h2 class="font-bold text-lilaText mt-4 uppercase">Gestión</h2>
-      <!-- ORGANIZADORES -->
-      <div class="pt-6">
-        <!-- BOTONES -->
-        <div class="mb-4 flex gap-x-4 justify-center">
-          <app-button-icon
-            [buttonText]="'Añadir organizador'"
-            [iconClass]="'uil-plus'"
-            (addClicked)="addOrganizer()"
-          ></app-button-icon>
-          <app-button-icon
-            [buttonText]="'Añadir colaborador'"
-            [iconClass]="'uil-plus'"
-            (addClicked)="addCollaborator()"
-          ></app-button-icon>
-          <app-button-icon
-            [buttonText]="'Añadir patrocinador'"
-            [iconClass]="'uil-plus'"
-            (addClicked)="addSponsor()"
-          ></app-button-icon>
-        </div>
-      </div>
 
-      <!-- ORGANIZADORES -->
-      @if (showOrganizers) {
-      <app-agent-array-control
-        [formArray]="organizers"
-        [agents]="agents"
-        [label]="'Organizador'"
-        (remove)="removeOrganizer($event)"
-      ></app-agent-array-control>
-      } @if (showCollaborators) {
-      <app-agent-array-control
-        [formArray]="collaborators"
-        [agents]="agents"
-        [label]="'Colaborador'"
-        (remove)="removeCollaborator($event)"
-      ></app-agent-array-control>
-      } @if (showSponsors) {
-      <app-agent-array-control
-        [formArray]="sponsors"
-        [agents]="agents"
-        [label]="'Patrocinador'"
-        (remove)="removeSponsor($event)"
-      ></app-agent-array-control>
-      } @if (errorSession) {
+        <!-- ORGANIZADORES -->
+        @if (showOrganizers) {
+        <app-agent-array-control
+          [formArray]="organizers"
+          [agents]="agents"
+          [label]="'Organizador'"
+          (remove)="removeOrganizer($event)"
+        ></app-agent-array-control>
+        } @if (showCollaborators) {
+        <app-agent-array-control
+          [formArray]="collaborators"
+          [agents]="agents"
+          [label]="'Colaborador'"
+          (remove)="removeCollaborator($event)"
+        ></app-agent-array-control>
+        } @if (showSponsors) {
+        <app-agent-array-control
+          [formArray]="sponsors"
+          [agents]="agents"
+          [label]="'Patrocinador'"
+          (remove)="removeSponsor($event)"
+        ></app-agent-array-control>
+        }
+      </div>
+      @if (errorSession) {
       <div>Hay algún campo incorrecto</div>
       }
       <div class="flex justify-center">

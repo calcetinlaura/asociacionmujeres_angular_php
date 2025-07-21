@@ -30,43 +30,47 @@
           <!-- Provincia -->
           <div class="box-input flex flex-1">
             <label for="province">Provincia</label>
-            <select
-              formControlName="province"
-              (change)="onProvinceChange()"
-              [ngClass]="{
-                'is-invalid': submitted && formPlace.get('province')?.invalid
-              }"
-            >
-              <option value="">Seleccione una provincia</option>
-              @for (prov of provincias; track prov) {
-              <option [value]="prov.label">
-                {{ prov.label }}
-              </option>
+            <div class="flex flex-col flex-1">
+              <select
+                formControlName="province"
+                (change)="onProvinceChange()"
+                [ngClass]="{
+                  'is-invalid': submitted && formPlace.get('province')?.invalid
+                }"
+              >
+                <option value="">Seleccione una provincia</option>
+                @for (prov of provincias; track prov) {
+                <option [value]="prov.label">
+                  {{ prov.label }}
+                </option>
+                }
+              </select>
+              @if (submitted && formPlace.get('town')?.invalid) {
+              <div class="is-invalid-text">Campo requerido</div>
               }
-            </select>
-            @if (submitted && formPlace.get('town')?.invalid) {
-            <div class="is-invalid-text">Campo requerido</div>
-            }
+            </div>
           </div>
           <!-- Municipio -->
           <div class="box-input flex flex-1">
             <label for="town">Municipio</label>
-            <select
-              formControlName="town"
-              [ngClass]="{
-                'is-invalid': submitted && formPlace.get('town')?.invalid
-              }"
-            >
-              <option value="">Seleccione un municipio</option>
-              @for (mun of municipios; track mun) {
-              <option [value]="mun.label">
-                {{ mun.label }}
-              </option>
+            <div class="flex flex-col flex-1">
+              <select
+                formControlName="town"
+                [ngClass]="{
+                  'is-invalid': submitted && formPlace.get('town')?.invalid
+                }"
+              >
+                <option value="">Seleccione un municipio</option>
+                @for (mun of municipios; track mun) {
+                <option [value]="mun.label">
+                  {{ mun.label }}
+                </option>
+                }
+              </select>
+              @if (submitted && formPlace.get('town')?.invalid) {
+              <div class="is-invalid-text">Campo requerido</div>
               }
-            </select>
-            @if (submitted && formPlace.get('town')?.invalid) {
-            <div class="is-invalid-text">Campo requerido</div>
-            }
+            </div>
           </div>
         </div>
         <div class="flex justify-between gap-x-4">
@@ -94,7 +98,7 @@
         </div>
       </div>
       <hr />
-      <div class="box-input gap-x-4 px-4">
+      <div class="box-input gap-x-4">
         <label for="gender">Gestión</label>
         <div class="flex flex-col flex-1">
           <select
@@ -117,7 +121,7 @@
       </div>
       <div class="flex gap-4">
         <!-- Descripción -->
-        <div class="box-input gap-x-4 px-4 w-3/4">
+        <div class="box-input gap-x-4 pr-4 flex-1">
           <label for="description">Descripción</label>
           <quill-editor
             formControlName="description"
@@ -127,7 +131,7 @@
           />
         </div>
         <!-- Imagen -->
-        <div class="box-input gap-x-4 px-4 w-72">
+        <div class="w-72">
           <app-image-control
             [previewImg]="
               formPlace.get('img')?.value ? formPlace.get('img')?.value! : null
@@ -136,14 +140,15 @@
             [type]="typeList"
             (imgSelected)="onImageSelected($event)"
             [imageWidthValue]="'full'"
+            class="w-full"
           ></app-image-control>
         </div>
       </div>
-      <div class="box-input gap-x-4 px-4">
+      <div class="box-input gap-x-4">
         <label for="observations">Observaciones</label>
         <input formControlName="observations" type="text" />
       </div>
-      <div class="flex justify-start gap-x-4 px-4">
+      <div class="flex justify-start gap-x-4">
         <input
           type="checkbox"
           formControlName="hassalas"
@@ -217,11 +222,7 @@
                 </div>
                 <div class="box-input gap-x-4">
                   <label for="capacity">Aforo</label>
-                  <input
-                    formControlName="capacity"
-                    type="number"
-                    placeholder="Capacidad"
-                  />
+                  <input formControlName="capacity" type="number" />
                 </div>
               </div>
             </div>
@@ -243,7 +244,7 @@
       </div>
       } @if (!formPlace.get('hassalas')?.value) {
       <div class="flex gap-x-4">
-        <div class="box-input gap-x-4 px-4 flex flex-1">
+        <div class="box-input gap-x-4 flex flex-1">
           <label for="gender">Espacio</label>
           <div class="flex flex-col flex-1">
             <select
@@ -264,7 +265,7 @@
             }
           </div>
         </div>
-        <div class="box-input gap-x-4 px-4">
+        <div class="box-input gap-x-4">
           <label for="capacity">Aforo</label>
           <input formControlName="capacity" type="number" />
         </div>

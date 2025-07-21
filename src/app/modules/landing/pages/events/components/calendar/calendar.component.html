@@ -29,25 +29,63 @@
         }"
       >
         <ng-container *ngIf="cell.date">
-          <div (click)="cell.event && openModalView(cell.event)">
-            <div
-              class="absolute top-1 right-1 text-xs text-white bg-black bg-opacity-50 rounded px-1"
-            >
-              {{ cell.date.getDate() }}
-            </div>
-            <ng-container *ngIf="cell.event as event">
-              <img
-                *ngIf="event.img"
-                [src]="
-                  '/uploads/img/EVENTS/' +
-                  (event.start | date : 'yyyy') +
-                  '/' +
-                  event.img
-                "
-                alt="{{ event.title }}"
-                class="w-full h-full object-cover"
-              />
+          <!-- Número del día -->
+          <div
+            class="absolute top-1 right-1 text-xs text-white bg-black bg-opacity-50 rounded px-1 z-10"
+          >
+            {{ cell.date.getDate() }}
+          </div>
+
+          <!-- FLEX WRAP para eventos -->
+          <div class="w-full h-full flex flex-wrap">
+            <ng-container *ngFor="let event of cell.events">
+              <div
+                class="relative"
+                [ngStyle]="{
+                  width: getFlexBasis(cell.events.length),
+                  height: getFlexBasis(cell.events.length)
+                }"
+              >
+                <div
+                  class="aspect-square bg-gray-100 relative overflow-hidden rounded-md cursor-pointer"
+                  [ngClass]="{
+                    'ring-2 ring-blue-500': isToday(cell.date)
+                  }"
+                  (click)="handleCellClick(cell)"
+                >
+                  <img
+                    appImgBroken
+                    [src]="(event.img ? event.img : '') | itemImage : type"
+                    alt="{{ event.title }}"
+                    class="object-cover w-full h-full cursor-pointer"
+                  />
+                  <ng-container
+                    *ngIf="
+                      (event.img ? event.img : '') | itemImage : type as imgSrc;
+                      else noImage
+                    "
+                  >
+                    <img [src]="imgSrc" alt="" class="cover" appImgBroken />
+                  </ng-container>
+                  <ng-template #noImage>
+                    <div
+                      class="flex flex-1 bg-gray-300 w-full h-[450px] items-center justify-center"
+                    >
+                      <i class="uil uil-camera-plus text-white text-[80px]"></i>
+                    </div>
+                  </ng-template>
+                </div>
+              </div>
             </ng-container>
+          </div>
+
+          <!-- Badge con +N -->
+          <div
+            *ngIf="cell.events.length > 1"
+            class="cursor-pointer absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-sm font-bold text-black bg-[#c79cd3] bg-opacity-80 rounded p-4 z-20"
+            (click)="openMultiEventModal($event, cell.events)"
+          >
+            +{{ cell.events.length }}
           </div>
         </ng-container>
       </div>
@@ -61,3 +99,11 @@
   [action]="TypeActionModal.Show"
   (closeModal)="onCloseModal()"
 ></app-modal>
+
+<!-- Modal intermedia para elegir evento -->
+<app-modal-multievent
+  *ngIf="showMultiEventModal"
+  [events]="multiEventItems"
+  (select)="selectEventFromMulti($event)"
+  (close)="closeMultiEventModal()"
+></app-modal-multievent>

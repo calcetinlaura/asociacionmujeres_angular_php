@@ -48,18 +48,18 @@
           </div>
         </div>
       </div>
-      <!-- Descripción -->
-      <div class="box-input gap-x-4 px-4">
-        <label for="theme">Temática</label>
-        <quill-editor
-          formControlName="theme"
-          [modules]="quillModules"
-          placeholder="Escribe aquí la descripción..."
-          class="flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
-        />
-      </div>
-      <div class="flex justify-start gap-x-8 h-[377px] bg-lilaClaro">
-        <div class="w-[200px]">
+      <div class="flex gap-x-4">
+        <!-- Descripción -->
+        <div class="flex flex-1 box-input gap-x-4 px-4">
+          <label for="theme">Temática</label>
+          <quill-editor
+            formControlName="theme"
+            [modules]="quillModules"
+            placeholder="Escribe aquí la descripción..."
+            class="flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
+          />
+        </div>
+        <div class="w-[250px]">
           <app-image-control
             [previewImg]="
               formPitera.get('img')?.value
@@ -69,9 +69,10 @@
             [entityId]="itemId"
             [type]="typeList"
             (imgSelected)="onImageSelected($event)"
+            class="w-full"
           ></app-image-control>
         </div>
-        <div class="w-[220px]">
+        <div class="w-[250px]">
           <app-pdf-control
             [type]="typeList"
             [previewPdf]="getPiteraPdfPreview()"

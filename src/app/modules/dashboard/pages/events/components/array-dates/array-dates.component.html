@@ -1,0 +1,105 @@
+<div class="mb-4 flex flex-col gap-y-8 mx-24">
+  @if (monthGroups && monthGroups.length > 0) { @for (group of monthGroups;
+  track $index) {
+  <div class="flex gap-x-4 w-full">
+    <!-- Título del mes -->
+    <div class="flex items-center pr-2 border-r-2 border-lilaClaro w-40">
+      <label class="py-2 px-1 rounded-xl text-sm text-lilaText bg-lilaMuyClaro">
+        {{ group.month | titlecase }}
+      </label>
+    </div>
+    <div class="flex flex-col gap-y-4">
+      <!-- Controles para este mes -->
+      @for (item of group.items; track item.index) {
+      <div
+        [formGroup]="item.formGroup"
+        class="flex gap-x-4 justify-between pl-4"
+      >
+        <div class="flex gap-x-4">
+          <!-- Día inicio -->
+          <div class="flex gap-x-4">
+            <label
+              class="py-2 px-1 rounded-xl text-sm text-lilaText bg-lilaMuyClaro text-center"
+              [class.bg-naranjaClaro]="item.isNew"
+              >Día inicio</label
+            >
+            <div class="flex flex-col flex-1">
+              <input
+                formControlName="start"
+                type="date"
+                class="p-1 border rounded w-full"
+                [ngClass]="{
+                  'is-invalid':
+                    submitted && item.formGroup.get('start')?.invalid
+                }"
+              />
+              <div *ngIf="submitted && item.formGroup.get('start')?.invalid">
+                <p class="text-[red] text-[11px]">Campo requerido</p>
+              </div>
+            </div>
+          </div>
+          <!-- Día fin -->
+          <!-- <div class="flex gap-x-4">
+            <label
+              class="py-2 px-1 rounded-xl text-sm text-lilaText bg-lilaMuyClaro text-center"
+              [class.bg-naranjaClaro]="item.isNew"
+              >Día fin</label
+            >
+            <div class="flex-1">
+              <input
+                formControlName="end"
+                type="date"
+                class="p-1 border rounded w-full"
+              />
+            </div>
+          </div> -->
+          <!-- Hora inicio -->
+          <div class="flex gap-x-4">
+            <label
+              class="py-2 px-1 rounded-xl text-sm text-lilaText bg-lilaMuyClaro text-center"
+              [class.bg-naranjaClaro]="item.isNew"
+              >Hora inicio</label
+            >
+            <div class="flex-1">
+              <input
+                formControlName="time_start"
+                type="time"
+                class="p-1 border rounded w-full"
+              />
+            </div>
+          </div>
+          <!-- Hora fin -->
+          <!-- <div class="flex gap-x-4">
+            <label
+              class="py-2 px-1 rounded-xl text-sm text-lilaText bg-lilaMuyClaro text-center"
+              [class.bg-naranjaClaro]="item.isNew"
+              >Hora fin</label
+            >
+            <div class="flex-1">
+              <input
+                formControlName="time_end"
+                type="time"
+                class="p-1 border rounded w-full"
+              />
+            </div>
+          </div> -->
+        </div>
+
+        <button
+          type="button"
+          (click)="remove.emit(item.index)"
+          class="btn-danger"
+        >
+          Eliminar
+        </button>
+      </div>
+      }
+    </div>
+  </div>
+  }}
+  <div *ngIf="submitted && formArray.errors?.['duplicateStartDates']">
+    <p class="text-[red] text-[11px]">
+      No puedes repetir fechas en eventos periódicos.
+    </p>
+  </div>
+</div>

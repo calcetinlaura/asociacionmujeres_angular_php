@@ -1,53 +1,45 @@
-<div class="relative w-full" [style.height]="pdfViewerHeight + 'px'">
-  @if (previewUrl && isPdfAvailable) {
-    <object
-      [data]="previewUrl"
-      type="application/pdf"
-      width="100%"
-      [style.height]="pdfHeight + 'px'"
-    ></object>
-    <div
-      class="absolute top-0 left-0 w-full h-full cursor-pointer"
-      (click)="openPdfNewWindow()"
-      style="z-index: 10"
-      [style.height]="pdfHeight + 'px'"
-    ></div>
-  } @else {
-    <img
-      [src]="placeholder"
-      alt="No se pudo cargar el PDF"
-      class="w-full h-full"
-      />
-    }
-
-
-    <input
-      #pdfInput
-      type="file"
-      accept="application/pdf"
-      hidden
-      (change)="onFileSelected($event)"
-      (click)="pdfInput.value = ''"
-      />
-
-      <button
-        mat-raised-button
-        type="button"
-        (click)="pdfInput.click()"
-        class="w-full my-4"
-        >
-        Seleccionar PDF
-      </button>
-
-      @if (isPdfAvailable) {
-        <button
-          mat-raised-button
-          color="warn"
-          type="button"
-          (click)="removePdf()"
-          class="w-full"
-          >
-          Eliminar PDF
-        </button>
-      }
+<div class="flex flex-col justify-between gap-y-4 relative w-full">
+  <div class="w-full cursor-pointer" (click)="pdfInput.click()">
+    @if (previewUrl && isPdfAvailable) {
+    <div class="relative w-full">
+      <object
+        [data]="previewUrl"
+        type="application/pdf"
+        width="100%"
+        [style.height]="pdfHeight + 'px'"
+      ></object>
+      <div
+        class="absolute top-0 left-0 w-full h-full"
+        style="z-index: 10"
+        [style.height]="pdfHeight + 'px'"
+      ></div>
     </div>
+    } @else {
+    <div
+      class="flex flex-col bg-gray-300 w-full h-[450px] items-center justify-center"
+    >
+      <i class="uil uil-file-plus-alt text-white text-[80px]"></i>
+      <p class="text-white text-[15px]">Añadir pdf</p>
+    </div>
+    }
+  </div>
+
+  <input
+    #pdfInput
+    type="file"
+    accept="application/pdf"
+    hidden
+    (change)="onFileSelected($event)"
+    (click)="pdfInput.value = ''"
+  />
+
+  @if (isPdfAvailable) {
+  <button
+    type="button"
+    (click)="removePdf()"
+    class="w-full text-[rgb(225,110,110)] border border-[rgb(225,110,110)] rounded p-1 cursor-pointer transition-all hover:border-2 hover:px-[3px]"
+  >
+    Eliminar PDF
+  </button>
+  }
+</div>

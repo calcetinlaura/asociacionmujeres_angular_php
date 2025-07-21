@@ -8,8 +8,8 @@
     class="login-auth-form"
   >
     <div class="flex flex-col gap-y-4">
-      <div class="flex justify-between gap-x-4">
-        <div class="flex flex-col w-3/4 gap-y-4">
+      <div class="flex justify-between gap-x-8">
+        <div class="flex flex-col flex-1 gap-y-4">
           <div class="box-input gap-x-4">
             <label for="email">Título</label>
             <div class="flex flex-col flex-1">
@@ -70,8 +70,8 @@
           </div>
         </div>
         <div class="flex flex-col gap-y-4 w-72 bg-lilaMuyClaro p-4">
-          <div class="flex box-input gap-x-4">
-            <label for="start">Inicio</label>
+          <div class="flex gap-x-4">
+            <label for="start" class="w-12">Inicio</label>
             <div class="flex flex-col flex-1">
               <input
                 formControlName="start"
@@ -86,8 +86,8 @@
               }
             </div>
           </div>
-          <div class="flex box-input gap-x-4">
-            <label for="end">Fin</label>
+          <div class="flex gap-x-4">
+            <label for="end" class="w-12">Fin</label>
             <div class="flex flex-col flex-1">
               <input
                 formControlName="end"
@@ -113,8 +113,8 @@
           </div>
         </div>
       </div>
-      <div class="flex gap-x-4">
-        <div class="flex-col gap-y-4 w-3/4 h-48">
+      <div class="flex gap-x-8">
+        <div class="flex-col gap-x-8 flex-1 h-48">
           <div class="box-input gap-x-4">
             <label for="description">Descripción</label>
             <quill-editor
@@ -125,7 +125,7 @@
             />
           </div>
         </div>
-        <div class="box-input gap-y-2 w-72">
+        <div class="w-72">
           <app-image-control
             [previewImg]="
               formMacroevent.get('img')?.value
@@ -136,6 +136,7 @@
             [type]="typeList"
             (imgSelected)="onImageSelected($event)"
             [imageWidthValue]="'full'"
+            class="w-full"
           ></app-image-control>
         </div>
       </div>

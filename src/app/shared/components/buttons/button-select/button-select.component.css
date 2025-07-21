@@ -1,0 +1,38 @@
+.button_select {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 12px 16px;
+  background-color: white;
+  color: #333;
+  cursor: pointer;
+  min-width: 160px;
+  text-align: left;
+  transition: all 0.2s ease-in-out;
+}
+
+.button_select i {
+  font-size: 28px;
+}
+.true {
+  /* color: var(--bg-lilaOscuro); */
+  color: #704f80;
+}
+.mat-icon {
+  font-size: 26px;
+  padding: 0;
+  margin: 0;
+  line-height: 26px !important;
+}
+.button_select.active {
+  border: 2px solid #89639c; /* azul destacado */
+  background-color: #fdf0ff;
+  color: #89639c;
+}
+
+.button_select.active i {
+  color: #89639c;
+}

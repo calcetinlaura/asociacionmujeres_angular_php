@@ -94,7 +94,16 @@ export class GeneralService {
     Object.keys(item).forEach((key) => {
       const value = item[key];
       if (value !== undefined && value !== null) {
-        if (Array.isArray(value) || typeof value === 'object') {
+        if (
+          key === 'organizer' ||
+          key === 'collaborator' ||
+          key === 'sponsor'
+        ) {
+          const ids = Array.isArray(value)
+            ? value.map((v: any) => v.agent_id)
+            : [];
+          formData.append(key, JSON.stringify(ids));
+        } else if (Array.isArray(value) || typeof value === 'object') {
           formData.append(key, JSON.stringify(value));
         } else {
           formData.append(key, value.toString());
@@ -104,21 +113,15 @@ export class GeneralService {
       }
     });
 
-    // Manejo flexible de múltiples archivos
-    Object.keys(fileFields).forEach((field) => {
-      const file = fileFields[field];
-      if (file instanceof File) {
-        formData.append(field, file, file.name);
-      } else if (item.existingUrl) {
-        formData.append('existingUrl', item.existingUrl);
-      } else {
-        // Marcar para borrar
-        formData.append(field, '');
+    Object.keys(fileFields).forEach((key) => {
+      const file = fileFields[key];
+      if (file) {
+        formData.append(key, file);
       }
     });
 
-    if (itemId && itemId !== 0) {
-      formData.append('_method', 'PATCH');
+    if (itemId !== undefined) {
+      formData.append('_method', itemId > 0 ? 'PATCH' : 'POST');
       formData.append('id', itemId.toString());
     }
 

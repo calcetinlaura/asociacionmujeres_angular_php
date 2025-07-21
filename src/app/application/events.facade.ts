@@ -2,71 +2,52 @@ import { DestroyRef, inject, Injectable } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, catchError, Observable, tap } from 'rxjs';
 import { EventsService } from 'src/app/core/services/events.services';
-import {
-  EventModel,
-  EventModelFullData,
-} from '../core/interfaces/event.interface';
+import { EventModelFullData } from '../core/interfaces/event.interface';
 import { GeneralService } from '../shared/services/generalService.service';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable({ providedIn: 'root' })
 export class EventsFacade {
   private readonly destroyRef = inject(DestroyRef);
   private readonly eventsService = inject(EventsService);
   private readonly generalService = inject(GeneralService);
-  private readonly eventsSubject = new BehaviorSubject<
+
+  private readonly eventsAllSubject = new BehaviorSubject<
     EventModelFullData[] | null
   >(null);
-  private readonly filteredEventsSubject = new BehaviorSubject<
+  private readonly nonRepeatedEventsSubject = new BehaviorSubject<
     EventModelFullData[] | null
   >(null);
   private readonly selectedEventSubject =
     new BehaviorSubject<EventModelFullData | null>(null);
 
-  events$ = this.eventsSubject.asObservable();
-  filteredEvents$ = this.filteredEventsSubject.asObservable();
+  eventsAll$ = this.eventsAllSubject.asObservable(); // Para calendario
+  nonRepeatedEvents$ = this.nonRepeatedEventsSubject.asObservable(); // Para lista principal
   selectedEvent$ = this.selectedEventSubject.asObservable();
-  currentYear: number | null = null;
-  currentFilter: number | null = null;
 
-  constructor() {}
+  currentFilter: number | null = null;
 
   setCurrentFilter(year: number | null): void {
     this.currentFilter = year;
   }
 
-  private reloadCurrentFilteredYear(): void {
-    if (this.currentFilter !== null) {
-      this.loadEventsByYear(this.currentFilter);
-    } else {
-      this.loadAllEvents();
-    }
-  }
-
-  loadAllEvents(): void {
+  loadEventsAllByYear(year: number): void {
     this.eventsService
-      .getEvents()
+      .getEventsByYear(year, 'all')
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((events) => this.updateEventState(events)),
+        tap((events) => this.eventsAllSubject.next(events)),
         catchError((err) => this.generalService.handleHttpError(err))
       )
       .subscribe();
   }
 
-  setCurrentYear(year: number): void {
-    this.currentYear = year;
-  }
-
-  loadEventsByYear(year: number): void {
+  loadNonRepeatedEventsByYear(year: number): void {
     this.setCurrentFilter(year);
-
     this.eventsService
-      .getEventsByYear(year)
+      .getEventsByYear(year, 'latest')
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((events) => this.updateEventState(events)),
+        tap((events) => this.nonRepeatedEventsSubject.next(events)),
         catchError((err) => this.generalService.handleHttpError(err))
       )
       .subscribe();
@@ -83,10 +64,13 @@ export class EventsFacade {
       .subscribe();
   }
 
-  editEvent(itemId: number, event: FormData): Observable<FormData> {
-    return this.eventsService.edit(itemId, event).pipe(
+  loadEventsByPeriodicId(periodicId: number): Observable<EventModelFullData[]> {
+    return this.eventsService.getEventsByPeriodicId(periodicId).pipe(
       takeUntilDestroyed(this.destroyRef),
-      tap(() => this.reloadCurrentFilteredYear()),
+      tap((events) => {
+        this.eventsAllSubject.next(events);
+        this.nonRepeatedEventsSubject.next(events);
+      }),
       catchError((err) => this.generalService.handleHttpError(err))
     );
   }
@@ -94,7 +78,15 @@ export class EventsFacade {
   addEvent(event: FormData): Observable<FormData> {
     return this.eventsService.add(event).pipe(
       takeUntilDestroyed(this.destroyRef),
-      tap(() => this.reloadCurrentFilteredYear()),
+      tap(() => this.reloadCurrentFilter()),
+      catchError((err) => this.generalService.handleHttpError(err))
+    );
+  }
+
+  editEvent(itemId: number, event: FormData): Observable<FormData> {
+    return this.eventsService.edit(itemId, event).pipe(
+      takeUntilDestroyed(this.destroyRef),
+      tap(() => this.reloadCurrentFilter()),
       catchError((err) => this.generalService.handleHttpError(err))
     );
   }
@@ -104,7 +96,7 @@ export class EventsFacade {
       .delete(id)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap(() => this.reloadCurrentFilteredYear()),
+        tap(() => this.reloadCurrentFilter()),
         catchError((err) => this.generalService.handleHttpError(err))
       )
       .subscribe();
@@ -115,22 +107,25 @@ export class EventsFacade {
   }
 
   applyFilterWord(keyword: string): void {
-    const allEvents = this.eventsSubject.getValue();
+    const currentEvents = this.nonRepeatedEventsSubject.getValue();
 
-    if (!keyword.trim() || !allEvents) {
-      this.filteredEventsSubject.next(allEvents);
+    if (!keyword.trim() || !currentEvents) {
+      this.nonRepeatedEventsSubject.next(currentEvents);
       return;
     }
-    const search = keyword.trim().toLowerCase();
 
-    const filteredEvents = allEvents.filter((event) =>
+    const search = keyword.trim().toLowerCase();
+    const filtered = currentEvents.filter((event) =>
       event.title.toLowerCase().includes(search)
     );
-    this.updateEventState(filteredEvents);
+
+    this.nonRepeatedEventsSubject.next(filtered);
   }
 
-  private updateEventState(events: EventModel[]): void {
-    this.eventsSubject.next(events);
-    this.filteredEventsSubject.next(events);
+  private reloadCurrentFilter(): void {
+    if (this.currentFilter !== null) {
+      this.loadEventsAllByYear(this.currentFilter);
+      this.loadNonRepeatedEventsByYear(this.currentFilter);
+    }
   }
 }

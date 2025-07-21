@@ -1,39 +1,41 @@
-import { Directive, ElementRef, HostListener, Input } from '@angular/core';
+import { Directive, ElementRef, HostListener, Renderer2 } from '@angular/core';
 
 @Directive({
   selector: 'img[appImgBroken]',
   standalone: true,
 })
 export class ImgBrokenDirective {
-  // @Input() customImg: string = '';
-  @HostListener('error') handleError(): void {
-    const elNative = this.elHost.nativeElement;
+  constructor(
+    private elHost: ElementRef<HTMLImageElement>,
+    private renderer: Renderer2
+  ) {}
 
-    // Obtener la ruta base del componente
-    const componentPath = this.getComponentPath();
+  @HostListener('error')
+  handleError(): void {
+    const imgEl = this.elHost.nativeElement;
+    const parent = imgEl.parentNode;
 
-    // Construir la ruta de la imagen de error relativa al componente
-    const errorImagePath = 'assets/img/error.jpg';
+    if (parent) {
+      const fallbackDiv = this.renderer.createElement('div');
+      this.renderer.addClass(fallbackDiv, 'flex');
+      this.renderer.addClass(fallbackDiv, 'flex-1');
+      this.renderer.addClass(fallbackDiv, 'bg-gray-300');
+      this.renderer.addClass(fallbackDiv, 'w-full');
+      this.renderer.addClass(fallbackDiv, 'h-full');
+      this.renderer.addClass(fallbackDiv, 'items-center');
+      this.renderer.addClass(fallbackDiv, 'justify-center');
 
-    // Establecer la nueva ruta de la imagen
-    elNative.src = errorImagePath;
-  }
+      const icon = this.renderer.createElement('i');
+      this.renderer.addClass(icon, 'uil');
+      this.renderer.addClass(icon, 'uil-camera');
+      this.renderer.addClass(icon, 'text-white');
+      this.renderer.addClass(icon, 'text-[80px]');
+      this.renderer.addClass(icon, 'p-[10px]');
 
-  constructor(private elHost: ElementRef) {}
+      this.renderer.appendChild(fallbackDiv, icon);
 
-  // Función para obtener la ruta base del componente
-  private getComponentPath(): string {
-    // Obtener el script actual
-    const currentScript = document.currentScript;
-
-    // if (currentScript) {
-    //   // Extraer la ruta base del componente
-    //   const componentBasePath = currentScript.src
-    //     ? currentScript.src.replace('/nombre-del-componente.js', '')
-    //     : '';
-    //   return componentBasePath;
-    // }
-
-    return '';
+      this.renderer.insertBefore(parent, fallbackDiv, imgEl);
+      this.renderer.removeChild(parent, imgEl);
+    }
   }
 }

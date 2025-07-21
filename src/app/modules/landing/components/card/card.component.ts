@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { TypeList } from 'src/app/core/models/general.model';
 import { TextBackgroundComponent } from 'src/app/shared/components/text/text-background/text-background.component';
 import { TextBorderComponent } from 'src/app/shared/components/text/text-border/text-border.component';
@@ -20,7 +20,7 @@ import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
     TextLinkComponent,
   ],
 })
-export class CardPlayerComponent implements OnInit {
+export class CardPlayerComponent {
   @Input() type: TypeList = TypeList.Books;
   @Input() item: any = {};
   typeList = TypeList;
@@ -29,22 +29,4 @@ export class CardPlayerComponent implements OnInit {
   datesEquals = false;
 
   constructor() {}
-
-  ngOnInit(): void {
-    if (this.type === this.typeList.Events) {
-      const startDate = new Date(this.item.start);
-      const endDate = new Date(this.item.end);
-      if (this.item.start === this.item.end) {
-        this.datesEquals = true;
-      }
-      const options: Intl.DateTimeFormatOptions = {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      };
-      this.formattedStartDate = startDate.toLocaleDateString('es', options);
-      this.formattedEndDate = endDate.toLocaleDateString('es', options);
-    }
-  }
 }

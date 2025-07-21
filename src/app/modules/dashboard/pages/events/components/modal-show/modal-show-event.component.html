@@ -12,17 +12,16 @@
     <p class="text-xs text-gray-500 pl-2">
       {{ item.salaData?.name }} - {{ item.salaData?.location }}
     </p>
-    }
+    } @if (item.periodicEvents === null){
     <div class="flex flex-col sm:flex-row gap-4 my-4">
-      @if (datesEquals) {
       <ng-container class="lowercase">
-        @if (item.start) {
+        @if (item.start && item.end === item.start) {
         <app-text-background
           [text]="item.start | date : 'EEEE dd MMMM yyyy'"
         ></app-text-background>
         }
       </ng-container>
-      } @else { @if (item.start && item.end) {
+      @if (item.start && item.end !== item.start) {
       <app-text-background
         [text]="
           (item.start | date : 'EEEE dd MMMM') +
@@ -30,11 +29,30 @@
           (item.end | date : 'EEEE dd MMMM yyyy')
         "
       ></app-text-background>
-      } } @if (item.time !== '') {
-      <app-text-border [text]="item.time?.slice(0, 5) + ' h'">
+      } @if (item.time_start !== '00:00:00') {
+      <app-text-border [text]="item.time_start?.slice(0, 5) + ' h'">
       </app-text-border>
       }
     </div>
+    } @if (item.periodicEvents && item.periodicEvents.length > 0) {
+    <p class="text-[16px] uppercase mt-6 mb-4 text-lilaOscuro font-semibold">
+      Pases
+    </p>
+    <div class="pl-6 flex flex-col gap-y-2">
+      @for (func of item.periodicEvents; track func) {
+      <div class="flex sm:flex-row gap-x-4 items-center">
+        <app-text-background
+          [text]="func.start | date : 'EEEE dd MMMM yyyy'"
+        ></app-text-background>
+
+        @if (func.time_start !== '00:00:00') {
+        <app-text-border [text]="func.time_start.slice(0, 5) + ' h'">
+        </app-text-border>
+        }
+      </div>
+      }
+    </div>
+    }
     <div class="mb-6">
       @if (item.organizer && item.organizer.length > 0) {
       <app-text-background [text]="'Organiza'"></app-text-background>
@@ -59,33 +77,33 @@
     <!-- <p class="body-subtitle">Aforo - {{ item.capacity }}</p> -->
     <app-text-editor [text]="item.description"></app-text-editor>
     <div class="my-4">
-      @if (item.price) {
+      <!-- @if (item.price) {
       <app-text-border [text]="item.price"></app-text-border>
+      } -->
+    </div>
+    <div>
+      @if (item.inscription === true) {
+      <p class="body-inscription">
+        * Se requiere inscripción previa en el email
+        asociacionmujerescallosa&#64;gmail.com
+      </p>
+      } @if (item.status === enumStatusEnum.CANCELADO) {
+      <app-text-background
+        [text]="'Evento ' + item.status"
+        [colorBack]="'#de7a71'"
+      ></app-text-background>
+      } @if (item.status === enumStatusEnum.AGOTADO) {
+      <app-text-background
+        [text]="'Inscripciones ' + item.status"
+        [colorBack]="'#de7a71'"
+        [colorText]="'white'"
+      ></app-text-background>
+      } @if (item.status_reason) {
+      <app-text-editor [text]="item.status_reason"></app-text-editor>
       }
     </div>
     @if (item.placeData && item.placeData.lat && item.placeData.lon) {
     <app-map [lat]="item.placeData.lat" [lon]="item.placeData.lon"></app-map>
-    }
-  </div>
-  <div>
-    @if (item.inscription === true) {
-    <p class="body-inscription">
-      * Se requiere inscripción previa en el email
-      asociacionmujerescallosa&#64;gmail.com
-    </p>
-    } @if (item.status === enumStatusEnum.CANCELADO) {
-    <app-text-background
-      [text]="'Evento ' + item.status"
-      [colorBack]="'#de7a71'"
-    ></app-text-background>
-    } @if (item.status === enumStatusEnum.AGOTADO) {
-    <app-text-background
-      [text]="'Inscripciones ' + item.status"
-      [colorBack]="'#de7a71'"
-      [colorText]="'white'"
-    ></app-text-background>
-    } @if (item.status_reason) {
-    <app-text-editor [text]="item.status_reason"></app-text-editor>
     }
   </div>
 </div>

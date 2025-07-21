@@ -83,7 +83,7 @@ export class FormSubsidyComponent implements OnInit {
 
   errorSession = false;
   submitted = false;
-  titleForm = 'Guarda subvención';
+  titleForm = 'Registrar subvención';
   buttonAction = 'Guardar';
   typeList = TypeList.Subsidies;
   years: number[] = [];

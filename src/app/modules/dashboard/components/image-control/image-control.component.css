@@ -1,13 +1,7 @@
-.control-container {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  position: relative;
-}
-
 .image-container {
   border-radius: 5px;
   position: relative;
+  height: 410px;
 
   > mat-progress-spinner {
     position: absolute;

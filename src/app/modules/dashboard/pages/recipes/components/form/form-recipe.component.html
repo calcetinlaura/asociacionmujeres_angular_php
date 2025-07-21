@@ -76,9 +76,9 @@
           </div>
         </div>
       </div>
-      <div class="flex gap-4">
+      <div class="flex gap-x-4">
         <!-- Ingredientes -->
-        <div class="box-input gap-x-4 px-4 w-3/4">
+        <div class="box-input gap-x-4 flex-1">
           <label for="ingredients">Ingredientes</label>
           <quill-editor
             formControlName="ingredients"
@@ -88,7 +88,7 @@
           />
         </div>
         <!-- Portada (Imagen) -->
-        <div class="box-input gap-x-4 px-4 w-72">
+        <div class="w-72">
           <app-image-control
             [previewImg]="
               formRecipe.get('img')?.value
@@ -99,11 +99,12 @@
             [type]="typeList"
             (imgSelected)="onImageSelected($event)"
             [imageWidthValue]="'full'"
+            class="w-full"
           ></app-image-control>
         </div>
       </div>
       <!-- Receta -->
-      <div class="box-input gap-x-4 px-4">
+      <div class="box-input gap-x-4">
         <label for="recipe">Receta</label>
 
         <quill-editor

@@ -75,7 +75,36 @@ p {
   font-size: 14px !important;
   padding-right: 2px;
 }
+.ql-container {
+  min-height: 400px;
+}
+/* Para el textarea de evento descripción que tiene una altura especial */
+.ql-container-large .ql-container {
+  min-height: 320px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
 
+.ql-container-large .ql-editor {
+  height: 320px !important;
+  flex: 1;
+  overflow-y: auto;
+  width: 100%;
+}
+.ql-container-small .ql-container {
+  min-height: 150px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.ql-container-small .ql-editor {
+  height: 150px !important;
+  flex: 1;
+  overflow-y: auto;
+  width: 100%;
+}
 @media print {
   .custom-header-row {
     position: static !important;

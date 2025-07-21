@@ -6,7 +6,7 @@
     (ngSubmit)="onSendFormPartner()"
     [formGroup]="formPartner"
     class="login-auth-form"
-    >
+  >
     <div class="flex flex-col gap-y-4">
       <div class="flex flex-col bg-lilaMuyClaro p-4 gap-y-4">
         <div class="flex gap-x-4">
@@ -20,132 +20,127 @@
                 [ngClass]="{
                   'is-invalid': submitted && formPartner.get('name')?.invalid
                 }"
-                />
-                @if (submitted && formPartner.get('name')?.invalid) {
-                  <div
-                    class="is-invalid-text"
-                    >
-                    Campo requerido
-                  </div>
-                }
+              />
+              @if (submitted && formPartner.get('name')?.invalid) {
+              <div class="is-invalid-text">Campo requerido</div>
+              }
+            </div>
+            <!-- Apellidos -->
+            <div class="box-input gap-x-4">
+              <label for="surname">Apellidos</label>
+              <input formControlName="surname" type="text" />
+            </div>
+            <div class="flex gap-x-4">
+              <!-- Fecha de nacimiento -->
+              <div class="box-input gap-x-4 flex-1">
+                <label for="birthday">Fecha Nac.</label>
+                <input formControlName="birthday" type="date" />
               </div>
-              <!-- Apellidos -->
-              <div class="box-input gap-x-4">
-                <label for="surname">Apellidos</label>
-                <input formControlName="surname" type="text" />
-              </div>
-              <div class="flex gap-x-4">
-                <!-- Fecha de nacimiento -->
-                <div class="box-input gap-x-4 flex-1">
-                  <label for="birthday">Fecha Nac.</label>
-                  <input formControlName="birthday" type="date" />
-                </div>
-                <!-- Teléfono -->
-                <div class="box-input flex-1 gap-x-4">
-                  <label for="address">Teléfono</label>
-                  <input formControlName="phone" type="text" />
-                </div>
-              </div>
-              <!-- Email -->
-              <div class="box-input gap-x-4">
-                <label for="address">Email</label>
-                <input formControlName="email" type="text" />
-              </div>
-              <div class="box-input flex gap-x-4">
-                <!-- Provincia -->
-                <div class="box-input flex gap-x-4 flex-1">
-                  <label for="province">Provincia</label>
-                  <select
-                    formControlName="province"
-                    (change)="onProvinceChange()"
-                    >
-                    <option value="">Seleccione una provincia</option>
-                    @for (prov of provincias; track prov) {
-                      <option [value]="prov.label">
-                        {{ prov.label }}
-                      </option>
-                    }
-                  </select>
-                </div>
-                <!-- Municipio -->
-                <div class="box-input gap-x-4 flex flex-1">
-                  <label for="town">Municipio</label>
-                  <select formControlName="town">
-                    <option value="">Seleccione un municipio</option>
-                    @for (mun of municipios; track mun) {
-                      <option [value]="mun.label">
-                        {{ mun.label }}
-                      </option>
-                    }
-                  </select>
-                </div>
-              </div>
-              <div class="box-input flex gap-x-4">
-                <div class="box-input gap-x-4 flex-1">
-                  <label for="address">Dirección</label>
-                  <input formControlName="address" type="text" />
-                </div>
-                <div class="box-input gap-x-4 w-auto">
-                  <label for="post_code">C.Postal</label>
-                  <input formControlName="post_code" type="text" />
-                </div>
+              <!-- Teléfono -->
+              <div class="box-input flex-1 gap-x-4">
+                <label for="address">Teléfono</label>
+                <input formControlName="phone" type="text" />
               </div>
             </div>
-            <div class="box-input gap-x-4 px-4 w-1/4">
-              <app-image-control
+            <!-- Email -->
+            <div class="box-input gap-x-4">
+              <label for="address">Email</label>
+              <input formControlName="email" type="text" />
+            </div>
+            <div class="box-input flex gap-x-4">
+              <!-- Provincia -->
+              <div class="box-input flex gap-x-4 flex-1">
+                <label for="province">Provincia</label>
+                <select
+                  formControlName="province"
+                  (change)="onProvinceChange()"
+                >
+                  <option value="">Seleccione una provincia</option>
+                  @for (prov of provincias; track prov) {
+                  <option [value]="prov.label">
+                    {{ prov.label }}
+                  </option>
+                  }
+                </select>
+              </div>
+              <!-- Municipio -->
+              <div class="box-input gap-x-4 flex flex-1">
+                <label for="town">Municipio</label>
+                <select formControlName="town">
+                  <option value="">Seleccione un municipio</option>
+                  @for (mun of municipios; track mun) {
+                  <option [value]="mun.label">
+                    {{ mun.label }}
+                  </option>
+                  }
+                </select>
+              </div>
+            </div>
+            <div class="box-input flex gap-x-4">
+              <div class="box-input gap-x-4 flex-1">
+                <label for="address">Dirección</label>
+                <input formControlName="address" type="text" />
+              </div>
+              <div class="box-input gap-x-4 w-auto">
+                <label for="post_code">C.Postal</label>
+                <input formControlName="post_code" type="text" />
+              </div>
+            </div>
+          </div>
+          <div class="box-input gap-x-4 px-4 w-1/4">
+            <app-image-control
               [previewImg]="
                 formPartner.get('img')?.value
                   ? formPartner.get('img')?.value!
                   : null
               "
-                [entityId]="itemId"
-                [type]="typeList"
-                (imgSelected)="onImageSelected($event)"
-                [imageWidthValue]="'full'"
-              ></app-image-control>
-            </div>
+              [entityId]="itemId"
+              [type]="typeList"
+              (imgSelected)="onImageSelected($event)"
+              [imageWidthValue]="'full'"
+              class="w-full"
+            ></app-image-control>
           </div>
-        </div>
-        <div class="boxCuotas p-4">
-          <h3 class="titleCuotas">Cuotas</h3>
-          <!-- Cuota -->
-          <div class="flex flex-col flex-wrap h-96">
-            @for (year of years; track year; let i = $index) {
-              <div
-                class="flex flex-col flex-wrap w-40"
-                >
-                <mat-checkbox [formControl]="getCuotaControl(i)" color="primary">
-                  Cuota {{ year }}
-                </mat-checkbox>
-              </div>
-            }
-          </div>
-        </div>
-        <div class="box-input gap-x-4 flex-1">
-          <label for="observations">Observaciones</label>
-          <input formControlName="observations" type="text" />
-        </div>
-        <div class="flex gap-4">
-          <mat-checkbox color="primary" formControlName="death"
-            >Ha fallecido
-          </mat-checkbox>
-          <mat-checkbox color="primary" formControlName="unsubscribe"
-            >Se ha dado de baja
-          </mat-checkbox>
-        </div>
-        <!-- Mensaje de error global -->
-        @if (errorSession) {
-          <div class="is-invalid-text">
-            Ocurrió un error con el envío del formulario
-          </div>
-        }
-
-        <!-- Botón de envío -->
-        <div class="flex justify-center">
-          <button class="bg-black p-4 text-white" type="submit">
-            {{ buttonAction }}
-          </button>
         </div>
       </div>
-    </form>
-  </div>
+      <div class="boxCuotas p-4">
+        <h3 class="titleCuotas">Cuotas</h3>
+        <!-- Cuota -->
+        <div class="flex flex-col flex-wrap h-96">
+          @for (year of years; track year; let i = $index) {
+          <div class="flex flex-col flex-wrap w-40">
+            <mat-checkbox [formControl]="getCuotaControl(i)" color="primary">
+              Cuota {{ year }}
+            </mat-checkbox>
+          </div>
+          }
+        </div>
+      </div>
+      <div class="box-input gap-x-4 flex-1">
+        <label for="observations">Observaciones</label>
+        <input formControlName="observations" type="text" />
+      </div>
+      <div class="flex gap-4">
+        <mat-checkbox color="primary" formControlName="death"
+          >Ha fallecido
+        </mat-checkbox>
+        <mat-checkbox color="primary" formControlName="unsubscribe"
+          >Se ha dado de baja
+        </mat-checkbox>
+      </div>
+      <!-- Mensaje de error global -->
+      @if (errorSession) {
+      <div class="is-invalid-text">
+        Ocurrió un error con el envío del formulario
+      </div>
+      }
+
+      <!-- Botón de envío -->
+      <div class="flex justify-center">
+        <button class="bg-black p-4 text-white" type="submit">
+          {{ buttonAction }}
+        </button>
+      </div>
+    </div>
+  </form>
+</div>

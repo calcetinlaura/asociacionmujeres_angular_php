@@ -1,10 +1,9 @@
-
 import {
   Component,
   DestroyRef,
-  inject,
   OnInit,
   ViewChild,
+  inject,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -35,8 +34,9 @@ import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loadi
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
-    selector: 'app-events-page',
-    imports: [
+  selector: 'app-events-page',
+  standalone: true,
+  imports: [
     DashboardHeaderComponent,
     ModalComponent,
     ButtonIconComponent,
@@ -44,10 +44,10 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
     InputSearchComponent,
     SpinnerLoadingComponent,
     TableComponent,
-    FiltersComponent
-],
-    templateUrl: './events-page.component.html',
-    styleUrl: './events-page.component.css'
+    FiltersComponent,
+  ],
+  templateUrl: './events-page.component.html',
+  styleUrl: './events-page.component.css',
 })
 export class EventsPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
@@ -57,7 +57,6 @@ export class EventsPageComponent implements OnInit {
   private readonly generalService = inject(GeneralService);
 
   events: EventModelFullData[] = [];
-  filteredEvents: EventModelFullData[] = [];
   filters: Filter[] = [];
 
   selectedFilter: number | null = null;
@@ -101,21 +100,21 @@ export class EventsPageComponent implements OnInit {
     {
       title: 'Organizador',
       key: 'organizer',
-      sortable: false,
+      sortable: true,
       showIndicatorOnEmpty: true,
       width: ColumnWidth.SM,
     },
     {
       title: 'Colaborador',
       key: 'collaborator',
-      sortable: false,
+      sortable: true,
       showIndicatorOnEmpty: true,
       width: ColumnWidth.SM,
     },
     {
       title: 'Patrocinador',
       key: 'sponsor',
-      sortable: false,
+      sortable: true,
       showIndicatorOnEmpty: true,
       width: ColumnWidth.SM,
     },
@@ -126,7 +125,6 @@ export class EventsPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.filters = [
-      { code: 'ALL', name: 'Histórico' },
       ...this.generalService.getYearFilters(2018, this.currentYear),
     ];
 
@@ -139,7 +137,7 @@ export class EventsPageComponent implements OnInit {
 
     this.filterSelected(this.currentYear.toString());
 
-    this.eventsFacade.filteredEvents$
+    this.eventsFacade.nonRepeatedEvents$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((events) => this.updateEventState(events))
@@ -148,14 +146,10 @@ export class EventsPageComponent implements OnInit {
   }
 
   filterSelected(filter: string): void {
-    this.selectedFilter = filter === 'ALL' ? null : Number(filter);
+    this.selectedFilter = Number(filter);
     this.generalService.clearSearchInput(this.inputSearchComponent);
 
-    if (filter === 'ALL') {
-      this.eventsFacade.loadAllEvents();
-    } else {
-      this.eventsFacade.loadEventsByYear(Number(filter));
-    }
+    this.eventsFacade.loadNonRepeatedEventsByYear(Number(filter));
   }
 
   applyFilterWord(keyword: string): void {
@@ -179,13 +173,7 @@ export class EventsPageComponent implements OnInit {
   ): void {
     this.currentModalAction = action;
     if (action === TypeActionModal.Duplicate && item) {
-      // Clonar el evento
-      const clonedItem: EventModelFullData = {
-        ...item,
-        id: 0, // ← importante: sin ID para que se cree como nuevo
-      };
-
-      this.item = clonedItem;
+      this.item = { ...item, id: 0 }; // Clonar sin ID
     } else {
       this.item = item;
     }
@@ -220,7 +208,6 @@ export class EventsPageComponent implements OnInit {
     if (!events) return;
 
     this.events = this.eventsService.sortEventsById(events);
-    this.filteredEvents = [...this.events];
     this.number = this.eventsService.countEvents(events);
     this.isLoading = false;
   }

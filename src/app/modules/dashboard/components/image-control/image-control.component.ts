@@ -1,4 +1,3 @@
-
 import { HttpClient } from '@angular/common/http';
 import {
   Component,
@@ -16,14 +15,10 @@ import { TypeList } from 'src/app/core/models/general.model';
 import { environments } from 'src/environments/environments';
 
 @Component({
-    selector: 'app-image-control',
-    templateUrl: './image-control.component.html',
-    styleUrls: ['./image-control.component.css'],
-    imports: [
-    MatDialogModule,
-    MatButtonModule,
-    MatProgressSpinnerModule
-]
+  selector: 'app-image-control',
+  templateUrl: './image-control.component.html',
+  styleUrls: ['./image-control.component.css'],
+  imports: [MatDialogModule, MatButtonModule, MatProgressSpinnerModule],
 })
 export class ImageControlComponent implements OnInit {
   selectedFile: File | null = null;
@@ -34,7 +29,7 @@ export class ImageControlComponent implements OnInit {
   @Input() imageWidthValue: number | string | null = 200;
   @Input() entityId: number | null = null;
   private apiUrl: string = `${environments.api}/backend`;
-  imageHeightValue: number = 150;
+  imageHeightValue: number = 300;
   previewUrl: string = '';
 
   basePath = '/uploads/img';
@@ -72,9 +67,7 @@ export class ImageControlComponent implements OnInit {
         ? `${this.basePath}/${this.type}/${yearFolder}/${this.previewImg}`
         : `${this.basePath}/${this.type}/${this.previewImg}`;
     } else {
-      if (this.type !== 'PARTNERS') {
-        this.previewUrl = this.placeholder; // Si no hay imagen, usa el placeholder
-      } else {
+      if (this.type === 'PARTNERS') {
         this.previewUrl = this.placeholderPartner;
       }
     }

@@ -1,0 +1,58 @@
+.loader {
+  width: 80px; /* duplicado desde 40px */
+  aspect-ratio: 1;
+  --c: no-repeat linear-gradient(#c18ade 0 0);
+  background: var(--c) 0 0, var(--c) 0 100%, var(--c) 50% 0, var(--c) 50% 100%,
+    var(--c) 100% 0, var(--c) 100% 100%;
+  background-size: 2px 50%; /* duplicado desde 2px */
+  animation: l7-0 1s infinite;
+  position: relative;
+  overflow: hidden;
+}
+
+.loader:before {
+  content: "";
+  position: absolute;
+  width: 2px; /* duplicado desde 2px */
+  height: 2px;
+  border-radius: 50%;
+  background: #c18ade;
+  top: calc(50% - 2px); /* centrado vertical del nuevo tamaño */
+  left: -2px; /* empieza fuera de la izquierda */
+  animation: inherit;
+  animation-name: l7-1;
+}
+
+@keyframes l7-0 {
+  16.67% {
+    background-size: 2px 30%, 2px 30%, 2px 50%, 2px 50%, 2px 50%, 2px 50%;
+  }
+  33.33% {
+    background-size: 2px 30%, 2px 30%, 2px 30%, 2px 30%, 2px 50%, 2px 50%;
+  }
+  50% {
+    background-size: 2px 30%, 2px 30%, 2px 30%, 2px 30%, 2px 30%, 2px 30%;
+  }
+  66.67% {
+    background-size: 2px 50%, 2px 50%, 2px 30%, 2px 30%, 2px 30%, 2px 30%;
+  }
+  83.33% {
+    background-size: 2px 50%, 2px 50%, 2px 50%, 2px 50%, 2px 30%, 2px 30%;
+  }
+}
+
+@keyframes l7-1 {
+  20% {
+    left: 0px;
+  }
+  40% {
+    left: calc(50% - 2px); /* centrado horizontal del nuevo tamaño */
+  }
+  60% {
+    left: calc(100% - 2px);
+  }
+  80%,
+  100% {
+    left: 100%;
+  }
+}

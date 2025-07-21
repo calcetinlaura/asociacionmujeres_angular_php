@@ -1,10 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { tap } from 'rxjs';
 import { EventsFacade } from 'src/app/application/events.facade';
 import { EventModel } from 'src/app/core/interfaces/event.interface';
-import { PlaceModel } from 'src/app/core/interfaces/place.interface';
 import { Filter, TypeList } from 'src/app/core/models/general.model';
 import { EventsService } from 'src/app/core/services/events.services';
 import { FiltersComponent } from 'src/app/modules/landing/components/filters/filters.component';
@@ -16,6 +15,7 @@ import { CalendarComponent } from '../components/calendar/calendar.component';
 
 @Component({
   selector: 'app-events-page-landing',
+  standalone: true,
   imports: [
     CommonModule,
     FiltersComponent,
@@ -33,16 +33,15 @@ export class EventsPageLandingComponent implements OnInit {
   private readonly eventsService = inject(EventsService);
   private readonly generalService = inject(GeneralService);
 
-  events: EventModel[] = [];
-  places: PlaceModel[] = [];
-  filteredEvents: EventModel[] = [];
+  nonRepeatedEvents: EventModel[] = []; // Lista principal sin repetidos
+  eventsAll: EventModel[] = []; // Todos los eventos para el calendario
   filters: Filter[] = [];
 
   isLoading = true;
   areThereResults = false;
   showCalendar = false;
   typeList = TypeList;
-  number: number = 0;
+  number = 0;
   selectedFilter: number | null = null;
   currentYear = this.generalService.currentYear;
 
@@ -52,73 +51,74 @@ export class EventsPageLandingComponent implements OnInit {
       this.currentYear,
       'Agenda'
     );
+    this.loadEvents(this.currentYear);
 
-    this.filterSelected(this.currentYear.toString());
+    this.eventsFacade.nonRepeatedEvents$
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap((events) => this.handleNonRepeatedEvents(events))
+      )
+      .subscribe();
 
-    this.eventsFacade.filteredEvents$
+    this.eventsFacade.eventsAll$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((events) => {
-          console.log('EVENTOS ENRIQUECIDOS', events); // 👈
-          this.updateEventState(events);
+          this.eventsAll = this.eventsService.sortEventsByDate(events || []);
         })
       )
       .subscribe();
   }
 
-  loadEventsByYear(year: number): void {
+  loadEvents(year: number): void {
+    this.isLoading = true;
     this.selectedFilter = year;
-    this.eventsFacade.loadEventsByYear(year);
+    this.eventsFacade.loadNonRepeatedEventsByYear(year);
+    this.eventsFacade.loadEventsAllByYear(year);
   }
 
   filterSelected(filter: string): void {
     const year = Number(filter);
     if (!isNaN(year)) {
-      this.loadEventsByYear(year);
+      this.loadEvents(year);
     }
   }
 
-  private updateEventState(events: EventModel[] | null): void {
+  private handleNonRepeatedEvents(events: EventModel[] | null): void {
     if (!events) return;
 
-    const now = new Date();
-    const truncateTime = (date: Date): Date => {
-      return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-    };
-
-    const today = truncateTime(now);
-    const currentYear = this.generalService.currentYear;
+    const today = this.truncateTime(new Date());
 
     const futureEvents: EventModel[] = [];
     const pastEvents: EventModel[] = [];
 
     for (const event of events) {
       const startDate = new Date(event.start);
+      const eventYear = startDate.getFullYear();
 
-      // Solo clasifica si es del año actual
-      if (startDate.getFullYear() === currentYear) {
-        if (truncateTime(startDate) >= today) {
-          futureEvents.push({ ...event, isPast: false });
-        } else {
-          pastEvents.push({ ...event, isPast: true });
-        }
-      } else {
-        // Si no es del año actual, no se clasifica como pasado
-        futureEvents.push({ ...event, isPast: false });
-      }
+      const isCurrentYear = eventYear === this.currentYear;
+      const isFutureOrToday = this.truncateTime(startDate) >= today;
+
+      const isPast = isCurrentYear && !isFutureOrToday;
+      const processedEvent = { ...event, isPast };
+
+      if (isPast) pastEvents.push(processedEvent);
+      else futureEvents.push(processedEvent);
     }
 
-    // Ordenar los eventos ya clasificados (futuros + pasados)
-    const allEvents = this.eventsService.sortEventsByDate([
+    const sortedEvents = this.eventsService.sortEventsByDate([
       ...futureEvents,
       ...pastEvents,
     ]);
 
-    this.events = allEvents;
-    this.filteredEvents = [...allEvents];
-    this.number = this.eventsService.countEvents(allEvents);
-    this.areThereResults = this.eventsService.hasResults(allEvents);
+    this.nonRepeatedEvents = sortedEvents;
+    this.number = this.eventsService.countEvents(sortedEvents);
+    this.areThereResults = this.eventsService.hasResults(sortedEvents);
     this.isLoading = false;
     this.showCalendar = true;
+  }
+
+  private truncateTime(date: Date): Date {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
   }
 }
