@@ -1,4 +1,3 @@
-
 import { Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -20,18 +19,18 @@ import { ModalService } from 'src/app/shared/components/modal/services/modal.ser
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 
 @Component({
-    selector: 'app-piteras-page',
-    imports: [
+  selector: 'app-piteras-page',
+  imports: [
     DashboardHeaderComponent,
     ModalComponent,
     ButtonIconComponent,
     ReactiveFormsModule,
     InputSearchComponent,
     SpinnerLoadingComponent,
-    TableComponent
-],
-    templateUrl: './piteras-page.component.html',
-    styleUrl: './piteras-page.component.css'
+    TableComponent,
+  ],
+  templateUrl: './piteras-page.component.html',
+  styleUrl: './piteras-page.component.css',
 })
 export class PiterasPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
@@ -49,7 +48,8 @@ export class PiterasPageComponent implements OnInit {
   item: PiteraModel | null = null;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
   searchForm!: FormGroup;
-  typeList = TypeList.Piteras;
+  typeSection = TypeList.Piteras;
+  typeModal = TypeList.Piteras;
 
   headerListPiteras: ColumnModel[] = [
     { title: 'Portada', key: 'img', sortable: false },
@@ -89,16 +89,25 @@ export class PiterasPageComponent implements OnInit {
   }
 
   addNewPiteraModal(): void {
-    this.openModal(TypeActionModal.Create, null);
+    this.openModal(this.typeModal, TypeActionModal.Create, null);
   }
 
-  onOpenModal(event: { action: TypeActionModal; item?: PiteraModel }): void {
-    this.openModal(event.action, event.item ?? null);
+  onOpenModal(event: {
+    typeModal: TypeList;
+    action: TypeActionModal;
+    item?: PiteraModel;
+  }): void {
+    this.openModal(event.typeModal, event.action, event.item ?? null);
   }
 
-  openModal(action: TypeActionModal, pitera: PiteraModel | null): void {
+  openModal(
+    typeModal: TypeList,
+    action: TypeActionModal,
+    pitera: PiteraModel | null
+  ): void {
     this.currentModalAction = action;
     this.item = pitera;
+    this.typeModal = typeModal;
     this.modalService.openModal();
   }
 

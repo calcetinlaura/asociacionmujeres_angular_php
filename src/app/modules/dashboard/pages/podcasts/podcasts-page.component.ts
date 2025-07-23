@@ -1,4 +1,3 @@
-
 import { Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -20,18 +19,18 @@ import { ModalService } from 'src/app/shared/components/modal/services/modal.ser
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 
 @Component({
-    selector: 'app-podcasts-page',
-    imports: [
+  selector: 'app-podcasts-page',
+  imports: [
     DashboardHeaderComponent,
     ModalComponent,
     ButtonIconComponent,
     ReactiveFormsModule,
     InputSearchComponent,
     SpinnerLoadingComponent,
-    TableComponent
-],
-    templateUrl: './podcasts-page.component.html',
-    styleUrl: './podcasts-page.component.css'
+    TableComponent,
+  ],
+  templateUrl: './podcasts-page.component.html',
+  styleUrl: './podcasts-page.component.css',
 })
 export class PodcastsPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
@@ -49,7 +48,8 @@ export class PodcastsPageComponent implements OnInit {
   item: PodcastModel | null = null;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
   searchForm!: FormGroup;
-  typeList = TypeList.Podcasts;
+  typeSection = TypeList.Podcasts;
+  typeModal = TypeList.Podcasts;
 
   headerListPodcasts: ColumnModel[] = [
     { title: 'Portada', key: 'img', sortable: false },
@@ -94,16 +94,25 @@ export class PodcastsPageComponent implements OnInit {
   }
 
   addNewPodcastModal(): void {
-    this.openModal(TypeActionModal.Create, null);
+    this.openModal(this.typeModal, TypeActionModal.Create, null);
   }
 
-  onOpenModal(event: { action: TypeActionModal; item?: PodcastModel }): void {
-    this.openModal(event.action, event.item ?? null);
+  onOpenModal(event: {
+    typeModal: TypeList;
+    action: TypeActionModal;
+    item?: PodcastModel;
+  }): void {
+    this.openModal(event.typeModal, event.action, event.item ?? null);
   }
 
-  openModal(action: TypeActionModal, podcast: PodcastModel | null): void {
+  openModal(
+    typeModal: TypeList,
+    action: TypeActionModal,
+    podcast: PodcastModel | null
+  ): void {
     this.currentModalAction = action;
     this.item = podcast;
+    this.typeModal = TypeList.Podcasts;
     this.modalService.openModal();
   }
 

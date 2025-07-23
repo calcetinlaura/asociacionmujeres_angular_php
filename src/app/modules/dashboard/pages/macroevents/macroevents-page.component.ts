@@ -1,4 +1,3 @@
-
 import {
   Component,
   DestroyRef,
@@ -32,8 +31,8 @@ import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loadi
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
-    selector: 'app-macroevents-page',
-    imports: [
+  selector: 'app-macroevents-page',
+  imports: [
     DashboardHeaderComponent,
     ModalComponent,
     ButtonIconComponent,
@@ -41,10 +40,10 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
     InputSearchComponent,
     SpinnerLoadingComponent,
     TableComponent,
-    FiltersComponent
-],
-    templateUrl: './macroevents-page.component.html',
-    styleUrl: './macroevents-page.component.css'
+    FiltersComponent,
+  ],
+  templateUrl: './macroevents-page.component.html',
+  styleUrl: './macroevents-page.component.css',
 })
 export class MacroeventsPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
@@ -59,7 +58,8 @@ export class MacroeventsPageComponent implements OnInit {
 
   selectedFilter: number | null = null;
   currentYear = this.generalService.currentYear;
-  typeList = TypeList.Macroevents;
+  typeSection = TypeList.Macroevents;
+  typeModal = TypeList.Macroevents;
   isLoading = true;
   isModalVisible = false;
   number = 0;
@@ -128,22 +128,29 @@ export class MacroeventsPageComponent implements OnInit {
   }
 
   addNewMacroeventModal(): void {
-    this.openModal(TypeActionModal.Create, null);
+    this.openModal(this.typeModal, TypeActionModal.Create, null);
   }
 
   onOpenModal(macroevent: {
+    typeModal: TypeList;
     action: TypeActionModal;
     item?: MacroeventModelFullData;
   }): void {
-    this.openModal(macroevent.action, macroevent.item ?? null);
+    this.openModal(
+      macroevent.typeModal,
+      macroevent.action,
+      macroevent.item ?? null
+    );
   }
 
   private openModal(
+    typeModal: TypeList,
     action: TypeActionModal,
     item: MacroeventModelFullData | null
   ): void {
     this.currentModalAction = action;
     this.item = item;
+    this.typeModal = typeModal;
     this.modalService.openModal();
   }
 

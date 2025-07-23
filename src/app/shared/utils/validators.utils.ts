@@ -1,4 +1,9 @@
-import { AbstractControl, FormArray, ValidationErrors } from '@angular/forms';
+import {
+  AbstractControl,
+  FormArray,
+  ValidationErrors,
+  ValidatorFn,
+} from '@angular/forms';
 
 // ✅ Validador de rango de fechas (start < end)
 export function dateRangeValidator(
@@ -35,18 +40,36 @@ export function timeRangeValidator(
   // Compara como strings 'HH:mm', funciona porque formato 24h respeta orden lexicográfico
   return timeEnd < timeStart ? { invalidTimeRange: true } : null;
 }
-export function uniqueStartDatesValidator(
+export const uniqueStartDatesValidator: ValidatorFn = (
   control: AbstractControl
-): ValidationErrors | null {
+): ValidationErrors | null => {
   if (!(control instanceof FormArray)) {
     return null;
   }
 
-  const dates = control.controls
-    .map((fg) => fg.get('start')?.value)
-    .filter((date) => !!date);
+  const dateTimePairs = control.controls
+    .map((fg) => {
+      const date = fg.get('start')?.value;
+      let time = fg.get('time_start')?.value;
 
-  const duplicates = dates.some((date, idx) => dates.indexOf(date) !== idx);
+      // Normalizar valores vacíos: si está vacío, lo tratamos como string vacío
+      time = time ?? '';
 
-  return duplicates ? { duplicateStartDates: true } : null;
-}
+      return { date, time };
+    })
+    .filter((pair) => !!pair.date); // solo si hay fecha
+
+  const seen = new Set<string>();
+  let hasDuplicate = false;
+
+  for (const { date, time } of dateTimePairs) {
+    const key = `${date}::${time}`;
+    if (seen.has(key)) {
+      hasDuplicate = true;
+      break;
+    }
+    seen.add(key);
+  }
+
+  return hasDuplicate ? { duplicateStartDatesAndTimes: true } : null;
+};

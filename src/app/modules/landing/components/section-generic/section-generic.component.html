@@ -1,29 +1,31 @@
 <div class="section--generic">
   <div class="flex flex-row justify-start section--generic--total">
-    Total: <span>{{ total }} {{ type }}</span>
+    Total: <span>{{ total }} {{ typeSection }}</span>
   </div>
   <div class="section--generic--list">
     <ul class="list">
       @for (item of data; track item) {
-        <li
-          [ngClass]="{ 'opacity-50 grayscale': item.isPast }"
-          >
-          <app-card-player
-            [item]="item"
-            [type]="selectedTypeModal"
-            (click)="type !== TypeList.Piteras ? openModalView(item) : null"
-          ></app-card-player>
-        </li>
+      <li [ngClass]="{ 'opacity-50 grayscale': item.isPast }">
+        <app-card-player
+          [item]="item"
+          [type]="typeSection"
+          (click)="
+            typeSection !== TypeList.Piteras ? openModalView(item) : null
+          "
+        ></app-card-player>
+      </li>
       }
     </ul>
   </div>
 </div>
 
 @if (showModalView) {
-  <app-modal
-    [item]="selectedItem"
-    [type]="selectedTypeModal"
-    [action]="TypeActionModal.Show"
-    (closeModal)="onCloseModal(TypeActionModal.Show)"
-  ></app-modal>
+<app-modal
+  [item]="selectedItem"
+  [typeModal]="selectedTypeModal"
+  [action]="TypeActionModal.Show"
+  (closeModal)="onCloseModal()"
+  (openMacroevent)="onOpenMacroevent($event)"
+  (openEvent)="onOpenEvent($event)"
+></app-modal>
 }

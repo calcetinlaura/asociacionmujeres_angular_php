@@ -1,7 +1,10 @@
 <div class="flex flex-col justify-between">
   <div>
     @if (item.macroeventData && item.macroeventData.title) {
-    <p class="macro">
+    <p
+      class="macro cursor-pointer"
+      (click)="onOpenMacroevent(item.macroeventData.id)"
+    >
       {{ item.macroeventData.title }}
     </p>
     }

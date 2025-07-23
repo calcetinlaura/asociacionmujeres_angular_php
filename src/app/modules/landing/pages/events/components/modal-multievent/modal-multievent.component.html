@@ -20,7 +20,7 @@
         <div class="w-[180px] h-[180px] overflow-hidden">
           <img
             appImgBroken
-            [src]="(event.img ? event.img : '') | itemImage : type"
+            [src]="(event.img ? event.img : '') | itemImage : typeModal"
             alt="{{ event.title }}"
             class="object-cover rounded"
           />

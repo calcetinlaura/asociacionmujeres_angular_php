@@ -4,47 +4,48 @@
     [title]="'Filmoteca'"
     [number]="number"
     [type]="'peliculas'"
-    />
-    <div class="flex flex-1 flex-col justify-center px-8 gap-y-8">
-      <app-filters
-        [filters]="filters"
-        (filterClicked)="filterSelected($event)"
-      ></app-filters>
-      <div class="flex gap-x-4">
-        <app-button-icon
-          [buttonText]="'Nueva película'"
-          [iconClass]="'uil-plus'"
-          (addClicked)="addNewMovieModal()"
-          />
-          <app-input-search (onDebounce)="applyFilterWord($event)" class="flex-1" />
-        </div>
-      </div>
+  />
+  <div class="flex flex-1 flex-col justify-center px-8 gap-y-8">
+    <app-filters
+      [filters]="filters"
+      (filterClicked)="filterSelected($event)"
+    ></app-filters>
+    <div class="flex gap-x-4">
+      <app-button-icon
+        [buttonText]="'Nueva película'"
+        [iconClass]="'uil-plus'"
+        (addClicked)="addNewMovieModal()"
+      />
+      <app-input-search (onDebounce)="applyFilterWord($event)" class="flex-1" />
     </div>
-    <div class="flex flex-col px-8">
-      <!-- Spinner Loading -->
-      @if (isLoading) {
-        <app-spinner-loading />
-      } @else {
-        <div class="pb-4 flex">
-          <app-table
-            [data]="filteredMovies"
-            [type]="typeList"
-            [headerColumns]="headerListMovies"
-            (openModal)="onOpenModal($event)"
-            />
-          </div>
-        }
-        <!-- Tabla -->
-      </div>
+  </div>
+</div>
+<div class="flex flex-col px-8">
+  <!-- Spinner Loading -->
+  @if (isLoading) {
+  <app-spinner-loading />
+  } @else {
+  <div class="pb-4 flex">
+    <app-table
+      [data]="filteredMovies"
+      [typeSection]="typeSection"
+      [typeModal]="typeModal"
+      [headerColumns]="headerListMovies"
+      (openModal)="onOpenModal($event)"
+    />
+  </div>
+  }
+  <!-- Tabla -->
+</div>
 
-      <!-- Modal -->
-      @if (isModalVisible) {
-        <app-modal
-          [item]="item"
-          [type]="typeList"
-          [action]="currentModalAction"
-          (closeModal)="onCloseModal()"
-          (confirmDelete)="confirmDeleteMovie(item)"
-          (sendFormMovieData)="sendFormMovie($event)"
-        ></app-modal>
-      }
+<!-- Modal -->
+@if (isModalVisible) {
+<app-modal
+  [item]="item"
+  [typeModal]="typeModal"
+  [action]="currentModalAction"
+  (closeModal)="onCloseModal()"
+  (confirmDelete)="confirmDeleteMovie(item)"
+  (sendFormMovieData)="sendFormMovie($event)"
+></app-modal>
+}

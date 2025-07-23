@@ -5,6 +5,7 @@ import {
   EventEmitter,
   inject,
   Input,
+  OnInit,
   Output,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -28,6 +29,7 @@ import { dateRangeValidator } from 'src/app/shared/utils/validators.utils';
 
 @Component({
   selector: 'app-form-macroevent',
+  standalone: true,
   imports: [
     CommonModule,
     ReactiveFormsModule,
@@ -38,16 +40,16 @@ import { dateRangeValidator } from 'src/app/shared/utils/validators.utils';
   templateUrl: './form-macroevent.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],
 })
-export class FormMacroeventComponent {
+export class FormMacroeventComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly macroeventsFacade = inject(MacroeventsFacade);
   private readonly generalService = inject(GeneralService);
-
   @Input() itemId!: number;
   @Output() sendFormMacroevent = new EventEmitter<{
     itemId: number;
     formData: FormData;
   }>();
+
   selectedImageFile: File | null = null;
   imageSrc: string = '';
   errorSession: boolean = false;
@@ -87,6 +89,7 @@ export class FormMacroeventComponent {
       [{ indent: '-1' }, { indent: '+1' }],
     ],
   };
+
   ngOnInit(): void {
     this.provincias = townsData
       .flatMap((region) => region.provinces)
@@ -116,7 +119,6 @@ export class FormMacroeventComponent {
               img: event.img,
             });
 
-            // this.onTownChange();
             this.titleForm = 'Editar Macroevento';
             this.buttonAction = 'Guardar cambios';
 
@@ -146,7 +148,7 @@ export class FormMacroeventComponent {
   onSendFormMacroevent(): void {
     if (this.formMacroevent.invalid) {
       this.submitted = true;
-      console.log('Formulario inválido', this.formMacroevent.errors);
+      console.warn('⚠️ Formulario inválido', this.formMacroevent.errors);
       return;
     }
 
@@ -161,10 +163,5 @@ export class FormMacroeventComponent {
       },
       this.itemId
     );
-
-    this.sendFormMacroevent.emit({
-      itemId: this.itemId,
-      formData: formData,
-    });
   }
 }

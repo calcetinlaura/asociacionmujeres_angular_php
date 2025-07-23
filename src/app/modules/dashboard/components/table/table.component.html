@@ -2,7 +2,7 @@
   class="filterColumns flex justify-end h-14 gap-x-1 items-center"
   [ngStyle]="{ top: topFilter + 'px' }"
 >
-  @if (type === TypeList.Invoices) {
+  @if (typeSection === TypeList.Invoices) {
   <app-icon-action
     [icon]="'uil-folder-download'"
     [tooltip]="'Descargar facturas'"
@@ -91,7 +91,7 @@
       @case (column.key === 'img') {
       <img
         appImgBroken
-        [src]="element[column.key] | itemImage : type"
+        [src]="element[column.key] | itemImage : typeSection"
         alt=""
         class="cover"
       />
@@ -103,7 +103,9 @@
       <!-- FECHAS -->
       @case (column.key === 'start') {
       <div class="flex justify-center">
-        @if (element['start'] && element['end'] === element['start']) {
+        <!-- Caso 1: NO tiene periodicEvents -->
+        @if (!element['periodicEvents'] || element['periodicEvents'].length ===
+        0) { @if (element['start'] && element['end'] === element['start']) {
         <p class="dateColumn">
           {{ element["start"] | date : "EEE dd MMM yyyy" }}
         </p>
@@ -115,9 +117,24 @@
             {{ element["end"] | date : "EEE dd MMM yyyy" }}
           </p>
         </div>
+        } }
+
+        <!-- Caso 2: Tiene periodicEvents -->
+        @if (element['periodicEvents'] && element['periodicEvents'].length > 0)
+        {
+        <div class="flex flex-col dateColumn">
+          @for (func of element['periodicEvents']; track func) {
+
+          <p class="text-[9px]">
+            {{ func.start | date : "EEEE dd MMM" }}
+          </p>
+
+          }
+        </div>
         }
       </div>
       }
+
       <!-- Diseño especial para 'espacio en eventos' -->
       @case (column.key === 'titleEvent') {
       <div>
@@ -370,27 +387,27 @@
   <ng-container matColumnDef="actions">
     <th mat-header-cell *matHeaderCellDef></th>
     <td mat-cell *matCellDef="let element">
-      @if (type === TypeList.Events) {
+      @if (typeSection === TypeList.Events) {
       <app-icon-action
         [icon]="'uil-copy'"
         [tooltip]="'Duplicar'"
-        (click)="onOpenModal(type, typeActionModal.Duplicate, element)"
+        (click)="onOpenModal(typeModal, typeActionModal.Duplicate, element)"
       ></app-icon-action>
       }
       <app-icon-action
         [icon]="'uil-eye'"
         [tooltip]="'Ver'"
-        (click)="onOpenModal(type, typeActionModal.Show, element)"
+        (click)="onOpenModal(typeModal, typeActionModal.Show, element)"
       ></app-icon-action>
       <app-icon-action
         [icon]="'uil-edit'"
         [tooltip]="'Editar'"
-        (click)="onOpenModal(type, typeActionModal.Edit, element)"
+        (click)="onOpenModal(typeModal, typeActionModal.Edit, element)"
       ></app-icon-action>
       <app-icon-action
         [icon]="'uil-trash-alt'"
         [tooltip]="'Eliminar'"
-        (click)="onOpenModal(type, typeActionModal.Delete, element)"
+        (click)="onOpenModal(typeModal, typeActionModal.Delete, element)"
       ></app-icon-action>
     </td>
     <td mat-footer-cell *matFooterCellDef></td>

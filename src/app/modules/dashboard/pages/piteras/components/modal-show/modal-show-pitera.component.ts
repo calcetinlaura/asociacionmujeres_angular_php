@@ -11,5 +11,5 @@ import { TextTitleComponent } from 'src/app/shared/components/text/text-title/te
 })
 export class ModalShowPiteraComponent {
   @Input() item!: PiteraModel;
-  type: TypeList = TypeList.Piteras;
+  typeModal: TypeList = TypeList.Piteras;
 }

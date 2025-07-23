@@ -51,14 +51,14 @@ export class ModalShowSubsidyComponent implements OnChanges {
   @Input() item!: SubsidyModelFullData;
   @Input() loadInvoices: boolean = false;
   @Output() openModal = new EventEmitter<{
-    type: TypeList;
+    typeModal: TypeList;
     action: TypeActionModal;
     item: any;
   }>();
 
   itemInvoice?: InvoiceModelFullData;
   typeList = TypeList;
-  type: TypeList = TypeList.Subsidies;
+  typeModal: TypeList = TypeList.Subsidies;
   filteredInvoices: InvoiceModelFullData[] = [];
   number_invoices: number = 0;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
@@ -247,12 +247,12 @@ export class ModalShowSubsidyComponent implements OnChanges {
   }
 
   onOpenModal(event: {
-    type: TypeList;
+    typeModal: TypeList;
     action: TypeActionModal;
     item: any;
   }): void {
     this.openModal.emit({
-      type: event.type,
+      typeModal: event.typeModal,
       action: event.action,
       item: event.item,
     });

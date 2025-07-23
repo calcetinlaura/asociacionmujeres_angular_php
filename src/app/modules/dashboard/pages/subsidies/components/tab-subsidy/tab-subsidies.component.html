@@ -11,7 +11,7 @@
       [tooltip]="'Editar'"
       (click)="
         openModal.emit({
-          type: typeList.Subsidies,
+          typeModal: typeList.Subsidies,
           action: typeActionModal.Edit,
           item: item
         })
@@ -67,7 +67,7 @@
         [iconClass]="'uil-plus'"
         (addClicked)="
           openModal.emit({
-            type: typeList.Projects,
+            typeModal: typeList.Projects,
             action: typeActionModal.Create,
             item: ''
           })
@@ -94,7 +94,7 @@
                   [tooltip]="'Editar'"
                   (click)="
                     openModal.emit({
-                      type: typeList.Projects,
+                      typeModal: typeList.Projects,
                       action: typeActionModal.Edit,
                       item: project
                     })
@@ -105,7 +105,7 @@
                   [tooltip]="'Ver'"
                   (click)="
                     openModal.emit({
-                      type: typeList.Projects,
+                      typeModal: typeList.Projects,
                       action: typeActionModal.Show,
                       item: project
                     })
@@ -116,7 +116,7 @@
                   [tooltip]="'Eliminar'"
                   (click)="
                     openModal.emit({
-                      type: typeList.Projects,
+                      typeModal: typeList.Projects,
                       action: typeActionModal.Delete,
                       item: project
                     })
@@ -227,12 +227,12 @@
   <div class="py-4 flex">
     @if (!loading) {
     <app-table
-      [type]="typeList.Invoices"
+      [typeSection]="typeList.Invoices"
       [data]="filteredInvoices"
       [headerColumns]="headerListInvoices"
       (openModal)="
         openModal.emit({
-          type: typeList.Invoices,
+          typeModal: typeList.Invoices,
           action: $event.action,
           item: $event.item
         })

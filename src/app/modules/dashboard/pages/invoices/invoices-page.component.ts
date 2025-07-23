@@ -31,20 +31,20 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { TableComponent } from '../../components/table/table.component';
 
 @Component({
-    selector: 'app-invoices-page',
-    imports: [
-        CommonModule,
-        DashboardHeaderComponent,
-        ModalComponent,
-        ButtonIconComponent,
-        InputSearchComponent,
-        SpinnerLoadingComponent,
-        TableComponent,
-        FiltersComponent,
-        MatTabsModule,
-    ],
-    templateUrl: './invoices-page.component.html',
-    styleUrls: ['./invoices-page.component.css']
+  selector: 'app-invoices-page',
+  imports: [
+    CommonModule,
+    DashboardHeaderComponent,
+    ModalComponent,
+    ButtonIconComponent,
+    InputSearchComponent,
+    SpinnerLoadingComponent,
+    TableComponent,
+    FiltersComponent,
+    MatTabsModule,
+  ],
+  templateUrl: './invoices-page.component.html',
+  styleUrls: ['./invoices-page.component.css'],
 })
 export class InvoicesPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
@@ -159,7 +159,8 @@ export class InvoicesPageComponent implements OnInit {
   number = 0;
   item: InvoiceModelFullData | null = null;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
-  typeList = TypeList.Invoices;
+  typeSection = TypeList.Invoices;
+  typeModal = TypeList.Invoices;
   currentFilterType: string | null = null;
   currentTab: string | null = null;
   currentYear = this.generalService.currentYear;
@@ -287,6 +288,7 @@ export class InvoicesPageComponent implements OnInit {
   }): void {
     this.currentModalAction = event.action;
     this.item = event.item;
+    this.typeModal = TypeList.Invoices;
     this.modalService.openModal();
   }
 

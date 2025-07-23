@@ -1,4 +1,3 @@
-
 import { Component, Input } from '@angular/core';
 import { AgentModel } from 'src/app/core/interfaces/agent.interface';
 import { TypeList } from 'src/app/core/models/general.model';
@@ -10,21 +9,21 @@ import { TextTitleComponent } from 'src/app/shared/components/text/text-title/te
 import { PhoneFormatPipe } from 'src/app/shared/pipe/phoneFormat.pipe';
 
 @Component({
-    selector: 'app-modal-show-agent',
-    imports: [
+  selector: 'app-modal-show-agent',
+  imports: [
     TextBackgroundComponent,
     TextTitleComponent,
     TextSubTitleComponent,
     TextIconComponent,
     TextEditorComponent,
-    PhoneFormatPipe
-],
-    templateUrl: './modal-show-agent.component.html',
-    styleUrl: './modal-show-agent.component.css'
+    PhoneFormatPipe,
+  ],
+  templateUrl: './modal-show-agent.component.html',
+  styleUrl: './modal-show-agent.component.css',
 })
 export class ModalShowAgentComponent {
   @Input() item!: AgentModel;
-  type: TypeList = TypeList.Agents;
+  typeModal: TypeList = TypeList.Agents;
 
   ngOnInit(): void {}
 }

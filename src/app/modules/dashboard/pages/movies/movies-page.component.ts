@@ -1,4 +1,3 @@
-
 import {
   Component,
   DestroyRef,
@@ -35,8 +34,8 @@ import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loadi
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
-    selector: 'app-movies-page',
-    imports: [
+  selector: 'app-movies-page',
+  imports: [
     DashboardHeaderComponent,
     ModalComponent,
     ButtonIconComponent,
@@ -44,10 +43,10 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
     InputSearchComponent,
     FiltersComponent,
     SpinnerLoadingComponent,
-    TableComponent
-],
-    templateUrl: './movies-page.component.html',
-    styleUrl: './movies-page.component.css'
+    TableComponent,
+  ],
+  templateUrl: './movies-page.component.html',
+  styleUrl: './movies-page.component.css',
 })
 export class MoviesPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
@@ -68,7 +67,8 @@ export class MoviesPageComponent implements OnInit {
   item: MovieModel | null = null;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
   searchForm!: FormGroup;
-  typeList = TypeList.Movies;
+  typeModal = TypeList.Movies;
+  typeSection = TypeList.Movies;
 
   headerListMovies: ColumnModel[] = [
     { title: 'Portada', key: 'img', sortable: false },
@@ -145,16 +145,25 @@ export class MoviesPageComponent implements OnInit {
   }
 
   addNewMovieModal(): void {
-    this.openModal(TypeActionModal.Create, null);
+    this.openModal(this.typeModal, TypeActionModal.Create, null);
   }
 
-  onOpenModal(event: { action: TypeActionModal; item: MovieModel }): void {
-    this.openModal(event.action, event.item ?? null);
+  onOpenModal(event: {
+    typeModal: TypeList;
+    action: TypeActionModal;
+    item: MovieModel;
+  }): void {
+    this.openModal(event.typeModal, event.action, event.item ?? null);
   }
 
-  openModal(action: TypeActionModal, movie: MovieModel | null): void {
+  openModal(
+    typeModal: TypeList,
+    action: TypeActionModal,
+    movie: MovieModel | null
+  ): void {
     this.currentModalAction = action;
     this.item = movie;
+    this.typeModal = TypeList.Movies;
     this.modalService.openModal();
   }
 

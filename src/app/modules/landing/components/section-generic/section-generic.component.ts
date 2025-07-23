@@ -1,24 +1,34 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, inject, Input, OnInit } from '@angular/core';
 import { BookModel } from 'src/app/core/interfaces/book.interface';
-import { EventModel } from 'src/app/core/interfaces/event.interface';
+import {
+  EventModel,
+  EventModelFullData,
+} from 'src/app/core/interfaces/event.interface';
+import { MacroeventModelFullData } from 'src/app/core/interfaces/macroevent.interface';
 import { MovieModel } from 'src/app/core/interfaces/movie.interface';
 import { PiteraModel } from 'src/app/core/interfaces/pitera.interface';
 import { RecipeModel } from 'src/app/core/interfaces/recipe.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
+import { EventsService } from 'src/app/core/services/events.services';
+import { MacroeventsService } from 'src/app/core/services/macroevents.services';
 import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
 import { CardPlayerComponent } from '../card/card.component';
 
 @Component({
-    selector: 'app-section-generic',
-    imports: [CardPlayerComponent, CommonModule, ModalComponent],
-    templateUrl: './section-generic.component.html',
-    styleUrl: './section-generic.component.css'
+  selector: 'app-section-generic',
+  imports: [CardPlayerComponent, CommonModule, ModalComponent],
+  templateUrl: './section-generic.component.html',
+  styleUrl: './section-generic.component.css',
 })
 export class SectionGenericComponent implements OnInit {
-  @Input() type: TypeList = TypeList.Books;
+  private readonly macroeventsService = inject(MacroeventsService);
+  private readonly eventsService = inject(EventsService);
+
   @Input() data: any[] = [];
   @Input() total?: number = 0;
+  @Input() typeSection: TypeList = TypeList.Books;
+  @Input() typeModal: TypeList = TypeList.Books;
   TypeList = TypeList;
   TypeActionModal = TypeActionModal;
 
@@ -36,19 +46,48 @@ export class SectionGenericComponent implements OnInit {
   constructor() {}
 
   ngOnInit(): void {
-    if (this.type === undefined) {
-      this.type = TypeList.Books;
+    if (this.typeSection === undefined) {
+      this.typeSection = TypeList.Books;
     }
-    this.selectedTypeModal = this.type;
+    if (this.typeModal === undefined) {
+      this.typeModal = TypeList.Books;
+    }
+    this.selectedTypeModal = this.typeSection;
   }
   openModalView(item: any) {
     this.showModalView = true;
     this.selectedItem = item;
     this.selectedActionModal = TypeActionModal.Show;
   }
-  onCloseModal(action: string) {
+  onCloseModal() {
     this.showModalView = false;
-    this.selectedTypeModal = this.type;
     this.selectedItem = '';
+  }
+
+  onOpenMacroevent(macroeventId: number) {
+    this.macroeventsService.getMacroeventById(macroeventId).subscribe({
+      next: (macroevent: MacroeventModelFullData) => {
+        this.selectedItem = macroevent;
+        this.selectedTypeModal = TypeList.Macroevents; // 👉 Esto es clave
+        this.selectedActionModal = TypeActionModal.Show;
+        this.showModalView = true;
+      },
+      error: (err) => {
+        console.error('Error cargando macroevento', err);
+      },
+    });
+  }
+  onOpenEvent(eventId: number) {
+    this.eventsService.getEventById(eventId).subscribe({
+      next: (event: EventModelFullData) => {
+        this.selectedItem = event;
+        this.selectedTypeModal = TypeList.Events; // 👉 Esto es clave
+        this.selectedActionModal = TypeActionModal.Show;
+        this.showModalView = true;
+      },
+      error: (err) => {
+        console.error('Error cargando evento', err);
+      },
+    });
   }
 }

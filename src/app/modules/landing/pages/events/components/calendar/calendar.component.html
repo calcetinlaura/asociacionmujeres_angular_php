@@ -55,25 +55,10 @@
                 >
                   <img
                     appImgBroken
-                    [src]="(event.img ? event.img : '') | itemImage : type"
+                    [src]="(event.img ? event.img : '') | itemImage : typeModal"
                     alt="{{ event.title }}"
                     class="object-cover w-full h-full cursor-pointer"
                   />
-                  <ng-container
-                    *ngIf="
-                      (event.img ? event.img : '') | itemImage : type as imgSrc;
-                      else noImage
-                    "
-                  >
-                    <img [src]="imgSrc" alt="" class="cover" appImgBroken />
-                  </ng-container>
-                  <ng-template #noImage>
-                    <div
-                      class="flex flex-1 bg-gray-300 w-full h-[450px] items-center justify-center"
-                    >
-                      <i class="uil uil-camera-plus text-white text-[80px]"></i>
-                    </div>
-                  </ng-template>
                 </div>
               </div>
             </ng-container>
@@ -95,8 +80,8 @@
 <app-modal
   *ngIf="showModalView"
   [item]="item"
-  [type]="type"
-  [action]="TypeActionModal.Show"
+  [typeModal]="typeModal"
+  [action]="selectedActionModal"
   (closeModal)="onCloseModal()"
 ></app-modal>
 

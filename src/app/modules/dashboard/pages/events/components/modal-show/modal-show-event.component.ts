@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import {
   EnumStatusEvent,
   EventModelFullData,
@@ -28,6 +28,14 @@ import { TextTitleComponent } from 'src/app/shared/components/text/text-title/te
 })
 export class ModalShowEventComponent {
   @Input() item!: EventModelFullData;
-  type: TypeList = TypeList.Events;
+  @Output() openMacroevent = new EventEmitter<number>();
+  typeModal: TypeList = TypeList.Events;
   enumStatusEnum = EnumStatusEvent;
+
+  onOpenMacroevent(macroeventId: number) {
+    console.log('ID MACRO en EVENTO', macroeventId);
+    if (macroeventId) {
+      this.openMacroevent.emit(macroeventId);
+    }
+  }
 }

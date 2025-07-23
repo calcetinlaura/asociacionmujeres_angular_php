@@ -1,4 +1,3 @@
-
 import {
   Component,
   DestroyRef,
@@ -36,8 +35,8 @@ import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loadi
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
-    selector: 'app-creditors-page',
-    imports: [
+  selector: 'app-creditors-page',
+  imports: [
     DashboardHeaderComponent,
     ModalComponent,
     ButtonIconComponent,
@@ -45,10 +44,10 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
     InputSearchComponent,
     SpinnerLoadingComponent,
     TableComponent,
-    FiltersComponent
-],
-    templateUrl: './creditors-page.component.html',
-    styleUrl: './creditors-page.component.css'
+    FiltersComponent,
+  ],
+  templateUrl: './creditors-page.component.html',
+  styleUrl: './creditors-page.component.css',
 })
 export class CreditorsPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
@@ -69,8 +68,8 @@ export class CreditorsPageComponent implements OnInit {
   item: CreditorWithInvoices | null = null;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
   searchForm!: FormGroup;
-  typeList = TypeList.Creditors;
-
+  typeModal = TypeList.Creditors;
+  typeSection = TypeList.Creditors;
   headerListCreditors: ColumnModel[] = [
     { title: 'Compañía', key: 'company', sortable: true },
     {
@@ -157,22 +156,25 @@ export class CreditorsPageComponent implements OnInit {
   }
 
   addNewCreditorModal(): void {
-    this.openModal(TypeActionModal.Create, null);
+    this.openModal(this.typeModal, TypeActionModal.Create, null);
   }
 
   onOpenModal(event: {
+    typeModal: TypeList;
     action: TypeActionModal;
     item: CreditorWithInvoices;
   }): void {
-    this.openModal(event.action, event.item);
+    this.openModal(event.typeModal, event.action, event.item);
   }
 
   private openModal(
+    typeModal: TypeList,
     action: TypeActionModal,
     item: CreditorWithInvoices | null
   ): void {
     this.currentModalAction = action;
     this.item = item;
+    this.typeModal = typeModal;
     this.modalService.openModal();
   }
 

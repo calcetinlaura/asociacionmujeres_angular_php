@@ -10,19 +10,19 @@ import { TextTitleComponent } from 'src/app/shared/components/text/text-title/te
 import { EurosFormatPipe } from 'src/app/shared/pipe/eurosFormat.pipe';
 
 @Component({
-    selector: 'app-modal-show-invoice',
-    imports: [
-        CommonModule,
-        TextBackgroundComponent,
-        TextBorderComponent,
-        TextTitleComponent,
-        TextEditorComponent,
-        TextIconComponent,
-        EurosFormatPipe,
-    ],
-    templateUrl: './modal-show-invoice.component.html'
+  selector: 'app-modal-show-invoice',
+  imports: [
+    CommonModule,
+    TextBackgroundComponent,
+    TextBorderComponent,
+    TextTitleComponent,
+    TextEditorComponent,
+    TextIconComponent,
+    EurosFormatPipe,
+  ],
+  templateUrl: './modal-show-invoice.component.html',
 })
 export class ModalShowInvoiceComponent {
   @Input() item!: InvoiceModelFullData;
-  type: TypeList = TypeList.Invoices;
+  typeModal: TypeList = TypeList.Invoices;
 }

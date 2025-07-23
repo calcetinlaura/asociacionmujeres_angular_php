@@ -3,19 +3,18 @@
   <app-input-search (onDebounce)="applyFilterWord($event)" class="my-8" />
   <!-- Spinner Loading -->
   @if (isLoading) {
-    <app-spinner-loading />
+  <app-spinner-loading />
+  } @else { @if (areThereResults) {
+  <app-section-generic
+    [typeSection]="typeList.Recipes"
+    [typeModal]="typeList.Recipes"
+    [data]="filteredRecipes"
+    [total]="number"
+  />
   } @else {
-    @if (areThereResults) {
-      <app-section-generic
-        [type]="typeList.Recipes"
-        [data]="filteredRecipes"
-        [total]="number"
-        />
-    } @else {
-      <app-no-results [text]="'recetas' | lowercase"
-        />
-    }
-    <!-- Sección no hay resultados -->
+  <app-no-results [text]="'recetas' | lowercase" />
+  }
+  <!-- Sección no hay resultados -->
   }
   <!-- Sección cards -->
 </div>

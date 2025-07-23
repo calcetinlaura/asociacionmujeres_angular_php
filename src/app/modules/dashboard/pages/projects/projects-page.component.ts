@@ -58,7 +58,8 @@ export class ProjectsPageComponent implements OnInit {
 
   selectedFilter: number | null = null;
   currentYear = this.generalService.currentYear;
-  typeList = TypeList.Projects;
+  typeSection = TypeList.Projects;
+  typeModal = TypeList.Projects;
   isLoading = true;
   isModalVisible = false;
   number = 0;
@@ -144,16 +145,25 @@ export class ProjectsPageComponent implements OnInit {
   }
 
   addNewProjectModal(): void {
-    this.openModal(TypeActionModal.Create, null);
+    this.openModal(this.typeModal, TypeActionModal.Create, null);
   }
 
-  onOpenModal(project: { action: TypeActionModal; item?: ProjectModel }): void {
-    this.openModal(project.action, project.item ?? null);
+  onOpenModal(project: {
+    typeModal: TypeList;
+    action: TypeActionModal;
+    item?: ProjectModel;
+  }): void {
+    this.openModal(project.typeModal, project.action, project.item ?? null);
   }
 
-  private openModal(action: TypeActionModal, item: ProjectModel | null): void {
+  private openModal(
+    typeModal: TypeList,
+    action: TypeActionModal,
+    item: ProjectModel | null
+  ): void {
     this.currentModalAction = action;
     this.item = item;
+    this.typeModal = TypeList.Projects;
     this.modalService.openModal();
   }
 

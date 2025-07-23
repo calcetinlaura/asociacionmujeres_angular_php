@@ -1,0 +1,8 @@
+<div class="box-modal-show">
+  <div>
+    <app-img-modal [img]="item?.img" [title]="item?.title" [type]="typeModal" />
+  </div>
+  <div class="flex flex-1 flex-col justify-between px-2 pt-4 pb-2 sm:p-4">
+    <ng-content></ng-content>
+  </div>
+</div>

@@ -39,7 +39,7 @@ export class CalendarComponent implements OnChanges {
   showModalView = false;
   selectedActionModal: TypeActionModal = TypeActionModal.Show;
   TypeActionModal = TypeActionModal;
-  type: TypeList = TypeList.Events;
+  typeModal: TypeList = TypeList.Events;
   item: EventModel | null = null;
   showMultiEventModal = false;
   multiEventItems: EventModel[] = [];

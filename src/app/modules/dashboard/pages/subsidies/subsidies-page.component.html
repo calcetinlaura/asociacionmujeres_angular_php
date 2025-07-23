@@ -4,73 +4,70 @@
     [title]="''"
     [number]="number"
     [type]="'Subvenciones'"
-    />
-    <div class="flex flex-1 flex-col justify-start p-8 gap-y-8">
-      <app-filters
-        [filters]="filtersYears"
-        (filterClicked)="filterSelected($event)"
-      ></app-filters>
-      @if (showAllSubsidies) {
-        <div class="flex gap-x-4">
-          <app-button-icon
-            [buttonText]="'Añadir subveción'"
-            [iconClass]="'uil-plus'"
-            (addClicked)="addNewSubsidyModal()"
-            />
-            <app-input-search
-              (onDebounce)="applyFilterWord($event)"
-              class="flex-1"
-              />
-            </div>
-          }
-        </div>
-      </div>
-      <div class="flex flex-col px-8">
-        <!-- Spinner Loading -->
-        @if (isLoading) {
-          <app-spinner-loading />
-        }
-        <!-- Tabla -->
-        @if (showAllSubsidies) {
-          <div class="pb-4 flex">
-            <app-table
-              [data]="filteredSubsidies"
-              [headerColumns]="headerListSubsidies"
-              [type]="typeListModal"
-              (openModal)="onOpenModal($event)"
-            ></app-table>
-          </div>
-        }
-        @if (!showAllSubsidies && !isLoading && visibleTabs.length > 0) {
-          <mat-tab-group
-            (selectedTabChange)="tabActive($event)"
-            [selectedIndex]="selectedIndex"
-            >
-            @for (tab of visibleTabs; track tab) {
-              <mat-tab [label]="tab.label">
-                <app-tab-subsidy
-                  [item]="tab.item"
-                  [loadInvoices]="true"
-                  (openModal)="onOpenModal($event)"
-                ></app-tab-subsidy>
-              </mat-tab>
-            }
-          </mat-tab-group>
-          }<!-- Mensaje cuando no hay subvenciones -->
-          @if (!showAllSubsidies && !isLoading && visibleTabs.length === 0) {
-            <div class="text-center text-gray-600 my-12 text-lg">
-              No hay subvenciones registradas en este año.
-            </div>
-          }
-        </div>
-        <!-- Modal -->
-        @if (isModalVisible) {
-          <app-modal
-            [item]="item"
-            [type]="typeListModal"
-            [action]="currentModalAction"
-            (closeModal)="onCloseModal()"
-            (confirmDelete)="confirmDeleteSubsidy(item)"
-            (sendFormSubsidyData)="sendFormSubsidy($event)"
-          ></app-modal>
-        }
+  />
+  <div class="flex flex-1 flex-col justify-start p-8 gap-y-8">
+    <app-filters
+      [filters]="filtersYears"
+      (filterClicked)="filterSelected($event)"
+    ></app-filters>
+    @if (showAllSubsidies) {
+    <div class="flex gap-x-4">
+      <app-button-icon
+        [buttonText]="'Añadir subveción'"
+        [iconClass]="'uil-plus'"
+        (addClicked)="addNewSubsidyModal()"
+      />
+      <app-input-search (onDebounce)="applyFilterWord($event)" class="flex-1" />
+    </div>
+    }
+  </div>
+</div>
+<div class="flex flex-col px-8">
+  <!-- Spinner Loading -->
+  @if (isLoading) {
+  <app-spinner-loading />
+  }
+  <!-- Tabla -->
+  @if (showAllSubsidies) {
+  <div class="pb-4 flex">
+    <app-table
+      [data]="filteredSubsidies"
+      [headerColumns]="headerListSubsidies"
+      [typeSection]="typeModal"
+      [typeModal]="typeModal"
+      (openModal)="onOpenModal($event)"
+    ></app-table>
+  </div>
+  } @if (!showAllSubsidies && !isLoading && visibleTabs.length > 0) {
+  <mat-tab-group
+    (selectedTabChange)="tabActive($event)"
+    [selectedIndex]="selectedIndex"
+  >
+    @for (tab of visibleTabs; track tab) {
+    <mat-tab [label]="tab.label">
+      <app-tab-subsidy
+        [item]="tab.item"
+        [loadInvoices]="true"
+        (openModal)="onOpenModal($event)"
+      ></app-tab-subsidy>
+    </mat-tab>
+    }
+  </mat-tab-group>
+  }<!-- Mensaje cuando no hay subvenciones -->
+  @if (!showAllSubsidies && !isLoading && visibleTabs.length === 0) {
+  <div class="text-center text-gray-600 my-12 text-lg">
+    No hay subvenciones registradas en este año.
+  </div>
+  }
+</div>
+<!-- Modal -->
+@if (isModalVisible) {
+<app-modal
+  [item]="item"
+  [typeModal]="typeModal"
+  [action]="currentModalAction"
+  (closeModal)="onCloseModal()"
+  (confirmDelete)="confirmDeleteSubsidy(item)"
+  (sendFormSubsidyData)="sendFormSubsidy($event)"
+></app-modal>
+}

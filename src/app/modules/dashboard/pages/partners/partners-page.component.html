@@ -4,47 +4,48 @@
     [title]="'Asociación'"
     [number]="number"
     [type]="'socias'"
-    />
-    <div class="flex flex-1 flex-col justify-center px-8 gap-y-3">
-      <app-filters
-        [filters]="filters"
-        (filterClicked)="filterSelected($event)"
-      ></app-filters>
-      <div class="flex gap-x-4">
-        <app-button-icon
-          [buttonText]="'Nueva socia'"
-          [iconClass]="'uil-plus'"
-          (addClicked)="addNewPartnerModal()"
-          />
-          <app-input-search (onDebounce)="applyFilterWord($event)" class="flex-1" />
-        </div>
-      </div>
+  />
+  <div class="flex flex-1 flex-col justify-center px-8 gap-y-3">
+    <app-filters
+      [filters]="filters"
+      (filterClicked)="filterSelected($event)"
+    ></app-filters>
+    <div class="flex gap-x-4">
+      <app-button-icon
+        [buttonText]="'Nueva socia'"
+        [iconClass]="'uil-plus'"
+        (addClicked)="addNewPartnerModal()"
+      />
+      <app-input-search (onDebounce)="applyFilterWord($event)" class="flex-1" />
     </div>
-    <div class="flex flex-col px-8">
-      <!-- Spinner Loading -->
-      @if (isLoading) {
-        <app-spinner-loading />
-      } @else {
-        <div class="pb-4 flex">
-          <app-table
-            [data]="filteredPartners"
-            [type]="typeList"
-            [headerColumns]="headerListPartners"
-            (openModal)="onOpenModal($event)"
-            />
-          </div>
-        }
-        <!-- Tabla -->
-      </div>
+  </div>
+</div>
+<div class="flex flex-col px-8">
+  <!-- Spinner Loading -->
+  @if (isLoading) {
+  <app-spinner-loading />
+  } @else {
+  <div class="pb-4 flex">
+    <app-table
+      [data]="filteredPartners"
+      [typeSection]="typeSection"
+      [typeModal]="typeModal"
+      [headerColumns]="headerListPartners"
+      (openModal)="onOpenModal($event)"
+    />
+  </div>
+  }
+  <!-- Tabla -->
+</div>
 
-      <!-- Modal -->
-      @if (isModalVisible) {
-        <app-modal
-          [item]="item"
-          [type]="typeList"
-          [action]="currentModalAction"
-          (closeModal)="onCloseModal()"
-          (confirmDelete)="confirmDeletePartner(item)"
-          (sendFormPartnerData)="sendFormPartner($event)"
-        ></app-modal>
-      }
+<!-- Modal -->
+@if (isModalVisible) {
+<app-modal
+  [item]="item"
+  [typeModal]="typeModal"
+  [action]="currentModalAction"
+  (closeModal)="onCloseModal()"
+  (confirmDelete)="confirmDeletePartner(item)"
+  (sendFormPartnerData)="sendFormPartner($event)"
+></app-modal>
+}

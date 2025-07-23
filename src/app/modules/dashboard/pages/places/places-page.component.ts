@@ -1,4 +1,3 @@
-
 import { Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -20,18 +19,18 @@ import { ModalService } from 'src/app/shared/components/modal/services/modal.ser
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 
 @Component({
-    selector: 'app-places-page',
-    imports: [
+  selector: 'app-places-page',
+  imports: [
     DashboardHeaderComponent,
     ModalComponent,
     ButtonIconComponent,
     ReactiveFormsModule,
     InputSearchComponent,
     SpinnerLoadingComponent,
-    TableComponent
-],
-    templateUrl: './places-page.component.html',
-    styleUrl: './places-page.component.css'
+    TableComponent,
+  ],
+  templateUrl: './places-page.component.html',
+  styleUrl: './places-page.component.css',
 })
 export class PlacesPageComponent implements OnInit {
   private readonly placesFacade = inject(PlacesFacade);
@@ -49,7 +48,8 @@ export class PlacesPageComponent implements OnInit {
   item: PlaceModel | null = null;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
   searchForm!: FormGroup;
-  typeList = TypeList.Places;
+  typeSection = TypeList.Places;
+  typeModal = TypeList.Places;
 
   headerListPlaces: ColumnModel[] = [
     { title: 'Imagen', key: 'img', sortable: false },
@@ -120,15 +120,24 @@ export class PlacesPageComponent implements OnInit {
   }
 
   addNewPlaceModal(): void {
-    this.openModal(TypeActionModal.Create, null);
+    this.openModal(this.typeModal, TypeActionModal.Create, null);
   }
 
-  onOpenModal(event: { action: TypeActionModal; item?: PlaceModel }): void {
-    this.openModal(event.action, event.item ?? null);
+  onOpenModal(event: {
+    typeModal: TypeList;
+    action: TypeActionModal;
+    item?: PlaceModel;
+  }): void {
+    this.openModal(event.typeModal, event.action, event.item ?? null);
   }
-  openModal(action: TypeActionModal, place: PlaceModel | null): void {
+  openModal(
+    typeModal: TypeList,
+    action: TypeActionModal,
+    place: PlaceModel | null
+  ): void {
     this.currentModalAction = action;
     this.item = place;
+    this.typeModal = typeModal;
     this.modalService.openModal();
   }
 

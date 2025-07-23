@@ -1,6 +1,13 @@
 <!-- Diseño del mode (big)-->
 <div [ngClass]="type === typeList.Piteras ? 'card card-pitera' : 'card'">
-  <img appImgBroken [src]="item.img | itemImage : type" alt="" class="cover" />
+  <div class="cover">
+    <img
+      appImgBroken
+      [src]="item.img | itemImage : type"
+      alt=""
+      class="cover_image"
+    />
+  </div>
   <div class="flex flex-col gap-y-1 text-center py-4">
     <div class="item-title">{{ item.title }}</div>
     @if (type === typeList.Events && item.place_name) {

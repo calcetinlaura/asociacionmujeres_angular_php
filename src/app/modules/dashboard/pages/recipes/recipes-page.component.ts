@@ -1,4 +1,3 @@
-
 import {
   Component,
   DestroyRef,
@@ -35,8 +34,8 @@ import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loadi
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
-    selector: 'app-recipes-page',
-    imports: [
+  selector: 'app-recipes-page',
+  imports: [
     DashboardHeaderComponent,
     ModalComponent,
     ButtonIconComponent,
@@ -44,10 +43,10 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
     InputSearchComponent,
     FiltersComponent,
     SpinnerLoadingComponent,
-    TableComponent
-],
-    templateUrl: './recipes-page.component.html',
-    styleUrl: './recipes-page.component.css'
+    TableComponent,
+  ],
+  templateUrl: './recipes-page.component.html',
+  styleUrl: './recipes-page.component.css',
 })
 export class RecipesPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
@@ -68,7 +67,8 @@ export class RecipesPageComponent implements OnInit {
   item: RecipeModel | null = null;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
   searchForm!: FormGroup;
-  typeList = TypeList.Recipes;
+  typeModal = TypeList.Recipes;
+  typeSection = TypeList.Recipes;
 
   headerListRecipes: ColumnModel[] = [
     { title: 'Portada', key: 'img', sortable: false },
@@ -135,16 +135,25 @@ export class RecipesPageComponent implements OnInit {
   }
 
   addNewRecipeModal(): void {
-    this.openModal(TypeActionModal.Create, null);
+    this.openModal(this.typeModal, TypeActionModal.Create, null);
   }
 
-  onOpenModal(event: { action: TypeActionModal; item: RecipeModel }): void {
-    this.openModal(event.action, event.item ?? null);
+  onOpenModal(event: {
+    typeModal: TypeList;
+    action: TypeActionModal;
+    item: RecipeModel;
+  }): void {
+    this.openModal(event.typeModal, event.action, event.item ?? null);
   }
 
-  private openModal(action: TypeActionModal, recipe: RecipeModel | null): void {
+  private openModal(
+    typeModal: TypeList,
+    action: TypeActionModal,
+    recipe: RecipeModel | null
+  ): void {
     this.currentModalAction = action;
     this.item = recipe;
+    this.typeModal = typeModal;
     this.modalService.openModal();
   }
 

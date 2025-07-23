@@ -61,7 +61,8 @@ export class EventsPageComponent implements OnInit {
 
   selectedFilter: number | null = null;
   currentYear = this.generalService.currentYear;
-  typeList = TypeList.Events;
+  typeSection = TypeList.Events;
+  typeModal = TypeList.Events;
   isLoading = true;
   isModalVisible = false;
   number = 0;
@@ -157,17 +158,19 @@ export class EventsPageComponent implements OnInit {
   }
 
   addNewEventModal(): void {
-    this.openModal(TypeActionModal.Create, null);
+    this.openModal(this.typeModal, TypeActionModal.Create, null);
   }
 
   onOpenModal(event: {
+    typeModal: TypeList;
     action: TypeActionModal;
     item?: EventModelFullData;
   }): void {
-    this.openModal(event.action, event.item ?? null);
+    this.openModal(event.typeModal, event.action, event.item ?? null);
   }
 
   private openModal(
+    typeModal: TypeList,
     action: TypeActionModal,
     item: EventModelFullData | null
   ): void {
@@ -177,6 +180,7 @@ export class EventsPageComponent implements OnInit {
     } else {
       this.item = item;
     }
+    this.typeModal = typeModal;
     this.modalService.openModal();
   }
 

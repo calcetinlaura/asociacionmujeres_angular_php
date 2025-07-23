@@ -1,4 +1,3 @@
-
 import { Component, Input } from '@angular/core';
 import { RecipeModel } from 'src/app/core/interfaces/recipe.interface';
 import { TypeList } from 'src/app/core/models/general.model';
@@ -9,17 +8,17 @@ import { TextSubTitleComponent } from 'src/app/shared/components/text/text-subTi
 import { TextTitleComponent } from 'src/app/shared/components/text/text-title/text-title.component';
 
 @Component({
-    selector: 'app-modal-show-recipe',
-    imports: [
+  selector: 'app-modal-show-recipe',
+  imports: [
     TextBackgroundComponent,
     TextBorderComponent,
     TextTitleComponent,
     TextSubTitleComponent,
-    TextEditorComponent
-],
-    templateUrl: './modal-show-recipe.component.html'
+    TextEditorComponent,
+  ],
+  templateUrl: './modal-show-recipe.component.html',
 })
 export class ModalShowRecipeComponent {
   @Input() item!: RecipeModel;
-  type: TypeList = TypeList.Recipes;
+  typeModal: TypeList = TypeList.Recipes;
 }

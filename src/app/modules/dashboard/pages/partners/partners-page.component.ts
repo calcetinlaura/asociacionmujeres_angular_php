@@ -1,4 +1,3 @@
-
 import {
   Component,
   DestroyRef,
@@ -32,8 +31,8 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { TableComponent } from '../../components/table/table.component';
 
 @Component({
-    selector: 'app-partners-page',
-    imports: [
+  selector: 'app-partners-page',
+  imports: [
     DashboardHeaderComponent,
     ModalComponent,
     ButtonIconComponent,
@@ -41,10 +40,10 @@ import { TableComponent } from '../../components/table/table.component';
     InputSearchComponent,
     SpinnerLoadingComponent,
     FiltersComponent,
-    TableComponent
-],
-    templateUrl: './partners-page.component.html',
-    styleUrl: './partners-page.component.css'
+    TableComponent,
+  ],
+  templateUrl: './partners-page.component.html',
+  styleUrl: './partners-page.component.css',
 })
 export class PartnersPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
@@ -59,7 +58,8 @@ export class PartnersPageComponent implements OnInit {
   selectedFilter: number | null = null;
 
   currentYear = this.generalService.currentYear;
-  typeList = TypeList.Partners;
+  typeSection = TypeList.Partners;
+  typeModal = TypeList.Partners;
   isLoading = true;
   isModalVisible = false;
   number = 0;
@@ -155,16 +155,25 @@ export class PartnersPageComponent implements OnInit {
   }
 
   addNewPartnerModal(): void {
-    this.openModal(TypeActionModal.Create, null);
+    this.openModal(this.typeModal, TypeActionModal.Create, null);
   }
 
-  onOpenModal(event: { action: TypeActionModal; item?: PartnerModel }): void {
-    this.openModal(event.action, event.item ?? null);
+  onOpenModal(event: {
+    typeModal: TypeList;
+    action: TypeActionModal;
+    item?: PartnerModel;
+  }): void {
+    this.openModal(event.typeModal, event.action, event.item ?? null);
   }
 
-  openModal(action: TypeActionModal, partner: PartnerModel | null): void {
+  openModal(
+    typeModal: TypeList,
+    action: TypeActionModal,
+    partner: PartnerModel | null
+  ): void {
     this.currentModalAction = action;
     this.item = partner;
+    this.typeModal = TypeList.Partners;
     this.modalService.openModal();
   }
 

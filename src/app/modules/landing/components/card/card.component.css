@@ -17,11 +17,17 @@
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.06);
   cursor: pointer;
 }
-
 .card .cover {
+  aspect-ratio: 210 / 297; /* Default cuadrado */
+  max-height: 125%;
+  overflow: hidden;
+}
+.card .cover_image {
   width: 100%;
   height: auto;
   border-radius: var(--border-radius-1);
+  object-fit: cover;
+  display: block;
 }
 
 .card .content-player {

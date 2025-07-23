@@ -1,13 +1,14 @@
 <div class="flex flex-col mx-3 md:mx-8 mt-2 md:mt-4">
   <!-- Spinner Loading -->
   @if (isLoading) {
-    <app-spinner-loading />
+  <app-spinner-loading />
   } @else {
-    <app-section-generic
-      [type]="typeList.Piteras"
-      [data]="piteras"
-      [total]="number"
-      />
-    }
-    <!-- Sección cards -->
-  </div>
+  <app-section-generic
+    [typeSection]="typeList.Piteras"
+    [typeModal]="typeList.Piteras"
+    [data]="piteras"
+    [total]="number"
+  />
+  }
+  <!-- Sección cards -->
+</div>

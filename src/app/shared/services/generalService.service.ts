@@ -159,4 +159,11 @@ export class GeneralService {
   getYearFromDate(dateString: string | Date): number {
     return new Date(dateString).getFullYear();
   }
+  convertFormDataToObject<T = any>(formData: FormData): T {
+    const obj: any = {};
+    formData.forEach((value, key) => {
+      obj[key] = value;
+    });
+    return obj as T;
+  }
 }

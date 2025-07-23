@@ -24,7 +24,7 @@ export class ModalMultiEventComponent {
   @Input() events: EventModelFullData[] = [];
   @Output() select = new EventEmitter<EventModelFullData>();
   @Output() close = new EventEmitter<void>();
-  type: TypeList = TypeList.Events;
+  typeModal: TypeList = TypeList.Events;
 
   onSelect(event: EventModelFullData) {
     this.select.emit(event);

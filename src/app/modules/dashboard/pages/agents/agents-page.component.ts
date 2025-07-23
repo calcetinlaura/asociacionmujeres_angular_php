@@ -1,4 +1,3 @@
-
 import {
   Component,
   DestroyRef,
@@ -35,8 +34,8 @@ import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loadi
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
-    selector: 'app-agents-page',
-    imports: [
+  selector: 'app-agents-page',
+  imports: [
     DashboardHeaderComponent,
     ModalComponent,
     ButtonIconComponent,
@@ -44,10 +43,10 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
     InputSearchComponent,
     SpinnerLoadingComponent,
     TableComponent,
-    FiltersComponent
-],
-    templateUrl: './agents-page.component.html',
-    styleUrl: './agents-page.component.css'
+    FiltersComponent,
+  ],
+  templateUrl: './agents-page.component.html',
+  styleUrl: './agents-page.component.css',
 })
 export class AgentsPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
@@ -68,7 +67,8 @@ export class AgentsPageComponent implements OnInit {
   item: AgentModel | null = null;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
   searchForm!: FormGroup;
-  typeList = TypeList.Agents;
+  typeSection = TypeList.Agents;
+  typeModal = TypeList.Agents;
 
   headerListAgents: ColumnModel[] = [
     { title: 'Imagen', key: 'img', sortable: false },
@@ -137,16 +137,25 @@ export class AgentsPageComponent implements OnInit {
   }
 
   addNewAgentModal(): void {
-    this.openModal(TypeActionModal.Create, null);
+    this.openModal(TypeList.Agents, TypeActionModal.Create, null);
   }
 
-  onOpenModal(event: { action: TypeActionModal; item: AgentModel }): void {
-    this.openModal(event.action, event.item);
+  onOpenModal(event: {
+    typeModal: TypeList;
+    action: TypeActionModal;
+    item: AgentModel;
+  }): void {
+    this.openModal(event.typeModal, event.action, event.item);
   }
 
-  private openModal(action: TypeActionModal, item: AgentModel | null): void {
+  private openModal(
+    typeModal: TypeList,
+    action: TypeActionModal,
+    item: AgentModel | null
+  ): void {
     this.currentModalAction = action;
     this.item = item;
+    this.typeModal = typeModal;
     this.modalService.openModal();
   }
 

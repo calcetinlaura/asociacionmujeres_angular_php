@@ -1,4 +1,3 @@
-
 import { Component, Input } from '@angular/core';
 import { SafeResourceUrl } from '@angular/platform-browser';
 import { PlaceModel } from 'src/app/core/interfaces/place.interface';
@@ -12,21 +11,21 @@ import { TextTitleComponent } from 'src/app/shared/components/text/text-title/te
 import { FilterTransformCodePipe } from 'src/app/shared/pipe/filterTransformCode.pipe';
 
 @Component({
-    selector: 'app-modal-show-place',
-    imports: [
+  selector: 'app-modal-show-place',
+  imports: [
     TextBackgroundComponent,
     TextTitleComponent,
     TextSubTitleComponent,
     TextIconComponent,
     TextEditorComponent,
     FilterTransformCodePipe,
-    MapComponent
-],
-    templateUrl: './modal-show-place.component.html'
+    MapComponent,
+  ],
+  templateUrl: './modal-show-place.component.html',
 })
 export class ModalShowPlaceComponent {
   @Input() item!: PlaceModel;
-  type: TypeList = TypeList.Places;
+  typeModal: TypeList = TypeList.Places;
   safeMapUrl: SafeResourceUrl | null = null;
 
   ngOnInit(): void {

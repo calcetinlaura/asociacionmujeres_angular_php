@@ -1,4 +1,3 @@
-
 import {
   Component,
   DestroyRef,
@@ -39,8 +38,8 @@ import { TableComponent } from '../../components/table/table.component';
 import { ModalShowSubsidyComponent } from './components/tab-subsidy/tab-subsidies.component';
 
 @Component({
-    selector: 'app-subsidies-page',
-    imports: [
+  selector: 'app-subsidies-page',
+  imports: [
     DashboardHeaderComponent,
     ModalComponent,
     ButtonIconComponent,
@@ -50,11 +49,11 @@ import { ModalShowSubsidyComponent } from './components/tab-subsidy/tab-subsidie
     MatTabsModule,
     SpinnerLoadingComponent,
     TableComponent,
-    ModalShowSubsidyComponent
-],
-    providers: [SubsidiesService],
-    templateUrl: './subsidies-page.component.html',
-    styleUrl: './subsidies-page.component.css'
+    ModalShowSubsidyComponent,
+  ],
+  providers: [SubsidiesService],
+  templateUrl: './subsidies-page.component.html',
+  styleUrl: './subsidies-page.component.css',
 })
 export class SubsidiesPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
@@ -68,8 +67,8 @@ export class SubsidiesPageComponent implements OnInit {
   tabSubsidies!: QueryList<ModalShowSubsidyComponent>;
 
   // Estado de UI
-  typeList = TypeList;
-  typeListModal: TypeList = TypeList.Subsidies;
+  typeSection = TypeList;
+  typeModal: TypeList = TypeList.Subsidies;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
   selectedFilter: number | null = null;
   selectedIndex: number = 0;
@@ -257,24 +256,24 @@ export class SubsidiesPageComponent implements OnInit {
   }
 
   addNewSubsidyModal(): void {
-    this.openModal(this.typeListModal, TypeActionModal.Create, null);
+    this.openModal(this.typeModal, TypeActionModal.Create, null);
   }
 
   onOpenModal(event: {
-    type: TypeList;
+    typeModal: TypeList;
     action: TypeActionModal;
     item: SubsidyModel;
   }): void {
-    this.openModal(event.type, event.action, event.item ?? null);
+    this.openModal(event.typeModal, event.action, event.item ?? null);
   }
 
   private openModal(
-    type: TypeList,
+    typeModal: TypeList,
     action: TypeActionModal,
     item: SubsidyModel | null
   ): void {
     this.currentModalAction = action;
-    this.typeListModal = type;
+    this.typeModal = typeModal;
     this.item = item;
     this.modalService.openModal();
   }

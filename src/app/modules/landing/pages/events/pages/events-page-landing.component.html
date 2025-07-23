@@ -16,7 +16,7 @@
   ></app-calendar>
   } @if (areThereResults) {
   <app-section-generic
-    [type]="typeList.Events"
+    [typeSection]="typeList.Events"
     [data]="nonRepeatedEvents"
     [total]="number"
   />

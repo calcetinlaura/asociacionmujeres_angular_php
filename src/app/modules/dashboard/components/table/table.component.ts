@@ -62,13 +62,14 @@ export class TableComponent {
   private readonly invoicesService = inject(InvoicesService);
 
   private _liveAnnouncer = inject(LiveAnnouncer);
-  @Input() type: TypeList = TypeList.Books;
+  @Input() typeSection: TypeList = TypeList.Books;
+  @Input() typeModal: TypeList = TypeList.Books;
   @Input() data: any[] = [];
   @Input() headerColumns: ColumnModel[] = [];
   @Input() topFilter = 270;
   @Input() topHeader = 326;
   @Output() openModal = new EventEmitter<{
-    type: TypeList;
+    typeModal: TypeList;
     action: TypeActionModal;
     item: any;
   }>();
@@ -82,17 +83,6 @@ export class TableComponent {
   selectedColumns: string[] = [];
 
   @ViewChild(MatSort) sort!: MatSort;
-
-  // @HostListener('window:resize', ['$event'])
-  // onResize(event: Event): void {
-  //   const totalFixedHeight = 800;
-
-  //   const headerRow: HTMLElement | null =
-  //     document.querySelector('.custom-list-row');
-  //   if (headerRow) {
-  //     headerRow.style.top = `${totalFixedHeight}px`;
-  //   }
-  // }
 
   ngOnInit(): void {
     this.headerColumns.forEach((col) => {
@@ -152,8 +142,8 @@ export class TableComponent {
     this.initDisplayedColumns();
   }
 
-  onOpenModal(type: TypeList, action: TypeActionModal, item: any): void {
-    this.openModal.emit({ type: type, action, item });
+  onOpenModal(typeModal: TypeList, action: TypeActionModal, item: any): void {
+    this.openModal.emit({ typeModal, action, item });
   }
 
   areDatesEqual(date1: string | Date, date2: string | Date): boolean {
@@ -212,7 +202,7 @@ export class TableComponent {
   }
 
   downloadFilteredPdfs(): void {
-    if (this.type !== TypeList.Invoices) return;
+    if (this.typeSection !== TypeList.Invoices) return;
 
     const data = this.dataSource.filteredData || [];
 

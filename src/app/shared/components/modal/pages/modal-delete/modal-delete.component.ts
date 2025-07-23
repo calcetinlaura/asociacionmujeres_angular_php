@@ -1,19 +1,18 @@
-
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 type DeleteMessageFormatter = (item: any) => { label: string; value: string };
 
 @Component({
-    imports: [],
-    selector: 'app-modal-delete',
-    templateUrl: './modal-delete.component.html',
-    styleUrls: ['./modal-delete.component.css']
+  imports: [],
+  selector: 'app-modal-delete',
+  templateUrl: './modal-delete.component.html',
+  styleUrls: ['./modal-delete.component.css'],
 })
 export class ModalDeleteComponent implements OnInit {
   @Output() closeModal = new EventEmitter<boolean>();
   @Output() confirmDelete = new EventEmitter<number>();
   @Input() item?: any;
-  @Input() type: TypeList = TypeList.Books;
+  @Input() typeModal: TypeList = TypeList.Books;
   @Input() action: TypeActionModal = TypeActionModal.Show;
 
   TypeActionModal = TypeActionModal;
@@ -106,12 +105,12 @@ export class ModalDeleteComponent implements OnInit {
   };
 
   getDeleteLabel(): string {
-    const formatter = this.messageMap[this.type];
+    const formatter = this.messageMap[this.typeModal];
     return formatter ? formatter(this.item).label : '';
   }
 
   getDeleteValue(): string {
-    const formatter = this.messageMap[this.type];
+    const formatter = this.messageMap[this.typeModal];
     return formatter ? formatter(this.item).value : '';
   }
 }

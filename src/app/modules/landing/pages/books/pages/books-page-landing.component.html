@@ -3,26 +3,24 @@
     [filters]="filters"
     (filterClicked)="filterSelected($event)"
     [loadFirstFilter]="'NOVEDADES'"
-    />
-    <app-input-search
-      (onDebounce)="applyFilterWord($event)"
-      class="my-4 md:my-6"
-      />
-      <!-- Spinner Loading -->
-      @if (isLoading) {
-        <app-spinner-loading />
-      } @else {
-        @if (areThereResults) {
-          <app-section-generic
-            [type]="typeList.Books"
-            [data]="filteredBooks"
-            [total]="number"
-            />
-        } @else {
-          <app-no-results [text]="'libros' | lowercase"
-            />
-        }
-      }
-      <!-- Sección cards -->
-      <!-- Sección no hay resultados -->
-    </div>
+  />
+  <app-input-search
+    (onDebounce)="applyFilterWord($event)"
+    class="my-4 md:my-6"
+  />
+  <!-- Spinner Loading -->
+  @if (isLoading) {
+  <app-spinner-loading />
+  } @else { @if (areThereResults) {
+  <app-section-generic
+    [typeSection]="typeList.Books"
+    [typeModal]="typeList.Books"
+    [data]="filteredBooks"
+    [total]="number"
+  />
+  } @else {
+  <app-no-results [text]="'libros' | lowercase" />
+  } }
+  <!-- Sección cards -->
+  <!-- Sección no hay resultados -->
+</div>

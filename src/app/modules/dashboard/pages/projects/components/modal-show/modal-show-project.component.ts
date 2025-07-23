@@ -1,4 +1,3 @@
-
 import { Component, inject, Input } from '@angular/core';
 import { tap } from 'rxjs';
 import { EventModelFullData } from 'src/app/core/interfaces/event.interface';
@@ -8,15 +7,15 @@ import { EventsService } from 'src/app/core/services/events.services';
 import { TextTitleComponent } from 'src/app/shared/components/text/text-title/text-title.component';
 
 @Component({
-    selector: 'app-modal-show-project',
-    imports: [TextTitleComponent],
-    templateUrl: './modal-show-project.component.html',
-    styleUrls: ['./modal-show-project.component.css']
+  selector: 'app-modal-show-project',
+  imports: [TextTitleComponent],
+  templateUrl: './modal-show-project.component.html',
+  styleUrls: ['./modal-show-project.component.css'],
 })
 export class ModalShowProjectComponent {
   private readonly eventsService = inject(EventsService);
   @Input() item!: ProjectModel;
-  type: TypeList = TypeList.Projects;
+  typeModal: TypeList = TypeList.Projects;
   datesEquals = false;
   eventsOfMacro: EventModelFullData[] = [];
 

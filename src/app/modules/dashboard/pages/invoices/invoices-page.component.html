@@ -4,78 +4,76 @@
     [title]="'Contabilidad'"
     [number]="number"
     [type]="'Cuentas'"
-    />
-    <div class="flex flex-1 flex-col justify-center px-8 gap-y-8">
-      <app-filters
-        [filters]="filtersYears"
-        (filterClicked)="filterSelected($event)"
-      ></app-filters>
-      <div class="flex gap-x-4">
-        <app-button-icon
-          [buttonText]="'Añadir movimiento'"
-          [iconClass]="'uil-plus'"
-          (addClicked)="addNewInvoiceModal()"
-          />
-          <app-input-search (onDebounce)="applyFilterWord($event)" class="flex-1" />
-        </div>
-      </div>
+  />
+  <div class="flex flex-1 flex-col justify-center px-8 gap-y-8">
+    <app-filters
+      [filters]="filtersYears"
+      (filterClicked)="filterSelected($event)"
+    ></app-filters>
+    <div class="flex gap-x-4">
+      <app-button-icon
+        [buttonText]="'Añadir movimiento'"
+        [iconClass]="'uil-plus'"
+        (addClicked)="addNewInvoiceModal()"
+      />
+      <app-input-search (onDebounce)="applyFilterWord($event)" class="flex-1" />
     </div>
+  </div>
+</div>
 
-    <div class="flex flex-col px-8">
-      @if (isLoading) {
-        <div class="flex justify-center items-center py-16">
-          <app-spinner-loading />
-        </div>
-      } @else {
-        @if (hasInvoicesForYear) {
-          <mat-tab-group
-            (selectedTabChange)="tabActive($event)"
-            [selectedIndex]="selectedIndex"
-            >
-            <mat-tab label="Contabilidad completa">
-              <ng-container *ngTemplateOutlet="templateTableInvoice"></ng-container>
-            </mat-tab>
-            <mat-tab label="Facturas">
-              <ng-container *ngTemplateOutlet="templateTableInvoice"></ng-container>
-            </mat-tab>
-            <mat-tab label="Tickets">
-              <ng-container *ngTemplateOutlet="templateTableInvoice"></ng-container>
-            </mat-tab>
-            <mat-tab label="Ingresos">
-              <ng-container *ngTemplateOutlet="templateTableInvoice"></ng-container>
-            </mat-tab>
-          </mat-tab-group>
-        } @else {
-          <div class="flex flex-col items-center justify-center py-16">
-            <p class="text-lg text-gray-500 text-center">
-              No hay contabilidad registrada de ese año.
-            </p>
-          </div>
-        }
-        <!-- Plantilla tabla -->
-        <ng-template #templateTableInvoice>
-          <div class="pb-4 flex">
-            <app-table
-              [data]="filteredInvoices"
-              [type]="typeList"
-              [headerColumns]="headerListInvoices"
-              (openModal)="onOpenModal($event)"
-              [topFilter]="0"
-              [topHeader]="60"
-              />
-            </div>
-          </ng-template>
-        }
+<div class="flex flex-col px-8">
+  @if (isLoading) {
+  <div class="flex justify-center items-center py-16">
+    <app-spinner-loading />
+  </div>
+  } @else { @if (hasInvoicesForYear) {
+  <mat-tab-group
+    (selectedTabChange)="tabActive($event)"
+    [selectedIndex]="selectedIndex"
+  >
+    <mat-tab label="Contabilidad completa">
+      <ng-container *ngTemplateOutlet="templateTableInvoice"></ng-container>
+    </mat-tab>
+    <mat-tab label="Facturas">
+      <ng-container *ngTemplateOutlet="templateTableInvoice"></ng-container>
+    </mat-tab>
+    <mat-tab label="Tickets">
+      <ng-container *ngTemplateOutlet="templateTableInvoice"></ng-container>
+    </mat-tab>
+    <mat-tab label="Ingresos">
+      <ng-container *ngTemplateOutlet="templateTableInvoice"></ng-container>
+    </mat-tab>
+  </mat-tab-group>
+  } @else {
+  <div class="flex flex-col items-center justify-center py-16">
+    <p class="text-lg text-gray-500 text-center">
+      No hay contabilidad registrada de ese año.
+    </p>
+  </div>
+  }
+  <!-- Plantilla tabla -->
+  <ng-template #templateTableInvoice>
+    <div class="pb-4 flex">
+      <app-table
+        [data]="filteredInvoices"
+        [typeSection]="typeSection"
+        [headerColumns]="headerListInvoices"
+        (openModal)="onOpenModal($event)"
+        [topFilter]="0"
+        [topHeader]="60"
+      />
+    </div>
+  </ng-template>
+  }
+</div>
 
-      </div>
-
-      @if (isModalVisible) {
-        <app-modal
-          [item]="item"
-          [type]="typeList"
-          [action]="currentModalAction"
-          (closeModal)="onCloseModal()"
-          (confirmDelete)="confirmDeleteInvoice(item)"
-          (sendFormInvoiceData)="sendFormInvoice($event)"
-        ></app-modal>
-      }
+@if (isModalVisible) {
+<app-modal
+  [item]="item"
+  [typeModal]="typeModal"
+  [action]="currentModalAction"
+  (closeModal)="onCloseModal()"
+  (confirmDelete)="confirmDeleteInvoice(item)"
+  (sendFormInvoiceData)="sendFormInvoice($event)"
+></app-modal>
+}

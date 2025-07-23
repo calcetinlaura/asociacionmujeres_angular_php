@@ -876,7 +876,6 @@ export class FormEventComponent implements OnInit, OnChanges {
 
       formValues.repeated_dates.forEach((rd: any) => {
         if (!rd.start) {
-          // Ignora este registro vacío
           return;
         }
 
@@ -884,15 +883,9 @@ export class FormEventComponent implements OnInit, OnChanges {
         const timeStart = rd.time_start;
         let timeEnd = rd.time_end;
         if (!timeStart) {
-          console.log('ℹ️  No hay time_start, dejar time_end vacío');
           timeEnd = '';
         } else if (!timeEnd || timeEnd === '00:00' || timeEnd === '00:00:00') {
-          console.log(
-            `ℹ️  time_end vacío o 00:00, calculando time_end desde time_start ${timeStart}`
-          );
           timeEnd = this.calcTimeEnd(timeStart);
-        } else {
-          console.log('✅ time_end ya tiene valor correcto:', timeEnd);
         }
 
         const eventId = rd.id ?? 0;

@@ -1,4 +1,3 @@
-
 import {
   Component,
   DestroyRef,
@@ -35,8 +34,8 @@ import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loadi
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
-    selector: 'app-books-page',
-    imports: [
+  selector: 'app-books-page',
+  imports: [
     DashboardHeaderComponent,
     ModalComponent,
     ButtonIconComponent,
@@ -44,10 +43,10 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
     InputSearchComponent,
     SpinnerLoadingComponent,
     TableComponent,
-    FiltersComponent
-],
-    templateUrl: './books-page.component.html',
-    styleUrl: './books-page.component.css'
+    FiltersComponent,
+  ],
+  templateUrl: './books-page.component.html',
+  styleUrl: './books-page.component.css',
 })
 export class BooksPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
@@ -87,7 +86,9 @@ export class BooksPageComponent implements OnInit {
   item: BookModel | null = null;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
   searchForm!: FormGroup;
-  typeList = TypeList.Books;
+
+  typeModal = TypeList.Books;
+  typeSection = TypeList.Books;
 
   @ViewChild(InputSearchComponent)
   private inputSearchComponent!: InputSearchComponent;
@@ -127,16 +128,25 @@ export class BooksPageComponent implements OnInit {
   }
 
   addNewBookModal(): void {
-    this.openModal(TypeActionModal.Create, null);
+    this.openModal(this.typeModal, TypeActionModal.Create, null);
   }
 
-  onOpenModal(event: { action: TypeActionModal; item?: BookModel }): void {
-    this.openModal(event.action, event.item ?? null);
+  onOpenModal(event: {
+    typeModal: TypeList;
+    action: TypeActionModal;
+    item?: BookModel;
+  }): void {
+    this.openModal(event.typeModal, event.action, event.item ?? null);
   }
 
-  openModal(action: TypeActionModal, book: BookModel | null): void {
+  openModal(
+    typeModal: TypeList,
+    action: TypeActionModal,
+    book: BookModel | null
+  ): void {
     this.currentModalAction = action;
     this.item = book;
+    this.typeModal = typeModal;
     this.modalService.openModal();
   }
 

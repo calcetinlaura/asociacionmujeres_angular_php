@@ -4,43 +4,44 @@
     [title]="''"
     [number]="number"
     [type]="'Podcasts'"
-    />
-    <div class="flex flex-1 flex-col justify-center px-8 gap-y-8">
-      <div class="flex gap-x-4">
-        <app-button-icon
-          [buttonText]="'Nuevo Podcast'"
-          [iconClass]="'uil-plus'"
-          (addClicked)="addNewPodcastModal()"
-          />
-          <app-input-search (onDebounce)="applyFilterWord($event)" class="flex-1" />
-        </div>
-      </div>
+  />
+  <div class="flex flex-1 flex-col justify-center px-8 gap-y-8">
+    <div class="flex gap-x-4">
+      <app-button-icon
+        [buttonText]="'Nuevo Podcast'"
+        [iconClass]="'uil-plus'"
+        (addClicked)="addNewPodcastModal()"
+      />
+      <app-input-search (onDebounce)="applyFilterWord($event)" class="flex-1" />
     </div>
-    <div class="flex flex-col px-8">
-      <!-- Spinner Loading -->
-      @if (isLoading) {
-        <app-spinner-loading />
-      } @else {
-        <div class="pb-4 flex">
-          <app-table
-            [data]="filteredPodcasts"
-            [type]="typeList"
-            [headerColumns]="headerListPodcasts"
-            (openModal)="onOpenModal($event)"
-            />
-          </div>
-        }
-        <!-- Tabla -->
-      </div>
+  </div>
+</div>
+<div class="flex flex-col px-8">
+  <!-- Spinner Loading -->
+  @if (isLoading) {
+  <app-spinner-loading />
+  } @else {
+  <div class="pb-4 flex">
+    <app-table
+      [data]="filteredPodcasts"
+      [typeSection]="typeSection"
+      [typeModal]="typeModal"
+      [headerColumns]="headerListPodcasts"
+      (openModal)="onOpenModal($event)"
+    />
+  </div>
+  }
+  <!-- Tabla -->
+</div>
 
-      <!-- Modal -->
-      @if (isModalVisible) {
-        <app-modal
-          [item]="item"
-          [type]="typeList"
-          [action]="currentModalAction"
-          (closeModal)="onCloseModal()"
-          (confirmDelete)="confirmDeletePodcast(item)"
-          (sendFormPodcastData)="sendFormPodcast($event)"
-        ></app-modal>
-      }
+<!-- Modal -->
+@if (isModalVisible) {
+<app-modal
+  [item]="item"
+  [typeModal]="typeModal"
+  [action]="currentModalAction"
+  (closeModal)="onCloseModal()"
+  (confirmDelete)="confirmDeletePodcast(item)"
+  (sendFormPodcastData)="sendFormPodcast($event)"
+></app-modal>
+}
