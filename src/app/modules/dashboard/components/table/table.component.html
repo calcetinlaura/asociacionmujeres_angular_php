@@ -1,36 +1,3 @@
-<div
-  class="filterColumns flex justify-end h-14 gap-x-1 items-center"
-  [ngStyle]="{ top: topFilter + 'px' }"
->
-  @if (typeSection === TypeList.Invoices) {
-  <app-icon-action
-    [icon]="'uil-folder-download'"
-    [tooltip]="'Descargar facturas'"
-    (click)="downloadFilteredPdfs()"
-  ></app-icon-action>
-  }
-  <app-icon-action
-    [icon]="'uil-print'"
-    [tooltip]="'Imprimir tabla'"
-    (click)="printTableAsPdf()"
-  ></app-icon-action>
-  <app-button
-    [buttonText]="'Filtrar columnas'"
-    [menu]="columnsMenu"
-  ></app-button>
-  <mat-menu #columnsMenu="matMenu">
-    @for (column of headerColumns; track trackByKey($index, column)) {
-    <button mat-menu-item>
-      <mat-checkbox
-        [checked]="columnVisibility[column.key]"
-        (change)="toggleColumn(column.key)"
-      >
-        {{ column.title }}
-      </mat-checkbox>
-    </button>
-    }
-  </mat-menu>
-</div>
 <table
   mat-table
   [dataSource]="dataSource"
@@ -427,5 +394,11 @@
     *matRowDef="let row; columns: displayedColumns"
     class="custom-list-row"
   ></tr>
-  <tr mat-footer-row *matFooterRowDef="displayedColumns" class="footer"></tr>
+  <ng-container *ngIf="showFooter">
+    <tr
+      mat-footer-row
+      *matFooterRowDef="displayedColumns"
+      class="footer bg-white"
+    ></tr>
+  </ng-container>
 </table>

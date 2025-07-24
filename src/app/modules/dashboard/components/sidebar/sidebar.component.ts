@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { RouterLink, RouterModule } from '@angular/router';
 
 interface MenuOption {
   name: string;
@@ -10,25 +10,37 @@ interface MenuOption {
 }
 
 @Component({
-    selector: 'app-sidebar',
-    imports: [CommonModule, RouterLink],
-    templateUrl: './sidebar.component.html',
-    styleUrl: './sidebar.component.css'
+  standalone: true,
+  selector: 'app-sidebar',
+  imports: [CommonModule, RouterLink, RouterModule],
+  templateUrl: './sidebar.component.html',
+  styleUrl: './sidebar.component.css',
 })
 export class SideBarComponent implements OnInit {
+  homeMenu: MenuOption[] = [];
+  eventsMenu: MenuOption[] = [];
   mainMenu: MenuOption[] = [];
   customOptions: MenuOption[] = [];
   accountingOptions: MenuOption[] = [];
   footerOptions: MenuOption[] = [];
 
   ngOnInit(): void {
-    this.mainMenu = [
+    this.homeMenu = [
+      {
+        name: 'Home',
+        icon: 'uil-home',
+        router: ['/dashboard/home'],
+      },
+    ];
+    this.eventsMenu = [
       {
         name: 'Macroeventos',
         icon: 'uil-calculator-alt',
         router: ['/dashboard/macroevents'],
       },
       { name: 'Eventos', icon: 'uil-ticket', router: ['/dashboard/events'] },
+    ];
+    this.mainMenu = [
       { name: 'Biblioteca', icon: 'uil-book', router: ['/dashboard/books'] },
       { name: 'Filmoteca', icon: 'uil-video', router: ['/dashboard/movies'] },
       { name: 'Recetas', icon: 'uil-utensils', router: ['/dashboard/recipes'] },

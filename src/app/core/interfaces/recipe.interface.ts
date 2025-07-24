@@ -11,7 +11,7 @@ export interface RecipeModel {
   year: number;
 }
 export const categoryFilterRecipes: Filter[] = [
-  { code: 'APERITIVO', name: 'APERITIVOS' },
-  { code: 'POSTRE', name: 'POSTRES' },
-  { code: 'CUCHARA', name: 'CUCHARA' },
+  { code: 'APERITIVO', name: 'Aperitivos' },
+  { code: 'POSTRE', name: 'Postres' },
+  { code: 'CUCHARA', name: 'Cuchara' },
 ];

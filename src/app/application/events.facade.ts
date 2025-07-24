@@ -1,8 +1,8 @@
 import { DestroyRef, inject, Injectable } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, catchError, Observable, tap } from 'rxjs';
-import { EventsService } from 'src/app/core/services/events.services';
 import { EventModelFullData } from '../core/interfaces/event.interface';
+import { EventsService } from '../core/services/events.services';
 import { GeneralService } from '../shared/services/generalService.service';
 
 @Injectable({ providedIn: 'root' })
@@ -20,8 +20,8 @@ export class EventsFacade {
   private readonly selectedEventSubject =
     new BehaviorSubject<EventModelFullData | null>(null);
 
-  eventsAll$ = this.eventsAllSubject.asObservable(); // Para calendario
-  nonRepeatedEvents$ = this.nonRepeatedEventsSubject.asObservable(); // Para lista principal
+  eventsAll$ = this.eventsAllSubject.asObservable();
+  nonRepeatedEvents$ = this.nonRepeatedEventsSubject.asObservable();
   selectedEvent$ = this.selectedEventSubject.asObservable();
 
   currentFilter: number | null = null;
@@ -36,7 +36,7 @@ export class EventsFacade {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((events) => this.eventsAllSubject.next(events)),
-        catchError((err) => this.generalService.handleHttpError(err))
+        this.catchAndLog()
       )
       .subscribe();
   }
@@ -48,7 +48,7 @@ export class EventsFacade {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((events) => this.nonRepeatedEventsSubject.next(events)),
-        catchError((err) => this.generalService.handleHttpError(err))
+        this.catchAndLog()
       )
       .subscribe();
   }
@@ -59,47 +59,39 @@ export class EventsFacade {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((event) => this.selectedEventSubject.next(event)),
-        catchError((err) => this.generalService.handleHttpError(err))
+        this.catchAndLog()
       )
       .subscribe();
   }
 
-  loadEventsByPeriodicId(periodicId: number): Observable<EventModelFullData[]> {
-    return this.eventsService.getEventsByPeriodicId(periodicId).pipe(
-      takeUntilDestroyed(this.destroyRef),
-      tap((events) => {
-        this.eventsAllSubject.next(events);
-        this.nonRepeatedEventsSubject.next(events);
-      }),
-      catchError((err) => this.generalService.handleHttpError(err))
-    );
+  loadEventsByPeriodicId(periodicId: string): Observable<EventModelFullData[]> {
+    return this.eventsService
+      .getEventsByPeriodicId(periodicId)
+      .pipe(this.catchAndLog());
   }
 
   addEvent(event: FormData): Observable<FormData> {
-    return this.eventsService.add(event).pipe(
-      takeUntilDestroyed(this.destroyRef),
-      tap(() => this.reloadCurrentFilter()),
-      catchError((err) => this.generalService.handleHttpError(err))
-    );
+    return this.withReload(this.eventsService.add(event));
   }
 
-  editEvent(itemId: number, event: FormData): Observable<FormData> {
-    return this.eventsService.edit(itemId, event).pipe(
-      takeUntilDestroyed(this.destroyRef),
-      tap(() => this.reloadCurrentFilter()),
-      catchError((err) => this.generalService.handleHttpError(err))
-    );
+  editEvent(id: number, event: FormData): Observable<FormData> {
+    return this.withReload(this.eventsService.edit(id, event));
   }
 
   deleteEvent(id: number): void {
-    this.eventsService
-      .delete(id)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap(() => this.reloadCurrentFilter()),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-      .subscribe();
+    this.withReload(this.eventsService.delete(id)).subscribe();
+  }
+
+  deleteEventsByPeriodicIdExcept(
+    periodicId: string,
+    keepId: number
+  ): Observable<void> {
+    return this.withReload(
+      this.eventsService.deleteEventsByPeriodicIdExcept(periodicId, keepId)
+    );
+  }
+  updateEvent(id: number, event: FormData): Observable<FormData> {
+    return this.withReload(this.eventsService.updateEvent(id, event));
   }
 
   clearSelectedEvent(): void {
@@ -108,17 +100,16 @@ export class EventsFacade {
 
   applyFilterWord(keyword: string): void {
     const currentEvents = this.nonRepeatedEventsSubject.getValue();
+    const search = keyword.trim().toLowerCase();
 
-    if (!keyword.trim() || !currentEvents) {
+    if (!search || !currentEvents) {
       this.nonRepeatedEventsSubject.next(currentEvents);
       return;
     }
 
-    const search = keyword.trim().toLowerCase();
     const filtered = currentEvents.filter((event) =>
       event.title.toLowerCase().includes(search)
     );
-
     this.nonRepeatedEventsSubject.next(filtered);
   }
 
@@ -127,5 +118,20 @@ export class EventsFacade {
       this.loadEventsAllByYear(this.currentFilter);
       this.loadNonRepeatedEventsByYear(this.currentFilter);
     }
+  }
+
+  private catchAndLog<T>() {
+    return catchError<T, Observable<never>>((err) => {
+      this.generalService.handleHttpError(err);
+      throw err;
+    });
+  }
+
+  private withReload<T>(obs$: Observable<T>): Observable<T> {
+    return obs$.pipe(
+      takeUntilDestroyed(this.destroyRef),
+      tap(() => this.reloadCurrentFilter()),
+      this.catchAndLog()
+    );
   }
 }

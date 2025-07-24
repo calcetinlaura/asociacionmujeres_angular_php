@@ -1,6 +1,9 @@
+import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatMenuModule } from '@angular/material/menu';
 import { tap } from 'rxjs';
 import { PiterasFacade } from 'src/app/application/piteras.facade';
 import {
@@ -13,10 +16,13 @@ import { PiterasService } from 'src/app/core/services/piteras.services';
 import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
 import { TableComponent } from 'src/app/modules/dashboard/components/table/table.component';
 import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
+import { ButtonComponent } from 'src/app/shared/components/buttons/button/button.component';
+import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
 import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
 import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
 import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
+import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
 
 @Component({
   selector: 'app-piteras-page',
@@ -28,6 +34,11 @@ import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loadi
     InputSearchComponent,
     SpinnerLoadingComponent,
     TableComponent,
+    MatCheckboxModule,
+    MatMenuModule,
+    ButtonComponent,
+    IconActionComponent,
+    CommonModule,
   ],
   templateUrl: './piteras-page.component.html',
   styleUrl: './piteras-page.component.css',
@@ -37,6 +48,7 @@ export class PiterasPageComponent implements OnInit {
   private readonly modalService = inject(ModalService);
   private readonly piterasFacade = inject(PiterasFacade);
   private readonly piterasService = inject(PiterasService);
+  private readonly pdfPrintService = inject(PdfPrintService);
 
   piteras: PiteraModel[] = [];
   filteredPiteras: PiteraModel[] = [];
@@ -50,6 +62,8 @@ export class PiterasPageComponent implements OnInit {
   searchForm!: FormGroup;
   typeSection = TypeList.Piteras;
   typeModal = TypeList.Piteras;
+  columnVisibility: Record<string, boolean> = {};
+  displayedColumns: string[] = [];
 
   headerListPiteras: ColumnModel[] = [
     { title: 'Portada', key: 'img', sortable: false },
@@ -70,6 +84,10 @@ export class PiterasPageComponent implements OnInit {
       .subscribe();
 
     this.loadAllPiteras();
+    this.columnVisibility = this.headerListPiteras.reduce(
+      (acc, col) => ({ ...acc, [col.key]: true }),
+      {}
+    );
   }
 
   loadAllPiteras(): void {
@@ -141,5 +159,20 @@ export class PiterasPageComponent implements OnInit {
     this.filteredPiteras = [...this.piteras];
     this.number = this.piterasService.countPiteras(piteras);
     this.isLoading = false;
+  }
+  printTableAsPdf(): void {
+    this.pdfPrintService.printTableAsPdf('table.mat-table', 'piteras.pdf');
+  }
+  toggleColumn(key: string): void {
+    this.columnVisibility[key] = !this.columnVisibility[key];
+    this.updateDisplayedColumns();
+  }
+
+  private updateDisplayedColumns(): void {
+    const base = ['number']; // si usas un número de fila
+    const dynamic = this.headerListPiteras
+      .filter((col) => this.columnVisibility[col.key])
+      .map((col) => col.key);
+    this.displayedColumns = [...base, ...dynamic, 'actions'];
   }
 }

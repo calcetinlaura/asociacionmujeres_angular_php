@@ -25,7 +25,6 @@ import { IconActionComponent } from 'src/app/shared/components/buttons/icon-acti
 import { FilterTransformCodePipe } from 'src/app/shared/pipe/filterTransformCode.pipe';
 import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
 import { PhoneFormatPipe } from 'src/app/shared/pipe/phoneFormat.pipe';
-import { ButtonComponent } from '../../../../shared/components/buttons/button/button.component';
 import { CalculateAgePipe } from '../../../../shared/pipe/caculate_age.pipe';
 import { EurosFormatPipe } from '../../../../shared/pipe/eurosFormat.pipe';
 import { HasValuePipe } from '../../../../shared/pipe/hasValue.pipe';
@@ -51,7 +50,6 @@ declare var html2pdf: any;
     MatSelectModule,
     HasValuePipe,
     CalculateAgePipe,
-    ButtonComponent,
   ],
   selector: 'app-table',
   templateUrl: './table.component.html',
@@ -62,6 +60,7 @@ export class TableComponent {
   private readonly invoicesService = inject(InvoicesService);
 
   private _liveAnnouncer = inject(LiveAnnouncer);
+  @Input() displayedColumns: string[] = [];
   @Input() typeSection: TypeList = TypeList.Books;
   @Input() typeModal: TypeList = TypeList.Books;
   @Input() data: any[] = [];
@@ -74,7 +73,7 @@ export class TableComponent {
     item: any;
   }>();
   nameSubsidy = this.subsidiesService.subsidiesMap;
-  displayedColumns: string[] = [];
+
   dataSource = new MatTableDataSource();
   typeActionModal = TypeActionModal;
   searchKeywordFilter = new FormControl();
@@ -200,59 +199,7 @@ export class TableComponent {
       .map((item) => Number(item[key]) || 0)
       .reduce((acc, value) => acc + value, 0);
   }
-
-  downloadFilteredPdfs(): void {
-    if (this.typeSection !== TypeList.Invoices) return;
-
-    const data = this.dataSource.filteredData || [];
-
-    const pdfFiles = data
-      .filter((invoice: any) => invoice.invoice_pdf)
-      .map((invoice: any) => {
-        const fileName = invoice.invoice_pdf;
-        const yearMatch = fileName.match(/^(\d{4})_/);
-        const yearFolder = yearMatch ? yearMatch[1] : '';
-        return `${yearFolder}/${fileName}`;
-      });
-
-    if (!pdfFiles.length) {
-      alert('No hay PDFs para descargar.');
-      return;
-    }
-
-    this.invoicesService.downloadFilteredPdfs(pdfFiles).subscribe({
-      next: (blob) => {
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'facturas.zip';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-      },
-      error: (err) => {
-        console.error('💥 Error al descargar ZIP:', err);
-        alert('Error al descargar el ZIP. Revisa la consola.');
-      },
-    });
-  }
-  printTableAsPdf(): void {
-    const table = document.querySelector('table');
-
-    if (!table) {
-      alert('No se encontró la tabla');
-      return;
-    }
-
-    const options = {
-      margin: 0.2,
-      filename: 'tabla-facturas.pdf',
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' },
-    };
-
-    html2pdf().set(options).from(table).save();
+  get showFooter(): boolean {
+    return this.headerColumns.some((col) => col.footerTotal);
   }
 }

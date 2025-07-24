@@ -29,11 +29,11 @@ export interface EventModel {
   ticket_prices: TicketPriceModel[];
   tickets_method: string;
   periodic: boolean;
-  periodic_id: number;
+  periodic_id: string;
 }
 export interface DayEventModel {
   id: number;
-  periodic_id?: number;
+  periodic_id?: string;
   start: string;
   end: string;
   time_start: string;

@@ -97,9 +97,9 @@
     </div>
   </div>
   }}
-  <div *ngIf="submitted && formArray.errors?.['duplicateStartDates']">
-    <p class="text-[red] text-[11px]">
-      No puedes repetir fechas en eventos periódicos.
+  <div *ngIf="submitted && formArray.errors?.['duplicateStartDatesAndTimes']">
+    <p class="text-[red] text-[11px] pl-44">
+      No puede repetir el mismo pase (fecha y hora)
     </p>
   </div>
 </div>

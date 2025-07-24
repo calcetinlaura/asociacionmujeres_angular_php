@@ -55,7 +55,7 @@ export class EventsService {
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
-  getEventsByPeriodicId(periodicId: number): Observable<any> {
+  getEventsByPeriodicId(periodicId: string): Observable<any> {
     return this.http
       .get(this.apiUrl, {
         params: { periodic_id: periodicId },
@@ -103,5 +103,21 @@ export class EventsService {
 
   countEvents(events: EventModelFullData[] | null): number {
     return events?.length ?? 0;
+  }
+  updateEvent(id: number, formData: FormData): Observable<any> {
+    return this.http.patch(`${this.apiUrl}?id=${id}`, formData);
+  }
+  deleteEventsByPeriodicIdExcept(
+    periodicId: string,
+    keepId: number
+  ): Observable<void> {
+    return this.http
+      .delete<void>(this.apiUrl, {
+        params: {
+          periodic_id: periodicId,
+          keep_id: keepId.toString(),
+        },
+      })
+      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 }

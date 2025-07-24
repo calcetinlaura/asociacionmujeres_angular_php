@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import {
   Component,
   DestroyRef,
@@ -7,6 +8,8 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatMenuModule } from '@angular/material/menu';
 import { tap } from 'rxjs';
 import { MoviesFacade } from 'src/app/application/movies.facade';
 import {
@@ -27,11 +30,14 @@ import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/d
 import { TableComponent } from 'src/app/modules/dashboard/components/table/table.component';
 import { FiltersComponent } from 'src/app/modules/landing/components/filters/filters.component';
 import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
+import { ButtonComponent } from 'src/app/shared/components/buttons/button/button.component';
+import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
 import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
 import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
 import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
+import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
 
 @Component({
   selector: 'app-movies-page',
@@ -44,6 +50,11 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
     FiltersComponent,
     SpinnerLoadingComponent,
     TableComponent,
+    IconActionComponent,
+    ButtonComponent,
+    MatMenuModule,
+    MatCheckboxModule,
+    CommonModule,
   ],
   templateUrl: './movies-page.component.html',
   styleUrl: './movies-page.component.css',
@@ -54,7 +65,7 @@ export class MoviesPageComponent implements OnInit {
   private readonly moviesFacade = inject(MoviesFacade);
   private readonly moviesService = inject(MoviesService);
   private readonly generalService = inject(GeneralService);
-
+  private readonly pdfPrintService = inject(PdfPrintService);
   movies: MovieModel[] = [];
   filteredMovies: MovieModel[] = [];
   filters: Filter[] = [];
@@ -69,7 +80,8 @@ export class MoviesPageComponent implements OnInit {
   searchForm!: FormGroup;
   typeModal = TypeList.Movies;
   typeSection = TypeList.Movies;
-
+  columnVisibility: Record<string, boolean> = {};
+  displayedColumns: string[] = [];
   headerListMovies: ColumnModel[] = [
     { title: 'Portada', key: 'img', sortable: false },
     { title: 'Título', key: 'title', sortable: true },
@@ -110,6 +122,10 @@ export class MoviesPageComponent implements OnInit {
       .subscribe();
 
     this.filterSelected('NOVEDADES');
+    this.columnVisibility = this.headerListMovies.reduce(
+      (acc, col) => ({ ...acc, [col.key]: true }),
+      {}
+    );
   }
 
   filterSelected(filter: string): void {
@@ -163,7 +179,7 @@ export class MoviesPageComponent implements OnInit {
   ): void {
     this.currentModalAction = action;
     this.item = movie;
-    this.typeModal = TypeList.Movies;
+    this.typeModal = typeModal;
     this.modalService.openModal();
   }
 
@@ -197,5 +213,57 @@ export class MoviesPageComponent implements OnInit {
     this.filteredMovies = [...this.movies];
     this.number = this.moviesService.countMovies(movies);
     this.isLoading = false;
+  }
+  toggleColumn(key: string): void {
+    this.columnVisibility[key] = !this.columnVisibility[key];
+    this.updateDisplayedColumns();
+  }
+
+  private updateDisplayedColumns(): void {
+    const base = ['number']; // si usas un número de fila
+    const dynamic = this.headerListMovies
+      .filter((col) => this.columnVisibility[col.key])
+      .map((col) => col.key);
+    this.displayedColumns = [...base, ...dynamic, 'actions'];
+  }
+
+  // downloadFilteredPdfs(): void {
+  //   if (this.typeSection !== TypeList.Invoices) return;
+
+  //   const data = this.dataSource.filteredData || [];
+
+  //   const pdfFiles = data
+  //     .filter((invoice: any) => invoice.invoice_pdf)
+  //     .map((invoice: any) => {
+  //       const fileName = invoice.invoice_pdf;
+  //       const yearMatch = fileName.match(/^(\d{4})_/);
+  //       const yearFolder = yearMatch ? yearMatch[1] : '';
+  //       return `${yearFolder}/${fileName}`;
+  //     });
+
+  //   if (!pdfFiles.length) {
+  //     alert('No hay PDFs para descargar.');
+  //     return;
+  //   }
+
+  //   this.invoicesService.downloadFilteredPdfs(pdfFiles).subscribe({
+  //     next: (blob) => {
+  //       const url = window.URL.createObjectURL(blob);
+  //       const a = document.createElement('a');
+  //       a.href = url;
+  //       a.download = 'facturas.zip';
+  //       document.body.appendChild(a);
+  //       a.click();
+  //       document.body.removeChild(a);
+  //       window.URL.revokeObjectURL(url);
+  //     },
+  //     error: (err) => {
+  //       console.error('💥 Error al descargar ZIP:', err);
+  //       alert('Error al descargar el ZIP. Revisa la consola.');
+  //     },
+  //   });
+  // }
+  printTableAsPdf(): void {
+    this.pdfPrintService.printTableAsPdf('table.mat-table', 'peliculas.pdf');
   }
 }

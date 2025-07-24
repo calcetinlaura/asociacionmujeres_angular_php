@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import {
   Component,
   DestroyRef,
@@ -8,6 +9,8 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatTabChangeEvent, MatTabsModule } from '@angular/material/tabs';
 import { tap } from 'rxjs';
 import { SubsidiesFacade } from 'src/app/application/subsidies.facade';
@@ -29,11 +32,14 @@ import { SubsidiesService } from 'src/app/core/services/subsidies.services';
 import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
 import { FiltersComponent } from 'src/app/modules/landing/components/filters/filters.component';
 import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
+import { ButtonComponent } from 'src/app/shared/components/buttons/button/button.component';
+import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
 import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
 import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
 import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
+import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
 import { TableComponent } from '../../components/table/table.component';
 import { ModalShowSubsidyComponent } from './components/tab-subsidy/tab-subsidies.component';
 
@@ -50,6 +56,11 @@ import { ModalShowSubsidyComponent } from './components/tab-subsidy/tab-subsidie
     SpinnerLoadingComponent,
     TableComponent,
     ModalShowSubsidyComponent,
+    MatMenuModule,
+    MatCheckboxModule,
+    ButtonComponent,
+    IconActionComponent,
+    CommonModule,
   ],
   providers: [SubsidiesService],
   templateUrl: './subsidies-page.component.html',
@@ -61,6 +72,7 @@ export class SubsidiesPageComponent implements OnInit {
   private readonly subsidiesFacade = inject(SubsidiesFacade);
   private readonly subsidiesService = inject(SubsidiesService);
   private readonly generalService = inject(GeneralService);
+  private readonly pdfPrintService = inject(PdfPrintService);
 
   // ViewChildren
   @ViewChildren(ModalShowSubsidyComponent)
@@ -78,15 +90,13 @@ export class SubsidiesPageComponent implements OnInit {
   number = 0;
   item: any;
   currentYear = this.generalService.currentYear;
-
-  // Datos
   subsidies: SubsidyModelFullData[] = [];
   filteredSubsidies: SubsidyModelFullData[] = [];
   filtersYears: Filter[] = [];
   filteredSubsidiesByType: { [key: string]: SubsidyModelFullData[] } = {};
   visibleTabs: { label: string; item: SubsidyModelFullData }[] = [];
-
-  // Columnas
+  columnVisibility: Record<string, boolean> = {};
+  displayedColumns: string[] = [];
   headerListSubsidies: ColumnModel[] = [
     {
       title: 'Nombre',
@@ -197,6 +207,10 @@ export class SubsidiesPageComponent implements OnInit {
       .subscribe((subsidies) => this.updateSubsidyState(subsidies));
 
     this.filterSelected('ALL');
+    this.columnVisibility = this.headerListSubsidies.reduce(
+      (acc, col) => ({ ...acc, [col.key]: true }),
+      {}
+    );
   }
 
   filterSelected(filter: string): void {
@@ -319,5 +333,20 @@ export class SubsidiesPageComponent implements OnInit {
     this.classifySubsidies(this.subsidies);
     this.isLoading = false;
     this.selectedIndex = 0;
+  }
+  printTableAsPdf(): void {
+    this.pdfPrintService.printTableAsPdf('table.mat-table', 'subvenciones.pdf');
+  }
+  toggleColumn(key: string): void {
+    this.columnVisibility[key] = !this.columnVisibility[key];
+    this.updateDisplayedColumns();
+  }
+
+  private updateDisplayedColumns(): void {
+    const base = ['number']; // si usas un número de fila
+    const dynamic = this.headerListSubsidies
+      .filter((col) => this.columnVisibility[col.key])
+      .map((col) => col.key);
+    this.displayedColumns = [...base, ...dynamic, 'actions'];
   }
 }

@@ -4,6 +4,7 @@ import { ArticlesPageComponent } from './pages/articles/articles-page.component'
 import { BooksPageComponent } from './pages/books/books-page.component';
 import { CreditorsPageComponent } from './pages/creditors/creditors-page.component';
 import { EventsPageComponent } from './pages/events/events-page.component';
+import { HomePageComponent } from './pages/home/home-page.component';
 import { InvoicesPageComponent } from './pages/invoices/invoices-page.component';
 import { LayoutPageComponent } from './pages/layout-page/layout-page.component';
 import { MacroeventsPageComponent } from './pages/macroevents/macroevents-page.component';
@@ -22,6 +23,7 @@ export const dashboardRoutes: Routes = [
     path: '',
     component: LayoutPageComponent,
     children: [
+      { path: 'home', component: HomePageComponent },
       { path: 'events', component: EventsPageComponent },
       { path: 'macroevents', component: MacroeventsPageComponent },
       { path: 'books', component: BooksPageComponent },

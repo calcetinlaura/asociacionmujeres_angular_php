@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import {
   Component,
   DestroyRef,
@@ -7,6 +8,8 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatMenuModule } from '@angular/material/menu';
 import { tap } from 'rxjs';
 import { BooksFacade } from 'src/app/application/books.facade';
 import {
@@ -27,11 +30,14 @@ import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/d
 import { TableComponent } from 'src/app/modules/dashboard/components/table/table.component';
 import { FiltersComponent } from 'src/app/modules/landing/components/filters/filters.component';
 import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
+import { ButtonComponent } from 'src/app/shared/components/buttons/button/button.component';
+import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
 import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
 import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
 import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
+import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
 
 @Component({
   selector: 'app-books-page',
@@ -44,6 +50,11 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
     SpinnerLoadingComponent,
     TableComponent,
     FiltersComponent,
+    IconActionComponent,
+    ButtonComponent,
+    MatMenuModule,
+    MatCheckboxModule,
+    CommonModule,
   ],
   templateUrl: './books-page.component.html',
   styleUrl: './books-page.component.css',
@@ -54,7 +65,9 @@ export class BooksPageComponent implements OnInit {
   private readonly booksFacade = inject(BooksFacade);
   private readonly booksService = inject(BooksService);
   private readonly generalService = inject(GeneralService);
-
+  private readonly pdfPrintService = inject(PdfPrintService);
+  columnVisibility: Record<string, boolean> = {};
+  displayedColumns: string[] = [];
   headerListBooks: ColumnModel[] = [
     { title: 'Portada', key: 'img', sortable: false },
     { title: 'Título', key: 'title', sortable: true },
@@ -115,6 +128,10 @@ export class BooksPageComponent implements OnInit {
         tap((books) => this.updateBookState(books))
       )
       .subscribe();
+    this.columnVisibility = this.headerListBooks.reduce(
+      (acc, col) => ({ ...acc, [col.key]: true }),
+      {}
+    );
   }
 
   filterSelected(filter: string): void {
@@ -180,5 +197,20 @@ export class BooksPageComponent implements OnInit {
     this.filteredBooks = [...this.books];
     this.number = this.booksService.countBooks(books);
     this.isLoading = false;
+  }
+  printTableAsPdf(): void {
+    this.pdfPrintService.printTableAsPdf('table.mat-table', 'libros.pdf');
+  }
+  toggleColumn(key: string): void {
+    this.columnVisibility[key] = !this.columnVisibility[key];
+    this.updateDisplayedColumns();
+  }
+
+  private updateDisplayedColumns(): void {
+    const base = ['number']; // si usas un número de fila
+    const dynamic = this.headerListBooks
+      .filter((col) => this.columnVisibility[col.key])
+      .map((col) => col.key);
+    this.displayedColumns = [...base, ...dynamic, 'actions'];
   }
 }

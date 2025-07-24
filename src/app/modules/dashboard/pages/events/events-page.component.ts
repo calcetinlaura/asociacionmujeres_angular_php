@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import {
   Component,
   DestroyRef,
@@ -7,6 +8,8 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatMenuModule } from '@angular/material/menu';
 import { tap } from 'rxjs';
 import { EventsFacade } from 'src/app/application/events.facade';
 import {
@@ -27,11 +30,14 @@ import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/d
 import { TableComponent } from 'src/app/modules/dashboard/components/table/table.component';
 import { FiltersComponent } from 'src/app/modules/landing/components/filters/filters.component';
 import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
+import { ButtonComponent } from 'src/app/shared/components/buttons/button/button.component';
+import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
 import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
 import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
 import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
+import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
 
 @Component({
   selector: 'app-events-page',
@@ -45,6 +51,11 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
     SpinnerLoadingComponent,
     TableComponent,
     FiltersComponent,
+    IconActionComponent,
+    ButtonComponent,
+    MatMenuModule,
+    MatCheckboxModule,
+    CommonModule,
   ],
   templateUrl: './events-page.component.html',
   styleUrl: './events-page.component.css',
@@ -55,6 +66,7 @@ export class EventsPageComponent implements OnInit {
   private readonly eventsFacade = inject(EventsFacade);
   private readonly eventsService = inject(EventsService);
   private readonly generalService = inject(GeneralService);
+  private readonly pdfPrintService = inject(PdfPrintService);
 
   events: EventModelFullData[] = [];
   filters: Filter[] = [];
@@ -70,6 +82,8 @@ export class EventsPageComponent implements OnInit {
   item: EventModelFullData | null = null;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
   searchForm!: FormGroup;
+  columnVisibility: Record<string, boolean> = {};
+  displayedColumns: string[] = [];
 
   headerListEvents: ColumnModel[] = [
     { title: 'Cartel', key: 'img', sortable: false },
@@ -144,6 +158,10 @@ export class EventsPageComponent implements OnInit {
         tap((events) => this.updateEventState(events))
       )
       .subscribe();
+    this.columnVisibility = this.headerListEvents.reduce(
+      (acc, col) => ({ ...acc, [col.key]: true }),
+      {}
+    );
   }
 
   filterSelected(filter: string): void {
@@ -214,5 +232,20 @@ export class EventsPageComponent implements OnInit {
     this.events = this.eventsService.sortEventsById(events);
     this.number = this.eventsService.countEvents(events);
     this.isLoading = false;
+  }
+  printTableAsPdf(): void {
+    this.pdfPrintService.printTableAsPdf('table.mat-table', 'eventos.pdf');
+  }
+  toggleColumn(key: string): void {
+    this.columnVisibility[key] = !this.columnVisibility[key];
+    this.updateDisplayedColumns();
+  }
+
+  private updateDisplayedColumns(): void {
+    const base = ['number']; // si usas un número de fila
+    const dynamic = this.headerListEvents
+      .filter((col) => this.columnVisibility[col.key])
+      .map((col) => col.key);
+    this.displayedColumns = [...base, ...dynamic, 'actions'];
   }
 }

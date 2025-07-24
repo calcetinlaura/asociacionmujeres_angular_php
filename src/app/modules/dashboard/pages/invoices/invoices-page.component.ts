@@ -7,6 +7,8 @@ import {
   inject,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatTabChangeEvent, MatTabsModule } from '@angular/material/tabs';
 import { combineLatest, tap } from 'rxjs';
 import { InvoicesFacade } from 'src/app/application/invoices.facade';
@@ -23,11 +25,14 @@ import {
 import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
 import { FiltersComponent } from 'src/app/modules/landing/components/filters/filters.component';
 import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
+import { ButtonComponent } from 'src/app/shared/components/buttons/button/button.component';
+import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
 import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
 import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
 import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
+import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
 import { TableComponent } from '../../components/table/table.component';
 
 @Component({
@@ -42,6 +47,10 @@ import { TableComponent } from '../../components/table/table.component';
     TableComponent,
     FiltersComponent,
     MatTabsModule,
+    IconActionComponent,
+    ButtonComponent,
+    MatMenuModule,
+    MatCheckboxModule,
   ],
   templateUrl: './invoices-page.component.html',
   styleUrls: ['./invoices-page.component.css'],
@@ -51,7 +60,9 @@ export class InvoicesPageComponent implements OnInit {
   private readonly modalService = inject(ModalService);
   private readonly invoicesFacade = inject(InvoicesFacade);
   private readonly generalService = inject(GeneralService);
-
+  private readonly pdfPrintService = inject(PdfPrintService);
+  columnVisibility: Record<string, boolean> = {};
+  displayedColumns: string[] = [];
   headerListInvoices: ColumnModel[] = [
     {
       title: 'Factura',
@@ -175,7 +186,10 @@ export class InvoicesPageComponent implements OnInit {
       2018,
       this.currentYear
     );
-
+    this.columnVisibility = this.headerListInvoices.reduce(
+      (acc, col) => ({ ...acc, [col.key]: true }),
+      {}
+    );
     combineLatest([
       this.invoicesFacade.invoices$,
       this.invoicesFacade.currentFilter$,
@@ -319,5 +333,20 @@ export class InvoicesPageComponent implements OnInit {
         })
       )
       .subscribe();
+  }
+  printTableAsPdf(): void {
+    this.pdfPrintService.printTableAsPdf('table.mat-table', 'facturas.pdf');
+  }
+  toggleColumn(key: string): void {
+    this.columnVisibility[key] = !this.columnVisibility[key];
+    this.updateDisplayedColumns();
+  }
+
+  private updateDisplayedColumns(): void {
+    const base = ['number']; // si usas un número de fila
+    const dynamic = this.headerListInvoices
+      .filter((col) => this.columnVisibility[col.key])
+      .map((col) => col.key);
+    this.displayedColumns = [...base, ...dynamic, 'actions'];
   }
 }

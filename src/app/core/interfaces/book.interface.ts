@@ -21,11 +21,11 @@ export type GenderBooks =
   | 'CLUB';
 
 export const genderFilterBooks: Filter[] = [
-  { code: 'ENSAYO', name: 'ENSAYO' },
-  { code: 'MASCULINIDADES', name: 'MASCULINIDADES' },
-  { code: 'MATERNIDAD', name: 'MATERNIDAD' },
-  { code: 'COMIC', name: 'COMIC & NOVELA ILUSTRADA' },
-  { code: 'JUVENIL', name: 'JUVENIL' },
-  { code: 'INFANTIL', name: 'INFANTIL' },
-  { code: 'CLUB', name: 'CLUB LECTURA' },
+  { code: 'ENSAYO', name: 'Ensayo' },
+  { code: 'MASCULINIDADES', name: 'Masculinidades' },
+  { code: 'MATERNIDAD', name: 'Maternidad' },
+  { code: 'COMIC', name: 'Comic & Novela ilustrada' },
+  { code: 'JUVENIL', name: 'Juvenil' },
+  { code: 'INFANTIL', name: 'Infantil' },
+  { code: 'CLUB', name: 'Club de lectura' },
 ];

@@ -13,6 +13,28 @@
         (addClicked)="addNewPiteraModal()"
       />
       <app-input-search (onDebounce)="applyFilterWord($event)" class="flex-1" />
+
+      <app-icon-action
+        [icon]="'uil-print'"
+        [tooltip]="'Imprimir tabla'"
+        (click)="printTableAsPdf()"
+      ></app-icon-action>
+
+      <app-button
+        [buttonText]="'Filtrar columnas'"
+        [menu]="columnsMenu"
+      ></app-button>
+
+      <mat-menu #columnsMenu="matMenu">
+        <button mat-menu-item *ngFor="let column of headerListPiteras">
+          <mat-checkbox
+            [checked]="columnVisibility[column.key]"
+            (change)="toggleColumn(column.key)"
+          >
+            {{ column.title }}
+          </mat-checkbox>
+        </button>
+      </mat-menu>
     </div>
   </div>
 </div>

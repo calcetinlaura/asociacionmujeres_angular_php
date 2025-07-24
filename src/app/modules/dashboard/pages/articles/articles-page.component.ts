@@ -1,6 +1,9 @@
+import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatMenuModule } from '@angular/material/menu';
 import { tap } from 'rxjs';
 import { ArticlesFacade } from 'src/app/application/articles.facade';
 import { ArticleModel } from 'src/app/core/interfaces/article.interface';
@@ -13,10 +16,13 @@ import { ArticlesService } from 'src/app/core/services/articles.services';
 import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
 import { TableComponent } from 'src/app/modules/dashboard/components/table/table.component';
 import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
+import { ButtonComponent } from 'src/app/shared/components/buttons/button/button.component';
+import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
 import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
 import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
 import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
+import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
 
 @Component({
   selector: 'app-articles-page',
@@ -28,6 +34,11 @@ import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loadi
     InputSearchComponent,
     SpinnerLoadingComponent,
     TableComponent,
+    IconActionComponent,
+    ButtonComponent,
+    MatMenuModule,
+    MatCheckboxModule,
+    CommonModule,
   ],
   templateUrl: './articles-page.component.html',
   styleUrl: './articles-page.component.css',
@@ -37,6 +48,7 @@ export class ArticlesPageComponent implements OnInit {
   private readonly modalService = inject(ModalService);
   private readonly articlesFacade = inject(ArticlesFacade);
   private readonly articlesService = inject(ArticlesService);
+  private readonly pdfPrintService = inject(PdfPrintService);
 
   articles: ArticleModel[] = [];
   filteredArticles: ArticleModel[] = [];
@@ -50,7 +62,8 @@ export class ArticlesPageComponent implements OnInit {
   searchForm!: FormGroup;
   typeSection = TypeList.Articles;
   typeModal = TypeList.Articles;
-
+  columnVisibility: Record<string, boolean> = {};
+  displayedColumns: string[] = [];
   headerListArticles: ColumnModel[] = [
     { title: 'Portada', key: 'img', sortable: false, width: ColumnWidth.XS },
     { title: 'Título', key: 'title', sortable: true },
@@ -73,6 +86,10 @@ export class ArticlesPageComponent implements OnInit {
       .subscribe();
 
     this.loadAllArticles();
+    this.columnVisibility = this.headerListArticles.reduce(
+      (acc, col) => ({ ...acc, [col.key]: true }),
+      {}
+    );
   }
 
   loadAllArticles(): void {
@@ -144,5 +161,20 @@ export class ArticlesPageComponent implements OnInit {
     this.filteredArticles = [...this.articles];
     this.number = this.articlesService.countArticles(articles);
     this.isLoading = false;
+  }
+  printTableAsPdf(): void {
+    this.pdfPrintService.printTableAsPdf('table.mat-table', 'articulos.pdf');
+  }
+  toggleColumn(key: string): void {
+    this.columnVisibility[key] = !this.columnVisibility[key];
+    this.updateDisplayedColumns();
+  }
+
+  private updateDisplayedColumns(): void {
+    const base = ['number']; // si usas un número de fila
+    const dynamic = this.headerListArticles
+      .filter((col) => this.columnVisibility[col.key])
+      .map((col) => col.key);
+    this.displayedColumns = [...base, ...dynamic, 'actions'];
   }
 }

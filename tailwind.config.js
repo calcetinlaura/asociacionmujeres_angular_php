@@ -4,8 +4,10 @@ module.exports = {
   content: ["./src/**/*.{html,ts}"],
   theme: {
     colors: {
+      azulOscuro: "#1C1C3A",
+      verdeClaro: "#8FE489",
       lilaClaro: "#cb8dd952",
-      lilaMuyClaro: "#ecd6f152",
+      lilaMuyClaro: "#F6F0FF",
       lilaOscuro: "#704f80",
       lilaText: "#46324b",
       amarilloClaro: "#f5d7a9",

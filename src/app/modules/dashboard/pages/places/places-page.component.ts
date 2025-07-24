@@ -1,6 +1,9 @@
+import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatMenuModule } from '@angular/material/menu';
 import { tap } from 'rxjs';
 import { PlacesFacade } from 'src/app/application/places.facade';
 import {
@@ -13,10 +16,13 @@ import { PlacesService } from 'src/app/core/services/places.services';
 import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
 import { TableComponent } from 'src/app/modules/dashboard/components/table/table.component';
 import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
+import { ButtonComponent } from 'src/app/shared/components/buttons/button/button.component';
+import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
 import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
 import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
 import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
+import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
 
 @Component({
   selector: 'app-places-page',
@@ -28,6 +34,11 @@ import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loadi
     InputSearchComponent,
     SpinnerLoadingComponent,
     TableComponent,
+    MatMenuModule,
+    MatCheckboxModule,
+    ButtonComponent,
+    IconActionComponent,
+    CommonModule,
   ],
   templateUrl: './places-page.component.html',
   styleUrl: './places-page.component.css',
@@ -37,6 +48,7 @@ export class PlacesPageComponent implements OnInit {
   private readonly modalService = inject(ModalService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly placesService = inject(PlacesService);
+  private readonly pdfPrintService = inject(PdfPrintService);
 
   places: PlaceModel[] = [];
   filteredPlaces: PlaceModel[] = [];
@@ -50,6 +62,8 @@ export class PlacesPageComponent implements OnInit {
   searchForm!: FormGroup;
   typeSection = TypeList.Places;
   typeModal = TypeList.Places;
+  columnVisibility: Record<string, boolean> = {};
+  displayedColumns: string[] = [];
 
   headerListPlaces: ColumnModel[] = [
     { title: 'Imagen', key: 'img', sortable: false },
@@ -102,6 +116,10 @@ export class PlacesPageComponent implements OnInit {
       .subscribe();
 
     this.loadAllPlaces();
+    this.columnVisibility = this.headerListPlaces.reduce(
+      (acc, col) => ({ ...acc, [col.key]: true }),
+      {}
+    );
   }
 
   loadAllPlaces(): void {
@@ -190,5 +208,20 @@ export class PlacesPageComponent implements OnInit {
     this.filteredPlaces = [...this.places];
     this.number = this.placesService.countPlaces(places);
     this.isLoading = false;
+  }
+  printTableAsPdf(): void {
+    this.pdfPrintService.printTableAsPdf('table.mat-table', 'lugares.pdf');
+  }
+  toggleColumn(key: string): void {
+    this.columnVisibility[key] = !this.columnVisibility[key];
+    this.updateDisplayedColumns();
+  }
+
+  private updateDisplayedColumns(): void {
+    const base = ['number']; // si usas un número de fila
+    const dynamic = this.headerListPlaces
+      .filter((col) => this.columnVisibility[col.key])
+      .map((col) => col.key);
+    this.displayedColumns = [...base, ...dynamic, 'actions'];
   }
 }

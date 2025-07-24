@@ -40,6 +40,7 @@ export function timeRangeValidator(
   // Compara como strings 'HH:mm', funciona porque formato 24h respeta orden lexicográfico
   return timeEnd < timeStart ? { invalidTimeRange: true } : null;
 }
+// ✅ Validador que no se repita el mismo pase
 export const uniqueStartDatesValidator: ValidatorFn = (
   control: AbstractControl
 ): ValidationErrors | null => {

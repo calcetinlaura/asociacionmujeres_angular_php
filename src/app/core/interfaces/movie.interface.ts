@@ -13,7 +13,7 @@ export interface MovieModel {
 export type GenderMovies = 'COMEDIA' | 'DOCUMENTAL' | 'DRAMA';
 
 export const genderFilterMovies: Filter[] = [
-  { code: 'COMEDIA', name: 'COMEDIA' },
-  { code: 'DOCUMENTAL', name: 'DOCUMENTAL' },
-  { code: 'DRAMA', name: 'DRAMA' },
+  { code: 'COMEDIA', name: 'Comedia' },
+  { code: 'DOCUMENTAL', name: 'Documental' },
+  { code: 'DRAMA', name: 'Drama' },
 ];

@@ -2,7 +2,7 @@
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed; /* Fija el ancho de las columnas */
-  border: none !important;
+  border: 0.2px solid #9f86c0;
   box-shadow: none !important;
   z-index: 900;
 }
@@ -28,8 +28,8 @@ td.mat-column-actions {
 }
 
 .mat-mdc-row .mat-mdc-cell {
-  border-bottom: 1px solid transparent;
-  border-top: 1px solid transparent;
+  border-bottom: 1px solid #9f86c0;
+  border-top: 1px solid #9f86c0;
   cursor: default;
 }
 /* Rows body */
@@ -38,11 +38,22 @@ td.mat-column-actions {
   box-shadow: none !important;
 }
 
-.mat-mdc-row:hover {
-  background-color: rgb(245, 235, 246);
-  font-weight: 500;
+.mat-mdc-row:nth-child(even) {
+  background-color: #faf3fc; /* Amarillo claro */
 }
 
+.mat-mdc-row:nth-child(odd) {
+  background-color: #f6f0ff; /* Rojo claro */
+}
+.mat-mdc-row:hover {
+  background-color: #bae6b6;
+  font-weight: 500;
+}
+.mat-mdc-row:first-child {
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  overflow: hidden;
+}
 th.mat-sort-header-sorted {
   color: rgb(232, 148, 243);
 }
@@ -156,7 +167,10 @@ th.mat-sort-header-sorted {
 .custom-header-row {
   position: sticky;
   z-index: 999;
-  background-color: #f2ebf2;
+  background-color: #eee1ff;
+  border-top-left-radius: 16px !important;
+  border-top-right-radius: 16px !important;
+  border: 1px solid #9f86c0;
 }
 
 :host ::ng-deep .mat-sort-header-container {
@@ -266,10 +280,13 @@ th.mat-sort-header-sorted {
 }
 .top-200 {
   top: 200px;
+  background-color: red;
 }
 .top-266 {
   top: 266px;
+  background-color: yellow;
 }
 .top-326 {
-  top: 326px;
+  top: 296px;
+  border: 1px solid #9f86c0;
 }

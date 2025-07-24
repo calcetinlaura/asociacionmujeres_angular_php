@@ -4,9 +4,8 @@
   position: fixed;
   top: 0;
   left: 0;
-  padding: 2rem 1rem;
-  background-color: #46324b;
-  color: var(--color-4);
+  color: white;
+  padding: 20px 0 10px 0;
 }
 
 .side-bar__list {
@@ -15,26 +14,32 @@
   margin: 0;
   opacity: 0.8;
 }
-
-.side-bar__list .list-label {
-  font-size: 14px;
-  font-weight: 500;
-}
-.side-bar__list .list-label:hover {
-  font-size: 15px;
-  cursor: pointer;
-}
-
 .side-bar__list .list-wrapper-item {
-  font-size: var(--font-size-2);
-  font-weight: 500;
   display: flex;
   align-items: center;
   align-content: center;
   text-transform: uppercase;
   font-family: "poppins";
-  padding-bottom: 1rem;
+  padding: 7px 10px 7px 30px;
 }
+.side-bar__list .list-wrapper-item.active {
+  background-color: #8fe489;
+  cursor: pointer;
+  color: black;
+}
+.side-bar__list .list-wrapper-item.active:hover {
+  color: black;
+}
+.side-bar__list .list-wrapper-item:hover {
+  cursor: pointer;
+  color: #8fe489;
+}
+
+.side-bar__list .list-label {
+  font-size: 14px;
+  font-weight: 400;
+}
+
 .side-bar__list .list-wrapper-item .uil {
   font-size: var(--font-size-3);
   padding-right: 0.5rem;
@@ -45,7 +50,8 @@
 }
 
 .side-bar__separator.line-separator {
-  border-bottom: solid 1px var(--color-4);
+  border-bottom: solid 0.5px var(--color-4);
+  margin-left: 20px;
 }
 
 .side-bar__list.list-three .list-wrapper-item {

@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import {
   Component,
   DestroyRef,
@@ -7,6 +8,8 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatMenuModule } from '@angular/material/menu';
 import { tap } from 'rxjs';
 import { PartnersFacade } from 'src/app/application/partners.facade';
 import {
@@ -23,11 +26,14 @@ import { PartnersService } from 'src/app/core/services/partners.services';
 import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
 import { FiltersComponent } from 'src/app/modules/landing/components/filters/filters.component';
 import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
+import { ButtonComponent } from 'src/app/shared/components/buttons/button/button.component';
+import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
 import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
 import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
 import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
+import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
 import { TableComponent } from '../../components/table/table.component';
 
 @Component({
@@ -41,6 +47,11 @@ import { TableComponent } from '../../components/table/table.component';
     SpinnerLoadingComponent,
     FiltersComponent,
     TableComponent,
+    MatCheckboxModule,
+    MatMenuModule,
+    ButtonComponent,
+    IconActionComponent,
+    CommonModule,
   ],
   templateUrl: './partners-page.component.html',
   styleUrl: './partners-page.component.css',
@@ -51,6 +62,7 @@ export class PartnersPageComponent implements OnInit {
   private readonly partnersFacade = inject(PartnersFacade);
   private readonly partnersService = inject(PartnersService);
   private readonly generalService = inject(GeneralService);
+  private readonly pdfPrintService = inject(PdfPrintService);
 
   partners: PartnerModel[] = [];
   filteredPartners: PartnerModel[] = [];
@@ -67,6 +79,8 @@ export class PartnersPageComponent implements OnInit {
   item: PartnerModel | null = null;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
   searchForm!: FormGroup;
+  columnVisibility: Record<string, boolean> = {};
+  displayedColumns: string[] = [];
   headerListPartners: ColumnModel[] = [
     { title: 'Imagen', key: 'img', sortable: false },
     { title: 'Nombre', key: 'name', sortable: true },
@@ -137,6 +151,10 @@ export class PartnersPageComponent implements OnInit {
         tap((partners) => this.updatePartnerState(partners))
       )
       .subscribe();
+    this.columnVisibility = this.headerListPartners.reduce(
+      (acc, col) => ({ ...acc, [col.key]: true }),
+      {}
+    );
   }
 
   filterSelected(filter: string): void {
@@ -217,5 +235,20 @@ export class PartnersPageComponent implements OnInit {
     this.filteredPartners = [...this.partners];
     this.number = this.partnersService.countPartners(partners);
     this.isLoading = false;
+  }
+  printTableAsPdf(): void {
+    this.pdfPrintService.printTableAsPdf('table.mat-table', 'socias.pdf');
+  }
+  toggleColumn(key: string): void {
+    this.columnVisibility[key] = !this.columnVisibility[key];
+    this.updateDisplayedColumns();
+  }
+
+  private updateDisplayedColumns(): void {
+    const base = ['number']; // si usas un número de fila
+    const dynamic = this.headerListPartners
+      .filter((col) => this.columnVisibility[col.key])
+      .map((col) => col.key);
+    this.displayedColumns = [...base, ...dynamic, 'actions'];
   }
 }

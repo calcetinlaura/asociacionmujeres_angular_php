@@ -1,19 +1,17 @@
 .button-filter {
-  color: white;
-  padding: 4px 8px;
-  font-size: 1.2rem;
-  background-color: #2a202b;
-  text-transform: capitalize;
-  border-radius: 4px;
+  padding: 4px 16px;
+  font-size: 1.1rem;
+  background-color: #f6f0ff;
+  border: 0.3px solid #2f2f61;
+  border-radius: 16px;
 }
 .button-filter:hover {
   cursor: pointer;
-  background-color: rgb(163, 130, 176);
+  background-color: rgb(166, 128, 181);
   color: white;
 }
 .active {
-  background-color: rgb(222, 199, 231);
-  color: #2a202b;
+  background-color: #e1cff8;
   cursor: pointer;
 }
 @media (max-width: 1200px) {

@@ -124,7 +124,7 @@ export class FormEventComponent implements OnInit, OnChanges {
       ticket_prices: new FormArray<FormGroup>([]),
       tickets_method: new FormControl(''),
       periodic: new FormControl(false),
-      periodic_id: new FormControl<number | null>(null),
+      periodic_id: new FormControl(''),
       repeated_dates: new FormArray<FormGroup>([], {
         validators: [uniqueStartDatesValidator],
       }),
@@ -290,7 +290,7 @@ export class FormEventComponent implements OnInit, OnChanges {
             macroevent_id: event.macroevent_id,
             project_id: event.project_id,
             online_link: event.online_link ?? '',
-            periodic_id: event.periodic_id ?? null,
+            periodic_id: event.periodic_id ?? '',
           },
           { emitEvent: false }
         );
@@ -797,6 +797,7 @@ export class FormEventComponent implements OnInit, OnChanges {
     return item.sala_id;
   }
   onSendFormEvent(): void {
+    console.log('📤 Enviando formulario…');
     if (this.formEvent.invalid) {
       this.submitted = true;
       if (this.isPeriodicEvent) {
@@ -872,7 +873,11 @@ export class FormEventComponent implements OnInit, OnChanges {
     };
 
     if (this.isPeriodicEvent && formValues.repeated_dates.length > 0) {
-      const groupId = formValues.periodic_id ?? this.generateUUID();
+      const groupId =
+        formValues.periodic_id && formValues.periodic_id.trim() !== ''
+          ? formValues.periodic_id
+          : this.generateUUID();
+      this.formEvent.patchValue({ periodic_id: groupId }); // ✅ Importante
 
       formValues.repeated_dates.forEach((rd: any) => {
         if (!rd.start) {
@@ -921,11 +926,55 @@ export class FormEventComponent implements OnInit, OnChanges {
         { img: this.selectedImageFile },
         this.itemId
       );
-
-      this.sendFormEvent.emit({
-        itemId: this.itemId,
-        formData,
-      });
+      const repeatedDates = formData.get('repeated_dates');
+      if (repeatedDates === '[]') {
+        formData.set('periodic_id', '');
+      }
+      // 👇 NUEVO BLOQUE: borrar eventos recurrentes si se pasó de periodic a individual
+      const hadPeriodicId = !!this.item?.periodic_id;
+      const oldPeriodicId = this.item?.periodic_id;
+      const newPeriodicId = formData.get('periodic_id');
+      if (hadPeriodicId && (!newPeriodicId || newPeriodicId === '')) {
+        // ⏳ Guardar como evento único
+        this.eventsFacade
+          .editEvent(this.itemId, formData) // Este método debe devolver un Observable
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: () => {
+              // ✅ Después de guardar, eliminamos el resto del grupo
+              this.eventsFacade
+                .deleteEventsByPeriodicIdExcept(oldPeriodicId!, this.itemId)
+                .pipe(takeUntilDestroyed(this.destroyRef))
+                .subscribe({
+                  next: () => {
+                    console.log('✅ Eventos repetidos eliminados.');
+                  },
+                  error: (err) => {
+                    console.error('❌ Error al borrar eventos repetidos:', err);
+                    this.generalService.handleHttpError(err);
+                  },
+                });
+            },
+            error: (err) => {
+              console.error('❌ Error al guardar evento como individual:', err);
+              this.generalService.handleHttpError(err);
+            },
+          });
+      } else {
+        // 🟢 Guardado normal (evento nuevo o aún periódico)
+        this.eventsFacade
+          .editEvent(this.itemId, formData)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: () => {
+              console.log('✅ Evento guardado.');
+            },
+            error: (err) => {
+              console.error('❌ Error al guardar evento:', err);
+              this.generalService.handleHttpError(err);
+            },
+          });
+      }
     }
   }
 
