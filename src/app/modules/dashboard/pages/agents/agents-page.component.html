@@ -52,7 +52,8 @@
       [data]="filteredAgents"
       [typeSection]="typeSection"
       [typeModal]="typeModal"
-      [headerColumns]="headerListAgents"
+      [headerColumns]="getVisibleColumns()"
+      [columnVisibility]="columnVisibility"
       (openModal)="onOpenModal($event)"
     />
   </div>

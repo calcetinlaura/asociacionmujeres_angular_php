@@ -27,8 +27,6 @@ body {
   font-family: var(--font-family-1);
   color: var(--color-3);
   list-style: decimal;
-}
-p {
   color: var(--color-3);
   font-size: 12px;
 }
@@ -105,49 +103,64 @@ p {
   overflow-y: auto;
   width: 100%;
 }
-@media print {
-  .custom-header-row {
-    position: static !important;
-    top: auto !important;
-    background-color: #fff !important;
-    z-index: auto !important;
-  }
 
-  .mat-elevation-z8 {
-    box-shadow: none !important;
-  }
+:host ::ng-deep .mat-autocomplete-panel {
+  max-height: 500px !important; /* Ajusta este valor según el número de opciones que desees */
+  overflow-y: auto;
+}
+/* IMPRIMR PDFs */
 
-  th.mat-column-actions,
-  td.mat-column-actions {
-    position: static !important;
-    top: auto !important;
-    z-index: auto !important;
-  }
+.printing .mat-elevation-z8 {
+  box-shadow: none !important;
+}
 
-  .table {
-    width: 100% !important;
-    table-layout: auto !important;
-  }
+.printing .table,
+.printing .mat-table {
+  width: 100% !important;
+  table-layout: auto !important;
+  border: none !important;
+}
 
-  .mat-table {
-    width: 100% !important;
-  }
+.printing .mat-header-row,
+.printing .mat-row,
+.printing .mat-footer-row {
+  break-inside: avoid !important;
+}
 
-  .mat-header-row,
-  .mat-row,
-  .mat-footer-row {
-    break-inside: avoid !important;
-  }
+.printing html,
+.printing body {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
 
-  @page {
-    size: A4 landscape;
-    margin: 1cm;
-  }
+.printing .no-print,
+.printing .top-206,
+.printing .top-296,
+.printing th.mat-column-actions,
+.printing td.mat-column-actions {
+  display: none !important;
+}
 
-  html,
-  body {
-    width: 100%;
-    margin: 0;
-    padding: 0;
-  }
+.printing .custom-header-row {
+  position: static !important;
+  top: auto !important;
+  background-color: #fff !important;
+  z-index: auto !important;
+}
+
+.printing .mat-elevation-z8 {
+  box-shadow: none !important;
+}
+
+.printing .print-title {
+  display: block !important;
+  text-align: center;
+  margin-bottom: 1rem;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.print-title {
+  display: none;
 }

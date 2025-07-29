@@ -10,7 +10,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
-import { tap } from 'rxjs';
+import { of, switchMap, tap } from 'rxjs';
 import { EventsFacade } from 'src/app/application/events.facade';
 import {
   ColumnModel,
@@ -87,14 +87,14 @@ export class EventsPageComponent implements OnInit {
 
   headerListEvents: ColumnModel[] = [
     { title: 'Cartel', key: 'img', sortable: false },
-    { title: 'Título', key: 'titleEvent', sortable: true },
+    { title: 'Título', key: 'title', sortable: true },
     { title: 'Fecha', key: 'start', sortable: true, width: ColumnWidth.SM },
     {
       title: 'Descripción',
       key: 'description',
       sortable: true,
-      booleanIndicator: true,
-      width: ColumnWidth.SM,
+      showIndicatorOnEmpty: true,
+      width: ColumnWidth.LG,
     },
     {
       title: 'Espacio',
@@ -139,6 +139,16 @@ export class EventsPageComponent implements OnInit {
   private inputSearchComponent!: InputSearchComponent;
 
   ngOnInit(): void {
+    this.columnVisibility = this.generalService.setColumnVisibility(
+      this.headerListEvents,
+      ['organizer', 'collaborator', 'sponsor'] // Coloca las columnas que deseas ocultar aquí
+    );
+
+    // Actualiza las columnas visibles según el estado de visibilidad
+    this.displayedColumns = this.generalService.updateDisplayedColumns(
+      this.headerListEvents,
+      this.columnVisibility
+    );
     this.filters = [
       ...this.generalService.getYearFilters(2018, this.currentYear),
     ];
@@ -158,10 +168,6 @@ export class EventsPageComponent implements OnInit {
         tap((events) => this.updateEventState(events))
       )
       .subscribe();
-    this.columnVisibility = this.headerListEvents.reduce(
-      (acc, col) => ({ ...acc, [col.key]: true }),
-      {}
-    );
   }
 
   filterSelected(filter: string): void {
@@ -209,11 +215,31 @@ export class EventsPageComponent implements OnInit {
 
   confirmDeleteEvent(event: EventModel | null): void {
     if (!event) return;
-    this.eventsFacade.deleteEvent(event.id);
+
+    if (event.periodic_id) {
+      // 🔥 Borra todo el grupo de eventos repetidos
+      this.eventsService
+        .deleteEventsByPeriodicId(event.periodic_id)
+        .pipe(
+          takeUntilDestroyed(this.destroyRef),
+          tap(() => this.filterSelected(this.selectedFilter?.toString() ?? ''))
+        )
+        .subscribe();
+    } else {
+      // 🔥 Borra solo el evento individual
+      this.eventsFacade.deleteEvent(event.id);
+    }
+
     this.onCloseModal();
   }
 
   sendFormEvent(event: { itemId: number; formData: FormData }): void {
+    const currentItem = this.item; // Guarda referencia al evento actual
+    const newPeriodicId = event.formData.get('periodic_id');
+    const oldPeriodicId = currentItem?.periodic_id || null;
+
+    const isRepeatedToUnique = !!oldPeriodicId && !newPeriodicId;
+
     const request$ = event.itemId
       ? this.eventsFacade.editEvent(event.itemId, event.formData)
       : this.eventsFacade.addEvent(event.formData);
@@ -221,7 +247,18 @@ export class EventsPageComponent implements OnInit {
     request$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap(() => this.onCloseModal())
+        switchMap(() => {
+          if (isRepeatedToUnique && oldPeriodicId) {
+            return this.eventsService.deleteOtherEventsByPeriodicId(
+              oldPeriodicId,
+              event.itemId
+            );
+          }
+          return of(null); // ← para mantener la cadena activa
+        }),
+        tap(() => {
+          this.onCloseModal();
+        })
       )
       .subscribe();
   }
@@ -234,18 +271,21 @@ export class EventsPageComponent implements OnInit {
     this.isLoading = false;
   }
   printTableAsPdf(): void {
-    this.pdfPrintService.printTableAsPdf('table.mat-table', 'eventos.pdf');
+    this.pdfPrintService.printTableAsPdf('table-to-print', 'eventos.pdf');
   }
+  getVisibleColumns() {
+    return this.headerListEvents.filter(
+      (col) => this.columnVisibility[col.key]
+    );
+  }
+  // Método para actualizar las columnas visibles cuando se hace toggle
   toggleColumn(key: string): void {
+    // Cambia la visibilidad de la columna en columnVisibility
     this.columnVisibility[key] = !this.columnVisibility[key];
-    this.updateDisplayedColumns();
-  }
-
-  private updateDisplayedColumns(): void {
-    const base = ['number']; // si usas un número de fila
-    const dynamic = this.headerListEvents
-      .filter((col) => this.columnVisibility[col.key])
-      .map((col) => col.key);
-    this.displayedColumns = [...base, ...dynamic, 'actions'];
+    // Actualiza las columnas visibles en la tabla después de cambiar el estado
+    this.displayedColumns = this.generalService.updateDisplayedColumns(
+      this.headerListEvents,
+      this.columnVisibility
+    );
   }
 }

@@ -140,6 +140,17 @@ export class CreditorsPageComponent implements OnInit {
   private inputSearchComponent!: InputSearchComponent;
 
   ngOnInit(): void {
+    // Ocultar 'date_payment' y 'date_accounting' al cargar la página
+    this.columnVisibility = this.generalService.setColumnVisibility(
+      this.headerListCreditors,
+      [''] // Coloca las columnas que deseas ocultar aquí
+    );
+
+    // Actualiza las columnas visibles según el estado de visibilidad
+    this.displayedColumns = this.generalService.updateDisplayedColumns(
+      this.headerListCreditors,
+      this.columnVisibility
+    );
     this.filters = [{ code: 'ALL', name: 'Todos' }, ...categoryFilterCreditors];
 
     this.modalService.modalVisibility$
@@ -157,10 +168,6 @@ export class CreditorsPageComponent implements OnInit {
         tap((creditors) => this.updateCreditorState(creditors))
       )
       .subscribe();
-    this.columnVisibility = this.headerListCreditors.reduce(
-      (acc, col) => ({ ...acc, [col.key]: true }),
-      {}
-    );
   }
 
   filterSelected(filter: string): void {
@@ -231,18 +238,21 @@ export class CreditorsPageComponent implements OnInit {
     this.isLoading = false;
   }
   printTableAsPdf(): void {
-    this.pdfPrintService.printTableAsPdf('table.mat-table', 'acreedores.pdf');
+    this.pdfPrintService.printTableAsPdf('table-to-print', 'acreedores.pdf');
   }
+  getVisibleColumns() {
+    return this.headerListCreditors.filter(
+      (col) => this.columnVisibility[col.key]
+    );
+  }
+  // Método para actualizar las columnas visibles cuando se hace toggle
   toggleColumn(key: string): void {
+    // Cambia la visibilidad de la columna en columnVisibility
     this.columnVisibility[key] = !this.columnVisibility[key];
-    this.updateDisplayedColumns();
-  }
-
-  private updateDisplayedColumns(): void {
-    const base = ['number']; // si usas un número de fila
-    const dynamic = this.headerListCreditors
-      .filter((col) => this.columnVisibility[col.key])
-      .map((col) => col.key);
-    this.displayedColumns = [...base, ...dynamic, 'actions'];
+    // Actualiza las columnas visibles en la tabla después de cambiar el estado
+    this.displayedColumns = this.generalService.updateDisplayedColumns(
+      this.headerListCreditors,
+      this.columnVisibility
+    );
   }
 }

@@ -514,60 +514,31 @@ LEFT JOIN macroevents m ON e.macroevent_id = m.id
 
 case 'DELETE':
   if (isset($_GET['periodic_id']) && isset($_GET['keep_id'])) {
-    $periodicId = $_GET['periodic_id'];
-    $keepId = (int)$_GET['keep_id'];
+  $periodicId = $_GET['periodic_id'];
+  $keepId = (int)$_GET['keep_id'];
 
-    // 🛡️ Verificamos si el evento keepId sigue teniendo el mismo periodic_id
-    $stmt = $connection->prepare("SELECT periodic_id FROM events WHERE id = ?");
-    $stmt->bind_param("i", $keepId);
-    $stmt->execute();
-    $res = $stmt->get_result();
-    $evento = $res->fetch_assoc();
+  // ✅ Elimina todos los eventos con ese periodic_id EXCEPTO el keepId
+  $stmt = $connection->prepare("DELETE FROM events WHERE periodic_id = ? AND id != ?");
+  $stmt->bind_param("si", $periodicId, $keepId);
+  $stmt->execute();
 
-    if ($evento && $evento['periodic_id'] === $periodicId) {
-      // ⛔ Sigue siendo parte del grupo, no borrar nada aún
-      http_response_code(400);
-      echo json_encode(["message" => "El evento keepId aún pertenece al grupo periódico."]);
-      exit();
-    }
+  // ✅ Si ya no hay ningún evento con ese periodic_id, eliminamos el grupo también
+  $stmt = $connection->prepare("SELECT COUNT(*) as count FROM events WHERE periodic_id = ?");
+  $stmt->bind_param("s", $periodicId);
+  $stmt->execute();
+  $res = $stmt->get_result();
+  $row = $res->fetch_assoc();
 
-    // ✅ Solo borramos el resto si keepId ya no está en el grupo
-    $stmt = $connection->prepare("SELECT id FROM events WHERE periodic_id = ?");
+  if ((int)$row['count'] === 0) {
+    $stmt = $connection->prepare("DELETE FROM periodic_groups WHERE id = ?");
     $stmt->bind_param("s", $periodicId);
     $stmt->execute();
-    $result = $stmt->get_result();
-
-    $idsToDelete = [];
-    while ($row = $result->fetch_assoc()) {
-      if ((int)$row['id'] !== $keepId) {
-        $idsToDelete[] = (int)$row['id'];
-      }
-    }
-
-    if (!empty($idsToDelete)) {
-      $placeholders = implode(',', array_fill(0, count($idsToDelete), '?'));
-      $types = str_repeat('i', count($idsToDelete));
-      $stmt = $connection->prepare("DELETE FROM events WHERE id IN ($placeholders)");
-      $stmt->bind_param($types, ...$idsToDelete);
-      $stmt->execute();
-    }
-
-    // ✅ También puedes borrar el grupo si ya no hay ningún evento con ese periodic_id
-    $stmt = $connection->prepare("SELECT COUNT(*) as count FROM events WHERE periodic_id = ?");
-    $stmt->bind_param("s", $periodicId);
-    $stmt->execute();
-    $res = $stmt->get_result();
-    $row = $res->fetch_assoc();
-    if ($row && (int)$row['count'] === 0) {
-      $stmt = $connection->prepare("DELETE FROM periodic_groups WHERE id = ?");
-      $stmt->bind_param("s", $periodicId);
-      $stmt->execute();
-    }
-
-    http_response_code(200);
-    echo json_encode(["message" => "Eventos recurrentes eliminados excepto keepId"]);
-    exit();
   }
+
+  http_response_code(200);
+  echo json_encode(["message" => "Eventos repetidos eliminados (excepto keepId)."]);
+  exit();
+}
 
   // 🧹 Eliminación completa del grupo periódico (sin keepId)
   if (isset($_GET['periodic_id'])) {

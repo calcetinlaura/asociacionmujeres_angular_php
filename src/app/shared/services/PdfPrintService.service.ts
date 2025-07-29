@@ -4,25 +4,28 @@ declare var html2pdf: any;
 
 @Injectable({ providedIn: 'root' })
 export class PdfPrintService {
-  printTableAsPdf(
-    tableSelector: string = 'table.mat-table',
-    fileName = 'tabla.pdf'
-  ): void {
-    const table = document.querySelector(tableSelector);
+  printTableAsPdf(selector: string, filename: string): void {
+    const element = document.getElementById(selector);
+    if (!element) return;
 
-    if (!table) {
-      alert('No se encontró la tabla');
-      return;
-    }
+    // Añadir clase al <body> para forzar los estilos
+    document.body.classList.add('printing');
 
-    const options = {
-      margin: 0.2,
-      filename: fileName,
+    const opt = {
+      margin: 0.5,
+      filename,
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: { scale: 2 },
-      jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' },
+      jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' },
     };
 
-    html2pdf().set(options).from(table).save();
+    html2pdf()
+      .set(opt)
+      .from(element)
+      .save()
+      .finally(() => {
+        // Eliminar clase al terminar
+        document.body.classList.remove('printing');
+      });
   }
 }

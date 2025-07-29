@@ -110,10 +110,10 @@ export class FormInvoiceComponent {
     creditor_id: new FormControl<number | null>(null),
     description: new FormControl('', [Validators.maxLength(2000)]),
     amount: new FormControl(0, [Validators.required, Validators.min(1)]),
-    irpf: new FormControl(),
-    iva: new FormControl(),
-    total_amount: new FormControl(),
-    total_amount_irpf: new FormControl(),
+    irpf: new FormControl(0),
+    iva: new FormControl(0),
+    total_amount: new FormControl(0),
+    total_amount_irpf: new FormControl(0),
     subsidy_id: new FormControl<number | null>({
       value: null,
       disabled: true,
@@ -127,7 +127,6 @@ export class FormInvoiceComponent {
   subsidies: SubsidyModelFullData[] = [];
   projects: ProjectModel[] = [];
   currentYear = this.generalService.currentYear;
-  isCreate = false;
   private loadedYearData: number | null = null;
   quillModules = {
     toolbar: [
@@ -142,9 +141,7 @@ export class FormInvoiceComponent {
     ],
   };
   ngOnInit(): void {
-    this.isCreate = this.itemId !== 0;
     this.years = this.generalService.loadYears(this.currentYear, 2018);
-
     if (this.itemId) {
       this.invoicesFacade.loadInvoiceById(this.itemId);
       this.invoicesFacade.selectedInvoice$
@@ -159,13 +156,13 @@ export class FormInvoiceComponent {
                 date_invoice: invoice.date_invoice || '',
                 date_accounting: invoice.date_accounting || '',
                 date_payment: invoice.date_payment || '',
-                creditor_id: invoice.creditor_id || null,
+                creditor_id: invoice.creditor_id,
                 description: invoice.description || '',
-                amount: invoice.amount || null,
-                irpf: invoice.irpf || null,
-                iva: invoice.iva || null,
-                total_amount: invoice.total_amount || null,
-                total_amount_irpf: invoice.total_amount_irpf || null,
+                amount: invoice.amount || 0,
+                irpf: invoice.irpf || 0,
+                iva: invoice.iva || 0,
+                total_amount: invoice.total_amount || 0,
+                total_amount_irpf: invoice.total_amount_irpf || 0,
                 subsidy_id: invoice.subsidy_id,
                 project_id: invoice.project_id,
                 invoice_pdf: invoice.invoice_pdf || '',
@@ -272,12 +269,15 @@ export class FormInvoiceComponent {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap(([amount, iva, irpf]) => {
+          // Convertir los valores a números
           const parsedAmount = Number(amount) || 0;
           const parsedIva = Number(iva) || 0;
           const parsedIrpf = Number(irpf) || 0;
 
+          // Calcular el total_amount
           const total = parsedAmount + parsedIva - parsedIrpf;
 
+          // Asignar el valor al campo total_amount
           this.formInvoice
             .get('total_amount')
             ?.setValue(total, { emitEvent: false });
@@ -319,10 +319,10 @@ export class FormInvoiceComponent {
     const creditorControl = this.formInvoice.get('creditor_id');
 
     if (!value) {
-      // ✅ Si el input está vacío, limpiar todo
+      // Si el input está vacío, limpiar todo
       creditorControl?.reset(null); // Limpia el ID
       this.creditors = []; // Limpia sugerencias
-      creditorControl?.setErrors(null); // Limpia errores manualmente (por si acaso)
+      creditorControl?.setErrors(null); // Limpia errores manualmente
       return;
     }
 
@@ -331,9 +331,21 @@ export class FormInvoiceComponent {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((creditors) => {
-          this.creditors = creditors;
+          // Filtrar y ordenar los resultados
+          this.creditors = creditors
+            .filter((creditor) =>
+              creditor.company.toLowerCase().startsWith(value.toLowerCase())
+            )
+            .concat(
+              creditors.filter(
+                (creditor) =>
+                  !creditor.company
+                    .toLowerCase()
+                    .startsWith(value.toLowerCase())
+              )
+            );
 
-          const matchedCreditor = creditors.find(
+          const matchedCreditor = this.creditors.find(
             (creditor) =>
               creditor.company === value || value.includes(creditor.company)
           );
@@ -408,48 +420,81 @@ export class FormInvoiceComponent {
   onSendFormInvoice(): void {
     this.submitted = true;
 
+    // Verificar si el formulario es válido antes de proceder
     if (this.formInvoice.invalid) {
       console.warn('⚠️ Formulario inválido', this.formInvoice.errors);
       return;
     }
 
-    const creditorId = this.formInvoice.value.creditor_id;
-    const enteredCreditor = this.searchInput.value?.trim() || '';
+    const rawValues = { ...this.formInvoice.getRawValue() } as any;
+    console.log('Valores del formulario (rawValues):', rawValues);
 
-    // ✅ Nueva lógica: Solo validar acreedor si hay texto escrito
-    if (enteredCreditor && typeof creditorId !== 'number') {
-      this.formInvoice.get('creditor_id')?.setErrors({ notRegistered: true });
-      return;
+    // Default values que pueden ser asignados si los campos son nulos
+    const defaultValues: { [key: string]: any } = {
+      irpf: 0,
+      iva: 0,
+      total_amount_irpf: 0,
+      invoice_pdf: '', // Asegúrate de asignar un valor predeterminado a 'invoice_pdf'
+    };
+
+    // Asegurarse de que los valores nulos sean reemplazados por un valor predeterminado
+    for (const key in rawValues) {
+      if (rawValues[key] === null || rawValues[key] === undefined) {
+        if (key in defaultValues) {
+          rawValues[key] = defaultValues[key];
+          console.warn(
+            `⚠️ El valor de ${key} es nulo o indefinido, asignando valor predeterminado`
+          );
+        } else {
+          rawValues[key] = ''; // O el valor predeterminado que prefieras
+        }
+      }
     }
 
-    // 🔹 Obtener valores del formulario
-    const rawValues = { ...this.formInvoice.getRawValue() } as any;
+    // Limpiar descripción de espacios no rompibles
     if (rawValues.description) {
       rawValues.description = rawValues.description.replace(/&nbsp;/g, ' ');
     }
-    const pdf = rawValues.invoice_pdf;
-    const selectedPdf = pdf instanceof File ? pdf : null;
-    delete rawValues.invoice_pdf;
+    console.log('Valores después de correcciones:', rawValues);
 
-    if (typeof pdf === 'string') {
+    // Manejo del PDF
+    const pdf = rawValues.invoice_pdf;
+    let selectedPdf = null;
+
+    // Verificar si el valor es un archivo
+    if (pdf instanceof File) {
+      selectedPdf = pdf;
+    } else if (typeof pdf === 'string' && pdf.trim() !== '') {
+      // Asignar el valor de URL existente
       rawValues.existingUrl = pdf;
+    } else {
+      // Si el valor es nulo, vacío o indefinido, asignar un valor vacío
+      rawValues.existingUrl = '';
     }
 
+    // Eliminar invoice_pdf de rawValues antes de pasarlo
+    delete rawValues.invoice_pdf;
+
+    // Crear FormData usando el método createFormData de generalService
     const formData = this.generalService.createFormData(
       rawValues,
-      { invoice_pdf: selectedPdf },
-      this.itemId
+      { url: selectedPdf }, // Se añade el archivo PDF (o la URL si es una cadena)
+      this.itemId // itemId: El id de la factura, ya sea para edición o nueva
     );
 
+    // Emitir el formulario con formData
     this.sendFormInvoice.emit({
       itemId: this.itemId,
       formData: formData,
     });
-    this.resetCreditor();
+
+    // Limpiar el acreedor después de enviar
+    // this.resetCreditor();
   }
-  resetCreditor(): void {
-    this.searchInput.reset(''); // limpia el input de texto
-    this.formInvoice.get('creditor_id')?.reset(null); // limpia el id de acreedor
-    this.creditors = []; // limpia sugerencias
-  }
+
+  // resetCreditor(): void {
+  //   this.searchInput.reset(''); // limpia el input de texto
+  //   this.formInvoice.get('creditor_id')?.reset(null); // limpia el id de acreedor
+  //   this.creditors = []; // limpia sugerencias
+  // }
 }

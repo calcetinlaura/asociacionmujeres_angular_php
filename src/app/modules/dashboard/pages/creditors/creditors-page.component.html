@@ -52,7 +52,8 @@
       [data]="filteredCreditors"
       [typeSection]="typeSection"
       [typeModal]="typeModal"
-      [headerColumns]="headerListCreditors"
+      [headerColumns]="getVisibleColumns()"
+      [columnVisibility]="columnVisibility"
       (openModal)="onOpenModal($event)"
     />
   </div>

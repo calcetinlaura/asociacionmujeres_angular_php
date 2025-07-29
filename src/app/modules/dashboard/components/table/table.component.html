@@ -1,404 +1,469 @@
-<table
-  mat-table
-  [dataSource]="dataSource"
-  matSort
-  (matSortChange)="announceSortChange($event)"
-  class="mat-elevation-z8 table"
->
-  <ng-container matColumnDef="number">
-    <th mat-header-cell *matHeaderCellDef>Nº</th>
-    <td mat-cell *matCellDef="let element; let i = index">
-      {{ i + 1 }}
-    </td>
-    <td mat-footer-cell *matFooterCellDef></td>
-  </ng-container>
-  @for (column of headerColumns; track column) {
-  <ng-container [matColumnDef]="column.key">
-    @if (column.sortable) {
-    <th
-      mat-header-cell
-      *matHeaderCellDef
-      mat-sort-header="{{ column.key }}"
-      [ngClass]="column.width"
-    >
-      {{ column.title }}
-    </th>
-    } @else {
-    <th mat-header-cell *matHeaderCellDef [ngClass]="column.width">
-      {{ column.title }}
-    </th>
-    }
-    <td mat-cell *matCellDef="let element" [ngClass]="column.width">
-      @switch (true) { @case (column.booleanIndicator === true) {
-      <app-circle-indicator
-        [item]="hasValueBoolean(element[column.key])"
-      ></app-circle-indicator>
-      } @case ( column.showIndicatorOnEmpty === true && !(element[column.key] |
-      hasValue) ) {
-      <app-circle-indicator [item]="false"></app-circle-indicator>
-      } @case (column.showLengthOnly === true) { @if
-      (element[column.key]?.length > 0) {
-      <div class="flex justify-center">
-        <div
-          class="w-8 h-8 flex items-center justify-center rounded-full border border-lilaClaro bg-transparent text-black text-sm"
-        >
-          {{ element[column.key]?.length || 0 }}
-        </div>
-      </div>
-      } } @case (column.pipe === 'eurosFormat') {
-      {{ element[column.key] | eurosFormat }}
-      } @case (column.pipe === 'phoneFormat') {
-      {{ element[column.key] | phoneFormat }}
-      } @case (column.pipe === 'i18nSelect : nameSubsidy') {
-      {{ element[column.key] | i18nSelect : nameSubsidy }}
-      } @case (column.pipe === 'date : dd MMM yyyy') {
-      <small>{{ element[column.key] | date : "dd MMM yyyy" }}</small>
+<div id="table-to-print">
+  <h2 class="print-title">Listado</h2>
+  <table
+    mat-table
+    [dataSource]="dataSource"
+    matSort
+    (matSortChange)="announceSortChange($event)"
+    class="mat-elevation-z8 table"
+  >
+    <ng-container matColumnDef="number">
+      <th mat-header-cell *matHeaderCellDef>Nº</th>
+      <td mat-cell *matCellDef="let element; let i = index">
+        {{ i + 1 }}
+      </td>
+      <td mat-footer-cell *matFooterCellDef></td>
+    </ng-container>
+    @for (column of headerColumns; track column) {
+    <ng-container [matColumnDef]="column.key">
+      @if (column.sortable) {
+      <th
+        mat-header-cell
+        *matHeaderCellDef
+        mat-sort-header="{{ column.key }}"
+        [ngClass]="column.width"
+      >
+        {{ column.title }}
+      </th>
+      } @else {
+      <th mat-header-cell *matHeaderCellDef [ngClass]="column.width">
+        {{ column.title }}
+      </th>
       }
-      <!-- IMAGEN -->
-      @case (column.key === 'img') {
-      <img
-        appImgBroken
-        [src]="element[column.key] | itemImage : typeSection"
-        alt=""
-        class="cover"
-      />
-      } @case (column.key === 'invoice_pdf') { @if (element['invoice_pdf']) {
-      <div>
-        <i class="uil uil-file-alt text-[25px]"></i>
-      </div>
-      } }
-      <!-- FECHAS -->
-      @case (column.key === 'start') {
-      <div class="flex justify-center">
-        <!-- Caso 1: NO tiene periodicEvents -->
-        @if (!element['periodicEvents'] || element['periodicEvents'].length ===
-        0) { @if (element['start'] && element['end'] === element['start']) {
-        <p class="dateColumn">
-          {{ element["start"] | date : "EEE dd MMM yyyy" }}
-        </p>
-        } @if (element['start'] && element['end'] !== element['start']) {
-        <div class="flex flex-col">
-          <p class="dateColumn">
-            {{ element["start"] | date : "EEE dd MMM yyyy" }}<br />
-            AL<br />
-            {{ element["end"] | date : "EEE dd MMM yyyy" }}
-          </p>
+      <td mat-cell *matCellDef="let element" [ngClass]="column.width">
+        @switch (true) { @case (column.booleanIndicator === true) {
+        <app-circle-indicator
+          [item]="hasValueBoolean(element[column.key])"
+        ></app-circle-indicator>
+        } @case ( column.showIndicatorOnEmpty === true && !(element[column.key]
+        | hasValue) ) {
+        <app-circle-indicator [item]="false"></app-circle-indicator>
+        } @case (column.showLengthOnly === true) { @if
+        (element[column.key]?.length > 0) {
+        <div class="flex justify-center">
+          <div
+            class="w-8 h-8 flex items-center justify-center rounded-full border border-lilaClaro bg-transparent text-black text-sm"
+          >
+            {{ element[column.key]?.length || 0 }}
+          </div>
+        </div>
+        } } @case (column.pipe === 'eurosFormat') {
+        {{ element[column.key] | eurosFormat }}
+        } @case (column.pipe === 'phoneFormat') {
+        {{ element[column.key] | phoneFormat }}
+        } @case (column.pipe === 'i18nSelect : nameSubsidy') {
+        {{ element[column.key] | i18nSelect : nameSubsidy }}
+        } @case (column.pipe === 'date : dd MMM yyyy') {
+        <small>{{ element[column.key] | date : "dd MMM yyyy" }}</small>
+        }
+        <!-- IMAGEN -->
+        @case (column.key === 'img') {
+        <img
+          appImgBroken
+          [src]="element[column.key] | itemImage : typeSection"
+          alt=""
+          class="cover"
+        />
+        } @case (column.key === 'invoice_pdf') { @if (element['invoice_pdf']) {
+        <div>
+          <i class="uil uil-file-alt text-[25px]"></i>
         </div>
         } }
-
-        <!-- Caso 2: Tiene periodicEvents -->
-        @if (element['periodicEvents'] && element['periodicEvents'].length > 0)
-        {
-        <div class="flex flex-col dateColumn">
-          @for (func of element['periodicEvents']; track func) {
-
-          <p class="text-[9px]">
-            {{ func.start | date : "EEEE dd MMM" }}
+        <!-- FECHAS -->
+        @case (column.key === 'start') {
+        <div class="flex justify-center">
+          <!-- Caso 1: NO tiene periodicEvents -->
+          @if (!element['periodicEvents'] || element['periodicEvents'].length
+          === 0) { @if (element['start'] && element['end'] === element['start'])
+          {
+          <p class="dateColumn">
+            {{ element["start"] | date : "EEE dd MMM yyyy" }}
           </p>
+          } @if (element['start'] && element['end'] !== element['start']) {
+          <div class="flex flex-col">
+            <p class="dateColumn">
+              {{ element["start"] | date : "EEE dd MMM yyyy" }}<br />
+              AL<br />
+              {{ element["end"] | date : "EEE dd MMM yyyy" }}
+            </p>
+          </div>
+          } }
 
+          <!-- Caso 2: Tiene periodicEvents -->
+          @if (element['periodicEvents'] && element['periodicEvents'].length >
+          0) {
+          <div class="flex flex-col dateColumn">
+            @for (func of element['periodicEvents']; track func) {
+
+            <p class="text-[9px]">
+              {{ func.start | date : "EEEE dd MMM" }}
+            </p>
+
+            }
+          </div>
+          }
+        </div>
+        } @case (column.key === 'title' || column.key === 'name'){
+        <div (click)="onOpenModal(typeModal, typeActionModal.Show, element)">
+          <p
+            class="cursor-pointer hover:underline hover:text-[green] text-[14px]"
+          >
+            @if(element.title) { {{ element.title }} } @if(element.name){
+            {{ element.name }} }
+          </p>
+          @if (typeSection === TypeList.Events && element.macroeventData?.title)
+          {
+          <div
+            class="bg-[#f5d7a9] text-[11px] rounded px-[3px] py-[0px] inline-block"
+          >
+            {{ element.macroeventData.title }}
+          </div>
           }
         </div>
         }
-      </div>
-      }
 
-      <!-- Diseño especial para 'espacio en eventos' -->
-      @case (column.key === 'titleEvent') {
-      <div>
-        @if (element.title) {
+        <!-- Diseño especial para 'espacio en eventos' -->
+        @case (column.key === 'title' && typeSection === TypeList.Events) {
         <div>
-          {{ element.title }}
+          @if (element.title) {
+          <div>
+            {{ element.title }}
+          </div>
+          @if (element.macroeventData?.title) {
+          <div
+            class="bg-[#f5d7a9] text-[11px] rounded px-[3px] py-[0px] inline-block"
+          >
+            {{ element.macroeventData.title }}
+          </div>
+          } }
         </div>
-        @if (element.macroeventData?.title) {
-        <div
-          class="bg-[#f5d7a9] text-[11px] rounded px-[3px] py-[0px] inline-block"
-        >
-          {{ element.macroeventData.title }}
+        }
+        <!-- Diseño especial para 'gender' -->
+        @case (column.key === 'gender') {
+        <div class="genderColumn">
+          <span>{{ element[column.key] }}</span>
         </div>
-        } }
-      </div>
-      }
-      <!-- Diseño especial para 'gender' -->
-      @case (column.key === 'gender') {
-      <div class="genderColumn">
-        <span>{{ element[column.key] }}</span>
-      </div>
-      } @case (column.key === 'birthday') { @if (element.birthday) {
-      <div class="text-center">
-        {{ element.birthday | date : "dd MMM yyyy" }}
-        <span class="dateColumn">
-          {{ element.birthday | calculateAge }} años
-        </span>
-      </div>
-      } } @case (column.key === 'years') {
-      {{ element.years || 0 }} años } @case (column.key === 'subsidy_name') {
-      @if (element[column.key]) {
-      <div class="text-center">
-        <span
-          class="subsidy"
-          [ngClass]="{
-            'subsidy-ayunt-equip': element[column.key] === 'AYUNT_EQUIPAMIENTO',
-            'subsidy-ayunt-activ': element[column.key] === 'AYUNT_ACTIVIDADES',
-            'subsidy-gener': element[column.key] === 'GENERALITAT',
-            'subsidy-dipu': element[column.key] === 'DIPUTACION',
-            'subsidy-minis': element[column.key] === 'MINISTERIO'
-          }"
-          >{{ element[column.key] }}
-        </span>
-      </div>
-      }
-      <!-- <ng-template #noSubsidy>
+        } @case (column.key === 'birthday') { @if (element.birthday) {
+        <div class="text-center">
+          {{ element.birthday | date : "dd MMM yyyy" }}
+          <span class="dateColumn">
+            {{ element.birthday | calculateAge }} años
+          </span>
+        </div>
+        } } @case (column.key === 'years') {
+        {{ element.years || 0 }} años } @case (column.key === 'subsidy_name') {
+        @if (element[column.key]) {
+        <div class="text-center">
+          <span
+            class="subsidy"
+            [ngClass]="{
+              'subsidy-ayunt-equip':
+                element[column.key] === 'AYUNT_EQUIPAMIENTO',
+              'subsidy-ayunt-activ':
+                element[column.key] === 'AYUNT_ACTIVIDADES',
+              'subsidy-gener': element[column.key] === 'GENERALITAT',
+              'subsidy-dipu': element[column.key] === 'DIPUTACION',
+              'subsidy-minis': element[column.key] === 'MINISTERIO'
+            }"
+            >{{ element[column.key] }}
+          </span>
+        </div>
+        }
+        <!-- <ng-template #noSubsidy>
               <app-circle-indicator [item]="false"></app-circle-indicator>
             </ng-template> -->
-      } @case (column.key === 'activities' && !column.showLengthOnly) { @if
-      (element[column.key] | hasValue) {
-      <div class="box-activities">
-        <div class="flex items-center gap-x-2">
-          <div
-            class="flex flex-col gap-y-4 w-3/4 border-r border-gray-300 pr-3"
-          >
-            @for (activity of element.activities; track activity) {
-            <div class="activities-list">
-              <p>{{ activity.name }}</p>
-              <p>{{ activity.budget | eurosFormat }}</p>
+        } @case (column.key === 'activities' && !column.showLengthOnly) { @if
+        (element[column.key] | hasValue) {
+        <div class="box-activities">
+          <div class="flex items-center gap-x-2">
+            <div
+              class="flex flex-col gap-y-4 w-3/4 border-r border-gray-300 pr-3"
+            >
+              @for (activity of element.activities; track activity) {
+              <div class="activities-list">
+                <p>{{ activity.name }}</p>
+                <p>{{ activity.budget | eurosFormat }}</p>
+              </div>
+              }
             </div>
-            }
+            <div class="totalAmount w-autor mx-2 bg-emerald-400">
+              <p>
+                {{ getTotalActivitiesAmount(element) | eurosFormat }}
+              </p>
+            </div>
           </div>
-          <div class="invoices-totalAmount w-1/4">
+        </div>
+        } @else {
+        <app-circle-indicator [item]="false"></app-circle-indicator>
+        } } @case (column.key === 'events' && !column.showLengthOnly) { @if
+        (element[column.key] | hasValue) {
+        <div class="box-events">
+          @for (event of element.events; track event) {
+          <div class="events-list">
             <p>
-              {{ getTotalActivitiesAmount(element) | eurosFormat }}
+              {{ event.title }}
             </p>
+            <p>{{ event.start | date : "EEE dd/MM/yyyy" }}</p>
           </div>
+          }
         </div>
-      </div>
-      } @else {
-      <app-circle-indicator [item]="false"></app-circle-indicator>
-      } } @case (column.key === 'events' && !column.showLengthOnly) { @if
-      (element[column.key] | hasValue) {
-      <div class="box-events">
-        @for (event of element.events; track event) {
-        <div class="events-list">
-          <p>
-            {{ event.title }}
-          </p>
-          <p>{{ event.start | date : "EEE dd/MM/yyyy" }}</p>
-        </div>
-        }
-      </div>
-      } @else {
-      <app-circle-indicator [item]="false"></app-circle-indicator>
-      } } @case (column.key === 'invoices' && !column.showLengthOnly) { @if
-      (element[column.key] | hasValue) {
-      <div class="box-invoices">
-        <div class="flex items-center gap-x-4">
-          <div
-            class="flex flex-col gap-y-4 w-3/5 border-r border-gray-300 pr-3"
-          >
-            @for (invoice of element.invoices; track invoice) {
-            <div class="invoices-list">
-              <p>{{ invoice.type_invoice }} {{ invoice.number_invoice }}</p>
-              <p>{{ invoice.total_amount | eurosFormat }}</p>
+        } @else {
+        <app-circle-indicator [item]="false"></app-circle-indicator>
+        } } @case (column.key === 'invoices' && !column.showLengthOnly) { @if
+        (element[column.key] | hasValue) {
+        <div class="box-invoices">
+          <div class="flex items-center gap-x-4">
+            <div
+              class="flex flex-col gap-y-4 w-4/5 border-r border-gray-300 pr-3"
+            >
+              @for (invoice of element.invoices; track invoice) {
+              <div class="invoices-list">
+                <p class="flex flex-row">
+                  {{ invoice.type_invoice }} {{ invoice.number_invoice }} -
+                  {{ invoice.creditor_company }} -
+                  <span [innerHTML]="invoice.description"></span>
+                </p>
+                <p>{{ invoice.total_amount | eurosFormat }}</p>
+              </div>
+              }
             </div>
-            }
-          </div>
-          <div class="px-3 invoices-totalAmount w-2/5">
-            <p>{{ getTotalInvoiceAmount(element) | eurosFormat }}</p>
+            <div class="px-3 totalAmount w-1/5">
+              <p>{{ getTotalInvoiceAmount(element) | eurosFormat }}</p>
+            </div>
           </div>
         </div>
-      </div>
-      } @else {
-      <app-circle-indicator [item]="false"></app-circle-indicator>
-      } }
-      <!-- STATUS -->
-      @case (column.key === 'status') { @if (element[column.key]!=='EJECUCION')
-      {
-      <div class="statusColumn">
-        <span class="bg-[#f18c8c] text-white">{{ element[column.key] }}</span>
-      </div>
-      }@else {
-      <div class="statusColumn">
-        <span class="bg-[#a3ca95] text-white">{{ element[column.key] }}</span>
-      </div>
-      }}
-      <!-- MUNICIPIO -->
-      @case (column.key === 'town') {
-      <div>
-        @if (element.town) {
+        } @else {
+        <app-circle-indicator [item]="false"></app-circle-indicator>
+        } }
+        <!-- STATUS -->
+        @case (column.key === 'status') { @if
+        (element[column.key]!=='EJECUCION') {
+        <div class="statusColumn">
+          <span class="bg-[#f18c8c] text-white">{{ element[column.key] }}</span>
+        </div>
+        }@else {
+        <div class="statusColumn">
+          <span class="bg-[#a3ca95] text-white">{{ element[column.key] }}</span>
+        </div>
+        }}
+        <!-- MUNICIPIO -->
+        @case (column.key === 'town') {
         <div>
-          {{ element.town }}
-        </div>
-        @if (element.address) {
-        <div style="font-size: 0.75rem; color: #666">
-          {{ element.address }}
-        </div>
-        } } @else {
-        <div class="flex justify-center">
-          <app-circle-indicator [item]="false"></app-circle-indicator>
+          @if (element.town) {
+          <div>
+            {{ element.town }}
+          </div>
+          @if (element.address) {
+          <div style="font-size: 0.75rem; color: #666">
+            {{ element.address }}
+          </div>
+          } } @else {
+          <div class="flex justify-center">
+            <app-circle-indicator [item]="false"></app-circle-indicator>
+          </div>
+          }
         </div>
         }
-      </div>
-      }
-      <!-- ESPACIO -->
-      @case (column.key === 'espacioTable') {
-      <div>
-        @if (element.placeData?.name) {
+        <!-- ESPACIO -->
+        @case (column.key === 'espacioTable') {
         <div>
-          {{ element.placeData.name }}
+          @if (element.placeData?.name) {
+          <div>
+            {{ element.placeData.name }}
+          </div>
+          @if (element.salaData?.name) {
+          <div style="font-size: 0.75rem; color: #666">
+            {{ element.salaData.name }}
+          </div>
+          } } @else {
+          <div class="flex justify-center">
+            <app-circle-indicator [item]="false"></app-circle-indicator>
+          </div>
+          }
         </div>
-        @if (element.salaData?.name) {
-        <div style="font-size: 0.75rem; color: #666">
-          {{ element.salaData.name }}
+        } @case (column.key === 'description' && !column.booleanIndicator) {
+        <div
+          [innerHTML]="element.description"
+          class="truncate text-[11px] text-gray-600"
+        ></div>
+
+        } @case (column.key === 'salas' && !column.showLengthOnly) { @if
+        (element[column.key] | hasValue) {
+        <div class="box-activities">
+          <div class="flex items-center gap-x-2">
+            <div class="totalAmount w-1/4">
+              <div
+                class="w-8 h-8 flex items-center justify-center rounded-full border border-lilaClaro bg-transparent text-black text-sm"
+              >
+                {{ element.salas.length || 0 }}
+              </div>
+            </div>
+            <div
+              class="flex flex-col gap-y-4 w-3/4 border-l pl-3 border-gray-300"
+            >
+              @for (sala of element.salas; track sala) {
+              <div class="activities-list">
+                <p>{{ sala.name }} - {{ sala.capacity }}</p>
+              </div>
+              }
+            </div>
+          </div>
         </div>
-        } } @else {
-        <div class="flex justify-center">
-          <app-circle-indicator [item]="false"></app-circle-indicator>
+        } @else {
+        <app-circle-indicator [item]="false"></app-circle-indicator>
+        } }
+
+        <!-- Diseño especial para 'capacity' -->
+        @case (column.key === 'capacity') { @if (element[column.key] !== 0) {
+        <div>
+          {{ element[column.key] }}
         </div>
-        }
-      </div>
-      }
-      <!-- Diseño especial para 'capacity' -->
-      @case (column.key === 'capacity') { @if (element[column.key] !== 0) {
-      <div>
+        } }
+        <!-- Diseño especial para 'gestión' -->
+        @case (column.key === 'management') { @if (element[column.key]) {
+        {{ element[column.key] | filterTransformCode : "PlaceManagement" }}
+        } }
+        <!-- Organizadores -->
+        @case (column.key === 'organizer') { @if (element[column.key] |
+        hasValue) {
+        <ul class="agent-list">
+          @for (agent of element[column.key]; track agent) {
+          <li>
+            {{ agent.name }}
+          </li>
+          }
+        </ul>
+        } @else {
+        <app-circle-indicator [item]="false"></app-circle-indicator>
+        } }
+        <!-- Colaboradores -->
+        @case (column.key === 'collaborator') { @if (element[column.key] |
+        hasValue) {
+        <ul class="agent-list">
+          @for (agent of element[column.key]; track agent) {
+          <li>
+            {{ agent.name }}
+          </li>
+          }
+        </ul>
+        } @else {
+        <app-circle-indicator [item]="false"></app-circle-indicator>
+        } }
+        <!-- 💰 Patrocinadores -->
+        @case (column.key === 'sponsor') { @if (element[column.key]) {
+        <ul class="agent-list">
+          @for (agent of element[column.key]; track agent) {
+          <li>
+            {{ agent.name }}
+          </li>
+          }
+        </ul>
+        } @else {
+        <app-circle-indicator [item]="false"></app-circle-indicator>
+        } } @case (column.key === 'name') {
         {{ element[column.key] }}
-      </div>
-      } }
-      <!-- Diseño especial para 'gestión' -->
-      @case (column.key === 'management') { @if (element[column.key]) {
-      {{ element[column.key] | filterTransformCode : "PlaceManagement" }}
-      } }
-      <!-- Organizadores -->
-      @case (column.key === 'organizer') { @if (element[column.key] | hasValue)
-      {
-      <ul class="agent-list">
-        @for (agent of element[column.key]; track agent) {
-        <li>
-          {{ agent.name }}
-        </li>
-        }
-      </ul>
-      } @else {
-      <app-circle-indicator [item]="false"></app-circle-indicator>
-      } }
-      <!-- Colaboradores -->
-      @case (column.key === 'collaborator') { @if (element[column.key] |
-      hasValue) {
-      <ul class="agent-list">
-        @for (agent of element[column.key]; track agent) {
-        <li>
-          {{ agent.name }}
-        </li>
-        }
-      </ul>
-      } @else {
-      <app-circle-indicator [item]="false"></app-circle-indicator>
-      } }
-      <!-- 💰 Patrocinadores -->
-      @case (column.key === 'sponsor') { @if (element[column.key]) {
-      <ul class="agent-list">
-        @for (agent of element[column.key]; track agent) {
-        <li>
-          {{ agent.name }}
-        </li>
-        }
-      </ul>
-      } @else {
-      <app-circle-indicator [item]="false"></app-circle-indicator>
-      } } @case (column.key === 'name') {
-      {{ element[column.key] }}
-      } @case (column.key === 'type_invoice') {
-      <span
-        [ngClass]="{
+        } @case (column.key === 'type_invoice') {
+        <span
+          [ngClass]="{
                 'type-ticket': element.type_invoice === 'Ticket',
                 'type-factura': element.type_invoice === 'Factura',
                 'type-ingreso': element.type_invoice === 'Ingreso',
               }"
-        >{{ element.type_invoice }}</span
-      >
-      } @case (column.key === 'creditor_company') {
-      {{ element.creditor_company }}<br />
-      @if (element.creditor_contact) {
-      <small>{{ element.creditor_contact }}</small>
-      } }
-      <!-- Diseño especial para 'categoría acreedores' -->
-      @case (column.key === 'category') { @if (element.category) {
-      <div class="genderColumn">
-        <span>{{ element[column.key] }}</span>
-      </div>
-      } }
-      <!-- Diseño especial para 'email' -->
-      @case (column.key === 'email') {
-      <small>{{ element[column.key] }}</small>
-      }
-      <!-- Diseño especial para 'salas' -->
-      @case (column.key === 'salasCount') {
-      <div>
-        @if (element[column.key] > 0) {
-        {{ element[column.key] }}
-        }
-      </div>
-      }
-      <!-- Diseño por defecto para otras columnas -->
-      @default {
-      {{ element[column.key] }}
-      } }
-    </td>
-    <td mat-footer-cell *matFooterCellDef>
-      @if (column.footerTotal) {
-      {{ getColumnTotal(column.key) | eurosFormat }}
-      }
-    </td>
-  </ng-container>
-  }
+          >{{ element.type_invoice }}</span
+        >
+        } @case (column.key === 'creditor_company') {
+        <p class="text-[12px]">{{ element.creditor_company }}</p>
 
-  <!-- Buttons Column -->
-  <ng-container matColumnDef="actions">
-    <th mat-header-cell *matHeaderCellDef></th>
-    <td mat-cell *matCellDef="let element">
-      @if (typeSection === TypeList.Events) {
-      <app-icon-action
-        [icon]="'uil-copy'"
-        [tooltip]="'Duplicar'"
-        (click)="onOpenModal(typeModal, typeActionModal.Duplicate, element)"
-      ></app-icon-action>
-      }
-      <app-icon-action
-        [icon]="'uil-eye'"
-        [tooltip]="'Ver'"
-        (click)="onOpenModal(typeModal, typeActionModal.Show, element)"
-      ></app-icon-action>
-      <app-icon-action
-        [icon]="'uil-edit'"
-        [tooltip]="'Editar'"
-        (click)="onOpenModal(typeModal, typeActionModal.Edit, element)"
-      ></app-icon-action>
-      <app-icon-action
-        [icon]="'uil-trash-alt'"
-        [tooltip]="'Eliminar'"
-        (click)="onOpenModal(typeModal, typeActionModal.Delete, element)"
-      ></app-icon-action>
-    </td>
-    <td mat-footer-cell *matFooterCellDef></td>
-  </ng-container>
-  <tr
-    mat-header-row
-    *matHeaderRowDef="displayedColumns"
-    class="custom-header-row"
-    [ngClass]="{
-      'top-266': topHeader === 266,
-      'top-326': topHeader === 326,
-      'top-200': topHeader === 200
-    }"
-  ></tr>
-  <tr
-    mat-row
-    *matRowDef="let row; columns: displayedColumns"
-    class="custom-list-row"
-  ></tr>
-  <ng-container *ngIf="showFooter">
+        @if (element.creditor_contact) {
+        <p class="text-[10x] text-[#666]">
+          {{ element.creditor_contact }}
+        </p>
+        } }
+        <!-- Diseño especial para 'categoría acreedores' -->
+        @case (column.key === 'category') { @if (element.category) {
+        <div class="genderColumn">
+          <span>{{ element[column.key] }}</span>
+        </div>
+        } } @case (column.key === 'project_title' && typeSection ===
+        TypeList.Invoices) { @if (element.project_title) {
+        <div class="genderColumn">
+          <span>{{ element[column.key] }}</span>
+        </div>
+        } }
+        <!-- Diseño especial para 'email' -->
+        @case (column.key === 'email') {
+        <small>{{ element[column.key] }}</small>
+        }
+        <!-- Diseño especial para 'salas' -->
+        @case (column.key === 'salasCount') {
+        <div>
+          @if (element[column.key] > 0) {
+          {{ element[column.key] }}
+          }
+        </div>
+        }
+        <!-- Diseño por defecto para otras columnas -->
+        @default {
+        {{ element[column.key] }}
+        } }
+      </td>
+      <td mat-footer-cell *matFooterCellDef>
+        @if (column.footerTotal) {
+        {{ getColumnTotal(column.key) | eurosFormat }}
+        }
+      </td>
+    </ng-container>
+    }
+
+    <!-- Buttons Column -->
+    <ng-container matColumnDef="actions">
+      <th mat-header-cell *matHeaderCellDef class="no-print"></th>
+      <td mat-cell *matCellDef="let element" class="no-print">
+        @if (typeSection === TypeList.Events) {
+        <app-icon-action
+          [icon]="'uil-copy'"
+          [tooltip]="'Duplicar'"
+          (click)="onOpenModal(typeModal, typeActionModal.Duplicate, element)"
+        ></app-icon-action>
+        }
+        <app-icon-action
+          [icon]="'uil-eye'"
+          [tooltip]="'Ver'"
+          (click)="onOpenModal(typeModal, typeActionModal.Show, element)"
+        ></app-icon-action>
+        <app-icon-action
+          [icon]="'uil-edit'"
+          [tooltip]="'Editar'"
+          (click)="onOpenModal(typeModal, typeActionModal.Edit, element)"
+        ></app-icon-action>
+        <app-icon-action
+          [icon]="'uil-trash-alt'"
+          [tooltip]="'Eliminar'"
+          (click)="onOpenModal(typeModal, typeActionModal.Delete, element)"
+        ></app-icon-action>
+      </td>
+      <td mat-footer-cell *matFooterCellDef></td>
+    </ng-container>
     <tr
-      mat-footer-row
-      *matFooterRowDef="displayedColumns"
-      class="footer bg-white"
+      mat-header-row
+      *matHeaderRowDef="displayedColumns"
+      class="custom-header-row"
+      [ngClass]="{
+      'top-206': topHeader === 206,
+      'top-296': topHeader === 296,
+    }"
     ></tr>
-  </ng-container>
-</table>
+    <tr
+      mat-row
+      *matRowDef="let row; columns: displayedColumns"
+      class="custom-list-row"
+    ></tr>
+    <ng-container *ngIf="showFooter">
+      <tr
+        mat-footer-row
+        *matFooterRowDef="displayedColumns"
+        class="footer bg-white"
+      ></tr>
+    </ng-container>
+  </table>
+</div>

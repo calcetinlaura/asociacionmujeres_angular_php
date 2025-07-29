@@ -22,6 +22,7 @@ import { InputSearchComponent } from 'src/app/shared/components/inputs/input-sea
 import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
 import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
+import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
 
 @Component({
@@ -49,6 +50,7 @@ export class PiterasPageComponent implements OnInit {
   private readonly piterasFacade = inject(PiterasFacade);
   private readonly piterasService = inject(PiterasService);
   private readonly pdfPrintService = inject(PdfPrintService);
+  private readonly generalService = inject(GeneralService);
 
   piteras: PiteraModel[] = [];
   filteredPiteras: PiteraModel[] = [];
@@ -74,6 +76,17 @@ export class PiterasPageComponent implements OnInit {
   ];
 
   ngOnInit(): void {
+    // Ocultar 'date_payment' y 'date_accounting' al cargar la página
+    this.columnVisibility = this.generalService.setColumnVisibility(
+      this.headerListPiteras,
+      [''] // Coloca las columnas que deseas ocultar aquí
+    );
+
+    // Actualiza las columnas visibles según el estado de visibilidad
+    this.displayedColumns = this.generalService.updateDisplayedColumns(
+      this.headerListPiteras,
+      this.columnVisibility
+    );
     this.modalService.modalVisibility$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
@@ -84,10 +97,6 @@ export class PiterasPageComponent implements OnInit {
       .subscribe();
 
     this.loadAllPiteras();
-    this.columnVisibility = this.headerListPiteras.reduce(
-      (acc, col) => ({ ...acc, [col.key]: true }),
-      {}
-    );
   }
 
   loadAllPiteras(): void {
@@ -161,11 +170,22 @@ export class PiterasPageComponent implements OnInit {
     this.isLoading = false;
   }
   printTableAsPdf(): void {
-    this.pdfPrintService.printTableAsPdf('table.mat-table', 'piteras.pdf');
+    this.pdfPrintService.printTableAsPdf('table-to-print', 'piteras.pdf');
   }
+  getVisibleColumns() {
+    return this.headerListPiteras.filter(
+      (col) => this.columnVisibility[col.key]
+    );
+  }
+  // Método para actualizar las columnas visibles cuando se hace toggle
   toggleColumn(key: string): void {
+    // Cambia la visibilidad de la columna en columnVisibility
     this.columnVisibility[key] = !this.columnVisibility[key];
-    this.updateDisplayedColumns();
+    // Actualiza las columnas visibles en la tabla después de cambiar el estado
+    this.displayedColumns = this.generalService.updateDisplayedColumns(
+      this.headerListPiteras,
+      this.columnVisibility
+    );
   }
 
   private updateDisplayedColumns(): void {

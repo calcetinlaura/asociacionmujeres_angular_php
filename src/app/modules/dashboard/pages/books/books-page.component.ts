@@ -107,6 +107,17 @@ export class BooksPageComponent implements OnInit {
   private inputSearchComponent!: InputSearchComponent;
 
   ngOnInit(): void {
+    // Ocultar 'date_payment' y 'date_accounting' al cargar la página
+    this.columnVisibility = this.generalService.setColumnVisibility(
+      this.headerListBooks,
+      ['year'] // Coloca las columnas que deseas ocultar aquí
+    );
+
+    // Actualiza las columnas visibles según el estado de visibilidad
+    this.displayedColumns = this.generalService.updateDisplayedColumns(
+      this.headerListBooks,
+      this.columnVisibility
+    );
     this.filters = [
       { code: 'NOVEDADES', name: 'Novedades' },
       { code: 'ALL', name: 'Todos' },
@@ -128,10 +139,6 @@ export class BooksPageComponent implements OnInit {
         tap((books) => this.updateBookState(books))
       )
       .subscribe();
-    this.columnVisibility = this.headerListBooks.reduce(
-      (acc, col) => ({ ...acc, [col.key]: true }),
-      {}
-    );
   }
 
   filterSelected(filter: string): void {
@@ -199,18 +206,19 @@ export class BooksPageComponent implements OnInit {
     this.isLoading = false;
   }
   printTableAsPdf(): void {
-    this.pdfPrintService.printTableAsPdf('table.mat-table', 'libros.pdf');
+    this.pdfPrintService.printTableAsPdf('table-to-print', 'libros.pdf');
   }
+  getVisibleColumns() {
+    return this.headerListBooks.filter((col) => this.columnVisibility[col.key]);
+  }
+  // Método para actualizar las columnas visibles cuando se hace toggle
   toggleColumn(key: string): void {
+    // Cambia la visibilidad de la columna en columnVisibility
     this.columnVisibility[key] = !this.columnVisibility[key];
-    this.updateDisplayedColumns();
-  }
-
-  private updateDisplayedColumns(): void {
-    const base = ['number']; // si usas un número de fila
-    const dynamic = this.headerListBooks
-      .filter((col) => this.columnVisibility[col.key])
-      .map((col) => col.key);
-    this.displayedColumns = [...base, ...dynamic, 'actions'];
+    // Actualiza las columnas visibles en la tabla después de cambiar el estado
+    this.displayedColumns = this.generalService.updateDisplayedColumns(
+      this.headerListBooks,
+      this.columnVisibility
+    );
   }
 }

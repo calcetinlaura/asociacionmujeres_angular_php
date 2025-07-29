@@ -52,7 +52,8 @@
       [data]="filteredRecipes"
       [typeSection]="typeSection"
       [typeModal]="typeModal"
-      [headerColumns]="headerListRecipes"
+      [headerColumns]="getVisibleColumns()"
+      [columnVisibility]="columnVisibility"
       (openModal)="onOpenModal($event)"
     />
   </div>

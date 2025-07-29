@@ -1,5 +1,5 @@
 import { Filter } from '../models/general.model';
-import { InvoiceModel } from './invoice.interface';
+import { InvoiceModelFullData } from './invoice.interface';
 import { ProjectModelFullData } from './project.interface';
 
 export interface SubsidyModel {
@@ -19,7 +19,7 @@ export interface SubsidyModel {
   observations?: string;
 }
 export interface SubsidyModelFullData extends SubsidyModel {
-  invoices?: InvoiceModel[];
+  invoices?: InvoiceModelFullData[];
   projects?: ProjectModelFullData[];
 }
 

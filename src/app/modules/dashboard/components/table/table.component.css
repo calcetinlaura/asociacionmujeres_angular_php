@@ -2,7 +2,6 @@
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed; /* Fija el ancho de las columnas */
-  border: 0.2px solid #9f86c0;
   box-shadow: none !important;
   z-index: 900;
 }
@@ -19,6 +18,7 @@ td {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap; /* Evita que el contenido de las celdas se desborde */
+  font-size: 11px;
 }
 th.mat-column-actions,
 td.mat-column-actions {
@@ -39,19 +39,17 @@ td.mat-column-actions {
 }
 
 .mat-mdc-row:nth-child(even) {
-  background-color: #faf3fc; /* Amarillo claro */
+  background-color: #fcfafc; /* Amarillo claro */
 }
 
 .mat-mdc-row:nth-child(odd) {
-  background-color: #f6f0ff; /* Rojo claro */
+  background-color: #f8f6fbbd; /* Rojo claro */
 }
 .mat-mdc-row:hover {
   background-color: #bae6b6;
   font-weight: 500;
 }
 .mat-mdc-row:first-child {
-  border-top-left-radius: 12px;
-  border-top-right-radius: 12px;
   overflow: hidden;
 }
 th.mat-sort-header-sorted {
@@ -168,14 +166,12 @@ th.mat-sort-header-sorted {
   position: sticky;
   z-index: 999;
   background-color: #eee1ff;
-  border-top-left-radius: 16px !important;
-  border-top-right-radius: 16px !important;
-  border: 1px solid #9f86c0;
 }
 
 :host ::ng-deep .mat-sort-header-container {
   display: flex;
   justify-content: center;
+  text-align: center;
 }
 .agent-list {
   font-size: 8px;
@@ -221,12 +217,10 @@ th.mat-sort-header-sorted {
   text-transform: capitalize;
   display: inline-block;
 }
-.activities-totalAmount,
-.invoices-totalAmount {
+.totalAmount {
   text-align: center;
 }
-.activities-totalAmount p,
-.invoices-totalAmount p {
+.totalAmount p {
   display: inline-block;
   padding: 1px 4px;
   font-size: 10px;
@@ -278,15 +272,31 @@ th.mat-sort-header-sorted {
 .footer {
   font-weight: 500;
 }
-.top-200 {
-  top: 200px;
-  background-color: red;
+
+.top-206 {
+  top: 206px;
 }
-.top-266 {
-  top: 266px;
-  background-color: yellow;
+.top-296 {
+  /* 2px más pequeño para que no se vea el borde al hacer scroll */
+  top: 294px;
 }
-.top-326 {
-  top: 296px;
-  border: 1px solid #9f86c0;
+.print-title {
+  display: none;
+}
+:host ::ng-deep {
+  @media print {
+    .no-print,
+    app-dashboard-header,
+    .top-206,
+    .top-296 {
+      display: none !important;
+    }
+    .print-title {
+      display: block;
+      text-align: center;
+      margin-bottom: 1rem;
+      font-size: 18px;
+      font-weight: bold;
+    }
+  }
 }

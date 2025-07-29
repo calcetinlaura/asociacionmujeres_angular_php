@@ -74,7 +74,8 @@
       [data]="filteredMovies"
       [typeSection]="typeSection"
       [typeModal]="typeModal"
-      [headerColumns]="headerListMovies"
+      [headerColumns]="getVisibleColumns()"
+      [columnVisibility]="columnVisibility"
       (openModal)="onOpenModal($event)"
       [displayedColumns]="displayedColumns"
     />

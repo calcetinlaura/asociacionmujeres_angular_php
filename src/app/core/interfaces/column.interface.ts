@@ -13,7 +13,7 @@ export interface ColumnModel {
   footerTotal?: boolean;
 }
 export enum ColumnWidth {
-  XS = 'w-[80px]',
+  XS = 'w-[90px]',
   SM = 'w-[120px]',
   MD = 'w-[160px]',
   LG = 'w-[200px]',

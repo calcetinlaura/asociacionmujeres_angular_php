@@ -177,8 +177,7 @@
     <div class="box-amount w-auto">
       <p>TOTAL SOLICITADO</p>
       <p class="text-center">
-        {{ getSubsidyTotalBudget(item) | eurosFormat
-        }}{{ item.amount_requested | eurosFormat }}
+        {{ getSubsidyTotalBudget(item) | eurosFormat }}
       </p>
     </div>
     <div class="box-amount w-auto">
@@ -229,7 +228,8 @@
     <app-table
       [typeSection]="typeList.Invoices"
       [data]="filteredInvoices"
-      [headerColumns]="headerListInvoices"
+      [headerColumns]="getVisibleColumns()"
+      [columnVisibility]="columnVisibility"
       (openModal)="
         openModal.emit({
           typeModal: typeList.Invoices,

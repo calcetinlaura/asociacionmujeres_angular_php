@@ -131,6 +131,17 @@ export class PartnersPageComponent implements OnInit {
   private inputSearchComponent!: InputSearchComponent;
 
   ngOnInit(): void {
+    // Ocultar 'date_payment' y 'date_accounting' al cargar la página
+    this.columnVisibility = this.generalService.setColumnVisibility(
+      this.headerListPartners,
+      [''] // Coloca las columnas que deseas ocultar aquí
+    );
+
+    // Actualiza las columnas visibles según el estado de visibilidad
+    this.displayedColumns = this.generalService.updateDisplayedColumns(
+      this.headerListPartners,
+      this.columnVisibility
+    );
     this.filters = [
       { code: 'ALL', name: 'Histórico' },
       ...this.generalService.getYearFilters(1995, this.currentYear),
@@ -151,10 +162,6 @@ export class PartnersPageComponent implements OnInit {
         tap((partners) => this.updatePartnerState(partners))
       )
       .subscribe();
-    this.columnVisibility = this.headerListPartners.reduce(
-      (acc, col) => ({ ...acc, [col.key]: true }),
-      {}
-    );
   }
 
   filterSelected(filter: string): void {
@@ -237,18 +244,21 @@ export class PartnersPageComponent implements OnInit {
     this.isLoading = false;
   }
   printTableAsPdf(): void {
-    this.pdfPrintService.printTableAsPdf('table.mat-table', 'socias.pdf');
+    this.pdfPrintService.printTableAsPdf('table-to-print', 'socias.pdf');
   }
+  getVisibleColumns() {
+    return this.headerListPartners.filter(
+      (col) => this.columnVisibility[col.key]
+    );
+  }
+  // Método para actualizar las columnas visibles cuando se hace toggle
   toggleColumn(key: string): void {
+    // Cambia la visibilidad de la columna en columnVisibility
     this.columnVisibility[key] = !this.columnVisibility[key];
-    this.updateDisplayedColumns();
-  }
-
-  private updateDisplayedColumns(): void {
-    const base = ['number']; // si usas un número de fila
-    const dynamic = this.headerListPartners
-      .filter((col) => this.columnVisibility[col.key])
-      .map((col) => col.key);
-    this.displayedColumns = [...base, ...dynamic, 'actions'];
+    // Actualiza las columnas visibles en la tabla después de cambiar el estado
+    this.displayedColumns = this.generalService.updateDisplayedColumns(
+      this.headerListPartners,
+      this.columnVisibility
+    );
   }
 }

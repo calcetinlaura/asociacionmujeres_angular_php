@@ -53,7 +53,8 @@
       [data]="filteredProjects"
       [typeSection]="typeSection"
       [typeModal]="typeModal"
-      [headerColumns]="headerListProjects"
+      [headerColumns]="getVisibleColumns()"
+      [columnVisibility]="columnVisibility"
       (openModal)="onOpenModal($event)"
     />
   </div>

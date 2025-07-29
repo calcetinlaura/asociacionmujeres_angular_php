@@ -55,7 +55,8 @@ export class ModalShowSubsidyComponent implements OnChanges {
     action: TypeActionModal;
     item: any;
   }>();
-
+  columnVisibility: Record<string, boolean> = {};
+  displayedColumns: string[] = [];
   itemInvoice?: InvoiceModelFullData;
   typeList = TypeList;
   typeModal: TypeList = TypeList.Subsidies;
@@ -256,5 +257,10 @@ export class ModalShowSubsidyComponent implements OnChanges {
       action: event.action,
       item: event.item,
     });
+  }
+  getVisibleColumns() {
+    return this.headerListInvoices.filter(
+      (col) => this.columnVisibility[col.key]
+    );
   }
 }

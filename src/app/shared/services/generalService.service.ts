@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Observable, throwError } from 'rxjs';
+import { ColumnModel } from 'src/app/core/interfaces/column.interface';
 import { Filter } from 'src/app/core/models/general.model';
 
 @Injectable({
@@ -93,17 +94,9 @@ export class GeneralService {
 
     Object.keys(item).forEach((key) => {
       const value = item[key];
+
       if (value !== undefined && value !== null) {
-        if (
-          key === 'organizer' ||
-          key === 'collaborator' ||
-          key === 'sponsor'
-        ) {
-          const ids = Array.isArray(value)
-            ? value.map((v: any) => v.agent_id)
-            : [];
-          formData.append(key, JSON.stringify(ids));
-        } else if (Array.isArray(value) || typeof value === 'object') {
+        if (Array.isArray(value) || typeof value === 'object') {
           formData.append(key, JSON.stringify(value));
         } else {
           formData.append(key, value.toString());
@@ -113,10 +106,16 @@ export class GeneralService {
       }
     });
 
-    Object.keys(fileFields).forEach((key) => {
-      const file = fileFields[key];
-      if (file) {
-        formData.append(key, file);
+    // Manejo flexible de múltiples archivos
+    Object.keys(fileFields).forEach((field) => {
+      const file = fileFields[field];
+      if (file instanceof File) {
+        formData.append(field, file, file.name);
+      } else if (item.existingUrl) {
+        formData.append('existingUrl', item.existingUrl);
+      } else {
+        // Marcar para borrar
+        formData.append(field, '');
       }
     });
 
@@ -126,10 +125,6 @@ export class GeneralService {
     }
 
     return formData;
-  }
-
-  private capitalize(text: string): string {
-    return text.charAt(0).toUpperCase() + text.slice(1);
   }
 
   handleHttpError(error: any): Observable<never> {
@@ -165,5 +160,42 @@ export class GeneralService {
       obj[key] = value;
     });
     return obj as T;
+  }
+  // Establece la visibilidad de las columnas
+  setColumnVisibility(
+    headerList: ColumnModel[],
+    columnsToHide: string[]
+  ): Record<string, boolean> {
+    // Inicia columnVisibility con todas las columnas visibles
+    return headerList.reduce((acc, col) => {
+      // Marca las columnas a ocultar como false, las demás como true
+      acc[col.key] = !columnsToHide.includes(col.key);
+      return acc;
+    }, {} as Record<string, boolean>);
+  }
+
+  // Actualiza las columnas visibles según la visibilidad configurada
+  updateDisplayedColumns(
+    headerList: ColumnModel[],
+    columnVisibility: Record<string, boolean>
+  ): string[] {
+    // Filtra las columnas que están visibles y devuelve las claves correspondientes
+    const dynamic = headerList
+      .filter((col) => columnVisibility[col.key]) // Filtra solo las columnas visibles
+      .map((col) => col.key); // Extrae las claves de las columnas visibles
+
+    return [...dynamic, 'actions']; // Asegúrate de agregar la columna 'actions' si la necesitas
+  }
+  // Toggle de visibilidad de columnas (ahora en el servicio)
+  toggleColumn(
+    key: string,
+    columnVisibility: Record<string, boolean>,
+    headerList: ColumnModel[]
+  ): string[] {
+    // Cambiar la visibilidad de la columna
+    columnVisibility[key] = !columnVisibility[key];
+
+    // Actualiza las columnas visibles después del toggle
+    return this.updateDisplayedColumns(headerList, columnVisibility);
   }
 }

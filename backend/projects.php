@@ -75,8 +75,18 @@ switch ($method) {
             $project['events'] = $events;
 
             // Invoices
-            $invoiceStmt = $connection->prepare("SELECT * FROM invoices WHERE project_id = ? ORDER BY date_invoice ASC");
-            $invoiceStmt->bind_param("i", $project['id']);
+          $invoiceStmt = $connection->prepare("
+  SELECT
+    invoices.*,
+    creditors.company AS creditor_company
+  FROM invoices
+  LEFT JOIN creditors ON invoices.creditor_id = creditors.id
+  WHERE invoices.project_id = ?
+  ORDER BY invoices.date_invoice ASC
+");
+
+
+$invoiceStmt->bind_param("i", $project['id']);
             $invoiceStmt->execute();
             $invoiceResult = $invoiceStmt->get_result();
             $invoices = [];
@@ -120,7 +130,16 @@ switch ($method) {
             $row['events'] = $events;
 
             // Invoices
-            $invoiceStmt = $connection->prepare("SELECT * FROM invoices WHERE project_id = ? ORDER BY date_invoice ASC");
+           $invoiceStmt = $connection->prepare("
+  SELECT
+    invoices.*,
+    creditors.company AS creditor_company
+  FROM invoices
+  LEFT JOIN creditors ON invoices.creditor_id = creditors.id
+  WHERE invoices.project_id = ?
+  ORDER BY invoices.date_invoice ASC
+");
+
             $invoiceStmt->bind_param("i", $projectId);
             $invoiceStmt->execute();
             $invoiceResult = $invoiceStmt->get_result();
@@ -164,7 +183,16 @@ switch ($method) {
             $row['events'] = $events;
 
             // Invoices
-            $invoiceStmt = $connection->prepare("SELECT * FROM invoices WHERE project_id = ? ORDER BY date_invoice ASC");
+           $invoiceStmt = $connection->prepare("
+  SELECT
+    invoices.*,
+    creditors.company AS creditor_company
+  FROM invoices
+  LEFT JOIN creditors ON invoices.creditor_id = creditors.id
+  WHERE invoices.project_id = ?
+  ORDER BY invoices.date_invoice ASC
+");
+
             $invoiceStmt->bind_param("i", $projectId);
             $invoiceStmt->execute();
             $invoiceResult = $invoiceStmt->get_result();

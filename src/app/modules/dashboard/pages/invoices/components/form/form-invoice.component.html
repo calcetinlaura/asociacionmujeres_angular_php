@@ -14,7 +14,7 @@
           <label for="subsidy">Subvención</label>
           <div class="flex flex-col flex-1">
             <select formControlName="subsidy_id">
-              <option [ngValue]="null">En casa subvención</option>
+              <option [ngValue]="null"></option>
               @for (subsidy of subsidies; track subsidy.id) {
               <option [ngValue]="subsidy.id">
                 {{ subsidy.name }} - {{ subsidy.year }}
@@ -35,7 +35,7 @@
           <label for="project">Proyecto</label>
           <div class="flex flex-col flex-1">
             <select formControlName="project_id">
-              <option [ngValue]="null">En casa proyecto</option>
+              <option [ngValue]="null"></option>
               @for (project of projects; track project.id) {
               <option [value]="project.id">
                 {{ project.title }} - {{ project.year }}

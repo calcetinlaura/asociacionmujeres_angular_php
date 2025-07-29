@@ -48,7 +48,8 @@
       [data]="filteredArticles"
       [typeSection]="typeSection"
       [typeModal]="typeModal"
-      [headerColumns]="headerListArticles"
+      [headerColumns]="getVisibleColumns()"
+      [columnVisibility]="columnVisibility"
       (openModal)="onOpenModal($event)"
     />
   </div>

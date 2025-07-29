@@ -1,3 +1,4 @@
+<!-- Zona sticky -->
 <div class="sticky-zone">
   <app-dashboard-header
     [icon]="'uil uil-calculator'"
@@ -5,44 +6,15 @@
     [number]="number"
     [type]="'Cuentas'"
   />
-  <div class="flex flex-1 flex-col justify-center px-8 gap-y-8">
+  <div class="flex flex-1 flex-col justify-start">
     <app-filters
       [filters]="filtersYears"
       (filterClicked)="filterSelected($event)"
     ></app-filters>
-    <div class="flex gap-x-4">
-      <app-button-icon
-        [buttonText]="'Añadir movimiento'"
-        [iconClass]="'uil-plus'"
-        (addClicked)="addNewInvoiceModal()"
-      />
-      <app-input-search (onDebounce)="applyFilterWord($event)" class="flex-1" />
-
-      <app-icon-action
-        [icon]="'uil-print'"
-        [tooltip]="'Imprimir tabla'"
-        (click)="printTableAsPdf()"
-      ></app-icon-action>
-
-      <app-button
-        [buttonText]="'Filtrar columnas'"
-        [menu]="columnsMenu"
-      ></app-button>
-
-      <mat-menu #columnsMenu="matMenu">
-        <button mat-menu-item *ngFor="let column of headerListInvoices">
-          <mat-checkbox
-            [checked]="columnVisibility[column.key]"
-            (change)="toggleColumn(column.key)"
-          >
-            {{ column.title }}
-          </mat-checkbox>
-        </button>
-      </mat-menu>
-    </div>
   </div>
 </div>
 
+<!-- Zona principal -->
 <div class="flex flex-col px-8">
   @if (isLoading) {
   <div class="flex justify-center items-center py-16">
@@ -54,17 +26,33 @@
     [selectedIndex]="selectedIndex"
   >
     <mat-tab label="Contabilidad completa">
-      <ng-container *ngTemplateOutlet="templateTableInvoice"></ng-container>
+      <div class="flex flex-1 flex-col justify-center px-8 gap-y-8 py-8">
+        <ng-container *ngTemplateOutlet="invoiceToolbar"></ng-container>
+        <ng-container *ngTemplateOutlet="templateTableInvoice"></ng-container>
+      </div>
     </mat-tab>
+
     <mat-tab label="Facturas">
-      <ng-container *ngTemplateOutlet="templateTableInvoice"></ng-container>
+      <div class="flex flex-1 flex-col justify-center px-8 gap-y-8 py-8">
+        <ng-container *ngTemplateOutlet="invoiceToolbar"></ng-container>
+        <ng-container *ngTemplateOutlet="templateTableInvoice"></ng-container>
+      </div>
     </mat-tab>
+
     <mat-tab label="Tickets">
-      <ng-container *ngTemplateOutlet="templateTableInvoice"></ng-container>
+      <div class="flex flex-1 flex-col justify-center px-8 gap-y-8 py-8">
+        <ng-container *ngTemplateOutlet="invoiceToolbar"></ng-container>
+        <ng-container *ngTemplateOutlet="templateTableInvoice"></ng-container>
+      </div>
     </mat-tab>
+
     <mat-tab label="Ingresos">
-      <ng-container *ngTemplateOutlet="templateTableInvoice"></ng-container>
-    </mat-tab>
+      <div class="flex flex-1 flex-col justify-center px-8 gap-y-8 py-8">
+        <ng-container *ngTemplateOutlet="invoiceToolbar"></ng-container>
+        <ng-container
+          *ngTemplateOutlet="templateTableInvoice"
+        ></ng-container></div
+    ></mat-tab>
   </mat-tab-group>
   } @else {
   <div class="flex flex-col items-center justify-center py-16">
@@ -73,22 +61,59 @@
     </p>
   </div>
   }
-  <!-- Plantilla tabla -->
+
+  <!-- Plantilla de tabla -->
   <ng-template #templateTableInvoice>
     <div class="pb-4 flex">
       <app-table
         [data]="filteredInvoices"
         [typeSection]="typeSection"
-        [headerColumns]="headerListInvoices"
+        [headerColumns]="getVisibleColumns()"
+        [columnVisibility]="columnVisibility"
         (openModal)="onOpenModal($event)"
-        [topFilter]="0"
         [topHeader]="60"
       />
     </div>
   </ng-template>
+
+  <!-- Plantilla reutilizable para toolbar -->
+  <ng-template #invoiceToolbar>
+    <div class="flex gap-x-4">
+      <app-button-icon
+        [buttonText]="'Añadir movimiento'"
+        [iconClass]="'uil-plus'"
+        (addClicked)="addNewInvoiceModal()"
+      />
+      <app-input-search (onDebounce)="applyFilterWord($event)" class="flex-1" />
+      <app-icon-action
+        [icon]="'uil-folder-download'"
+        [tooltip]="'Descargar facturas'"
+        (click)="downloadFilteredPdfs()"
+      />
+      <app-icon-action
+        [icon]="'uil-print'"
+        [tooltip]="'Imprimir tabla'"
+        (click)="printTableAsPdf()"
+      />
+      <app-button [buttonText]="'Filtrar columnas'" [menu]="columnsMenu" />
+    </div>
+  </ng-template>
+
+  <!-- Menú separado (único, accesible por todos los tabs) -->
+  <mat-menu #columnsMenu="matMenu">
+    <button mat-menu-item *ngFor="let column of headerListInvoices">
+      <mat-checkbox
+        [checked]="columnVisibility[column.key]"
+        (change)="toggleColumn(column.key)"
+      >
+        {{ column.title }}
+      </mat-checkbox>
+    </button>
+  </mat-menu>
   }
 </div>
 
+<!-- Modal -->
 @if (isModalVisible) {
 <app-modal
   [item]="item"

@@ -22,6 +22,7 @@ import { InputSearchComponent } from 'src/app/shared/components/inputs/input-sea
 import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
 import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
+import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
 
 @Component({
@@ -49,7 +50,7 @@ export class ArticlesPageComponent implements OnInit {
   private readonly articlesFacade = inject(ArticlesFacade);
   private readonly articlesService = inject(ArticlesService);
   private readonly pdfPrintService = inject(PdfPrintService);
-
+  private readonly generalService = inject(GeneralService);
   articles: ArticleModel[] = [];
   filteredArticles: ArticleModel[] = [];
 
@@ -78,6 +79,17 @@ export class ArticlesPageComponent implements OnInit {
   ];
 
   ngOnInit(): void {
+    // Ocultar 'date_payment' y 'date_accounting' al cargar la página
+    this.columnVisibility = this.generalService.setColumnVisibility(
+      this.headerListArticles,
+      [''] // Coloca las columnas que deseas ocultar aquí
+    );
+
+    // Actualiza las columnas visibles según el estado de visibilidad
+    this.displayedColumns = this.generalService.updateDisplayedColumns(
+      this.headerListArticles,
+      this.columnVisibility
+    );
     this.modalService.modalVisibility$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
@@ -86,10 +98,6 @@ export class ArticlesPageComponent implements OnInit {
       .subscribe();
 
     this.loadAllArticles();
-    this.columnVisibility = this.headerListArticles.reduce(
-      (acc, col) => ({ ...acc, [col.key]: true }),
-      {}
-    );
   }
 
   loadAllArticles(): void {
@@ -163,18 +171,21 @@ export class ArticlesPageComponent implements OnInit {
     this.isLoading = false;
   }
   printTableAsPdf(): void {
-    this.pdfPrintService.printTableAsPdf('table.mat-table', 'articulos.pdf');
+    this.pdfPrintService.printTableAsPdf('table-to-print', 'articulos.pdf');
   }
+  getVisibleColumns() {
+    return this.headerListArticles.filter(
+      (col) => this.columnVisibility[col.key]
+    );
+  }
+  // Método para actualizar las columnas visibles cuando se hace toggle
   toggleColumn(key: string): void {
+    // Cambia la visibilidad de la columna en columnVisibility
     this.columnVisibility[key] = !this.columnVisibility[key];
-    this.updateDisplayedColumns();
-  }
-
-  private updateDisplayedColumns(): void {
-    const base = ['number']; // si usas un número de fila
-    const dynamic = this.headerListArticles
-      .filter((col) => this.columnVisibility[col.key])
-      .map((col) => col.key);
-    this.displayedColumns = [...base, ...dynamic, 'actions'];
+    // Actualiza las columnas visibles en la tabla después de cambiar el estado
+    this.displayedColumns = this.generalService.updateDisplayedColumns(
+      this.headerListArticles,
+      this.columnVisibility
+    );
   }
 }

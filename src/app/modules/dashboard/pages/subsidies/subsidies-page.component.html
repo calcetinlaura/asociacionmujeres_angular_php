@@ -54,7 +54,8 @@
   <div class="pb-4 flex">
     <app-table
       [data]="filteredSubsidies"
-      [headerColumns]="headerListSubsidies"
+      [headerColumns]="getVisibleColumns()"
+      [columnVisibility]="columnVisibility"
       [typeSection]="typeModal"
       [typeModal]="typeModal"
       (openModal)="onOpenModal($event)"

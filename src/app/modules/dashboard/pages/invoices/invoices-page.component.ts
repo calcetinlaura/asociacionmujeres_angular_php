@@ -22,6 +22,7 @@ import {
   TypeActionModal,
   TypeList,
 } from 'src/app/core/models/general.model';
+import { InvoicesService } from 'src/app/core/services/invoices.services';
 import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
 import { FiltersComponent } from 'src/app/modules/landing/components/filters/filters.component';
 import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
@@ -59,8 +60,10 @@ export class InvoicesPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly modalService = inject(ModalService);
   private readonly invoicesFacade = inject(InvoicesFacade);
+  private readonly invoicesService = inject(InvoicesService);
   private readonly generalService = inject(GeneralService);
   private readonly pdfPrintService = inject(PdfPrintService);
+  // Para controlar qué columnas se muestran
   columnVisibility: Record<string, boolean> = {};
   displayedColumns: string[] = [];
   headerListInvoices: ColumnModel[] = [
@@ -110,8 +113,8 @@ export class InvoicesPageComponent implements OnInit {
       title: 'Descripción',
       key: 'description',
       sortable: true,
-      booleanIndicator: true,
-      width: ColumnWidth.SM,
+      showIndicatorOnEmpty: true,
+      width: ColumnWidth.LG,
     },
     {
       title: 'Cantidad',
@@ -155,7 +158,7 @@ export class InvoicesPageComponent implements OnInit {
       title: 'Proyecto',
       key: 'project_title',
       sortable: true,
-      width: ColumnWidth.XS,
+      width: ColumnWidth.MD,
       showIndicatorOnEmpty: true,
     },
   ];
@@ -181,15 +184,24 @@ export class InvoicesPageComponent implements OnInit {
   private inputSearchComponent!: InputSearchComponent;
 
   ngOnInit(): void {
+    // Ocultar 'date_payment' y 'date_accounting' al cargar la página
+    this.columnVisibility = this.generalService.setColumnVisibility(
+      this.headerListInvoices,
+      ['date_payment', 'date_accounting'] // Coloca las columnas que deseas ocultar aquí
+    );
+
+    // Actualiza las columnas visibles según el estado de visibilidad
+    this.displayedColumns = this.generalService.updateDisplayedColumns(
+      this.headerListInvoices,
+      this.columnVisibility
+    );
+
     this.invoicesFacade.clearInvoices();
     this.filtersYears = this.generalService.getYearFilters(
       2018,
       this.currentYear
     );
-    this.columnVisibility = this.headerListInvoices.reduce(
-      (acc, col) => ({ ...acc, [col.key]: true }),
-      {}
-    );
+
     combineLatest([
       this.invoicesFacade.invoices$,
       this.invoicesFacade.currentFilter$,
@@ -335,18 +347,61 @@ export class InvoicesPageComponent implements OnInit {
       .subscribe();
   }
   printTableAsPdf(): void {
-    this.pdfPrintService.printTableAsPdf('table.mat-table', 'facturas.pdf');
-  }
-  toggleColumn(key: string): void {
-    this.columnVisibility[key] = !this.columnVisibility[key];
-    this.updateDisplayedColumns();
+    this.pdfPrintService.printTableAsPdf('table-to-print', 'facturas.pdf');
   }
 
-  private updateDisplayedColumns(): void {
-    const base = ['number']; // si usas un número de fila
-    const dynamic = this.headerListInvoices
-      .filter((col) => this.columnVisibility[col.key])
-      .map((col) => col.key);
-    this.displayedColumns = [...base, ...dynamic, 'actions'];
+  downloadFilteredPdfs(): void {
+    // Filtra los datos que tienen un PDF
+    const data = this.filteredInvoices || [];
+
+    const pdfFiles = data
+      .filter((invoice: any) => invoice.invoice_pdf) // Filtra las facturas que tienen un PDF
+      .map((invoice: any) => {
+        const fileName = invoice.invoice_pdf;
+        const yearMatch = fileName.match(/^(\d{4})_/); // Extrae el año del nombre del archivo
+        const yearFolder = yearMatch ? yearMatch[1] : '';
+        return `${yearFolder}/${fileName}`; // Retorna la ruta completa del archivo PDF
+      });
+
+    // Si no hay PDFs, muestra una alerta
+    if (!pdfFiles.length) {
+      alert('No hay PDFs para descargar.');
+      return;
+    }
+
+    // Llama al servicio para descargar el archivo ZIP
+    this.invoicesService.downloadFilteredPdfs(pdfFiles).subscribe({
+      next: (blob) => {
+        // Crea un objeto URL para el archivo Blob
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'facturas.zip'; // Nombre del archivo ZIP descargado
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url); // Libera el objeto URL
+      },
+      error: (err) => {
+        console.error('💥 Error al descargar ZIP:', err);
+        alert('Error al descargar el ZIP. Revisa la consola.');
+      },
+    });
+  }
+
+  getVisibleColumns() {
+    return this.headerListInvoices.filter(
+      (col) => this.columnVisibility[col.key]
+    );
+  }
+  // Método para actualizar las columnas visibles cuando se hace toggle
+  toggleColumn(key: string): void {
+    // Cambia la visibilidad de la columna en columnVisibility
+    this.columnVisibility[key] = !this.columnVisibility[key];
+    // Actualiza las columnas visibles en la tabla después de cambiar el estado
+    this.displayedColumns = this.generalService.updateDisplayedColumns(
+      this.headerListInvoices,
+      this.columnVisibility
+    );
   }
 }

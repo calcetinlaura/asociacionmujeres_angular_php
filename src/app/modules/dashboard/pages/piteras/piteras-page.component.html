@@ -48,10 +48,10 @@
       [data]="filteredPiteras"
       [typeSection]="typeSection"
       [typeModal]="typeModal"
-      [headerColumns]="headerListPiteras"
+      [headerColumns]="getVisibleColumns()"
+      [columnVisibility]="columnVisibility"
       (openModal)="onOpenModal($event)"
-      [topFilter]="210"
-      [topHeader]="266"
+      [topHeader]="206"
     />
   </div>
   }

@@ -162,7 +162,6 @@ export class FormEventComponent implements OnInit, OnChanges {
   dates: DayEventModel[] = [];
   wasPeriodic = false;
   selectedPlaceId: number | null = null;
-  isCreate = false;
   quillModules = {
     toolbar: [
       [{ header: [1, 2, false] }],
@@ -798,107 +797,74 @@ export class FormEventComponent implements OnInit, OnChanges {
   }
   onSendFormEvent(): void {
     console.log('📤 Enviando formulario…');
+
+    // 🔍 VALIDACIÓN GENERAL
     if (this.formEvent.invalid) {
       this.submitted = true;
+
       if (this.isPeriodicEvent) {
-        const hasAtLeastOneStart = this.repeatedDates.controls.some(
+        const hasDate = this.repeatedDates.controls.some(
           (fg) => !!fg.get('start')?.value
         );
-
-        if (!hasAtLeastOneStart) {
-          console.warn(
-            'Debe añadir al menos una fecha válida en repeated_dates'
-          );
+        if (!hasDate) {
+          console.warn('Debe añadir al menos una fecha válida');
           return;
         }
       }
-      const formGroupErrors = this.formEvent.errors;
-      if (formGroupErrors) {
-        console.log('Errores a nivel de formulario:', formGroupErrors);
-      }
 
-      Object.keys(this.formEvent.controls).forEach((key) => {
-        const control = this.formEvent.get(key);
-        if (control && control.invalid) {
-          console.log(
-            `Campo '${key}' inválido. Errors:`,
-            control.errors,
-            `Valor actual:`,
-            control.value
-          );
-        }
-      });
-
+      this.logFormErrors();
       return;
     }
 
-    const formValues = this.formEvent.getRawValue();
+    // 🧼 PREPARACIÓN DE DATOS COMUNES
+    const rawValues = this.formEvent.getRawValue();
+    if (!rawValues.end && rawValues.start) rawValues.end = rawValues.start;
 
-    // ✅ Ajuste de fecha fin si está vacío:
-    if (!formValues.end && formValues.start) {
-      formValues.end = formValues.start;
-    }
-
-    // ✅ Ajuste de time_end si está vacío o es "00:00:00"
     const isTimeEndEmpty =
-      !formValues.time_end ||
-      formValues.time_end === '00:00' ||
-      formValues.time_end === '00:00:00';
+      !rawValues.time_end ||
+      rawValues.time_end === '00:00' ||
+      rawValues.time_end === '00:00:00';
     if (isTimeEndEmpty) {
-      if (formValues.time_start) {
-        formValues.time_end = this.calcTimeEnd(formValues.time_start);
-      } else {
-        formValues.time_end = '';
-      }
+      rawValues.time_end = rawValues.time_start
+        ? this.calcTimeEnd(rawValues.time_start)
+        : '';
     }
 
-    const organizerIds = this.organizers
-      .getRawValue()
-      .map((a: any) => a.agent_id);
-    const collaboratorIds = this.collaborators
-      .getRawValue()
-      .map((a: any) => a.agent_id);
-    const sponsorIds = this.sponsors.getRawValue().map((a: any) => a.agent_id);
-
-    const baseEventData = {
-      ...formValues,
-      macroevent_id: formValues.macroevent_id
-        ? Number(formValues.macroevent_id)
+    const baseData = {
+      ...rawValues,
+      macroevent_id: rawValues.macroevent_id
+        ? Number(rawValues.macroevent_id)
         : null,
-      project_id: formValues.project_id ? Number(formValues.project_id) : null,
-      organizer: organizerIds,
-      collaborator: collaboratorIds,
-      sponsor: sponsorIds,
+      project_id: rawValues.project_id ? Number(rawValues.project_id) : null,
+      organizer: this.organizers.getRawValue().map((a) => a.agent_id),
+      collaborator: this.collaborators.getRawValue().map((a) => a.agent_id),
+      sponsor: this.sponsors.getRawValue().map((a) => a.agent_id),
       ticket_prices: this.ticketPrices.getRawValue(),
     };
 
-    if (this.isPeriodicEvent && formValues.repeated_dates.length > 0) {
-      const groupId =
-        formValues.periodic_id && formValues.periodic_id.trim() !== ''
-          ? formValues.periodic_id
-          : this.generateUUID();
-      this.formEvent.patchValue({ periodic_id: groupId }); // ✅ Importante
+    // 🔁 CASO 1: EVENTO REPETIDO
+    if (this.isPeriodicEvent && rawValues.repeated_dates.length > 0) {
+      const groupId = rawValues.periodic_id?.trim() || this.generateUUID();
+      this.formEvent.patchValue({ periodic_id: groupId });
 
-      formValues.repeated_dates.forEach((rd: any) => {
-        if (!rd.start) {
-          return;
-        }
+      rawValues.repeated_dates.forEach((rd: any) => {
+        if (!rd.start) return;
 
         const end = rd.end || rd.start;
+        const start = rd.start;
         const timeStart = rd.time_start;
-        let timeEnd = rd.time_end;
-        if (!timeStart) {
-          timeEnd = '';
-        } else if (!timeEnd || timeEnd === '00:00' || timeEnd === '00:00:00') {
-          timeEnd = this.calcTimeEnd(timeStart);
-        }
+        const timeEnd =
+          rd.time_end && rd.time_end !== '00:00' && rd.time_end !== '00:00:00'
+            ? rd.time_end
+            : timeStart
+            ? this.calcTimeEnd(timeStart)
+            : '';
 
-        const eventId = rd.id ?? 0;
         const eventData = {
-          ...baseEventData,
-          start: rd.start,
+          ...baseData,
+          start,
           end,
-          time_start: rd.time_start,
+          time_start: timeStart,
           time_end: timeEnd,
           periodic_id: groupId,
         };
@@ -906,78 +872,77 @@ export class FormEventComponent implements OnInit, OnChanges {
         const formData = this.generalService.createFormData(
           eventData,
           { img: this.selectedImageFile },
-          eventId
+          rd.id ?? 0
         );
 
         this.sendFormEvent.emit({
-          itemId: eventId,
+          itemId: rd.id ?? 0,
           formData,
         });
       });
-    } else if (!this.isPeriodicEvent) {
-      const eventData = { ...baseEventData, group_id: null };
 
-      if (eventData.description) {
-        eventData.description = eventData.description.replace(/&nbsp;/g, ' ');
-      }
-
-      const formData = this.generalService.createFormData(
-        eventData,
-        { img: this.selectedImageFile },
-        this.itemId
-      );
-      const repeatedDates = formData.get('repeated_dates');
-      if (repeatedDates === '[]') {
-        formData.set('periodic_id', '');
-      }
-      // 👇 NUEVO BLOQUE: borrar eventos recurrentes si se pasó de periodic a individual
-      const hadPeriodicId = !!this.item?.periodic_id;
-      const oldPeriodicId = this.item?.periodic_id;
-      const newPeriodicId = formData.get('periodic_id');
-      if (hadPeriodicId && (!newPeriodicId || newPeriodicId === '')) {
-        // ⏳ Guardar como evento único
-        this.eventsFacade
-          .editEvent(this.itemId, formData) // Este método debe devolver un Observable
-          .pipe(takeUntilDestroyed(this.destroyRef))
-          .subscribe({
-            next: () => {
-              // ✅ Después de guardar, eliminamos el resto del grupo
-              this.eventsFacade
-                .deleteEventsByPeriodicIdExcept(oldPeriodicId!, this.itemId)
-                .pipe(takeUntilDestroyed(this.destroyRef))
-                .subscribe({
-                  next: () => {
-                    console.log('✅ Eventos repetidos eliminados.');
-                  },
-                  error: (err) => {
-                    console.error('❌ Error al borrar eventos repetidos:', err);
-                    this.generalService.handleHttpError(err);
-                  },
-                });
-            },
-            error: (err) => {
-              console.error('❌ Error al guardar evento como individual:', err);
-              this.generalService.handleHttpError(err);
-            },
-          });
-      } else {
-        // 🟢 Guardado normal (evento nuevo o aún periódico)
-        this.eventsFacade
-          .editEvent(this.itemId, formData)
-          .pipe(takeUntilDestroyed(this.destroyRef))
-          .subscribe({
-            next: () => {
-              console.log('✅ Evento guardado.');
-            },
-            error: (err) => {
-              console.error('❌ Error al guardar evento:', err);
-              this.generalService.handleHttpError(err);
-            },
-          });
-      }
+      return;
     }
-  }
 
+    // 🟢 CASO 2: EVENTO ÚNICO
+    const singleEventData = { ...baseData, periodic_id: null };
+    if (singleEventData.description) {
+      singleEventData.description = singleEventData.description.replace(
+        /&nbsp;/g,
+        ' '
+      );
+    }
+
+    const formData = this.generalService.createFormData(
+      singleEventData,
+      { img: this.selectedImageFile },
+      this.itemId
+    );
+
+    const hadPeriodicId = !!this.item?.periodic_id;
+    const oldPeriodicId = this.item?.periodic_id;
+    const newPeriodicId = formData.get('periodic_id');
+
+    const becameUnique =
+      hadPeriodicId && (!newPeriodicId || newPeriodicId === '');
+
+    const save$ = this.eventsFacade.editEvent(this.itemId, formData);
+
+    save$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        console.log('✅ Evento guardado.');
+
+        if (becameUnique && oldPeriodicId) {
+          this.eventsFacade
+            .deleteEventsByPeriodicIdExcept(oldPeriodicId, this.itemId)
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+              next: () => console.log('✅ Repetidos eliminados.'),
+              error: (err) => {
+                console.error('❌ Error al borrar repetidos:', err);
+                this.generalService.handleHttpError(err);
+              },
+            });
+        }
+      },
+      error: (err) => {
+        console.error('❌ Error al guardar evento:', err);
+        this.generalService.handleHttpError(err);
+      },
+    });
+  }
+  private logFormErrors(): void {
+    const formErrors = this.formEvent.errors;
+    if (formErrors) {
+      console.warn('Errores generales del formulario:', formErrors);
+    }
+
+    Object.entries(this.formEvent.controls).forEach(([key, control]) => {
+      if (control.invalid) {
+        console.warn(`Campo inválido "${key}":`, control.errors);
+      }
+    });
+  }
   // Función auxiliar para sumar 3 horas y normalizar formato HH:mm:ss
   private calcTimeEnd(timeStart: string): string {
     const [h, m] = timeStart.split(':');

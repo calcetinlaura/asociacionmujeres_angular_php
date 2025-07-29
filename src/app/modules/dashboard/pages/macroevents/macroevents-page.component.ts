@@ -90,8 +90,8 @@ export class MacroeventsPageComponent implements OnInit {
       title: 'Descripción',
       key: 'description',
       sortable: true,
-      booleanIndicator: true,
-      width: ColumnWidth.SM,
+      showIndicatorOnEmpty: true,
+      width: ColumnWidth.LG,
     },
     { title: 'Municipio', key: 'town', sortable: true, width: ColumnWidth.SM },
   ];
@@ -100,6 +100,16 @@ export class MacroeventsPageComponent implements OnInit {
   private inputSearchComponent!: InputSearchComponent;
 
   ngOnInit(): void {
+    this.columnVisibility = this.generalService.setColumnVisibility(
+      this.headerListMacroevents,
+      ['town'] // Coloca las columnas que deseas ocultar aquí
+    );
+
+    // Actualiza las columnas visibles según el estado de visibilidad
+    this.displayedColumns = this.generalService.updateDisplayedColumns(
+      this.headerListMacroevents,
+      this.columnVisibility
+    );
     this.filters = [
       { code: 'ALL', name: 'Histórico' },
       ...this.generalService.getYearFilters(2018, this.currentYear),
@@ -120,10 +130,6 @@ export class MacroeventsPageComponent implements OnInit {
         tap((macroevents) => this.updateMacroeventState(macroevents))
       )
       .subscribe();
-    this.columnVisibility = this.headerListMacroevents.reduce(
-      (acc, col) => ({ ...acc, [col.key]: true }),
-      {}
-    );
   }
 
   filterSelected(filter: string): void {
@@ -208,18 +214,21 @@ export class MacroeventsPageComponent implements OnInit {
     this.isLoading = false;
   }
   printTableAsPdf(): void {
-    this.pdfPrintService.printTableAsPdf('table.mat-table', 'macroeventos.pdf');
+    this.pdfPrintService.printTableAsPdf('table-to-print', 'macroeventos.pdf');
   }
+  getVisibleColumns() {
+    return this.headerListMacroevents.filter(
+      (col) => this.columnVisibility[col.key]
+    );
+  }
+  // Método para actualizar las columnas visibles cuando se hace toggle
   toggleColumn(key: string): void {
+    // Cambia la visibilidad de la columna en columnVisibility
     this.columnVisibility[key] = !this.columnVisibility[key];
-    this.updateDisplayedColumns();
-  }
-
-  private updateDisplayedColumns(): void {
-    const base = ['number']; // si usas un número de fila
-    const dynamic = this.headerListMacroevents
-      .filter((col) => this.columnVisibility[col.key])
-      .map((col) => col.key);
-    this.displayedColumns = [...base, ...dynamic, 'actions'];
+    // Actualiza las columnas visibles en la tabla después de cambiar el estado
+    this.displayedColumns = this.generalService.updateDisplayedColumns(
+      this.headerListMacroevents,
+      this.columnVisibility
+    );
   }
 }

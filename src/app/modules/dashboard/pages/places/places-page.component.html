@@ -48,10 +48,10 @@
       [data]="filteredPlaces"
       [typeSection]="typeSection"
       [typeModal]="typeModal"
-      [headerColumns]="headerListPlaces"
+      [headerColumns]="getVisibleColumns()"
+      [columnVisibility]="columnVisibility"
       (openModal)="onOpenModal($event)"
-      [topFilter]="210"
-      [topHeader]="266"
+      [topHeader]="206"
     />
   </div>
   }

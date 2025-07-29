@@ -107,6 +107,14 @@ export class EventsService {
   updateEvent(id: number, formData: FormData): Observable<any> {
     return this.http.patch(`${this.apiUrl}?id=${id}`, formData);
   }
+  deleteEventsByPeriodicId(periodicId: string) {
+    return this.http.delete(`${this.apiUrl}?periodic_id=${periodicId}`);
+  }
+  deleteOtherEventsByPeriodicId(periodicId: string, keepId: number) {
+    return this.http.delete(
+      `${this.apiUrl}?periodic_id=${periodicId}&keep_id=${keepId}`
+    );
+  }
   deleteEventsByPeriodicIdExcept(
     periodicId: string,
     keepId: number

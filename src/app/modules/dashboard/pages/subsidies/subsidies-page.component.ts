@@ -193,6 +193,17 @@ export class SubsidiesPageComponent implements OnInit {
   ];
 
   ngOnInit(): void {
+    // Ocultar 'date_payment' y 'date_accounting' al cargar la página
+    this.columnVisibility = this.generalService.setColumnVisibility(
+      this.headerListSubsidies,
+      ['date_justification', 'start', 'url_presentation', 'url_justification'] // Coloca las columnas que deseas ocultar aquí
+    );
+
+    // Actualiza las columnas visibles según el estado de visibilidad
+    this.displayedColumns = this.generalService.updateDisplayedColumns(
+      this.headerListSubsidies,
+      this.columnVisibility
+    );
     this.filtersYears = [
       { code: 'ALL', name: 'Histórico' },
       ...this.generalService.getYearFilters(2018, this.currentYear),
@@ -207,10 +218,6 @@ export class SubsidiesPageComponent implements OnInit {
       .subscribe((subsidies) => this.updateSubsidyState(subsidies));
 
     this.filterSelected('ALL');
-    this.columnVisibility = this.headerListSubsidies.reduce(
-      (acc, col) => ({ ...acc, [col.key]: true }),
-      {}
-    );
   }
 
   filterSelected(filter: string): void {
@@ -335,18 +342,21 @@ export class SubsidiesPageComponent implements OnInit {
     this.selectedIndex = 0;
   }
   printTableAsPdf(): void {
-    this.pdfPrintService.printTableAsPdf('table.mat-table', 'subvenciones.pdf');
+    this.pdfPrintService.printTableAsPdf('table-to-print', 'subvenciones.pdf');
   }
+  getVisibleColumns() {
+    return this.headerListSubsidies.filter(
+      (col) => this.columnVisibility[col.key]
+    );
+  }
+  // Método para actualizar las columnas visibles cuando se hace toggle
   toggleColumn(key: string): void {
+    // Cambia la visibilidad de la columna en columnVisibility
     this.columnVisibility[key] = !this.columnVisibility[key];
-    this.updateDisplayedColumns();
-  }
-
-  private updateDisplayedColumns(): void {
-    const base = ['number']; // si usas un número de fila
-    const dynamic = this.headerListSubsidies
-      .filter((col) => this.columnVisibility[col.key])
-      .map((col) => col.key);
-    this.displayedColumns = [...base, ...dynamic, 'actions'];
+    // Actualiza las columnas visibles en la tabla después de cambiar el estado
+    this.displayedColumns = this.generalService.updateDisplayedColumns(
+      this.headerListSubsidies,
+      this.columnVisibility
+    );
   }
 }

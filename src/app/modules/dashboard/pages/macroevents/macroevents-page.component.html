@@ -53,7 +53,8 @@
       [data]="filteredMacroevents"
       [typeSection]="typeSection"
       [typeModal]="typeModal"
-      [headerColumns]="headerListMacroevents"
+      [headerColumns]="getVisibleColumns()"
+      [columnVisibility]="columnVisibility"
       (openModal)="onOpenModal($event)"
     />
   </div>

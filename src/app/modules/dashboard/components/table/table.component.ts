@@ -19,7 +19,6 @@ import { MatSort, MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { ColumnModel } from 'src/app/core/interfaces/column.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
-import { InvoicesService } from 'src/app/core/services/invoices.services';
 import { SubsidiesService } from 'src/app/core/services/subsidies.services';
 import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
 import { FilterTransformCodePipe } from 'src/app/shared/pipe/filterTransformCode.pipe';
@@ -29,7 +28,7 @@ import { CalculateAgePipe } from '../../../../shared/pipe/caculate_age.pipe';
 import { EurosFormatPipe } from '../../../../shared/pipe/eurosFormat.pipe';
 import { HasValuePipe } from '../../../../shared/pipe/hasValue.pipe';
 import { CircleIndicatorComponent } from '../circle-indicator/circle-indicator.component';
-declare var html2pdf: any;
+
 @Component({
   standalone: true,
   imports: [
@@ -57,16 +56,15 @@ declare var html2pdf: any;
 })
 export class TableComponent {
   private readonly subsidiesService = inject(SubsidiesService);
-  private readonly invoicesService = inject(InvoicesService);
 
   private _liveAnnouncer = inject(LiveAnnouncer);
   @Input() displayedColumns: string[] = [];
+  @Input() columnVisibility: { [key: string]: boolean } = {};
   @Input() typeSection: TypeList = TypeList.Books;
   @Input() typeModal: TypeList = TypeList.Books;
   @Input() data: any[] = [];
   @Input() headerColumns: ColumnModel[] = [];
-  @Input() topFilter = 270;
-  @Input() topHeader = 326;
+  @Input() topHeader = 296;
   @Output() openModal = new EventEmitter<{
     typeModal: TypeList;
     action: TypeActionModal;
@@ -78,17 +76,11 @@ export class TableComponent {
   typeActionModal = TypeActionModal;
   searchKeywordFilter = new FormControl();
   TypeList = TypeList;
-  columnVisibility: { [key: string]: boolean } = {};
-  selectedColumns: string[] = [];
 
   @ViewChild(MatSort) sort!: MatSort;
 
   ngOnInit(): void {
-    this.headerColumns.forEach((col) => {
-      this.columnVisibility[col.key] = true; // primero inicializas visibilidad
-    });
-
-    this.initDisplayedColumns(); // luego construyes displayedColumns
+    this.initDisplayedColumns();
 
     this.dataSource = new MatTableDataSource(this.data || []);
     this.dataSource.sort = this.sort;
@@ -136,10 +128,6 @@ export class TableComponent {
       this._liveAnnouncer.announce('Sorting cleared');
     }
   }
-  toggleColumn(key: string) {
-    this.columnVisibility[key] = !this.columnVisibility[key];
-    this.initDisplayedColumns();
-  }
 
   onOpenModal(typeModal: TypeList, action: TypeActionModal, item: any): void {
     this.openModal.emit({ typeModal, action, item });
@@ -175,12 +163,6 @@ export class TableComponent {
     return this.headerColumns
       .filter((col) => this.columnVisibility[col.key])
       .map((col) => col.key);
-  }
-  updateVisibleColumns() {
-    this.headerColumns.forEach((col) => {
-      this.columnVisibility[col.key] = this.selectedColumns.includes(col.key);
-    });
-    this.initDisplayedColumns(); // Recalcula las columnas mostradas
   }
 
   trackByKey(index: number, col: ColumnModel) {

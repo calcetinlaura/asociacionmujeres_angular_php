@@ -52,7 +52,9 @@
       [data]="filteredBooks"
       [typeSection]="typeSection"
       [typeModal]="typeModal"
-      [headerColumns]="headerListBooks"
+      [headerColumns]="getVisibleColumns()"
+      [columnVisibility]="columnVisibility"
+      [columnVisibility]="columnVisibility"
       (openModal)="onOpenModal($event)"
     />
   </div>

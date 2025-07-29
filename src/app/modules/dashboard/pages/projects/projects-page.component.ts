@@ -83,7 +83,7 @@ export class ProjectsPageComponent implements OnInit {
   displayedColumns: string[] = [];
 
   headerListProjects: ColumnModel[] = [
-    { title: 'Título', key: 'title', sortable: true },
+    { title: 'Título', key: 'title', sortable: true, width: ColumnWidth.XL },
     { title: 'Año', key: 'year', sortable: true, width: ColumnWidth.XS },
     {
       title: 'Descripción',
@@ -103,23 +103,33 @@ export class ProjectsPageComponent implements OnInit {
       title: 'Actividades',
       key: 'activities',
       sortable: true,
+      width: ColumnWidth.XL,
     },
-    { title: 'Eventos', key: 'events', sortable: true },
-    { title: 'Facturas', key: 'invoices', sortable: true },
+    { title: 'Eventos', key: 'events', sortable: true, width: ColumnWidth.XL },
+    {
+      title: 'Facturas',
+      key: 'invoices',
+      sortable: true,
+      width: ColumnWidth.FULL,
+    },
   ];
 
   @ViewChild(InputSearchComponent)
   private inputSearchComponent!: InputSearchComponent;
 
   ngOnInit(): void {
-    const prueba = new Intl.NumberFormat('es', {
-      style: 'currency',
-      currency: 'EUR',
-    }).format(1234567.89);
-    this.columnVisibility = this.headerListProjects.reduce(
-      (acc, col) => ({ ...acc, [col.key]: true }),
-      {}
+    // Ocultar 'date_payment' y 'date_accounting' al cargar la página
+    this.columnVisibility = this.generalService.setColumnVisibility(
+      this.headerListProjects,
+      ['description'] // Coloca las columnas que deseas ocultar aquí
     );
+
+    // Actualiza las columnas visibles según el estado de visibilidad
+    this.displayedColumns = this.generalService.updateDisplayedColumns(
+      this.headerListProjects,
+      this.columnVisibility
+    );
+
     this.filters = [
       { code: 'ALL', name: 'Histórico' },
       ...this.generalService.getYearFilters(2018, this.currentYear),
@@ -215,18 +225,21 @@ export class ProjectsPageComponent implements OnInit {
     this.isLoading = false;
   }
   printTableAsPdf(): void {
-    this.pdfPrintService.printTableAsPdf('table.mat-table', 'proyectos.pdf');
+    this.pdfPrintService.printTableAsPdf('table-to-print', 'proyectos.pdf');
   }
+  getVisibleColumns() {
+    return this.headerListProjects.filter(
+      (col) => this.columnVisibility[col.key]
+    );
+  }
+  // Método para actualizar las columnas visibles cuando se hace toggle
   toggleColumn(key: string): void {
+    // Cambia la visibilidad de la columna en columnVisibility
     this.columnVisibility[key] = !this.columnVisibility[key];
-    this.updateDisplayedColumns();
-  }
-
-  private updateDisplayedColumns(): void {
-    const base = ['number']; // si usas un número de fila
-    const dynamic = this.headerListProjects
-      .filter((col) => this.columnVisibility[col.key])
-      .map((col) => col.key);
-    this.displayedColumns = [...base, ...dynamic, 'actions'];
+    // Actualiza las columnas visibles en la tabla después de cambiar el estado
+    this.displayedColumns = this.generalService.updateDisplayedColumns(
+      this.headerListProjects,
+      this.columnVisibility
+    );
   }
 }

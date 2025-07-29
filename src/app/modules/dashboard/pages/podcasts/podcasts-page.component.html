@@ -48,7 +48,8 @@
       [data]="filteredPodcasts"
       [typeSection]="typeSection"
       [typeModal]="typeModal"
-      [headerColumns]="headerListPodcasts"
+      [headerColumns]="getVisibleColumns()"
+      [columnVisibility]="columnVisibility"
       (openModal)="onOpenModal($event)"
     />
   </div>
