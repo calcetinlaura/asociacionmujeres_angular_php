@@ -1,5 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, inject, Input, Output } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  EventEmitter,
+  inject,
+  Input,
+  Output,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   FormControl,
   FormGroup,
@@ -33,22 +41,14 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
 })
 export class FormMovieComponent {
   private moviesFacade = inject(MoviesFacade);
+  private destroyRef = inject(DestroyRef);
   private generalService = inject(GeneralService);
   @Input() itemId!: number;
   @Output() sendFormMovie = new EventEmitter<{
     itemId: number;
     formData: FormData;
   }>();
-  selectedImageFile: File | null = null;
-  movieData: any;
-  imageSrc: string = '';
-  errorSession: boolean = false;
-  submitted: boolean = false;
-  titleForm: string = 'Registrar película';
-  buttonAction: string = 'Guardar';
-  years: number[] = [];
-  genderMovies = genderFilterMovies;
-  typeList = TypeList.Movies;
+
   formMovie = new FormGroup({
     title: new FormControl('', [Validators.required]),
     director: new FormControl(''),
@@ -60,6 +60,16 @@ export class FormMovieComponent {
       Validators.min(2000),
     ]),
   });
+  selectedImageFile: File | null = null;
+  movieData: any;
+  imageSrc: string = '';
+  submitted = false;
+  titleForm: string = 'Registrar película';
+  buttonAction: string = 'Guardar';
+  years: number[] = [];
+  genderMovies = genderFilterMovies;
+  typeList = TypeList.Movies;
+
   currentYear = this.generalService.currentYear;
   quillModules = {
     toolbar: [
@@ -80,6 +90,7 @@ export class FormMovieComponent {
       this.moviesFacade.loadMovieById(this.itemId);
       this.moviesFacade.selectedMovie$
         .pipe(
+          takeUntilDestroyed(this.destroyRef),
           filter((movie: MovieModel | null) => movie !== null),
           tap((movie: MovieModel | null) => {
             if (movie) {

@@ -53,7 +53,6 @@ export class FormPodcastComponent implements OnInit {
 
   selectedImageFile: File | null = null;
   imageSrc = '';
-  errorSession = false;
   submitted = false;
   titleForm = 'Registrar Podcast';
   buttonAction = 'Guardar';

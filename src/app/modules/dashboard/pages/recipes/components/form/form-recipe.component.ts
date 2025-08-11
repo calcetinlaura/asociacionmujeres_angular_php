@@ -43,7 +43,6 @@ export class FormRecipeComponent {
   selectedImageFile: File | null = null;
   recipeData: any;
   imageSrc: string = '';
-  errorSession: boolean = false;
   submitted: boolean = false;
   titleForm: string = 'Registrar receta';
   buttonAction: string = 'Guardar';

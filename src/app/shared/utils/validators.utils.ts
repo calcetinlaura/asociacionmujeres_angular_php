@@ -40,6 +40,20 @@ export function timeRangeValidator(
   // Compara como strings 'HH:mm', funciona porque formato 24h respeta orden lexicográfico
   return timeEnd < timeStart ? { invalidTimeRange: true } : null;
 }
+//✅ Validador evento periódico más de una fecha
+export const periodicHasMultipleDatesValidator: ValidatorFn = (
+  control: AbstractControl
+): ValidationErrors | null => {
+  const isPeriodic = control.get('periodic')?.value;
+  const repeatedDates = control.get('repeated_dates') as FormArray;
+
+  if (!isPeriodic) return null;
+  if (!repeatedDates || repeatedDates.length < 2) {
+    return { periodicNeedsAtLeastTwoDates: true };
+  }
+
+  return null;
+};
 // ✅ Validador que no se repita el mismo pase
 export const uniqueStartDatesValidator: ValidatorFn = (
   control: AbstractControl

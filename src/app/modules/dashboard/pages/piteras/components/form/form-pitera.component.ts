@@ -42,7 +42,6 @@ export class FormPiteraComponent {
   selectedImageFile: File | null = null;
   piteraData: any;
   imageSrc: string = '';
-  errorSession: boolean = false;
   submitted: boolean = false;
   titleForm: string = 'Registrar Pitera';
   buttonAction: string = 'Guardar';

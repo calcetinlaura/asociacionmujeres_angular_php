@@ -75,7 +75,6 @@ export class FormProjectComponent implements OnInit {
 
   selectedImageFile: File | null = null;
   imageSrc = '';
-  errorSession = false;
   submitted = false;
   titleForm = 'Registrar proyecto';
   buttonAction = 'Guardar';

@@ -39,6 +39,7 @@ import { ModalService } from 'src/app/shared/components/modal/services/modal.ser
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
+import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.component';
 
 @Component({
   selector: 'app-creditors-page',
@@ -56,6 +57,7 @@ import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service
     MatMenuModule,
     MatCheckboxModule,
     CommonModule,
+    StickyZoneComponent,
   ],
   templateUrl: './creditors-page.component.html',
   styleUrl: './creditors-page.component.css',
@@ -126,6 +128,7 @@ export class CreditorsPageComponent implements OnInit {
       title: 'Categoría',
       key: 'category',
       sortable: true,
+      backColor: true,
       width: ColumnWidth.XS,
     },
     {

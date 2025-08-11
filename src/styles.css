@@ -135,8 +135,8 @@ body {
 }
 
 .printing .no-print,
-.printing .top-206,
-.printing .top-296,
+.printing .top-210,
+.printing .top-246,
 .printing th.mat-column-actions,
 .printing td.mat-column-actions {
   display: none !important;

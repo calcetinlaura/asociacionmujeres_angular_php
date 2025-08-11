@@ -1,11 +1,11 @@
-<div class="sticky-zone">
+<app-sticky-zone [height]="296">
   <app-dashboard-header
     [icon]="'uil uil-users-alt'"
     [title]="'Asociación'"
     [number]="number"
     [type]="'socias'"
   />
-  <div class="flex flex-1 flex-col justify-center px-8 gap-y-3">
+  <div class="flex flex-col gap-y-10">
     <app-filters
       [filters]="filters"
       (filterClicked)="filterSelected($event)"
@@ -41,12 +41,12 @@
       </mat-menu>
     </div>
   </div>
-</div>
+</app-sticky-zone>
 <div class="flex flex-col px-8">
   <!-- Spinner Loading -->
   @if (isLoading) {
   <app-spinner-loading />
-  } @else {
+  } @else {@if(filteredPartners.length > 0){
   <div class="pb-4 flex">
     <app-table
       [data]="filteredPartners"
@@ -57,7 +57,11 @@
       (openModal)="onOpenModal($event)"
     />
   </div>
-  }
+  }@else{
+  <div class="text-center text-gray-600 my-12 text-lg">
+    No hay socias registradas.
+  </div>
+  } }
   <!-- Tabla -->
 </div>
 

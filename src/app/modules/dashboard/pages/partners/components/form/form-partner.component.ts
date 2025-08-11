@@ -25,16 +25,16 @@ import { TypeList } from 'src/app/core/models/general.model';
 import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 @Component({
-    selector: 'app-form-partner',
-    imports: [
-        CommonModule,
-        ReactiveFormsModule,
-        MatCheckboxModule,
-        MatCardModule,
-        ImageControlComponent,
-    ],
-    templateUrl: './form-partner.component.html',
-    styleUrls: ['../../../../components/form/form.component.css']
+  selector: 'app-form-partner',
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    MatCheckboxModule,
+    MatCardModule,
+    ImageControlComponent,
+  ],
+  templateUrl: './form-partner.component.html',
+  styleUrls: ['../../../../components/form/form.component.css'],
 })
 export class FormPartnerComponent {
   private partnersFacade = inject(PartnersFacade);
@@ -49,7 +49,6 @@ export class FormPartnerComponent {
   selectedImageFile: File | null = null;
   partnerData: PartnerModel | null = null;
   imageSrc: string = '';
-  errorSession: boolean = false;
   submitted: boolean = false;
   titleForm: string = 'Registrar socia';
   buttonAction: string = 'Guardar';

@@ -1,11 +1,11 @@
-<div class="sticky-zone">
+<app-sticky-zone [height]="210">
   <app-dashboard-header
     [icon]="'uil uil-newspaper'"
-    [title]="''"
+    [title]="'Podcasts'"
     [number]="number"
     [type]="'Podcasts'"
   />
-  <div class="flex flex-1 flex-col justify-center px-8 gap-y-8">
+  <div class="flex flex-col gap-y-8">
     <div class="flex gap-x-4">
       <app-button-icon
         [buttonText]="'Nuevo Podcast'"
@@ -37,12 +37,12 @@
       </mat-menu>
     </div>
   </div>
-</div>
+</app-sticky-zone>
 <div class="flex flex-col px-8">
   <!-- Spinner Loading -->
   @if (isLoading) {
   <app-spinner-loading />
-  } @else {
+  } @else { @if(filteredPodcasts.length > 0){
   <div class="pb-4 flex">
     <app-table
       [data]="filteredPodcasts"
@@ -51,9 +51,14 @@
       [headerColumns]="getVisibleColumns()"
       [columnVisibility]="columnVisibility"
       (openModal)="onOpenModal($event)"
+      [topHeader]="210"
     />
   </div>
-  }
+  }@else{
+  <div class="text-center text-gray-600 my-12 text-lg">
+    No hay podcasts registrados.
+  </div>
+  } }
   <!-- Tabla -->
 </div>
 

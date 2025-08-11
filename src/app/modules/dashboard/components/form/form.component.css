@@ -19,8 +19,16 @@
   color: Red;
   font-size: 11px;
 }
-.strong-border {
-  border: 2px solid black !important;
+.str.is-invalid-text {
+  color: Red;
+  font-size: 11px;
+}
+.error {
+  border: 2px solid red !important;
+  color: Red;
+  font-size: 11px;
+  padding: 8px 8px;
+  text-align: center;
 }
 .linea {
   border: 1px solid #cb8dd952;

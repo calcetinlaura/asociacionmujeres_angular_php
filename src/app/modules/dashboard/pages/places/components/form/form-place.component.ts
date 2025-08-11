@@ -48,7 +48,6 @@ export class FormPlaceComponent {
 
   selectedImageFile: File | null = null;
   imageSrc: string = '';
-  errorSession: boolean = false;
   submitted: boolean = false;
   titleForm: string = 'Registrar espacio';
   buttonAction: string = 'Guardar';

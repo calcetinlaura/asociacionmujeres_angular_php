@@ -64,7 +64,7 @@ export class TableComponent {
   @Input() typeModal: TypeList = TypeList.Books;
   @Input() data: any[] = [];
   @Input() headerColumns: ColumnModel[] = [];
-  @Input() topHeader = 296;
+  @Input() topHeader = 246;
   @Output() openModal = new EventEmitter<{
     typeModal: TypeList;
     action: TypeActionModal;

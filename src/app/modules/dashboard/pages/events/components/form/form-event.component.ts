@@ -49,6 +49,7 @@ import { ProjectsService } from 'src/app/core/services/projects.services';
 import { ButtonSelectComponent } from 'src/app/shared/components/buttons/button-select/button-select.component';
 import {
   dateRangeValidator,
+  periodicHasMultipleDatesValidator,
   timeRangeValidator,
   uniqueStartDatesValidator,
 } from 'src/app/shared/utils/validators.utils';
@@ -88,7 +89,6 @@ export class FormEventComponent implements OnInit, OnChanges {
 
   selectedImageFile: File | null = null;
   imageSrc = '';
-  errorSession = false;
   submitted = false;
   titleForm: string = 'Registrar evento';
   buttonAction: string = 'Guardar';
@@ -98,12 +98,12 @@ export class FormEventComponent implements OnInit, OnChanges {
   showOrganizers = false;
   showCollaborators = false;
   showSponsors = false;
-  isPeriodicEvent = false;
+
   eventTypeMacro: 'event' | 'macro' = 'event';
   eventTypeProject: 'event' | 'project' = 'event';
   eventTypePeriod: 'event' | 'single' | 'periodic' = 'event';
   eventTypeUbication: 'place' | 'online' | 'pending' = 'pending';
-  eventTypeAccess: 'free' | 'tickets' = 'free';
+  eventTypeAccess: 'free' | 'tickets' | 'unspecified' = 'unspecified';
   eventTypeStatus: 'event' | 'cancel' | 'postpone' | 'sold_out' = 'event';
   eventTypeInscription: 'unlimited' | 'inscription' = 'unlimited';
 
@@ -121,6 +121,7 @@ export class FormEventComponent implements OnInit, OnChanges {
       place_id: new FormControl<number | null>(null),
       sala_id: new FormControl<number | null>(null),
       capacity: new FormControl(),
+      access: new FormControl(''),
       ticket_prices: new FormArray<FormGroup>([]),
       tickets_method: new FormControl(''),
       periodic: new FormControl(false),
@@ -145,7 +146,13 @@ export class FormEventComponent implements OnInit, OnChanges {
         disabled: true,
       }),
     },
-    { validators: [dateRangeValidator, timeRangeValidator] }
+    {
+      validators: [
+        dateRangeValidator,
+        timeRangeValidator,
+        periodicHasMultipleDatesValidator,
+      ],
+    }
   );
 
   macroevents: MacroeventModel[] = [];
@@ -285,10 +292,12 @@ export class FormEventComponent implements OnInit, OnChanges {
             status_reason: event.status_reason,
             inscription: event.inscription ?? false,
             inscription_method: event.inscription_method,
+            access: event.access,
             tickets_method: event.tickets_method,
             macroevent_id: event.macroevent_id,
             project_id: event.project_id,
             online_link: event.online_link ?? '',
+            periodic: event.periodic ?? false,
             periodic_id: event.periodic_id ?? '',
           },
           { emitEvent: false }
@@ -357,8 +366,7 @@ export class FormEventComponent implements OnInit, OnChanges {
           'project_id',
           'macroevent_id',
         ]);
-        if (event.periodic_id) {
-          this.isPeriodicEvent = true;
+        if (event.periodic) {
           this.eventTypePeriod = 'periodic';
           this.wasPeriodic = true;
 
@@ -393,7 +401,6 @@ export class FormEventComponent implements OnInit, OnChanges {
             )
             .subscribe();
         } else {
-          this.isPeriodicEvent = false;
           this.eventTypePeriod = 'single';
         }
 
@@ -607,7 +614,7 @@ export class FormEventComponent implements OnInit, OnChanges {
     const startControl = this.formEvent.get('start');
 
     if (type === 'single') {
-      this.isPeriodicEvent = false;
+      this.formEvent.patchValue({ periodic: false, periodic_id: '' });
       if (this.wasPeriodic) {
         this.formEvent.patchValue({
           start: null,
@@ -620,7 +627,7 @@ export class FormEventComponent implements OnInit, OnChanges {
       startControl?.setValidators([Validators.required]);
       startControl?.updateValueAndValidity();
     } else if (type === 'periodic') {
-      this.isPeriodicEvent = true;
+      this.formEvent.patchValue({ periodic: true });
       this.wasPeriodic = true;
       this.formEvent.patchValue({
         start: null,
@@ -684,7 +691,7 @@ export class FormEventComponent implements OnInit, OnChanges {
       this.formEvent.patchValue({ project_id: null });
     }
   }
-  setEventTypeAccess(type: 'free' | 'tickets'): void {
+  setEventTypeAccess(type: 'free' | 'tickets' | 'unspecified'): void {
     this.eventTypeAccess = type;
 
     if (type === 'tickets') {
@@ -693,10 +700,18 @@ export class FormEventComponent implements OnInit, OnChanges {
         this.addTicketPrice();
       }
       this.formEvent.patchValue({ inscription_method: '' });
-    } else {
+      this.formEvent.patchValue({ access: 'TICKETS' });
+    }
+    if (type === 'free') {
       // Opcional: si quieres limpiar cuando cambie a otro tipo
       this.ticketPrices.clear();
       this.formEvent.patchValue({ tickets_method: '' });
+      this.formEvent.patchValue({ access: 'FREE' });
+    }
+    if (type === 'unspecified') {
+      this.ticketPrices.clear();
+      this.formEvent.patchValue({ tickets_method: '' });
+      this.formEvent.patchValue({ access: 'UNSPECIFIED' });
     }
   }
   setEventTypeInscription(type: 'unlimited' | 'inscription'): void {
@@ -797,39 +812,43 @@ export class FormEventComponent implements OnInit, OnChanges {
   }
   onSendFormEvent(): void {
     console.log('📤 Enviando formulario…');
+    this.submitted = true;
 
-    // 🔍 VALIDACIÓN GENERAL
+    const isPeriodic = this.eventTypePeriod === 'periodic';
+    this.formEvent.patchValue({ periodic: isPeriodic });
+
     if (this.formEvent.invalid) {
-      this.submitted = true;
+      const hasDate = isPeriodic
+        ? this.repeatedDates.controls.some((fg) => !!fg.get('start')?.value)
+        : !!this.formEvent.get('start')?.value;
 
-      if (this.isPeriodicEvent) {
-        const hasDate = this.repeatedDates.controls.some(
-          (fg) => !!fg.get('start')?.value
-        );
-        if (!hasDate) {
-          console.warn('Debe añadir al menos una fecha válida');
-          return;
-        }
+      if (!hasDate) {
+        console.warn('Debe añadir al menos una fecha válida');
+        return;
       }
 
       this.logFormErrors();
       return;
     }
 
-    // 🧼 PREPARACIÓN DE DATOS COMUNES
     const rawValues = this.formEvent.getRawValue();
-    if (!rawValues.end && rawValues.start) rawValues.end = rawValues.start;
+
+    if (!rawValues.end && rawValues.start) {
+      rawValues.end = rawValues.start;
+    }
 
     const isTimeEndEmpty =
       !rawValues.time_end ||
       rawValues.time_end === '00:00' ||
       rawValues.time_end === '00:00:00';
+
     if (isTimeEndEmpty) {
       rawValues.time_end = rawValues.time_start
         ? this.calcTimeEnd(rawValues.time_start)
         : '';
     }
 
+    // Construcción base
     const baseData = {
       ...rawValues,
       macroevent_id: rawValues.macroevent_id
@@ -842,95 +861,60 @@ export class FormEventComponent implements OnInit, OnChanges {
       ticket_prices: this.ticketPrices.getRawValue(),
     };
 
-    // 🔁 CASO 1: EVENTO REPETIDO
-    if (this.isPeriodicEvent && rawValues.repeated_dates.length > 0) {
-      const groupId = rawValues.periodic_id?.trim() || this.generateUUID();
-      this.formEvent.patchValue({ periodic_id: groupId });
+    // Si es periódico, añadimos los pases
+    if (isPeriodic) {
+      const repeated = this.repeatedDates.getRawValue();
+      if (!repeated.length) {
+        console.warn('Debe incluir al menos una fecha de pase');
+        return;
+      }
 
-      rawValues.repeated_dates.forEach((rd: any) => {
-        if (!rd.start) return;
+      const periodic_id = rawValues.periodic_id?.trim() || this.generateUUID();
+      baseData.periodic_id = periodic_id;
+      baseData.repeated_dates = repeated;
 
-        const end = rd.end || rd.start;
-        const start = rd.start;
-        const timeStart = rd.time_start;
-        const timeEnd =
-          rd.time_end && rd.time_end !== '00:00' && rd.time_end !== '00:00:00'
-            ? rd.time_end
-            : timeStart
-            ? this.calcTimeEnd(timeStart)
-            : '';
+      // 👉 Establecer start y end del evento principal a la primera fecha
+      const first = repeated.find((r) => !!r.start);
+      if (first) {
+        baseData.start = first.start;
+        baseData.end = first.end || first.start;
 
-        const eventData = {
-          ...baseData,
-          start,
-          end,
-          time_start: timeStart,
-          time_end: timeEnd,
-          periodic_id: groupId,
-        };
+        const isTimeEndEmpty =
+          !first.time_end ||
+          first.time_end === '00:00' ||
+          first.time_end === '00:00:00';
 
-        const formData = this.generalService.createFormData(
-          eventData,
-          { img: this.selectedImageFile },
-          rd.id ?? 0
-        );
+        baseData.time_start = first.time_start || '';
 
-        this.sendFormEvent.emit({
-          itemId: rd.id ?? 0,
-          formData,
-        });
-      });
-
-      return;
+        if (first.time_start && !first.time_end) {
+          baseData.time_end = this.calcTimeEnd(first.time_start);
+        } else {
+          baseData.time_end = first.time_end || '';
+        }
+      }
+    } else {
+      baseData.periodic_id = '';
+      baseData.repeated_dates = [];
     }
 
-    // 🟢 CASO 2: EVENTO ÚNICO
-    const singleEventData = { ...baseData, periodic_id: null };
-    if (singleEventData.description) {
-      singleEventData.description = singleEventData.description.replace(
-        /&nbsp;/g,
-        ' '
-      );
+    // Limpieza de descripción
+    if (baseData.description) {
+      baseData.description = baseData.description.replace(/&nbsp;/g, ' ');
     }
 
+    // Crea el único FormData para enviar
     const formData = this.generalService.createFormData(
-      singleEventData,
+      baseData,
       { img: this.selectedImageFile },
       this.itemId
     );
 
-    const hadPeriodicId = !!this.item?.periodic_id;
-    const oldPeriodicId = this.item?.periodic_id;
-    const newPeriodicId = formData.get('periodic_id');
-
-    const becameUnique =
-      hadPeriodicId && (!newPeriodicId || newPeriodicId === '');
-
-    const save$ = this.eventsFacade.editEvent(this.itemId, formData);
-
-    save$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        console.log('✅ Evento guardado.');
-
-        if (becameUnique && oldPeriodicId) {
-          this.eventsFacade
-            .deleteEventsByPeriodicIdExcept(oldPeriodicId, this.itemId)
-            .pipe(takeUntilDestroyed(this.destroyRef))
-            .subscribe({
-              next: () => console.log('✅ Repetidos eliminados.'),
-              error: (err) => {
-                console.error('❌ Error al borrar repetidos:', err);
-                this.generalService.handleHttpError(err);
-              },
-            });
-        }
-      },
-      error: (err) => {
-        console.error('❌ Error al guardar evento:', err);
-        this.generalService.handleHttpError(err);
-      },
+    this.sendFormEvent.emit({
+      itemId: this.itemId || 0,
+      formData,
     });
   }
+
   private logFormErrors(): void {
     const formErrors = this.formEvent.errors;
     if (formErrors) {
@@ -945,9 +929,13 @@ export class FormEventComponent implements OnInit, OnChanges {
   }
   // Función auxiliar para sumar 3 horas y normalizar formato HH:mm:ss
   private calcTimeEnd(timeStart: string): string {
+    if (!timeStart || !timeStart.includes(':')) return '';
+
     const [h, m] = timeStart.split(':');
     const hours = parseInt(h, 10);
     const minutes = parseInt(m, 10);
+
+    if (isNaN(hours) || isNaN(minutes)) return '';
 
     let newHours = hours + 3;
     if (newHours >= 24) {
@@ -955,6 +943,6 @@ export class FormEventComponent implements OnInit, OnChanges {
     }
 
     const pad = (n: number) => (n < 10 ? '0' + n : n);
-    return `${pad(newHours)}:${pad(minutes)}:00`; // Normalizamos a HH:mm:ss
+    return `${pad(newHours)}:${pad(minutes)}:00`;
   }
 }

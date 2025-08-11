@@ -81,7 +81,6 @@ export class FormSubsidyComponent implements OnInit {
     observations: new FormControl(''),
   });
 
-  errorSession = false;
   submitted = false;
   titleForm = 'Registrar subvención';
   buttonAction = 'Guardar';

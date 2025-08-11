@@ -64,8 +64,7 @@ export class FormBookComponent {
 
   selectedImageFile: File | null = null;
   bookData: any;
-  imageSrc = '';
-  errorSession = false;
+  imageSrc: string = '';
   submitted = false;
   titleForm: string = 'Registrar libro';
   buttonAction: string = 'Guardar';

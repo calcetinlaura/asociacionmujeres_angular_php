@@ -38,6 +38,7 @@ import { ModalService } from 'src/app/shared/components/modal/services/modal.ser
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
+import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.component';
 
 @Component({
   selector: 'app-events-page',
@@ -56,6 +57,7 @@ import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service
     MatMenuModule,
     MatCheckboxModule,
     CommonModule,
+    StickyZoneComponent,
   ],
   templateUrl: './events-page.component.html',
   styleUrl: './events-page.component.css',
@@ -234,10 +236,9 @@ export class EventsPageComponent implements OnInit {
   }
 
   sendFormEvent(event: { itemId: number; formData: FormData }): void {
-    const currentItem = this.item; // Guarda referencia al evento actual
+    const currentItem = this.item;
     const newPeriodicId = event.formData.get('periodic_id');
     const oldPeriodicId = currentItem?.periodic_id || null;
-
     const isRepeatedToUnique = !!oldPeriodicId && !newPeriodicId;
 
     const request$ = event.itemId
@@ -257,6 +258,10 @@ export class EventsPageComponent implements OnInit {
           return of(null); // ← para mantener la cadena activa
         }),
         tap(() => {
+          // 👇 Reforzamos la recarga aunque no haya periodicidad
+          this.eventsFacade.loadNonRepeatedEventsByYear(
+            this.selectedFilter ?? this.currentYear
+          );
           this.onCloseModal();
         })
       )

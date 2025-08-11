@@ -1,12 +1,9 @@
-<div class="header">
-  <div class="content-icon">
-    <div class="icon-box">
-      <i [ngClass]="['uil', icon]"></i>
-    </div>
+<div class="flex gap-x-4">
+  <div class="">
+    <i [ngClass]="['uil', icon]" class="text-[80px] p-0 m-0 leading-none"></i>
   </div>
-  <div class="content-text">
-    <div class="small-text">{{ title }}</div>
-    <h1 class="title">{{ type }}</h1>
+  <div class="flex flex-col justify-center">
+    <h1 class="title">{{ title }}</h1>
     <h5 class="sub-title">
       <span>{{ number }} {{ type }}</span>
     </h5>

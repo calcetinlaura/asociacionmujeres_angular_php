@@ -123,7 +123,7 @@
 
 <ng-template #templateForm let-item="item">
   @if (typeModal === TypeList.Books) {
-  <app-form-book [itemId]="item.id" (sendFormBook)="onSendFormBook($event)" />
+  <app-form-book [itemId]="item?.id" (sendFormBook)="onSendFormBook($event)" />
   } @if (typeModal === TypeList.Movies) {
   <app-form-movie
     [itemId]="item?.id"

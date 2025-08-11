@@ -56,7 +56,6 @@ export class FormArticleComponent {
 
   selectedImageFile: File | null = null;
   imageSrc = '';
-  errorSession = false;
   submitted = false;
   titleForm = 'Registrar artículo';
   buttonAction = 'Guardar';

@@ -38,6 +38,10 @@
         } @case ( column.showIndicatorOnEmpty === true && !(element[column.key]
         | hasValue) ) {
         <app-circle-indicator [item]="false"></app-circle-indicator>
+        } @case (column.backColor === true){
+        <div class="backColor">
+          <span>{{ element[column.key] }}</span>
+        </div>
         } @case (column.showLengthOnly === true) { @if
         (element[column.key]?.length > 0) {
         <div class="flex justify-center">
@@ -139,11 +143,7 @@
         </div>
         }
         <!-- Diseño especial para 'gender' -->
-        @case (column.key === 'gender') {
-        <div class="genderColumn">
-          <span>{{ element[column.key] }}</span>
-        </div>
-        } @case (column.key === 'birthday') { @if (element.birthday) {
+        @case (column.key === 'birthday') { @if (element.birthday) {
         <div class="text-center">
           {{ element.birthday | date : "dd MMM yyyy" }}
           <span class="dateColumn">
@@ -379,17 +379,6 @@
           {{ element.creditor_contact }}
         </p>
         } }
-        <!-- Diseño especial para 'categoría acreedores' -->
-        @case (column.key === 'category') { @if (element.category) {
-        <div class="genderColumn">
-          <span>{{ element[column.key] }}</span>
-        </div>
-        } } @case (column.key === 'project_title' && typeSection ===
-        TypeList.Invoices) { @if (element.project_title) {
-        <div class="genderColumn">
-          <span>{{ element[column.key] }}</span>
-        </div>
-        } }
         <!-- Diseño especial para 'email' -->
         @case (column.key === 'email') {
         <small>{{ element[column.key] }}</small>
@@ -449,8 +438,8 @@
       *matHeaderRowDef="displayedColumns"
       class="custom-header-row"
       [ngClass]="{
-      'top-206': topHeader === 206,
-      'top-296': topHeader === 296,
+      'top-210': topHeader === 210,
+      'top-246': topHeader === 246,
     }"
     ></tr>
     <tr

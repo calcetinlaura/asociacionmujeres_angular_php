@@ -52,7 +52,6 @@ export class FormMacroeventComponent implements OnInit {
 
   selectedImageFile: File | null = null;
   imageSrc: string = '';
-  errorSession: boolean = false;
   submitted: boolean = false;
   titleForm: string = 'Registrar macroevento';
   buttonAction: string = 'Guardar';

@@ -38,6 +38,7 @@ import { ModalService } from 'src/app/shared/components/modal/services/modal.ser
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
+import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.component';
 
 @Component({
   selector: 'app-recipes-page',
@@ -55,6 +56,7 @@ import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service
     ButtonComponent,
     IconActionComponent,
     CommonModule,
+    StickyZoneComponent,
   ],
   templateUrl: './recipes-page.component.html',
   styleUrl: './recipes-page.component.css',
@@ -91,6 +93,7 @@ export class RecipesPageComponent implements OnInit {
       title: 'Categoria',
       key: 'category',
       sortable: true,
+      backColor: true,
       width: ColumnWidth.SM,
     },
     { title: 'Autor/a', key: 'owner', sortable: true },

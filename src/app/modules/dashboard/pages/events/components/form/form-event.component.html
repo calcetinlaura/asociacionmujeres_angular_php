@@ -53,8 +53,15 @@
       <div
         class="border-2 pt-2 px-4 pb-6 mb-6"
         [ngClass]="{
-          'border-[red]': submitted && !isTypePeriodSelected
-        }"
+  'border-[red]': submitted && (
+    !isTypePeriodSelected ||
+    formEvent.errors?.['periodicNeedsAtLeastTwoDates'] ||
+    formEvent.errors?.['invalidDateRange'] ||
+    formEvent.errors?.['invalidTimeRange'] ||
+    repeatedDates.errors?.['duplicateStartDatesAndTimes'] ||
+    formEvent.get('start')?.invalid
+  )
+}"
       >
         <h2 class="font-bold text-lilaText mt-4 uppercase">Tipo de evento</h2>
         <div class="flex justify-center gap-x-4 py-2">
@@ -192,13 +199,22 @@
         <div
           *ngIf="eventTypePeriod === 'periodic'"
           formArrayName="repeated_dates"
-          class="flex flex-col gap-y-4 pt-8 px-4"
+          class="flex flex-col gap-y-4 pt-8 px-4 items-center"
         >
           <app-date-array-control
             [formArray]="repeatedDates"
             [submitted]="submitted"
             (remove)="removeRepeatedDate($event)"
           ></app-date-array-control>
+          <div
+            *ngIf="submitted && formEvent.errors?.['periodicNeedsAtLeastTwoDates']"
+            class="text-center"
+          >
+            <p class="text-[red] text-[11px]">
+              Un evento periódico debe tener al menos dos fechas. Si es solo una
+              fecha pasar a evento de pase único.
+            </p>
+          </div>
           <div class="flex justify-center">
             <app-button-icon
               [buttonText]="'Añadir fecha'"
@@ -353,7 +369,7 @@
         <div *ngIf="eventTypeMacro === 'macro'" class="pt-4 px-4">
           <p class="text-[15px] text-center mb-10 text-lilaText px-4">
             Si el macroevento al que pertenece el evento no aparece se debe
-            añadir previamente el mismo desde la sección de macroeventos.
+            añadir previamente desde la sección de macroeventos.
           </p>
           <div class="flex gap-x-8">
             <div class="box-input gap-x-4 flex flex-1">
@@ -445,6 +461,11 @@
             [active]="eventTypeAccess === 'tickets'"
             (addClicked)="setEventTypeAccess('tickets')"
             iconClass="uil-ticket"
+          /><app-button-select
+            [buttonText]="'Por anunciar'"
+            [active]="eventTypeAccess === 'unspecified'"
+            (addClicked)="setEventTypeAccess('unspecified')"
+            iconClass="uil-megaphone"
           />
         </div>
         @if (eventTypeAccess === 'tickets') {
@@ -637,8 +658,10 @@
         ></app-agent-array-control>
         }
       </div>
-      @if (errorSession) {
-      <div>Hay algún campo incorrecto</div>
+      @if (formEvent.invalid && submitted) {
+      <div class="flex justify-center">
+        <div class="error">Hay algún campo incorrecto</div>
+      </div>
       }
       <div class="flex justify-center">
         <button class="bg-black p-4 text-white" type="submit">

@@ -128,13 +128,11 @@
           >Se ha dado de baja
         </mat-checkbox>
       </div>
-      <!-- Mensaje de error global -->
-      @if (errorSession) {
-      <div class="is-invalid-text">
-        Ocurrió un error con el envío del formulario
+      @if (formPartner.invalid && submitted) {
+      <div class="flex justify-center">
+        <div class="error">Hay algún campo incorrecto</div>
       </div>
       }
-
       <!-- Botón de envío -->
       <div class="flex justify-center">
         <button class="bg-black p-4 text-white" type="submit">

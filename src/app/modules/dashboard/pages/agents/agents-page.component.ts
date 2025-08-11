@@ -38,6 +38,7 @@ import { ModalService } from 'src/app/shared/components/modal/services/modal.ser
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
+import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.component';
 
 @Component({
   selector: 'app-agents-page',
@@ -55,6 +56,7 @@ import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service
     ButtonComponent,
     IconActionComponent,
     CommonModule,
+    StickyZoneComponent,
   ],
   templateUrl: './agents-page.component.html',
   styleUrl: './agents-page.component.css',
@@ -111,6 +113,7 @@ export class AgentsPageComponent implements OnInit {
     {
       title: 'Categoría',
       key: 'category',
+      backColor: true,
       sortable: true,
       width: ColumnWidth.XS,
     },

@@ -40,7 +40,6 @@ export class FormCreditorComponent {
   }>();
 
   creditorData: any;
-  errorSession: boolean = false;
   submitted: boolean = false;
   titleForm: string = 'Registrar acreedor/a';
   buttonAction: string = 'Guardar';

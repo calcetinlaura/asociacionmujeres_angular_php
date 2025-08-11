@@ -38,6 +38,7 @@ import { ModalService } from 'src/app/shared/components/modal/services/modal.ser
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
+import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.component';
 
 @Component({
   selector: 'app-books-page',
@@ -55,6 +56,7 @@ import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service
     MatMenuModule,
     MatCheckboxModule,
     CommonModule,
+    StickyZoneComponent,
   ],
   templateUrl: './books-page.component.html',
   styleUrl: './books-page.component.css',
@@ -84,7 +86,13 @@ export class BooksPageComponent implements OnInit {
       booleanIndicator: true,
       width: ColumnWidth.SM,
     },
-    { title: 'Género', key: 'gender', sortable: true, width: ColumnWidth.XS },
+    {
+      title: 'Género',
+      key: 'gender',
+      sortable: true,
+      backColor: true,
+      width: ColumnWidth.XS,
+    },
     { title: 'Año compra', key: 'year', sortable: true, width: ColumnWidth.XS },
   ];
   books: BookModel[] = [];

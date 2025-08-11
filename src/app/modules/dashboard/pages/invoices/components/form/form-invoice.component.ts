@@ -86,7 +86,6 @@ export class FormInvoiceComponent {
 
   invoiceData: any;
   imageSrc: string = '';
-  errorSession: boolean = false;
   submitted: boolean = false;
   titleForm: string = 'Registrar factura';
   buttonAction: string = 'Guardar';

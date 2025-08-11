@@ -1,0 +1,50 @@
+<div class="share-icons mt-4 mb-8">
+  <!-- WhatsApp -->
+  <a
+    [href]="'https://wa.me/?text=' + encodedTitle + '%20' + encodedUrl"
+    target="_blank"
+    rel="noopener"
+    title="Compartir en WhatsApp"
+  >
+    <i class="uil uil-whatsapp"></i>
+  </a>
+
+  <!-- Facebook -->
+  <a
+    [href]="'https://www.facebook.com/sharer/sharer.php?u=' + encodedUrl"
+    target="_blank"
+    rel="noopener"
+    title="Compartir en Facebook"
+  >
+    <i class="uil uil-facebook-f"></i>
+  </a>
+
+  <!-- X (Twitter) -->
+  <a
+    [href]="
+      'https://twitter.com/intent/tweet?url=' +
+      encodedUrl +
+      '&text=' +
+      encodedTitle
+    "
+    target="_blank"
+    rel="noopener"
+    title="Compartir en X (Twitter)"
+  >
+    <i class="uil uil-twitter"></i>
+  </a>
+
+  <!-- LinkedIn -->
+  <a
+    [href]="'https://www.linkedin.com/sharing/share-offsite/?url=' + encodedUrl"
+    target="_blank"
+    rel="noopener"
+    title="Compartir en LinkedIn"
+  >
+    <i class="uil uil-linkedin"></i>
+  </a>
+
+  <button (click)="copyLink()" title="Copiar enlace">
+    <i class="uil uil-link"></i>
+  </button>
+</div>

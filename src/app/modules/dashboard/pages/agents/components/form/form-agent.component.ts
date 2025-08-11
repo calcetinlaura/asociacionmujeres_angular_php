@@ -52,7 +52,6 @@ export class FormAgentComponent {
   selectedImageFile: File | null = null;
   agentData: any;
   imageSrc: string = '';
-  errorSession = false;
   submitted = false;
   titleForm: string = 'Registrar acreedor/a';
   buttonAction: string = 'Guardar';

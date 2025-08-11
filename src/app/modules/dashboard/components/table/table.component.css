@@ -71,23 +71,24 @@ th.mat-sort-header-sorted {
   white-space: unset !important;
 }
 
-.genderColumn,
+.backColor,
 .statusColumn {
   text-align: center;
 }
-.genderColumn > span,
+
+.backColor > span,
 .statusColumn > span {
   border-radius: 5px;
   padding: 4px;
   font-size: 10px;
 }
-.genderColumn > span {
+.backColor > span {
   background-color: rgb(245, 235, 246);
 }
 .statusColumn > span {
   font-size: 9px;
 }
-.mat-mdc-row:hover .genderColumn > span {
+.mat-mdc-row:hover .backColor > span {
   background-color: rgb(245, 205, 250);
 }
 
@@ -273,12 +274,12 @@ th.mat-sort-header-sorted {
   font-weight: 500;
 }
 
-.top-206 {
-  top: 206px;
+.top-210 {
+  top: 208px;
 }
-.top-296 {
+.top-246 {
   /* 2px más pequeño para que no se vea el borde al hacer scroll */
-  top: 294px;
+  top: 244px;
 }
 .print-title {
   display: none;
@@ -287,8 +288,8 @@ th.mat-sort-header-sorted {
   @media print {
     .no-print,
     app-dashboard-header,
-    .top-206,
-    .top-296 {
+    .top-210,
+    .top-246 {
       display: none !important;
     }
     .print-title {

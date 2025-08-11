@@ -1,6 +1,13 @@
 import { DestroyRef, inject, Injectable } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, catchError, Observable, tap } from 'rxjs';
+import {
+  BehaviorSubject,
+  catchError,
+  Observable,
+  of,
+  switchMap,
+  tap,
+} from 'rxjs';
 import { EventModelFullData } from '../core/interfaces/event.interface';
 import { EventsService } from '../core/services/events.services';
 import { GeneralService } from '../shared/services/generalService.service';
@@ -26,10 +33,19 @@ export class EventsFacade {
 
   currentFilter: number | null = null;
 
+  // ---------- Filtros ----------
   setCurrentFilter(year: number | null): void {
     this.currentFilter = year;
   }
 
+  private reloadCurrentFilter(): void {
+    if (this.currentFilter !== null) {
+      this.loadEventsAllByYear(this.currentFilter);
+      this.loadNonRepeatedEventsByYear(this.currentFilter);
+    }
+  }
+
+  // ---------- Carga de eventos ----------
   loadEventsAllByYear(year: number): void {
     this.eventsService
       .getEventsByYear(year, 'all')
@@ -70,30 +86,70 @@ export class EventsFacade {
       .pipe(this.catchAndLog());
   }
 
+  // ---------- Guardar / Editar ----------
   addEvent(event: FormData): Observable<FormData> {
-    return this.withReload(this.eventsService.add(event));
+    return this.eventsService.add(event).pipe(this.catchAndLog());
   }
 
   editEvent(id: number, event: FormData): Observable<FormData> {
-    return this.withReload(this.eventsService.edit(id, event));
+    return this.eventsService.edit(id, event).pipe(this.catchAndLog());
   }
 
+  updateEvent(id: number, event: FormData): Observable<FormData> {
+    return this.eventsService.updateEvent(id, event).pipe(this.catchAndLog());
+  }
+
+  // ---------- Eliminar ----------
   deleteEvent(id: number): void {
-    this.withReload(this.eventsService.delete(id)).subscribe();
+    this.eventsService
+      .delete(id)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap(() => this.reloadCurrentFilter()),
+        this.catchAndLog()
+      )
+      .subscribe();
   }
 
   deleteEventsByPeriodicIdExcept(
     periodicId: string,
     keepId: number
   ): Observable<void> {
-    return this.withReload(
-      this.eventsService.deleteEventsByPeriodicIdExcept(periodicId, keepId)
-    );
-  }
-  updateEvent(id: number, event: FormData): Observable<FormData> {
-    return this.withReload(this.eventsService.updateEvent(id, event));
+    return this.eventsService
+      .deleteEventsByPeriodicIdExcept(periodicId, keepId)
+      .pipe(this.catchAndLog());
   }
 
+  // ---------- Guardado inteligente (editar o crear + eliminar repetidos si cambia a único) ----------
+  saveEventSmart(
+    event: FormData,
+    isEdit: boolean,
+    eventId?: number
+  ): Observable<any> {
+    const save$ =
+      isEdit && eventId
+        ? this.eventsService.updateEvent(eventId, event)
+        : this.eventsService.add(event);
+
+    return save$.pipe(
+      switchMap((response: any) => {
+        const periodic = event.get('periodic') === '1';
+        const periodicId = event.get('periodic_id')?.toString() || '';
+        const id = isEdit ? eventId : response?.id;
+
+        if (!periodic && periodicId && id) {
+          return this.eventsService
+            .deleteEventsByPeriodicIdExcept(periodicId, +id)
+            .pipe(tap(() => this.reloadCurrentFilter()));
+        }
+
+        return of(null).pipe(tap(() => this.reloadCurrentFilter()));
+      }),
+      this.catchAndLog()
+    );
+  }
+
+  // ---------- Utilidades ----------
   clearSelectedEvent(): void {
     this.selectedEventSubject.next(null);
   }
@@ -113,25 +169,10 @@ export class EventsFacade {
     this.nonRepeatedEventsSubject.next(filtered);
   }
 
-  private reloadCurrentFilter(): void {
-    if (this.currentFilter !== null) {
-      this.loadEventsAllByYear(this.currentFilter);
-      this.loadNonRepeatedEventsByYear(this.currentFilter);
-    }
-  }
-
   private catchAndLog<T>() {
     return catchError<T, Observable<never>>((err) => {
       this.generalService.handleHttpError(err);
       throw err;
     });
-  }
-
-  private withReload<T>(obs$: Observable<T>): Observable<T> {
-    return obs$.pipe(
-      takeUntilDestroyed(this.destroyRef),
-      tap(() => this.reloadCurrentFilter()),
-      this.catchAndLog()
-    );
   }
 }

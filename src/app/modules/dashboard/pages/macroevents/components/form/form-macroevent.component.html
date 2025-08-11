@@ -140,8 +140,10 @@
           ></app-image-control>
         </div>
       </div>
-      @if (errorSession) {
-      <div>Hay algún campo incorrecto</div>
+      @if (formMacroevent.invalid && submitted) {
+      <div class="flex justify-center">
+        <div class="error">Hay algún campo incorrecto</div>
+      </div>
       }
       <div class="flex justify-center">
         <button class="bg-black p-4 text-white" type="submit">

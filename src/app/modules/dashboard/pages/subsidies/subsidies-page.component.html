@@ -1,7 +1,7 @@
-<div class="sticky-zone">
+<app-sticky-zone>
   <app-dashboard-header
     [icon]="'uil-euro-circle'"
-    [title]="''"
+    [title]="'Subvenciones'"
     [number]="number"
     [type]="'Subvenciones'"
   />
@@ -43,12 +43,12 @@
     </div>
     }
   </div>
-</div>
+</app-sticky-zone>
 <div class="flex flex-col px-8">
   <!-- Spinner Loading -->
   @if (isLoading) {
   <app-spinner-loading />
-  }
+  }@else {
   <!-- Tabla -->
   @if (showAllSubsidies) {
   <div class="pb-4 flex">
@@ -81,7 +81,7 @@
   <div class="text-center text-gray-600 my-12 text-lg">
     No hay subvenciones registradas en este año.
   </div>
-  }
+  }}
 </div>
 <!-- Modal -->
 @if (isModalVisible) {

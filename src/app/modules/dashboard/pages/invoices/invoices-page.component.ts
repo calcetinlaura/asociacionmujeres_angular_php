@@ -34,6 +34,7 @@ import { ModalService } from 'src/app/shared/components/modal/services/modal.ser
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
+import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.component';
 import { TableComponent } from '../../components/table/table.component';
 
 @Component({
@@ -52,6 +53,7 @@ import { TableComponent } from '../../components/table/table.component';
     ButtonComponent,
     MatMenuModule,
     MatCheckboxModule,
+    StickyZoneComponent,
   ],
   templateUrl: './invoices-page.component.html',
   styleUrls: ['./invoices-page.component.css'],
@@ -158,6 +160,7 @@ export class InvoicesPageComponent implements OnInit {
       title: 'Proyecto',
       key: 'project_title',
       sortable: true,
+      backColor: true,
       width: ColumnWidth.MD,
       showIndicatorOnEmpty: true,
     },

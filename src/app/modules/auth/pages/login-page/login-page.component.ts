@@ -1,29 +1,28 @@
+import { CommonModule } from '@angular/common';
+import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   FormControl,
   FormGroup,
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { Component, DestroyRef, inject, OnInit } from '@angular/core';
-import { AuthService } from 'src/app/modules/auth/services/auth.service';
-import { Router, RouterOutlet } from '@angular/router';
-import { CommonModule } from '@angular/common';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Router } from '@angular/router';
 import { tap } from 'rxjs';
+import { AuthService } from 'src/app/modules/auth/services/auth.service';
 
 @Component({
-    selector: 'app-login-page',
-    templateUrl: './login-page.component.html',
-    styleUrls: ['./login-page.component.css'],
-    imports: [
-        CommonModule,
-        ReactiveFormsModule,
-        // RouterOutlet
-    ]
+  selector: 'app-login-page',
+  templateUrl: './login-page.component.html',
+  styleUrls: ['./login-page.component.css'],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    // RouterOutlet
+  ],
 })
 export class LoginPageComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
-  errorSession: boolean = false;
   submitted: boolean = false;
 
   constructor(
@@ -67,8 +66,6 @@ export class LoginPageComponent implements OnInit {
             console.log('Ha sido un éxito', response);
           },
           error: (err) => {
-            // Handle error response (e.g., 401 Unauthorized)
-            this.errorSession = true;
             console.log(
               'Ocurrió error con tu nombre de usuario o contraseña',
               err

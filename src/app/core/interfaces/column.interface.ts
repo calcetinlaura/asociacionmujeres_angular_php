@@ -11,6 +11,7 @@ export interface ColumnModel {
   pipe?: string;
   showLengthOnly?: boolean;
   footerTotal?: boolean;
+  backColor?: boolean;
 }
 export enum ColumnWidth {
   XS = 'w-[90px]',

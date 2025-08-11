@@ -115,10 +115,9 @@
           ></app-image-control>
         </div>
       </div>
-      <!-- Mensaje de error global -->
-      @if (errorSession) {
-      <div class="is-invalid-text">
-        Ocurrió un error con el envío del formulario
+      @if (formAgent.invalid && submitted) {
+      <div class="flex justify-center">
+        <div class="error">Hay algún campo incorrecto</div>
       </div>
       }
       <!-- Botón de envío -->

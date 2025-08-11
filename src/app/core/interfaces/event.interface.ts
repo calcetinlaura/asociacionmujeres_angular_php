@@ -26,6 +26,7 @@ export interface EventModel {
   isPast?: boolean;
   macroevent_id?: number;
   project_id?: number;
+  access?: string;
   ticket_prices: TicketPriceModel[];
   tickets_method: string;
   periodic: boolean;
