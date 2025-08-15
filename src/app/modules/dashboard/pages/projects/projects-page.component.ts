@@ -86,7 +86,13 @@ export class ProjectsPageComponent implements OnInit {
 
   headerListProjects: ColumnModel[] = [
     { title: 'Título', key: 'title', sortable: true, width: ColumnWidth.XL },
-    { title: 'Año', key: 'year', sortable: true, width: ColumnWidth.XS },
+    {
+      title: 'Año',
+      key: 'year',
+      sortable: true,
+      width: ColumnWidth.XS,
+      textAlign: 'center',
+    },
     {
       title: 'Descripción',
       key: 'description',
@@ -192,6 +198,7 @@ export class ProjectsPageComponent implements OnInit {
     this.currentModalAction = action;
     this.item = item;
     this.typeModal = TypeList.Projects;
+    this.projectsFacade.clearSelectedProject();
     this.modalService.openModal();
   }
 

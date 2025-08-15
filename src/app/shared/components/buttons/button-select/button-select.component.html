@@ -12,9 +12,9 @@
     }
     <div class="flex flex-col">
       <span class="title">{{ buttonText }}</span>
-      <span *ngIf="subText" class="text-[12px] text-gray-500">{{
-        subText
-      }}</span>
+      @if (subText) {
+      <span class="text-[12px] text-gray-500">{{ subText }}</span>
+      }
     </div>
     <div class="w-[30px] flex items-center justify-center">
       @if (active) {

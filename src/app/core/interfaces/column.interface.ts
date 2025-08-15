@@ -4,14 +4,13 @@ export interface ColumnModel {
   sortable?: boolean;
   showIndicatorOnEmpty?: boolean;
   booleanIndicator?: boolean;
-  minWidth?: boolean;
-  mediumWidth?: boolean;
-  largeWidth?: boolean;
   width?: ColumnWidth;
   pipe?: string;
+  pipeArg?: string;
   showLengthOnly?: boolean;
   footerTotal?: boolean;
   backColor?: boolean;
+  textAlign?: 'right' | 'left' | 'center';
 }
 export enum ColumnWidth {
   XS = 'w-[90px]',

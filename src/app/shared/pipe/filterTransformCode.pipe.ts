@@ -1,4 +1,5 @@
 import { Pipe, PipeTransform } from '@angular/core'; // Asegúrate que la ruta es correcta
+import { CategoryFilterAgents } from 'src/app/core/interfaces/agent.interface';
 import {
   ManagementFilterPlaces,
   TypeFilterPlaces,
@@ -11,8 +12,9 @@ import { Filter } from 'src/app/core/models/general.model';
 })
 export class FilterTransformCodePipe implements PipeTransform {
   private filtersMap: { [key: string]: Filter[] } = {
-    PlaceType: TypeFilterPlaces,
-    PlaceManagement: ManagementFilterPlaces,
+    typePlaces: TypeFilterPlaces,
+    managementPlaces: ManagementFilterPlaces,
+    categoryAgents: CategoryFilterAgents,
   };
 
   transform(

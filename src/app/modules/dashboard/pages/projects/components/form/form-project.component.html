@@ -2,6 +2,11 @@
   <div class="text-center pb-5 uppercase">
     <p class="text-2xl">{{ titleForm }}</p>
   </div>
+  @if (isLoading) {
+  <div class="spinner-container">
+    <app-spinner-loading />
+  </div>
+  } @else {
   <form
     (ngSubmit)="onSendFormProject()"
     [formGroup]="formProject"
@@ -75,23 +80,23 @@
       </div>
       <!-- ACTIVIDADES -->
       <div formArrayName="activities" class="flex flex-col gap-y-4">
-        @for (activity of activities.controls; track activity; let i = $index) {
+        <!-- Recorremos las actividades y las mostramos -->
+
+        @for (activity of activities.controls; track
+        activity.get('activity_id')?.value ?? $index; let i = $index) {
         <div [formGroupName]="i" class="flex gap-x-4 px-8">
-          <input formControlName="id" type="hidden" />
+          <input formControlName="activity_id" type="hidden" />
+
           <div class="sala_box flex justify-center items-center pr-4">
             Actividad {{ i + 1 }}
           </div>
+
           <div class="flex flex-col flex-1 gap-y-4 bg-lilaMuyClaro p-4">
             <div class="box-input gap-x-4">
               <label>Nombre </label>
               <input
                 formControlName="name"
                 placeholder="Nombre de la actividad"
-                [ngClass]="{
-                  'is-invalid':
-                    submitted &&
-                    activities.get(i.toString())?.get('name')?.invalid
-                }"
               />
             </div>
             <div class="box-input gap-x-4">
@@ -112,6 +117,7 @@
               />
             </div>
           </div>
+
           <div class="flex justify-center items-center">
             <button
               type="button"
@@ -124,6 +130,7 @@
         </div>
         }
       </div>
+
       <!-- Botón para añadir -->
       <div class="mt-2">
         <app-button-icon
@@ -171,4 +178,5 @@
       </div>
     </div>
   </form>
+  }
 </div>

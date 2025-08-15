@@ -31,14 +31,15 @@
       ></app-button>
 
       <mat-menu #columnsMenu="matMenu">
-        <button mat-menu-item *ngFor="let column of headerListSubsidies">
+        @for (column of headerListSubsidies; track $index) {
+        <button mat-menu-item>
           <mat-checkbox
             [checked]="columnVisibility[column.key]"
             (change)="toggleColumn(column.key)"
           >
             {{ column.title }}
-          </mat-checkbox>
-        </button>
+          </mat-checkbox></button
+        >}
       </mat-menu>
     </div>
     }
@@ -90,7 +91,11 @@
   [typeModal]="typeModal"
   [action]="currentModalAction"
   (closeModal)="onCloseModal()"
-  (confirmDelete)="confirmDeleteSubsidy(item)"
+  (confirmDeleteSubsidy)="confirmDeleteSubsidy(item)"
   (sendFormSubsidyData)="sendFormSubsidy($event)"
+  (confirmDeleteProject)="confirmDeleteProject(item)"
+  (sendFormProjectData)="sendFormProject($event)"
+  (confirmDeleteInvoice)="confirmDeleteInvoice(item)"
+  (sendFormInvoiceData)="sendFormInvoice($event)"
 ></app-modal>
 }

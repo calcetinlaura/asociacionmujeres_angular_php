@@ -26,14 +26,15 @@
       ></app-button>
 
       <mat-menu #columnsMenu="matMenu" class="flex flex-col">
-        <button mat-menu-item *ngFor="let column of headerListPlaces">
+        @for (column of headerListPlaces; track $index) {
+        <button mat-menu-item>
           <mat-checkbox
             [checked]="columnVisibility[column.key]"
             (change)="toggleColumn(column.key)"
           >
             {{ column.title }}
-          </mat-checkbox>
-        </button>
+          </mat-checkbox></button
+        >}
       </mat-menu>
     </div>
   </div>

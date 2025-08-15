@@ -141,7 +141,8 @@ export class PodcastsPageComponent implements OnInit {
   ): void {
     this.currentModalAction = action;
     this.item = podcast;
-    this.typeModal = TypeList.Podcasts;
+    this.typeModal = typeModal;
+    this.podcastsFacade.clearSelectedPodcast();
     this.modalService.openModal();
   }
 

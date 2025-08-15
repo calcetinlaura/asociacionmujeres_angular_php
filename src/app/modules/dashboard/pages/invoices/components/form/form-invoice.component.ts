@@ -50,6 +50,7 @@ import { TypeList } from 'src/app/core/models/general.model';
 import { CreditorsService } from 'src/app/core/services/creditors.services';
 import { ProjectsService } from 'src/app/core/services/projects.services';
 import { SubsidiesService } from 'src/app/core/services/subsidies.services';
+import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { PdfControlComponent } from '../../../../components/pdf-control/pdf-control.component';
 
@@ -66,6 +67,7 @@ import { PdfControlComponent } from '../../../../components/pdf-control/pdf-cont
     MatCardModule,
     PdfControlComponent,
     QuillModule,
+    SpinnerLoadingComponent,
   ],
   templateUrl: './form-invoice.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],
@@ -127,6 +129,7 @@ export class FormInvoiceComponent {
   projects: ProjectModel[] = [];
   currentYear = this.generalService.currentYear;
   private loadedYearData: number | null = null;
+  isLoading = true;
   quillModules = {
     toolbar: [
       [{ header: [1, 2, false] }],
@@ -140,6 +143,7 @@ export class FormInvoiceComponent {
     ],
   };
   ngOnInit(): void {
+    this.isLoading = true;
     this.years = this.generalService.loadYears(this.currentYear, 2018);
     if (this.itemId) {
       this.invoicesFacade.loadInvoiceById(this.itemId);
@@ -196,9 +200,12 @@ export class FormInvoiceComponent {
               this.titleForm = 'Editar Factura';
               this.buttonAction = 'Guardar cambios';
             }
+            this.isLoading = false;
           })
         )
         .subscribe();
+    } else {
+      this.isLoading = false;
     }
     // Activar `project_id` solo con date_invoice válido
     this.formInvoice

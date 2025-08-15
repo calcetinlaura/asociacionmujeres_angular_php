@@ -91,7 +91,7 @@ export class BooksPageComponent implements OnInit {
       key: 'gender',
       sortable: true,
       backColor: true,
-      width: ColumnWidth.XS,
+      width: ColumnWidth.SM,
     },
     { title: 'Año compra', key: 'year', sortable: true, width: ColumnWidth.XS },
   ];
@@ -150,6 +150,7 @@ export class BooksPageComponent implements OnInit {
   }
 
   filterSelected(filter: string): void {
+    this.isLoading = true;
     this.selectedFilter = filter;
     this.generalService.clearSearchInput(this.inputSearchComponent);
     this.booksFacade.setCurrentFilter(filter);
@@ -179,6 +180,7 @@ export class BooksPageComponent implements OnInit {
     this.currentModalAction = action;
     this.item = book;
     this.typeModal = typeModal;
+    this.booksFacade.clearSelectedBook();
     this.modalService.openModal();
   }
 

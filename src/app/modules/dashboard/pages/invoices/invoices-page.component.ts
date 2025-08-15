@@ -70,22 +70,25 @@ export class InvoicesPageComponent implements OnInit {
   displayedColumns: string[] = [];
   headerListInvoices: ColumnModel[] = [
     {
-      title: 'Factura',
+      title: 'PDF',
       key: 'invoice_pdf',
       sortable: true,
       showIndicatorOnEmpty: true,
+      textAlign: 'center',
     },
     {
       title: 'Tipo',
       key: 'type_invoice',
       sortable: true,
       width: ColumnWidth.XS,
+      textAlign: 'center',
     },
     {
       title: 'Nº Factura',
       key: 'number_invoice',
       width: ColumnWidth.XS,
       showIndicatorOnEmpty: true,
+      textAlign: 'center',
     },
     {
       title: 'Fecha factura',
@@ -93,6 +96,7 @@ export class InvoicesPageComponent implements OnInit {
       sortable: true,
       width: ColumnWidth.XS,
       pipe: 'date : dd MMM yyyy',
+      textAlign: 'center',
     },
     {
       title: 'Fecha cuentas',
@@ -101,6 +105,7 @@ export class InvoicesPageComponent implements OnInit {
       width: ColumnWidth.XS,
       pipe: 'date : dd MMM yyyy',
       showIndicatorOnEmpty: true,
+      textAlign: 'center',
     },
     {
       title: 'Fecha pago',
@@ -109,6 +114,7 @@ export class InvoicesPageComponent implements OnInit {
       width: ColumnWidth.XS,
       pipe: 'date : dd MMM yyyy',
       showIndicatorOnEmpty: true,
+      textAlign: 'center',
     },
     { title: 'Acreedor', key: 'creditor_company', sortable: true },
     {
@@ -125,6 +131,7 @@ export class InvoicesPageComponent implements OnInit {
       width: ColumnWidth.XS,
       pipe: 'eurosFormat',
       footerTotal: true,
+      textAlign: 'right',
     },
     {
       title: 'IVA',
@@ -132,6 +139,7 @@ export class InvoicesPageComponent implements OnInit {
       sortable: true,
       width: ColumnWidth.XS,
       pipe: 'eurosFormat',
+      textAlign: 'right',
     },
     {
       title: 'IRPF',
@@ -140,6 +148,7 @@ export class InvoicesPageComponent implements OnInit {
       width: ColumnWidth.XS,
       pipe: 'eurosFormat',
       footerTotal: true,
+      textAlign: 'right',
     },
     {
       title: 'TOTAL',
@@ -148,6 +157,7 @@ export class InvoicesPageComponent implements OnInit {
       width: ColumnWidth.XS,
       pipe: 'eurosFormat',
       footerTotal: true,
+      textAlign: 'right',
     },
     {
       title: 'Subvención',
@@ -306,18 +316,26 @@ export class InvoicesPageComponent implements OnInit {
   }
 
   addNewInvoiceModal(): void {
-    this.currentModalAction = TypeActionModal.Create;
-    this.item = null;
-    this.modalService.openModal();
+    this.openModal(this.typeModal, TypeActionModal.Create, null);
   }
 
   onOpenModal(event: {
+    typeModal: TypeList;
     action: TypeActionModal;
-    item: InvoiceModelFullData;
+    item?: InvoiceModelFullData;
   }): void {
-    this.currentModalAction = event.action;
-    this.item = event.item;
-    this.typeModal = TypeList.Invoices;
+    this.openModal(event.typeModal, event.action, event.item ?? null);
+  }
+
+  private openModal(
+    typeModal: TypeList,
+    action: TypeActionModal,
+    item: InvoiceModelFullData | null
+  ): void {
+    this.currentModalAction = action;
+    this.typeModal = typeModal;
+    this.item = item;
+    this.invoicesFacade.clearSelectedInvoice();
     this.modalService.openModal();
   }
 

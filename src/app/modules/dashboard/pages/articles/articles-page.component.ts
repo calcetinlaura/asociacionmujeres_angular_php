@@ -138,6 +138,7 @@ export class ArticlesPageComponent implements OnInit {
     this.currentModalAction = action;
     this.item = article;
     this.typeModal = typeModal;
+    this.articlesFacade.clearSelectedArticle();
     this.modalService.openModal();
   }
 

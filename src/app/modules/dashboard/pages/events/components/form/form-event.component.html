@@ -2,6 +2,11 @@
   <div class="text-center pb-5 uppercase">
     <p class="text-2xl">{{ titleForm }}</p>
   </div>
+  @if (isLoading) {
+  <div class="spinner-container">
+    <app-spinner-loading />
+  </div>
+  } @else {
   <form
     (ngSubmit)="onSendFormEvent()"
     [formGroup]="formEvent"
@@ -89,14 +94,17 @@
         </div>
         }
         <!-- Pase único -->
-        <div *ngIf="eventTypePeriod === 'single'" class="pt-4 px-4">
+        @if (eventTypePeriod === 'single') {
+        <div class="pt-4 px-4">
           <p class="text-[15px] text-center mb-10 text-lilaText px-4">
             Si el evento es de un solo día, no es necesario indicar una fecha de
             fin. Además, si no se especifica la hora de finalización, el sistema
             asignará automáticamente una duración de 3 horas a partir de la hora
             de inicio.
           </p>
+
           <div class="flex gap-x-4">
+            <!-- Fecha inicio -->
             <div class="flex flex-1 gap-x-4 items-center">
               <label
                 class="py-2 px-4 rounded-xl text-sm text-lilaText bg-lilaMuyClaro w-auto"
@@ -112,15 +120,13 @@
                     'is-invalid': submitted && formEvent.get('start')?.invalid
                   }"
                 />
-                <div
-                  *ngIf="submitted && formEvent.get('start')?.invalid"
-                  class="is-invalid-text"
-                >
-                  Campo requerido
-                </div>
+                @if (submitted && formEvent.get('start')?.invalid) {
+                <div class="is-invalid-text">Campo requerido</div>
+                }
               </div>
             </div>
 
+            <!-- Fecha fin -->
             <div class="flex flex-1 gap-x-4 items-center">
               <label
                 class="py-2 px-4 rounded-xl text-sm text-lilaText bg-lilaMuyClaro"
@@ -136,23 +142,20 @@
                     'is-invalid': submitted && formEvent.get('end')?.invalid
                   }"
                 />
-                <div
-                  *ngIf="submitted && formEvent.get('end')?.invalid"
-                  class="is-invalid-text"
-                >
-                  Campo requerido
-                </div>
+                @if (submitted && formEvent.get('end')?.invalid) {
+                <div class="is-invalid-text">Campo requerido</div>
+                }
+
                 <!-- Error si el rango de fechas es incorrecto -->
-                <div
-                  *ngIf="submitted && formEvent.errors?.['invalidDateRange']"
-                >
-                  <p class="text-[red] text-[11px]">
-                    La fecha fin no puede ser anterior a la fecha de inicio
-                  </p>
-                </div>
+                @if (submitted && formEvent.errors?.['invalidDateRange']) {
+                <p class="text-[red] text-[11px]">
+                  La fecha fin no puede ser anterior a la fecha de inicio
+                </p>
+                }
               </div>
             </div>
 
+            <!-- Hora inicio -->
             <div class="flex gap-x-4 items-center">
               <label
                 class="py-2 px-4 rounded-xl text-sm text-lilaText bg-lilaMuyClaro"
@@ -168,6 +171,8 @@
                 />
               </div>
             </div>
+
+            <!-- Hora fin -->
             <div class="flex flex-col">
               <div class="flex flex-1 gap-x-4 items-center">
                 <label
@@ -182,22 +187,25 @@
                     class="w-full p-1 border rounded"
                     placeholder="00:00"
                     [ngClass]="{
-                    'is-invalid': submitted && formEvent.errors?.['invalidTimeRange']
-                  }"
+                'is-invalid': submitted && formEvent.errors?.['invalidTimeRange']
+              }"
                   />
                 </div>
               </div>
-              <div *ngIf="submitted && formEvent.errors?.['invalidTimeRange']">
-                <p class="text-[red] text-[11px]">
-                  La hora fin no puede ser anterior a inicio
-                </p>
-              </div>
+
+              @if (submitted && formEvent.errors?.['invalidTimeRange']) {
+              <p class="text-[red] text-[11px]">
+                La hora fin no puede ser anterior a inicio
+              </p>
+              }
             </div>
           </div>
         </div>
+        }
+
         <!-- Evento periódico -->
+        @if (eventTypePeriod === 'periodic') {
         <div
-          *ngIf="eventTypePeriod === 'periodic'"
           formArrayName="repeated_dates"
           class="flex flex-col gap-y-4 pt-8 px-4 items-center"
         >
@@ -206,15 +214,17 @@
             [submitted]="submitted"
             (remove)="removeRepeatedDate($event)"
           ></app-date-array-control>
-          <div
-            *ngIf="submitted && formEvent.errors?.['periodicNeedsAtLeastTwoDates']"
-            class="text-center"
-          >
+
+          @if (submitted && formEvent.errors?.['periodicNeedsAtLeastTwoDates'])
+          {
+          <div class="text-center">
             <p class="text-[red] text-[11px]">
               Un evento periódico debe tener al menos dos fechas. Si es solo una
               fecha pasar a evento de pase único.
             </p>
           </div>
+          }
+
           <div class="flex justify-center">
             <app-button-icon
               [buttonText]="'Añadir fecha'"
@@ -223,6 +233,7 @@
             ></app-button-icon>
           </div>
         </div>
+        }
       </div>
 
       <!-- UBICACION -->
@@ -366,11 +377,13 @@
           />
         </div>
         <!-- macro -->
-        <div *ngIf="eventTypeMacro === 'macro'" class="pt-4 px-4">
+        @if (eventTypeMacro === 'macro') {
+        <div class="pt-4 px-4">
           <p class="text-[15px] text-center mb-10 text-lilaText px-4">
             Si el macroevento al que pertenece el evento no aparece se debe
             añadir previamente desde la sección de macroeventos.
           </p>
+
           <div class="flex gap-x-8">
             <div class="box-input gap-x-4 flex flex-1">
               <label for="province">Macroevento</label>
@@ -383,6 +396,7 @@
                   </option>
                   }
                 </select>
+
                 @if (formEvent.controls.macroevent_id.disabled) {
                 <div>
                   <small class="text-gray-500 italic">
@@ -395,6 +409,7 @@
             </div>
           </div>
         </div>
+        }
       </div>
       <!-- PROYECTO -->
       <div class="border-2 pt-2 px-4 pb-6 mb-6">
@@ -414,11 +429,13 @@
             iconClass="uil-calendar-alt"
           />
         </div>
-        <div *ngIf="eventTypeProject === 'project'" class="pt-4 px-4">
+        @if (eventTypeProject === 'project') {
+        <div class="pt-4 px-4">
           <p class="text-[15px] text-center mb-10 text-lilaText px-4">
             Si el proyecto al que pertenece el evento no aparece se debe añadir
             previamente el mismo desde la sección de proyectos.
           </p>
+
           <div class="flex gap-x-8">
             <div class="box-input gap-x-4 flex flex-1">
               <label for="province">Proyecto</label>
@@ -433,6 +450,7 @@
                   </option>
                   }
                 </select>
+
                 @if (formEvent.controls.project_id.disabled) {
                 <div>
                   <small class="text-gray-500 italic">
@@ -445,6 +463,7 @@
             </div>
           </div>
         </div>
+        }
       </div>
       <!-- ADMISIÓN -->
       <div class="border-2 pt-2 px-4 pb-6 mb-6">
@@ -452,23 +471,23 @@
         <div class="flex justify-center gap-x-4 py-2">
           <app-button-select
             [buttonText]="'Evento gratuito'"
-            [active]="eventTypeAccess === 'free'"
-            (addClicked)="setEventTypeAccess('free')"
+            [active]="eventTypeAccess === 'FREE'"
+            (addClicked)="setEventTypeAccess('FREE')"
             iconClass="uil-social-distancing"
           />
           <app-button-select
             [buttonText]="'Evento de pago'"
-            [active]="eventTypeAccess === 'tickets'"
-            (addClicked)="setEventTypeAccess('tickets')"
+            [active]="eventTypeAccess === 'TICKETS'"
+            (addClicked)="setEventTypeAccess('TICKETS')"
             iconClass="uil-ticket"
           /><app-button-select
-            [buttonText]="'Por anunciar'"
-            [active]="eventTypeAccess === 'unspecified'"
-            (addClicked)="setEventTypeAccess('unspecified')"
-            iconClass="uil-megaphone"
+            [buttonText]="'Por determinar'"
+            [active]="eventTypeAccess === 'UNSPECIFIED'"
+            (addClicked)="setEventTypeAccess('UNSPECIFIED')"
+            iconClass="uil-question-circle"
           />
         </div>
-        @if (eventTypeAccess === 'tickets') {
+        @if (eventTypeAccess === 'TICKETS') {
         <div class="pt-4 px-4">
           <p class="text-[15px] text-center mb-10 text-lilaText px-4">
             Si el evento requiere de variedad de entradas, añade las diferentes
@@ -477,11 +496,9 @@
             gratuitas, introduce 0 como precio.
           </p>
           <div formArrayName="ticket_prices">
-            <div
-              *ngFor="let group of ticketPrices.controls; let i = index"
-              [formGroupName]="i"
-              class="box-input gap-x-4 pb-4"
-            >
+            @for (group of ticketPrices.controls; track $index; let i = $index)
+            {
+            <div [formGroupName]="i" class="box-input gap-x-4 pb-4">
               <label
                 class="py-2 px-4 rounded-xl text-sm text-lilaText bg-lilaMuyClaro"
               >
@@ -506,6 +523,7 @@
                 Eliminar
               </button>
             </div>
+            }
           </div>
           <div class="mb-4 flex gap-x-4 justify-start">
             <app-button-icon
@@ -517,7 +535,7 @@
         </div>
         }
       </div>
-      @if (eventTypeAccess === 'free') {
+      @if (eventTypeAccess !== 'TICKETS' ) {
       <div class="border-2 pt-2 px-4 pb-6 mb-6">
         <h2 class="font-bold text-lilaText mt-4 uppercase">Inscripción</h2>
         <div class="flex justify-center gap-x-4 py-2">
@@ -545,7 +563,7 @@
         </div>
         }
       </div>
-      } @if (eventTypeAccess === 'tickets') {
+      } @if (eventTypeAccess === 'TICKETS') {
       <div class="border-2 pt-2 px-4 pb-6 mb-6">
         <h2 class="font-bold text-lilaText mt-4 uppercase">
           Adquirir reserva / entrada
@@ -670,4 +688,5 @@
       </div>
     </div>
   </form>
+  }
 </div>

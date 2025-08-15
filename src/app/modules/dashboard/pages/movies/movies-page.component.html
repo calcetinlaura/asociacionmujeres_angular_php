@@ -30,36 +30,15 @@
       ></app-button>
 
       <mat-menu #columnsMenu="matMenu">
-        <button mat-menu-item *ngFor="let column of headerListMovies">
+        @for (column of headerListMovies; track $index) {
+        <button mat-menu-item>
           <mat-checkbox
             [checked]="columnVisibility[column.key]"
             (change)="toggleColumn(column.key)"
           >
             {{ column.title }}
-          </mat-checkbox>
-        </button>
-      </mat-menu>
-
-      <app-icon-action
-        [icon]="'uil-print'"
-        [tooltip]="'Imprimir tabla'"
-        (click)="printTableAsPdf()"
-      ></app-icon-action>
-
-      <app-button
-        [buttonText]="'Filtrar columnas'"
-        [menu]="columnsMenu"
-      ></app-button>
-
-      <mat-menu #columnsMenu="matMenu">
-        <button mat-menu-item *ngFor="let column of headerListMovies">
-          <mat-checkbox
-            [checked]="columnVisibility[column.key]"
-            (change)="toggleColumn(column.key)"
-          >
-            {{ column.title }}
-          </mat-checkbox>
-        </button>
+          </mat-checkbox></button
+        >}
       </mat-menu>
     </div>
   </div>

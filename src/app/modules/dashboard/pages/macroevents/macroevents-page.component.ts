@@ -176,6 +176,7 @@ export class MacroeventsPageComponent implements OnInit {
     this.currentModalAction = action;
     this.item = item;
     this.typeModal = typeModal;
+    this.macroeventsFacade.clearSelectedMacroevent();
     this.modalService.openModal();
   }
 

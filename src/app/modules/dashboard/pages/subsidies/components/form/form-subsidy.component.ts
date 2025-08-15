@@ -35,6 +35,7 @@ import {
 } from 'src/app/core/interfaces/subsidy.interface';
 import { TypeList } from 'src/app/core/models/general.model';
 import { SubsidiesService } from 'src/app/core/services/subsidies.services';
+import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
@@ -49,6 +50,7 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
     MatInputModule,
     MatCardModule,
     QuillModule,
+    SpinnerLoadingComponent,
   ],
   templateUrl: './form-subsidy.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],
@@ -95,6 +97,7 @@ export class FormSubsidyComponent implements OnInit {
   searchInput = new FormControl();
 
   currentYear = this.generalService.currentYear;
+  isLoading = true;
   quillModules = {
     toolbar: [
       [{ header: [1, 2, false] }],
@@ -108,6 +111,7 @@ export class FormSubsidyComponent implements OnInit {
     ],
   };
   ngOnInit(): void {
+    this.isLoading = true;
     this.years = this.generalService.loadYears(this.currentYear, 2018);
 
     if (this.itemId) {
@@ -122,9 +126,12 @@ export class FormSubsidyComponent implements OnInit {
               this.titleForm = 'Editar Subvención';
               this.buttonAction = 'Guardar cambios';
             }
+            this.isLoading = false;
           })
         )
         .subscribe();
+    } else {
+      this.isLoading = false;
     }
   }
 

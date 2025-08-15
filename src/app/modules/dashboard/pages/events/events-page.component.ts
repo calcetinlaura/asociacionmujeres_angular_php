@@ -105,7 +105,7 @@ export class EventsPageComponent implements OnInit {
       width: ColumnWidth.LG,
     },
     { title: 'Aforo', key: 'capacity', sortable: false, width: ColumnWidth.XS },
-    { title: 'Precio', key: 'price', sortable: true, width: ColumnWidth.XS },
+    { title: 'Precio', key: 'access', sortable: true, width: ColumnWidth.MD },
     { title: 'Estado', key: 'status', sortable: true, width: ColumnWidth.XS },
     {
       title: 'Inscripción',
@@ -174,6 +174,7 @@ export class EventsPageComponent implements OnInit {
 
   filterSelected(filter: string): void {
     this.selectedFilter = Number(filter);
+    this.isLoading = true;
     this.generalService.clearSearchInput(this.inputSearchComponent);
 
     this.eventsFacade.loadNonRepeatedEventsByYear(Number(filter));
@@ -207,6 +208,7 @@ export class EventsPageComponent implements OnInit {
       this.item = item;
     }
     this.typeModal = typeModal;
+    this.eventsFacade.clearSelectedEvent();
     this.modalService.openModal();
   }
 

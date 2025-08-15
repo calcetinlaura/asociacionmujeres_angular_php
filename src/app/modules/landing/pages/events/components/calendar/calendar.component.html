@@ -21,74 +21,71 @@
 
   <!-- Días del calendario -->
   <div class="grid grid-cols-7 gap-2">
-    <ng-container *ngFor="let cell of calendar">
+    @for (cell of calendar; track $index) {
+    <div
+      class="aspect-square bg-gray-100 relative overflow-hidden rounded-md"
+      [ngClass]="{ 'ring-2 ring-blue-500': isToday(cell.date) }"
+    >
+      @if (cell.date) {
+      <!-- Número del día -->
       <div
-        class="aspect-square bg-gray-100 relative overflow-hidden rounded-md"
-        [ngClass]="{
-          'ring-2 ring-blue-500': isToday(cell.date)
-        }"
+        class="absolute top-1 right-1 text-xs text-white bg-black bg-opacity-50 rounded px-1 z-10"
       >
-        <ng-container *ngIf="cell.date">
-          <!-- Número del día -->
-          <div
-            class="absolute top-1 right-1 text-xs text-white bg-black bg-opacity-50 rounded px-1 z-10"
-          >
-            {{ cell.date.getDate() }}
-          </div>
-
-          <!-- FLEX WRAP para eventos -->
-          <div class="w-full h-full flex flex-wrap">
-            <ng-container *ngFor="let event of cell.events">
-              <div
-                class="relative"
-                [ngStyle]="{
-                  width: getFlexBasis(cell.events.length),
-                  height: getFlexBasis(cell.events.length)
-                }"
-              >
-                <div
-                  class="aspect-square bg-gray-100 relative overflow-hidden rounded-md cursor-pointer"
-                  [ngClass]="{
-                    'ring-2 ring-blue-500': isToday(cell.date)
-                  }"
-                  (click)="handleCellClick(cell)"
-                >
-                  <img
-                    appImgBroken
-                    [src]="(event.img ? event.img : '') | itemImage : typeModal"
-                    alt="{{ event.title }}"
-                    class="object-cover w-full h-full cursor-pointer"
-                  />
-                </div>
-              </div>
-            </ng-container>
-          </div>
-
-          <!-- Badge con +N -->
-          <div
-            *ngIf="cell.events.length > 1"
-            class="cursor-pointer absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-sm font-bold text-black bg-[#c79cd3] bg-opacity-80 rounded p-4 z-20"
-            (click)="openMultiEventModal($event, cell.events)"
-          >
-            +{{ cell.events.length }}
-          </div>
-        </ng-container>
+        {{ cell.date.getDate() }}
       </div>
-    </ng-container>
+
+      <!-- FLEX WRAP para eventos -->
+      <div class="w-full h-full flex flex-wrap">
+        @for (event of cell.events; track $index) {
+        <div
+          class="relative"
+          [ngStyle]="{
+            width: getFlexBasis(cell.events.length),
+            height: getFlexBasis(cell.events.length)
+          }"
+        >
+          <div
+            class="aspect-square bg-gray-100 relative overflow-hidden rounded-md cursor-pointer"
+            [ngClass]="{ 'ring-2 ring-blue-500': isToday(cell.date) }"
+            (click)="handleCellClick(cell)"
+          >
+            <img
+              appImgBroken
+              [src]="(event.img ? event.img : '') | itemImage : typeModal"
+              alt="{{ event.title }}"
+              class="object-cover w-full h-full cursor-pointer"
+            />
+          </div>
+        </div>
+        }
+      </div>
+
+      <!-- Badge con +N -->
+      @if (cell.events.length > 1) {
+      <div
+        class="cursor-pointer absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-sm font-bold text-black bg-[#c79cd3] bg-opacity-80 rounded p-4 z-20"
+        (click)="openMultiEventModal($event, cell.events)"
+      >
+        +{{ cell.events.length }}
+      </div>
+      } }
+    </div>
+    }
   </div>
 </div>
+
+<!-- Modales -->
+@if (showModalView) {
 <app-modal
-  *ngIf="showModalView"
   [item]="item"
   [typeModal]="typeModal"
   [action]="selectedActionModal"
   (closeModal)="onCloseModal()"
-></app-modal>
-
-<!-- Modal intermedia para elegir evento -->
+/>
+} @if (showMultiEventModal) {
 <app-modal-multievent
-  *ngIf="showMultiEventModal"
   [events]="multiEventItems"
   (select)="selectEventFromMulti($event)"
   (close)="closeMultiEventModal()"
-></app-modal-multievent>
+/>
+}

@@ -94,7 +94,6 @@ export class GeneralService {
 
     Object.keys(item).forEach((key) => {
       const value = item[key];
-
       if (value !== undefined && value !== null) {
         if (Array.isArray(value) || typeof value === 'object') {
           formData.append(key, JSON.stringify(value));
@@ -119,8 +118,8 @@ export class GeneralService {
       }
     });
 
-    if (itemId !== undefined) {
-      formData.append('_method', itemId > 0 ? 'PATCH' : 'POST');
+    if (itemId && itemId !== 0) {
+      formData.append('_method', 'PATCH');
       formData.append('id', itemId.toString());
     }
 

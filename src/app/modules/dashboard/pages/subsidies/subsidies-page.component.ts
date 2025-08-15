@@ -13,11 +13,15 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTabChangeEvent, MatTabsModule } from '@angular/material/tabs';
 import { tap } from 'rxjs';
+import { InvoicesFacade } from 'src/app/application/invoices.facade';
+import { ProjectsFacade } from 'src/app/application/projects.facade';
 import { SubsidiesFacade } from 'src/app/application/subsidies.facade';
 import {
   ColumnModel,
   ColumnWidth,
 } from 'src/app/core/interfaces/column.interface';
+import { InvoiceModelFullData } from 'src/app/core/interfaces/invoice.interface';
+import { ProjectModel } from 'src/app/core/interfaces/project.interface';
 import {
   categoryFilterSubsidies,
   SubsidyModel,
@@ -72,6 +76,8 @@ export class SubsidiesPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly modalService = inject(ModalService);
   private readonly subsidiesFacade = inject(SubsidiesFacade);
+  private readonly invoicesFacade = inject(InvoicesFacade);
+  private readonly projectsFacade = inject(ProjectsFacade);
   private readonly subsidiesService = inject(SubsidiesService);
   private readonly generalService = inject(GeneralService);
   private readonly pdfPrintService = inject(PdfPrintService);
@@ -104,9 +110,14 @@ export class SubsidiesPageComponent implements OnInit {
       title: 'Nombre',
       key: 'nameSubsidy',
       sortable: true,
-      pipe: 'i18nSelect : nameSubsidy',
     },
-    { title: 'Año', key: 'year', sortable: true, width: ColumnWidth.XS },
+    {
+      title: 'Año',
+      key: 'year',
+      sortable: true,
+      width: ColumnWidth.XS,
+      textAlign: 'center',
+    },
     {
       title: 'Fecha Max. Presentación',
       key: 'date_presentation',
@@ -114,6 +125,7 @@ export class SubsidiesPageComponent implements OnInit {
       pipe: 'date : dd MMM yyyy',
       width: ColumnWidth.XS,
       showIndicatorOnEmpty: true,
+      textAlign: 'center',
     },
     {
       title: 'Fecha Max. Justificación',
@@ -122,6 +134,7 @@ export class SubsidiesPageComponent implements OnInit {
       pipe: 'date : dd MMM yyyy',
       width: ColumnWidth.XS,
       showIndicatorOnEmpty: true,
+      textAlign: 'center',
     },
     {
       title: 'Periodo',
@@ -129,6 +142,7 @@ export class SubsidiesPageComponent implements OnInit {
       sortable: true,
       width: ColumnWidth.XS,
       showIndicatorOnEmpty: true,
+      textAlign: 'center',
     },
     {
       title: 'Proyectos',
@@ -165,6 +179,7 @@ export class SubsidiesPageComponent implements OnInit {
       width: ColumnWidth.XS,
       pipe: 'eurosFormat',
       showIndicatorOnEmpty: true,
+      textAlign: 'right',
     },
     {
       title: 'Cant. Adjudicada',
@@ -174,6 +189,7 @@ export class SubsidiesPageComponent implements OnInit {
       pipe: 'eurosFormat',
       footerTotal: true,
       showIndicatorOnEmpty: true,
+      textAlign: 'right',
     },
     {
       title: 'Cant. Justificada',
@@ -182,6 +198,7 @@ export class SubsidiesPageComponent implements OnInit {
       width: ColumnWidth.XS,
       pipe: 'eurosFormat',
       showIndicatorOnEmpty: true,
+      textAlign: 'right',
     },
     {
       title: 'Cant. Asociación',
@@ -191,6 +208,7 @@ export class SubsidiesPageComponent implements OnInit {
       pipe: 'eurosFormat',
       footerTotal: true,
       showIndicatorOnEmpty: true,
+      textAlign: 'right',
     },
   ];
 
@@ -298,6 +316,7 @@ export class SubsidiesPageComponent implements OnInit {
     this.currentModalAction = action;
     this.typeModal = typeModal;
     this.item = item;
+    this.subsidiesFacade.clearSelectedSubsidy();
     this.modalService.openModal();
   }
 
@@ -309,6 +328,20 @@ export class SubsidiesPageComponent implements OnInit {
     if (!subsidy?.id) return;
     this.subsidiesFacade.deleteSubsidy(subsidy.id);
     this.modalService.closeModal();
+  }
+  confirmDeleteInvoice(invoice: InvoiceModelFullData | null): void {
+    if (!invoice?.id) return;
+    this.invoicesFacade.deleteInvoice(invoice.id);
+    this.modalService.closeModal();
+  }
+  confirmDeleteProject(project: ProjectModel | null): void {
+    if (!project?.id) return;
+    this.projectsFacade.deleteProject(project.id);
+    this.modalService.closeModal();
+  }
+  private reloadActiveTab(): void {
+    const selected = this.tabSubsidies.toArray()[this.selectedIndex];
+    selected?.load();
   }
 
   sendFormSubsidy(event: {
@@ -327,6 +360,39 @@ export class SubsidiesPageComponent implements OnInit {
       .subscribe();
   }
 
+  sendFormProject(event: { itemId?: number; formData: FormData }) {
+    const req$ = event.itemId
+      ? this.projectsFacade.editProject(event.itemId, event.formData)
+      : this.projectsFacade.addProject(event.formData);
+
+    req$
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap(() => {
+          this.onCloseModal();
+          this.reloadActiveTab();
+        })
+      )
+      .subscribe();
+  }
+
+  sendFormInvoice(event: { itemId: number; formData: FormData }): void {
+    const operation = event.itemId
+      ? this.invoicesFacade.editInvoice(event.itemId, event.formData)
+      : this.invoicesFacade.addInvoice(event.formData);
+
+    operation
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap(() => {
+          this.filterSelected(
+            (this.selectedFilter ?? this.currentYear).toString()
+          );
+          this.onCloseModal();
+        })
+      )
+      .subscribe();
+  }
   private updateSubsidyState(subsidies: SubsidyModelFullData[] | null): void {
     if (!subsidies) return;
 

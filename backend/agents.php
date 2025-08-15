@@ -24,7 +24,19 @@ switch ($method) {
             $result = $stmt->get_result();
             $agent = $result->fetch_assoc();
             echo json_encode($agent ?: []);
-        } else {
+        }
+        elseif (isset($_GET['category'])) {
+        $category = $_GET['category'];
+        $stmt = $connection->prepare("SELECT * FROM agents WHERE category = ?");
+        $stmt->bind_param("s", $category);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $agents = [];
+        while ($row = $result->fetch_assoc()) {
+            $agents[] = $row;
+        }
+        echo json_encode($agents);
+    } else {
             $stmt = $connection->prepare("SELECT * FROM agents");
             $stmt->execute();
             $result = $stmt->get_result();

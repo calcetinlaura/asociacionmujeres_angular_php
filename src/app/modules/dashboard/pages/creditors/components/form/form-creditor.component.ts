@@ -23,9 +23,15 @@ import {
   categoryFilterCreditors,
   CreditorModel,
 } from 'src/app/core/interfaces/creditor.interface';
+import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 @Component({
   selector: 'app-form-creditor',
-  imports: [CommonModule, ReactiveFormsModule, QuillModule],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    QuillModule,
+    SpinnerLoadingComponent,
+  ],
   templateUrl: './form-creditor.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],
 })
@@ -66,6 +72,7 @@ export class FormCreditorComponent {
   municipios: { label: string; code: string }[] = [];
 
   private creditor_id!: number;
+  isLoading = true;
   quillModules = {
     toolbar: [
       [{ header: [1, 2, false] }],
@@ -79,6 +86,8 @@ export class FormCreditorComponent {
     ],
   };
   ngOnInit(): void {
+    this.isLoading = true;
+
     this.provincias = townsData
       .flatMap((region) => region.provinces)
       .sort((a, b) => a.label.localeCompare(b.label));
@@ -101,11 +110,15 @@ export class FormCreditorComponent {
 
               this.creditor_id = creditor.id;
               this.titleForm = 'Editar Acreedor/a';
+
               this.buttonAction = 'Guardar cambios';
             }
+            this.isLoading = false;
           })
         )
         .subscribe();
+    } else {
+      this.isLoading = false;
     }
   }
 

@@ -14,6 +14,7 @@ import { PiterasFacade } from 'src/app/application/piteras.facade';
 import { PiteraModel } from 'src/app/core/interfaces/pitera.interface';
 import { TypeList } from 'src/app/core/models/general.model';
 import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
+import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { PdfControlComponent } from '../../../../components/pdf-control/pdf-control.component';
 
@@ -26,6 +27,7 @@ import { PdfControlComponent } from '../../../../components/pdf-control/pdf-cont
     ImageControlComponent,
     PdfControlComponent,
     QuillModule,
+    SpinnerLoadingComponent,
   ],
   templateUrl: './form-pitera.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],
@@ -60,6 +62,7 @@ export class FormPiteraComponent {
     ]),
   });
   currentYear = this.generalService.currentYear;
+  isLoading = true;
   quillModules = {
     toolbar: [
       [{ header: [1, 2, false] }],
@@ -73,6 +76,7 @@ export class FormPiteraComponent {
     ],
   };
   ngOnInit(): void {
+    this.isLoading = true;
     this.years = this.generalService.loadYears(this.currentYear, 1995);
 
     if (this.itemId) {
@@ -97,9 +101,12 @@ export class FormPiteraComponent {
                 this.selectedImageFile = null;
               }
             }
+            this.isLoading = false;
           })
         )
         .subscribe();
+    } else {
+      this.isLoading = false;
     }
   }
 

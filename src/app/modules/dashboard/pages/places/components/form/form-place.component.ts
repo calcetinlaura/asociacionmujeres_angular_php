@@ -21,6 +21,7 @@ import {
 import { TypeList } from 'src/app/core/models/general.model';
 import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
 import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
+import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
@@ -32,6 +33,7 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
     ImageControlComponent,
     ButtonIconComponent,
     QuillModule,
+    SpinnerLoadingComponent,
   ],
   templateUrl: './form-place.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],
@@ -80,6 +82,7 @@ export class FormPlaceComponent {
   }[] = [];
 
   municipios: { label: string; code: string }[] = [];
+  isLoading = true;
   quillModules = {
     toolbar: [
       [{ header: [1, 2, false] }],
@@ -93,6 +96,7 @@ export class FormPlaceComponent {
     ],
   };
   ngOnInit(): void {
+    this.isLoading = true;
     this.provincias = townsData
       .flatMap((region) => region.provinces)
       .sort((a, b) => a.label.localeCompare(b.label));
@@ -132,9 +136,12 @@ export class FormPlaceComponent {
               this.imageSrc = place.img;
               this.selectedImageFile = null;
             }
+            this.isLoading = false;
           })
         )
         .subscribe();
+    } else {
+      this.isLoading = false;
     }
   }
 

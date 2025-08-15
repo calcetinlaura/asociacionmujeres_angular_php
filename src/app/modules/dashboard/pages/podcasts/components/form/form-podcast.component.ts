@@ -21,6 +21,7 @@ import { PodcastsFacade } from 'src/app/application/podcasts.facade';
 import { PodcastModel } from 'src/app/core/interfaces/podcast.interface';
 import { TypeList } from 'src/app/core/models/general.model';
 import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
+import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
@@ -31,6 +32,7 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
     MatCardModule,
     ImageControlComponent,
     QuillModule,
+    SpinnerLoadingComponent,
   ],
   templateUrl: './form-podcast.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],
@@ -59,6 +61,7 @@ export class FormPodcastComponent implements OnInit {
   typeList = TypeList.Podcasts;
 
   currentYear = this.generalService.currentYear;
+  isLoading = true;
   quillModules = {
     toolbar: [
       [{ header: [1, 2, false] }],
@@ -72,6 +75,7 @@ export class FormPodcastComponent implements OnInit {
     ],
   };
   ngOnInit(): void {
+    this.isLoading = true;
     if (this.itemId) {
       this.podcastsFacade.loadPodcastById(this.itemId);
       this.podcastsFacade.selectedPodcast$
@@ -93,9 +97,12 @@ export class FormPodcastComponent implements OnInit {
                 this.selectedImageFile = null;
               }
             }
+            this.isLoading = false;
           })
         )
         .subscribe();
+    } else {
+      this.isLoading = false;
     }
   }
 

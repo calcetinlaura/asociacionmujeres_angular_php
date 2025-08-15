@@ -21,12 +21,13 @@ import { ColumnModel } from 'src/app/core/interfaces/column.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { SubsidiesService } from 'src/app/core/services/subsidies.services';
 import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
+import { CalculateAgePipe } from 'src/app/shared/pipe/caculate_age.pipe';
+import { EurosFormatPipe } from 'src/app/shared/pipe/eurosFormat.pipe';
 import { FilterTransformCodePipe } from 'src/app/shared/pipe/filterTransformCode.pipe';
+import { HasValuePipe } from 'src/app/shared/pipe/hasValue.pipe';
 import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
+import { ParseJsonPipe } from 'src/app/shared/pipe/parseJson.pipe';
 import { PhoneFormatPipe } from 'src/app/shared/pipe/phoneFormat.pipe';
-import { CalculateAgePipe } from '../../../../shared/pipe/caculate_age.pipe';
-import { EurosFormatPipe } from '../../../../shared/pipe/eurosFormat.pipe';
-import { HasValuePipe } from '../../../../shared/pipe/hasValue.pipe';
 import { CircleIndicatorComponent } from '../circle-indicator/circle-indicator.component';
 
 @Component({
@@ -49,6 +50,7 @@ import { CircleIndicatorComponent } from '../circle-indicator/circle-indicator.c
     MatSelectModule,
     HasValuePipe,
     CalculateAgePipe,
+    ParseJsonPipe,
   ],
   selector: 'app-table',
   templateUrl: './table.component.html',
@@ -165,7 +167,7 @@ export class TableComponent {
       .map((col) => col.key);
   }
 
-  trackByKey(index: number, col: ColumnModel) {
+  trackByColumnKey(index: number, col: ColumnModel) {
     return col.key;
   }
 

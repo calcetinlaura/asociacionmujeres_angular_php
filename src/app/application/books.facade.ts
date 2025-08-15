@@ -1,6 +1,14 @@
 import { DestroyRef, inject, Injectable } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, catchError, Observable, tap } from 'rxjs';
+import {
+  asyncScheduler,
+  BehaviorSubject,
+  catchError,
+  finalize,
+  Observable,
+  observeOn,
+  tap,
+} from 'rxjs';
 import { BookModel } from 'src/app/core/interfaces/book.interface';
 import { BooksService } from 'src/app/core/services/books.services';
 import { GeneralService } from '../shared/services/generalService.service';
@@ -19,7 +27,8 @@ export class BooksFacade {
   private readonly selectedBookSubject = new BehaviorSubject<BookModel | null>(
     null
   );
-
+  private readonly loadingSubject = new BehaviorSubject<boolean>(false);
+  isLoading$ = this.loadingSubject.asObservable();
   books$ = this.booksSubject.asObservable();
   selectedBook$ = this.selectedBookSubject.asObservable();
   filteredBooks$ = this.filteredBooksSubject.asObservable();
@@ -45,26 +54,37 @@ export class BooksFacade {
     this.loadBooksByFilter(this.currentFilter);
   }
 
+  private withLoading<T>(source$: Observable<T>, minMs = 150): Observable<T> {
+    this.loadingSubject.next(true);
+    const start = performance.now();
+    return source$.pipe(
+      // Mueve la emisión al siguiente ciclo: da tiempo a pintar el spinner
+      observeOn(asyncScheduler),
+      finalize(() => {
+        const elapsed = performance.now() - start;
+        const wait = Math.max(0, minMs - elapsed);
+        setTimeout(() => this.loadingSubject.next(false), wait);
+      })
+    );
+  }
   loadAllBooks(): void {
-    this.booksService
-      .getBooks()
-      .pipe(
+    this.withLoading(
+      this.booksService.getBooks().pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((books: BookModel[]) => this.updateBookState(books)),
+        tap((books) => this.updateBookState(books)),
         catchError((err) => this.generalService.handleHttpError(err))
       )
-      .subscribe();
+    ).subscribe();
   }
 
   loadBooksByLatest(): void {
-    this.booksService
-      .getBooksByLatest()
-      .pipe(
+    this.withLoading(
+      this.booksService.getBooksByLatest().pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((books: BookModel[]) => this.updateBookState(books)),
+        tap((books) => this.updateBookState(books)),
         catchError((err) => this.generalService.handleHttpError(err))
       )
-      .subscribe();
+    ).subscribe();
   }
 
   loadBooksByGender(gender: string): void {

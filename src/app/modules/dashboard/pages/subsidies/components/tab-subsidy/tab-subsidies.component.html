@@ -20,7 +20,7 @@
   </h1>
   <div class="flex flex-row">
     <div class="flex flex-col justify-center flex-1 gap-y-4">
-      <h2>Nombre: {{ item.url_presentation }}</h2>
+      <h2>Nombre: {{ item.name | i18nSelect : nameSubsidy }}</h2>
       <h2>URL Subvención: {{ item.url_presentation }}</h2>
       <h2>URL Resolución: {{ item.url_justification }}</h2>
     </div>
@@ -33,7 +33,7 @@
       >
         <mat-icon class="calendar-icon">calendar_today</mat-icon>
         <h2>Fecha Max. Presentación:</h2>
-        <p>
+        <p class="capitalize">
           {{ item.date_presentation | date : "EEEE dd MMM yyyy" }}
         </p>
       </div>
@@ -42,7 +42,7 @@
       >
         <mat-icon class="calendar-icon">calendar_today</mat-icon>
         <h2>Fecha Max. Justificación:</h2>
-        <p>
+        <p class="capitalize">
           {{ item.date_justification | date : "EEEE dd MMM yyyy" }}
         </p>
       </div>
@@ -191,42 +191,46 @@
     <div class="box-amount flex-1">
       <p>GASTO ACUMULADO</p>
       <p>
-        <span>Total </span>@if (amount_justified) {
-        <span>{{ amount_justified | eurosFormat }}</span>
+        <span>Total </span>@if (amount_spend) {
+        <span>{{ amount_spend | eurosFormat }}</span>
         }
       </p>
       <p>
         <span
-          >Total {{ amount_justified | eurosFormat }} + IRPF
-          {{ amountIrpf | eurosFormat }} =
+          >Total {{ amount_spend | eurosFormat }} + IRPF
+          {{ amount_spend | eurosFormat }} =
         </span>
-        {{ amount_justified + amountIrpf | eurosFormat }}
+        {{ amount_spend + amount_spend_irpf | eurosFormat }}
       </p>
     </div>
-    @if (amount_association + amountIrpf > 0) {
+    <div class="box-amount flex-1 negative">
+      <p>FALTA POR FACTURAR</p>
+      <p>
+        <span
+          >Total {{ item.amount_justified | eurosFormat }} -
+          {{ amount_spend + amount_spend_irpf | eurosFormat }} = </span
+        >{{
+          item.amount_justified! - (amount_spend + amount_spend_irpf)
+            | eurosFormat
+        }}
+      </p>
+    </div>
     <div class="box-amount flex-1 positive">
       <p>APORTE ASOCIACIÓN</p>
-      <p><span>Total </span>{{ amount_association | eurosFormat }}</p>
       <p>
-        <span>Total + IRPF </span
-        >{{ amount_association + amountIrpf | eurosFormat }}
+        <span
+          >Total {{ amount_spend + amount_spend_irpf | eurosFormat }} -
+          {{ item.amount_granted | eurosFormat }} =</span
+        >
+        {{ amount_association | eurosFormat }}
       </p>
     </div>
-    } @else {
-    <div class="box-amount flex-1 negative">
-      <p>FALTAN POR FACTURAR</p>
-      <p><span>Total </span>{{ amount_association | eurosFormat }}</p>
-      <p>
-        <span>Total + IRPF </span
-        >{{ amount_association - amountIrpf | eurosFormat }}
-      </p>
-    </div>
-    }
   </div>
   <div class="py-4 flex">
     @if (!loading) {
     <app-table
       [typeSection]="typeList.Invoices"
+      [typeModal]="typeList.Invoices"
       [data]="filteredInvoices"
       [headerColumns]="getVisibleColumns()"
       [columnVisibility]="columnVisibility"

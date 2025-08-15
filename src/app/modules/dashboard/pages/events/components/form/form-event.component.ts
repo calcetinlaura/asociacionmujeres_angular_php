@@ -47,6 +47,7 @@ import { ProjectModel } from 'src/app/core/interfaces/project.interface';
 import { MacroeventsService } from 'src/app/core/services/macroevents.services';
 import { ProjectsService } from 'src/app/core/services/projects.services';
 import { ButtonSelectComponent } from 'src/app/shared/components/buttons/button-select/button-select.component';
+import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import {
   dateRangeValidator,
   periodicHasMultipleDatesValidator,
@@ -66,6 +67,7 @@ import { DateArrayControlComponent } from '../array-dates/array-dates.component'
     QuillModule,
     ButtonSelectComponent,
     DateArrayControlComponent,
+    SpinnerLoadingComponent,
   ],
   templateUrl: './form-event.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],
@@ -103,7 +105,7 @@ export class FormEventComponent implements OnInit, OnChanges {
   eventTypeProject: 'event' | 'project' = 'event';
   eventTypePeriod: 'event' | 'single' | 'periodic' = 'event';
   eventTypeUbication: 'place' | 'online' | 'pending' = 'pending';
-  eventTypeAccess: 'free' | 'tickets' | 'unspecified' = 'unspecified';
+  eventTypeAccess: 'FREE' | 'TICKETS' | 'UNSPECIFIED' = 'UNSPECIFIED';
   eventTypeStatus: 'event' | 'cancel' | 'postpone' | 'sold_out' = 'event';
   eventTypeInscription: 'unlimited' | 'inscription' = 'unlimited';
 
@@ -121,7 +123,7 @@ export class FormEventComponent implements OnInit, OnChanges {
       place_id: new FormControl<number | null>(null),
       sala_id: new FormControl<number | null>(null),
       capacity: new FormControl(),
-      access: new FormControl(''),
+      access: new FormControl('UNSPECIFIED'),
       ticket_prices: new FormArray<FormGroup>([]),
       tickets_method: new FormControl(''),
       periodic: new FormControl(false),
@@ -169,6 +171,7 @@ export class FormEventComponent implements OnInit, OnChanges {
   dates: DayEventModel[] = [];
   wasPeriodic = false;
   selectedPlaceId: number | null = null;
+  isLoading = true;
   quillModules = {
     toolbar: [
       [{ header: [1, 2, false] }],
@@ -182,6 +185,29 @@ export class FormEventComponent implements OnInit, OnChanges {
     ],
   };
   ngOnInit(): void {
+    this.isLoading = true; // Activamos el spinner desde el inicio
+    console.log('ID', this.itemId, this.item);
+    if (this.itemId === 0 || !this.itemId) {
+      // Si es duplicar, aquí es donde gestionas la lógica para obtener los datos y detener el spinner
+      if (this.item) {
+        this.populateFormWithEvent(this.item!).subscribe(() => {
+          this.isLoading = false; // Detenemos el spinner cuando los datos se carguen
+        });
+      } else {
+        // Si itemId es 0 o no está presente, es un evento nuevo o duplicado
+        // Desactivamos el spinner para un evento nuevo
+        this.isLoading = false;
+        this.formEvent.reset(); // Limpiamos el formulario
+        this.titleForm = 'Registrar evento';
+        this.buttonAction = 'Guardar';
+      }
+
+      // this.isLoading = false;
+    } else {
+      // Si el itemId está presente, cargamos los datos del evento
+      this.loadEventData(this.itemId);
+    }
+
     this.provincias = townsData
       .flatMap((region) => region.provinces)
       .sort((a, b) => a.label.localeCompare(b.label));
@@ -226,36 +252,43 @@ export class FormEventComponent implements OnInit, OnChanges {
       )
       .subscribe();
   }
-
   ngOnChanges(changes: SimpleChanges): void {
-    if (
-      changes['itemId'] &&
-      changes['itemId'].currentValue !== changes['itemId'].previousValue
-    ) {
+    if (changes['itemId'] && changes['itemId'].currentValue) {
       const newId = changes['itemId'].currentValue;
 
-      if (newId) {
-        this.eventsFacade.loadEventById(newId);
-
-        this.eventsFacade.selectedEvent$
-          .pipe(
-            takeUntilDestroyed(this.destroyRef),
-            filter(
-              (event): event is EventModelFullData =>
-                !!event && event.id === newId
-            ),
-            tap(() => this.formEvent.reset()), // 👈 para evitar parches sobre datos viejos
-            switchMap((event) => this.populateFormWithEvent(event))
-          )
-          .subscribe();
+      if (newId !== 0) {
+        // Si el itemId cambia y no es un evento nuevo (no es 0),
+        // cargamos los datos del evento
+        this.isLoading = true; // Activamos el spinner mientras cargamos
+        this.loadEventData(newId);
       }
     }
-
     // 👇 Manejo cuando es duplicar o crear (ya tienes la data directamente)
     if (changes['item'] && changes['item'].currentValue && this.itemId === 0) {
-      this.formEvent.reset(); // ← importante para que no se mezclen restos
-      this.populateFormWithEvent(this.item!).subscribe();
+      this.isLoading = true; // Activar spinner mientras se carga el evento para duplicar
+      this.formEvent.reset(); // ← Limpiar el formulario
+      this.populateFormWithEvent(this.item!).subscribe(() => {
+        this.isLoading = false; // Desactivar el spinner una vez que los datos se carguen
+      });
     }
+  }
+
+  private loadEventData(eventId: number): void {
+    this.eventsFacade.loadEventById(eventId);
+
+    this.eventsFacade.selectedEvent$
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        filter(
+          (event): event is EventModelFullData =>
+            !!event && event.id === eventId
+        ),
+        tap(() => this.formEvent.reset()), // Limpiamos el formulario para evitar datos viejos
+        switchMap((event) => this.populateFormWithEvent(event))
+      )
+      .subscribe(() => {
+        this.isLoading = false; // Desactivamos el spinner cuando los datos se cargan
+      });
   }
 
   private populateFormWithEvent(event: EventModelFullData): Observable<void> {
@@ -324,14 +357,14 @@ export class FormEventComponent implements OnInit, OnChanges {
           parsedTicketPrices = [];
         }
 
-        if (
-          Array.isArray(parsedTicketPrices) &&
-          parsedTicketPrices.length > 0
-        ) {
-          this.eventTypeAccess = 'tickets';
-        } else {
-          this.eventTypeAccess = 'free';
-        }
+        // if (
+        //   Array.isArray(parsedTicketPrices) &&
+        //   parsedTicketPrices.length > 0
+        // ) {
+        //   this.eventTypeAccess = 'TICKETS';
+        // } else {
+        //   this.eventTypeAccess = 'UNSPECIFIED';
+        // }
 
         this.ticketPrices.clear();
         parsedTicketPrices.forEach((ticket) => {
@@ -339,7 +372,22 @@ export class FormEventComponent implements OnInit, OnChanges {
             this.createTicketPriceForm(ticket.type, ticket.price)
           );
         });
+        switch (event.access as 'FREE' | 'TICKETS' | 'UNSPECIFIED') {
+          case 'TICKETS':
+            // No añadirá fila vacía porque ya hay prices cargados
+            this.setEventTypeAccess('TICKETS');
+            break;
 
+          case 'FREE':
+            // Limpia ticketPrices y deja el botón FREE activo
+            this.setEventTypeAccess('FREE');
+            break;
+
+          default:
+            // Cubre 'UNSPECIFIED' o valores inesperados
+            this.setEventTypeAccess('UNSPECIFIED');
+            break;
+        }
         this.eventTypeInscription = event.inscription
           ? 'inscription'
           : 'unlimited';
@@ -691,10 +739,10 @@ export class FormEventComponent implements OnInit, OnChanges {
       this.formEvent.patchValue({ project_id: null });
     }
   }
-  setEventTypeAccess(type: 'free' | 'tickets' | 'unspecified'): void {
+  setEventTypeAccess(type: 'FREE' | 'TICKETS' | 'UNSPECIFIED'): void {
     this.eventTypeAccess = type;
 
-    if (type === 'tickets') {
+    if (type === 'TICKETS') {
       // Asegúrate de que haya al menos una fila:
       if (this.ticketPrices.length === 0) {
         this.addTicketPrice();
@@ -702,13 +750,13 @@ export class FormEventComponent implements OnInit, OnChanges {
       this.formEvent.patchValue({ inscription_method: '' });
       this.formEvent.patchValue({ access: 'TICKETS' });
     }
-    if (type === 'free') {
+    if (type === 'FREE') {
       // Opcional: si quieres limpiar cuando cambie a otro tipo
       this.ticketPrices.clear();
       this.formEvent.patchValue({ tickets_method: '' });
       this.formEvent.patchValue({ access: 'FREE' });
     }
-    if (type === 'unspecified') {
+    if (type === 'UNSPECIFIED') {
       this.ticketPrices.clear();
       this.formEvent.patchValue({ tickets_method: '' });
       this.formEvent.patchValue({ access: 'UNSPECIFIED' });

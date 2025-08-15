@@ -2,6 +2,11 @@
   <div class="text-center pb-5 uppercase">
     <p class="text-2xl">{{ titleForm }}</p>
   </div>
+  @if (isLoading) {
+  <div class="spinner-container">
+    <app-spinner-loading />
+  </div>
+  } @else {
   <form
     (ngSubmit)="onSendFormMacroevent()"
     [formGroup]="formMacroevent"
@@ -114,16 +119,15 @@
         </div>
       </div>
       <div class="flex gap-x-8">
-        <div class="flex-col gap-x-8 flex-1 h-48">
-          <div class="box-input gap-x-4">
-            <label for="description">Descripción</label>
-            <quill-editor
-              formControlName="description"
-              [modules]="quillModules"
-              placeholder="Escribe aquí la descripción..."
-              class="flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
-            />
-          </div>
+        <!-- Descripción -->
+        <div class="box-input gap-x-4 flex-1">
+          <label for="description">Descripción</label>
+          <quill-editor
+            formControlName="description"
+            [modules]="quillModules"
+            placeholder="Escribe aquí la descripción..."
+            class="flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
+          />
         </div>
         <div class="w-72">
           <app-image-control
@@ -152,4 +156,5 @@
       </div>
     </div>
   </form>
+  }
 </div>

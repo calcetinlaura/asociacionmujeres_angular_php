@@ -31,7 +31,8 @@
       ></app-button>
 
       <mat-menu #columnsMenu="matMenu">
-        <button mat-menu-item *ngFor="let column of headerListEvents">
+        @for (column of headerListEvents; track $index) {
+        <button mat-menu-item>
           <mat-checkbox
             [checked]="columnVisibility[column.key]"
             (change)="toggleColumn(column.key)"
@@ -39,6 +40,7 @@
             {{ column.title }}
           </mat-checkbox>
         </button>
+        }
       </mat-menu>
     </div>
   </div>
@@ -46,7 +48,7 @@
 <div class="flex flex-col px-8">
   @if (isLoading) {
   <app-spinner-loading />
-  } @else {@if(events.length > 0){
+  } @else { @if(events.length > 0){
   <div class="pb-4 flex">
     <app-table
       [data]="events"

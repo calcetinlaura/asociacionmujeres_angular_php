@@ -14,7 +14,7 @@ import { tap } from 'rxjs';
 import { AgentsFacade } from 'src/app/application/agents.facade';
 import {
   AgentModel,
-  categoryFilterAgents,
+  CategoryFilterAgents,
 } from 'src/app/core/interfaces/agent.interface';
 import {
   ColumnModel,
@@ -101,6 +101,7 @@ export class AgentsPageComponent implements OnInit {
       showIndicatorOnEmpty: true,
       width: ColumnWidth.XS,
       pipe: 'phoneFormat',
+      textAlign: 'center',
     },
     {
       title: 'Email',
@@ -109,13 +110,14 @@ export class AgentsPageComponent implements OnInit {
       showIndicatorOnEmpty: true,
       width: ColumnWidth.LG,
     },
-    { title: 'Municipio', key: 'town', sortable: true },
+    { title: 'Municipio', key: 'town', sortable: true, textAlign: 'center' },
     {
       title: 'Categoría',
       key: 'category',
-      backColor: true,
       sortable: true,
-      width: ColumnWidth.XS,
+      width: ColumnWidth.MD,
+      pipe: 'filterTransformCode',
+      pipeArg: 'categoryAgents',
     },
   ];
 
@@ -134,7 +136,7 @@ export class AgentsPageComponent implements OnInit {
       this.headerListAgents,
       this.columnVisibility
     );
-    this.filters = [{ code: 'ALL', name: 'Todos' }, ...categoryFilterAgents];
+    this.filters = [{ code: 'ALL', name: 'Todos' }, ...CategoryFilterAgents];
 
     this.modalService.modalVisibility$
       .pipe(
@@ -183,6 +185,7 @@ export class AgentsPageComponent implements OnInit {
     this.currentModalAction = action;
     this.item = item;
     this.typeModal = typeModal;
+    this.agentsFacade.clearSelectedAgent();
     this.modalService.openModal();
   }
 

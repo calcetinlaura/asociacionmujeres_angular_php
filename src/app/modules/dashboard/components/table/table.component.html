@@ -7,13 +7,13 @@
     (matSortChange)="announceSortChange($event)"
     class="mat-elevation-z8 table"
   >
+    <!-- Columna de número -->
     <ng-container matColumnDef="number">
       <th mat-header-cell *matHeaderCellDef>Nº</th>
-      <td mat-cell *matCellDef="let element; let i = index">
-        {{ i + 1 }}
-      </td>
+      <td mat-cell *matCellDef="let element; let i = index">{{ i + 1 }}</td>
       <td mat-footer-cell *matFooterCellDef></td>
     </ng-container>
+
     @for (column of headerColumns; track column) {
     <ng-container [matColumnDef]="column.key">
       @if (column.sortable) {
@@ -30,7 +30,12 @@
         {{ column.title }}
       </th>
       }
-      <td mat-cell *matCellDef="let element" [ngClass]="column.width">
+      <td
+        mat-cell
+        *matCellDef="let element"
+        [ngClass]="column.width"
+        [style.textAlign]="column.textAlign || 'left'"
+      >
         @switch (true) { @case (column.booleanIndicator === true) {
         <app-circle-indicator
           [item]="hasValueBoolean(element[column.key])"
@@ -38,11 +43,11 @@
         } @case ( column.showIndicatorOnEmpty === true && !(element[column.key]
         | hasValue) ) {
         <app-circle-indicator [item]="false"></app-circle-indicator>
-        } @case (column.backColor === true){
+        } @case (column.backColor === true){ @if(element[column.key]){
         <div class="backColor">
           <span>{{ element[column.key] }}</span>
         </div>
-        } @case (column.showLengthOnly === true) { @if
+        } } @case (column.showLengthOnly === true) { @if
         (element[column.key]?.length > 0) {
         <div class="flex justify-center">
           <div
@@ -55,11 +60,16 @@
         {{ element[column.key] | eurosFormat }}
         } @case (column.pipe === 'phoneFormat') {
         {{ element[column.key] | phoneFormat }}
-        } @case (column.pipe === 'i18nSelect : nameSubsidy') {
-        {{ element[column.key] | i18nSelect : nameSubsidy }}
         } @case (column.pipe === 'date : dd MMM yyyy') {
         <small>{{ element[column.key] | date : "dd MMM yyyy" }}</small>
-        }
+        } @case (column.pipe === 'filterTransformCode'){
+        @if(element[column.key]){
+        <div class="backColor">
+          <span>
+            {{ element[column.key] | filterTransformCode : column.pipeArg! }}
+          </span>
+        </div>
+        } }
         <!-- IMAGEN -->
         @case (column.key === 'img') {
         <img
@@ -69,7 +79,7 @@
           class="cover"
         />
         } @case (column.key === 'invoice_pdf') { @if (element['invoice_pdf']) {
-        <div>
+        <div class="flex">
           <i class="uil uil-file-alt text-[25px]"></i>
         </div>
         } }
@@ -107,14 +117,23 @@
           </div>
           }
         </div>
-        } @case (column.key === 'title' || column.key === 'name'){
+        } @case (column.key === 'title' || column.key === 'name' ||
+        column.key==='nameSubsidy'|| column.key==='company' ){
         <div (click)="onOpenModal(typeModal, typeActionModal.Show, element)">
           <p
             class="cursor-pointer hover:underline hover:text-[green] text-[14px]"
           >
-            @if(element.title) { {{ element.title }} } @if(element.name){
-            {{ element.name }} }
+            @if (element?.title) {
+            {{ element.title }}
+            } @else { @if (element?.name && !element?.nameSubsidy) {
+            {{ element.name }}
+            } @else { @if (element?.nameSubsidy) {
+            {{ element.nameSubsidy | i18nSelect : nameSubsidy }}
+            } @else { @if (element?.company) {
+            {{ element.company }}
+            } } } }
           </p>
+
           @if (typeSection === TypeList.Events && element.macroeventData?.title)
           {
           <div
@@ -165,14 +184,10 @@
               'subsidy-dipu': element[column.key] === 'DIPUTACION',
               'subsidy-minis': element[column.key] === 'MINISTERIO'
             }"
-            >{{ element[column.key] }}
+            >{{ element[column.key] | i18nSelect : nameSubsidy }}
           </span>
         </div>
-        }
-        <!-- <ng-template #noSubsidy>
-              <app-circle-indicator [item]="false"></app-circle-indicator>
-            </ng-template> -->
-        } @case (column.key === 'activities' && !column.showLengthOnly) { @if
+        } } @case (column.key === 'activities' && !column.showLengthOnly) { @if
         (element[column.key] | hasValue) {
         <div class="box-activities">
           <div class="flex items-center gap-x-2">
@@ -234,7 +249,18 @@
         </div>
         } @else {
         <app-circle-indicator [item]="false"></app-circle-indicator>
-        } }
+        } } @case (column.key === 'access'){ @if(element[column.key] ===
+        'FREE'){
+        <p class="text-center">Gratis</p>
+        } @if(element[column.key] === 'UNSPECIFIED'){
+        <app-circle-indicator [item]="false"></app-circle-indicator>
+        }@if ((element.access ?? element[column.key]) === 'TICKETS') { @for
+        (ticket of (element.ticket_prices | parseJson); track ticket.type) {
+        <div class="invoices-list">
+          <p class="flex flex-row">{{ ticket.type }}</p>
+          <p>{{ ticket.price | eurosFormat }}</p>
+        </div>
+        } }}
         <!-- STATUS -->
         @case (column.key === 'status') { @if
         (element[column.key]!=='EJECUCION') {
@@ -319,10 +345,7 @@
           {{ element[column.key] }}
         </div>
         } }
-        <!-- Diseño especial para 'gestión' -->
-        @case (column.key === 'management') { @if (element[column.key]) {
-        {{ element[column.key] | filterTransformCode : "PlaceManagement" }}
-        } }
+
         <!-- Organizadores -->
         @case (column.key === 'organizer') { @if (element[column.key] |
         hasValue) {
@@ -398,7 +421,7 @@
       </td>
       <td mat-footer-cell *matFooterCellDef>
         @if (column.footerTotal) {
-        {{ getColumnTotal(column.key) | eurosFormat }}
+        <p class="text-right">{{ getColumnTotal(column.key) | eurosFormat }}</p>
         }
       </td>
     </ng-container>
@@ -447,12 +470,12 @@
       *matRowDef="let row; columns: displayedColumns"
       class="custom-list-row"
     ></tr>
-    <ng-container *ngIf="showFooter">
-      <tr
-        mat-footer-row
-        *matFooterRowDef="displayedColumns"
-        class="footer bg-white"
-      ></tr>
-    </ng-container>
+    @if (showFooter) {
+    <tr
+      mat-footer-row
+      *matFooterRowDef="displayedColumns"
+      class="footer bg-white"
+    ></tr>
+    }
   </table>
 </div>

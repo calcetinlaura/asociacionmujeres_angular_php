@@ -94,6 +94,7 @@ export class CreditorsPageComponent implements OnInit {
       sortable: true,
       showIndicatorOnEmpty: true,
       width: ColumnWidth.SM,
+      textAlign: 'center',
     },
     {
       title: 'Contacto',
@@ -203,6 +204,7 @@ export class CreditorsPageComponent implements OnInit {
     this.currentModalAction = action;
     this.item = item;
     this.typeModal = typeModal;
+    this.creditorsFacade.clearSelectedCreditor();
     this.modalService.openModal();
   }
 

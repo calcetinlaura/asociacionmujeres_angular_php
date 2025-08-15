@@ -22,9 +22,10 @@ import { filter, tap } from 'rxjs';
 import { AgentsFacade } from 'src/app/application/agents.facade';
 import {
   AgentModel,
-  categoryFilterAgents,
+  CategoryFilterAgents,
 } from 'src/app/core/interfaces/agent.interface';
 import { TypeList } from 'src/app/core/models/general.model';
+import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { ImageControlComponent } from '../../../../components/image-control/image-control.component';
 @Component({
@@ -35,6 +36,7 @@ import { ImageControlComponent } from '../../../../components/image-control/imag
     ImageControlComponent,
     MatCardModule,
     QuillModule,
+    SpinnerLoadingComponent,
   ],
   templateUrl: './form-agent.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],
@@ -55,7 +57,7 @@ export class FormAgentComponent {
   submitted = false;
   titleForm: string = 'Registrar acreedor/a';
   buttonAction: string = 'Guardar';
-  categoryFilterAgents = categoryFilterAgents;
+  CategoryFilterAgents = CategoryFilterAgents;
   typeList = TypeList.Agents;
   formAgent = new FormGroup({
     name: new FormControl('', [Validators.required]),
@@ -76,6 +78,7 @@ export class FormAgentComponent {
     towns: { label: string; code: string }[];
   }[] = [];
   municipios: { label: string; code: string }[] = [];
+  isLoading = true;
   quillModules = {
     toolbar: [
       [{ header: [1, 2, false] }],
@@ -89,6 +92,7 @@ export class FormAgentComponent {
     ],
   };
   ngOnInit(): void {
+    this.isLoading = true;
     this.provincias = townsData
       .flatMap((region) => region.provinces)
       .sort((a, b) => a.label.localeCompare(b.label));
@@ -116,9 +120,12 @@ export class FormAgentComponent {
                 this.selectedImageFile = null;
               }
             }
+            this.isLoading = false;
           })
         )
         .subscribe();
+    } else {
+      this.isLoading = false;
     }
   }
 

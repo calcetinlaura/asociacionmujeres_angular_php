@@ -24,6 +24,7 @@ import { MacroeventsFacade } from 'src/app/application/macroevents.facade';
 import { MacroeventModel } from 'src/app/core/interfaces/macroevent.interface';
 import { TypeList } from 'src/app/core/models/general.model';
 import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
+import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { dateRangeValidator } from 'src/app/shared/utils/validators.utils';
 
@@ -36,6 +37,7 @@ import { dateRangeValidator } from 'src/app/shared/utils/validators.utils';
     MatCardModule,
     ImageControlComponent,
     QuillModule,
+    SpinnerLoadingComponent,
   ],
   templateUrl: './form-macroevent.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],
@@ -76,6 +78,7 @@ export class FormMacroeventComponent implements OnInit {
     towns: { label: string; code: string }[];
   }[] = [];
   municipios: { label: string; code: string }[] = [];
+  isLoading = true;
   quillModules = {
     toolbar: [
       [{ header: [1, 2, false] }],
@@ -90,6 +93,7 @@ export class FormMacroeventComponent implements OnInit {
   };
 
   ngOnInit(): void {
+    this.isLoading = true;
     this.provincias = townsData
       .flatMap((region) => region.provinces)
       .sort((a, b) => a.label.localeCompare(b.label));
@@ -125,9 +129,12 @@ export class FormMacroeventComponent implements OnInit {
               this.imageSrc = event.img;
               this.selectedImageFile = null;
             }
+            this.isLoading = false;
           })
         )
         .subscribe();
+    } else {
+      this.isLoading = false;
     }
   }
 

@@ -12,11 +12,8 @@
       Programación eventos
     </h2>
     <div class="flex flex-col gap-y-4">
-      <div
-        *ngFor="let event of events"
-        (click)="onSelect(event)"
-        class="cursor-pointer flex gap-x-4"
-      >
+      @for (event of events; track event.id ?? $index) {
+      <div (click)="onSelect(event)" class="cursor-pointer flex gap-x-4">
         <div class="w-[180px] h-[180px] overflow-hidden">
           <img
             appImgBroken
@@ -25,12 +22,14 @@
             class="object-cover rounded"
           />
         </div>
+
         <div
           class="flex flex-1 flex-col gap-y-2 justify-center bg-gray-100 w-full p-4"
         >
           <div class="text-lg font-bold">
             {{ event.title }}
           </div>
+
           @if (event.placeData?.name) {
           <div>
             <p class="text-xs">
@@ -43,16 +42,19 @@
             }
           </div>
           }
+
           <app-text-background
             [text]="event.start | date : 'EEEE dd MMMM yyyy'"
-          ></app-text-background>
+          >
+          </app-text-background>
 
-          @if ( event.time_start && event.time_start !== '00:00:00') {
+          @if (event.time_start && event.time_start !== '00:00:00') {
           <app-text-border [text]="event.time_start.slice(0, 5) + ' h'">
           </app-text-border>
           }
         </div>
       </div>
+      }
     </div>
   </div>
 </div>

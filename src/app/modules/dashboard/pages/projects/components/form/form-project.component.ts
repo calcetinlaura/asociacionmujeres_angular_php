@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
+  AbstractControl,
   FormArray,
   FormControl,
   FormGroup,
@@ -26,6 +27,7 @@ import { SubsidyModelFullData } from 'src/app/core/interfaces/subsidy.interface'
 import { TypeList } from 'src/app/core/models/general.model';
 import { SubsidiesService } from 'src/app/core/services/subsidies.services';
 import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
+import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { dateRangeValidator } from 'src/app/shared/utils/validators.utils';
 import { ButtonIconComponent } from '../../../../../../shared/components/buttons/button-icon/button-icon.component';
@@ -39,6 +41,7 @@ import { ButtonIconComponent } from '../../../../../../shared/components/buttons
     ImageControlComponent,
     ButtonIconComponent,
     QuillModule,
+    SpinnerLoadingComponent,
   ],
   templateUrl: './form-project.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],
@@ -82,6 +85,7 @@ export class FormProjectComponent implements OnInit {
   years: number[] = [];
   subsidies: SubsidyModelFullData[] = [];
   currentYear = this.generalService.currentYear;
+  isLoading = true;
   quillModules = {
     toolbar: [
       [{ header: [1, 2, false] }],
@@ -95,6 +99,7 @@ export class FormProjectComponent implements OnInit {
     ],
   };
   ngOnInit(): void {
+    this.isLoading = true;
     this.years = this.generalService.loadYears(this.currentYear, 2018);
 
     this.formProject.controls.year.valueChanges
@@ -130,6 +135,7 @@ export class FormProjectComponent implements OnInit {
               img: project.img,
             });
             this.setActivities(project.activities || []);
+
             if (typeof project.year === 'number') {
               this.loadSubisidiesByYear(project.year).subscribe(() => {
                 this.formProject.controls.subsidy_id.enable();
@@ -142,11 +148,19 @@ export class FormProjectComponent implements OnInit {
               this.imageSrc = project.img;
               this.selectedImageFile = null;
             }
+            this.isLoading = false;
           })
         )
         .subscribe();
+    } else {
+      this.isLoading = false;
     }
   }
+  trackByActivityId(index: number, activity: AbstractControl): any {
+    const formGroup = activity as FormGroup;
+    return formGroup.get('activity_id')?.value || index; // Usa index como fallback si activity_id es null
+  }
+
   setActivities(activities: any[]): void {
     this.activities.clear();
     activities.forEach((act) => this.addActivity(act));

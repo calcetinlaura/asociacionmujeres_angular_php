@@ -25,6 +25,7 @@ import {
 } from 'src/app/core/interfaces/movie.interface';
 import { TypeList } from 'src/app/core/models/general.model';
 import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
+import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
@@ -35,6 +36,7 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
     MatCardModule,
     ImageControlComponent,
     QuillModule,
+    SpinnerLoadingComponent,
   ],
   templateUrl: './form-movie.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],
@@ -71,6 +73,7 @@ export class FormMovieComponent {
   typeList = TypeList.Movies;
 
   currentYear = this.generalService.currentYear;
+  isLoading = true;
   quillModules = {
     toolbar: [
       [{ header: [1, 2, false] }],
@@ -84,6 +87,7 @@ export class FormMovieComponent {
     ],
   };
   ngOnInit(): void {
+    this.isLoading = true;
     this.years = this.generalService.loadYears(this.currentYear, 2018);
 
     if (this.itemId) {
@@ -110,9 +114,12 @@ export class FormMovieComponent {
                 this.selectedImageFile = null;
               }
             }
+            this.isLoading = false;
           })
         )
         .subscribe();
+    } else {
+      this.isLoading = false;
     }
   }
 

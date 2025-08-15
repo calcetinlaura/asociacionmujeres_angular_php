@@ -111,7 +111,13 @@ export class RecipesPageComponent implements OnInit {
       booleanIndicator: true,
       width: ColumnWidth.XS,
     },
-    { title: 'Año', key: 'year', sortable: true, width: ColumnWidth.XS },
+    {
+      title: 'Año',
+      key: 'year',
+      sortable: true,
+      width: ColumnWidth.XS,
+      textAlign: 'center',
+    },
   ];
 
   @ViewChild(InputSearchComponent)
@@ -182,6 +188,7 @@ export class RecipesPageComponent implements OnInit {
     this.currentModalAction = action;
     this.item = recipe;
     this.typeModal = typeModal;
+    this.recipesFacade.clearSelectedRecipe();
     this.modalService.openModal();
   }
 

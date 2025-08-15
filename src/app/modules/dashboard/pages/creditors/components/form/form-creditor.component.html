@@ -2,6 +2,11 @@
   <div class="text-center pb-5 uppercase">
     <p class="text-2xl">{{ titleForm }}</p>
   </div>
+  @if (isLoading) {
+  <div class="spinner-container">
+    <app-spinner-loading />
+  </div>
+  } @else {
   <form
     (ngSubmit)="onSendFormCreditor()"
     [formGroup]="formCreditor"
@@ -121,4 +126,5 @@
       </div>
     </div>
   </form>
+  }
 </div>

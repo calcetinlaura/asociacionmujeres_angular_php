@@ -19,7 +19,8 @@ export interface AgentAutocompleteModel {
   id: number;
   name: string;
 }
-export const categoryFilterAgents: Filter[] = [
+export const CategoryFilterAgents: Filter[] = [
   { code: 'ORGANISMO', name: 'Organismo público' },
   { code: 'ASOCIACION', name: 'Asociación' },
+  { code: 'COOPERATIVA', name: 'Cooperativa' },
 ];

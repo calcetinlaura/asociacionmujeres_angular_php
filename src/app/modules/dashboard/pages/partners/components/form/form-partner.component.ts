@@ -23,6 +23,7 @@ import { PartnersFacade } from 'src/app/application/partners.facade';
 import { PartnerModel } from 'src/app/core/interfaces/partner.interface';
 import { TypeList } from 'src/app/core/models/general.model';
 import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
+import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 @Component({
   selector: 'app-form-partner',
@@ -32,6 +33,7 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
     MatCheckboxModule,
     MatCardModule,
     ImageControlComponent,
+    SpinnerLoadingComponent,
   ],
   templateUrl: './form-partner.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],
@@ -78,8 +80,10 @@ export class FormPartnerComponent {
   }[] = [];
   municipios: { label: string; code: string }[] = [];
   currentYear = this.generalService.currentYear;
+  isLoading = true;
 
   ngOnInit(): void {
+    this.isLoading = true;
     this.years = this.generalService.loadYears(this.currentYear, 1995);
 
     this.provincias = townsData
@@ -132,9 +136,12 @@ export class FormPartnerComponent {
               // Marcar cuotas si existen en la base de datos
               this.setCuotasForm(partner.cuotas || []);
             }
+            this.isLoading = false;
           })
         )
         .subscribe();
+    } else {
+      this.isLoading = false;
     }
   }
 

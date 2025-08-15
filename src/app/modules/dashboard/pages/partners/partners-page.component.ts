@@ -97,6 +97,7 @@ export class PartnersPageComponent implements OnInit {
       key: 'birthday',
       sortable: true,
       width: ColumnWidth.LG,
+      textAlign: 'center',
     },
     { title: 'Dirección', key: 'town', sortable: true, width: ColumnWidth.XL },
     {
@@ -106,6 +107,7 @@ export class PartnersPageComponent implements OnInit {
       showIndicatorOnEmpty: true,
       width: ColumnWidth.XS,
       pipe: 'phoneFormat',
+      textAlign: 'center',
     },
     {
       title: 'Email',
@@ -120,12 +122,14 @@ export class PartnersPageComponent implements OnInit {
       sortable: true,
       booleanIndicator: true,
       width: ColumnWidth.XS,
+      textAlign: 'center',
     },
     {
       title: 'Tiempo socia',
       key: 'years',
       sortable: true,
       width: ColumnWidth.XS,
+      textAlign: 'center',
     },
   ];
 
@@ -200,7 +204,8 @@ export class PartnersPageComponent implements OnInit {
   ): void {
     this.currentModalAction = action;
     this.item = partner;
-    this.typeModal = TypeList.Partners;
+    this.typeModal = typeModal;
+    this.partnersFacade.clearSelectedPartner();
     this.modalService.openModal();
   }
 

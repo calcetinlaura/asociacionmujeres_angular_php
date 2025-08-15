@@ -68,6 +68,7 @@
       <app-table
         [data]="filteredInvoices"
         [typeSection]="typeSection"
+        [typeModal]="typeModal"
         [headerColumns]="getVisibleColumns()"
         [columnVisibility]="columnVisibility"
         (openModal)="onOpenModal($event)"
@@ -101,14 +102,15 @@
 
   <!-- Menú separado (único, accesible por todos los tabs) -->
   <mat-menu #columnsMenu="matMenu">
-    <button mat-menu-item *ngFor="let column of headerListInvoices">
+    @for (column of headerListInvoices; track $index) {
+    <button mat-menu-item>
       <mat-checkbox
         [checked]="columnVisibility[column.key]"
         (change)="toggleColumn(column.key)"
       >
         {{ column.title }}
-      </mat-checkbox>
-    </button>
+      </mat-checkbox></button
+    >}
   </mat-menu>
   }
 </div>

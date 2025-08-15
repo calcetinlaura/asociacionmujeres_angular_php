@@ -2,6 +2,11 @@
   <div class="text-center pb-5 uppercase">
     <p class="text-2xl">{{ titleForm }}</p>
   </div>
+  @if (isLoading) {
+  <div class="spinner-container">
+    <app-spinner-loading />
+  </div>
+  } @else {
   <form
     (ngSubmit)="onSendFormAgent()"
     [formGroup]="formAgent"
@@ -11,7 +16,7 @@
       <div class="flex flex-col bg-lilaMuyClaro p-4 gap-y-4">
         <!-- Nombre -->
         <div class="box-input">
-          <label for="name">Nombre institución</label>
+          <label for="name">Institución</label>
           <div class="flex flex-col flex-1">
             <input
               formControlName="name"
@@ -83,7 +88,7 @@
       <div class="box-input gap-x-4 px-4">
         <label for="category">Categoría </label>
         <select formControlName="category">
-          @for (type of categoryFilterAgents; track type) {
+          @for (type of CategoryFilterAgents; track type) {
           <option [value]="type.code">
             {{ type.name }}
           </option>
@@ -128,4 +133,5 @@
       </div>
     </div>
   </form>
+  }
 </div>

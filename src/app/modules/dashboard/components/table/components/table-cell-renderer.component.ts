@@ -8,12 +8,11 @@ import { CircleIndicatorComponent } from '../../circle-indicator/circle-indicato
   selector: 'app-table-cell-renderer',
   imports: [CommonModule, CircleIndicatorComponent],
   template: `
-    <ng-container *ngIf="hasValue(value); else empty">
-      {{ value }}
-    </ng-container>
-    <ng-template #empty>
-      <app-circle-indicator [item]="false"></app-circle-indicator>
-    </ng-template>
+    @if (hasValue(value)) {
+    {{ value }}
+    } @else {
+    <app-circle-indicator [item]="false" />
+    }
   `,
 })
 export class TableCellRendererComponent {

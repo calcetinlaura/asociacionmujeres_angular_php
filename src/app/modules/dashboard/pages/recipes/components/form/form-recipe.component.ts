@@ -17,6 +17,7 @@ import {
 } from 'src/app/core/interfaces/recipe.interface';
 import { TypeList } from 'src/app/core/models/general.model';
 import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
+import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
@@ -27,6 +28,7 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
     MatCardModule,
     ImageControlComponent,
     QuillModule,
+    SpinnerLoadingComponent,
   ],
   templateUrl: './form-recipe.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],
@@ -63,6 +65,7 @@ export class FormRecipeComponent {
     ]),
   });
   currentYear = this.generalService.currentYear;
+  isLoading = true;
   quillModules = {
     toolbar: [
       [{ header: [1, 2, false] }],
@@ -76,6 +79,7 @@ export class FormRecipeComponent {
     ],
   };
   ngOnInit(): void {
+    this.isLoading = true;
     this.years = this.generalService.loadYears(this.currentYear, 2018);
 
     if (this.itemId) {
@@ -86,15 +90,6 @@ export class FormRecipeComponent {
           tap((recipe: RecipeModel | null) => {
             if (recipe) {
               this.formRecipe.patchValue(recipe);
-              // {
-              //   title: recipe.title || null,
-              //   category: recipe.category || null,
-              //   ingredients: recipe.ingredients || null,
-              //   owner: recipe.owner || null,
-              //   recipe: recipe.recipe || null,
-              //   img: recipe.img || null,
-              //   year: recipe.year || 0,
-              // }
               this.titleForm = 'Editar Receta';
               this.buttonAction = 'Guardar cambios';
               if (recipe.img) {
@@ -102,9 +97,12 @@ export class FormRecipeComponent {
                 this.selectedImageFile = null;
               }
             }
+            this.isLoading = false;
           })
         )
         .subscribe();
+    } else {
+      this.isLoading = false;
     }
   }
 

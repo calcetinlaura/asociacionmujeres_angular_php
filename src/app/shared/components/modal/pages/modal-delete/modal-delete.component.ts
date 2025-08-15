@@ -63,7 +63,7 @@ export class ModalDeleteComponent implements OnInit {
       value: item?.title,
     }),
     [TypeList.Invoices]: (item) => ({
-      label: 'la factura con número',
+      label: 'la factura ',
       value: item?.number_invoice,
     }),
     [TypeList.Macroevents]: (item) => ({

@@ -195,6 +195,7 @@ export class MoviesPageComponent implements OnInit {
     this.currentModalAction = action;
     this.item = movie;
     this.typeModal = typeModal;
+    this.moviesFacade.clearSelectedMovie();
     this.modalService.openModal();
   }
 

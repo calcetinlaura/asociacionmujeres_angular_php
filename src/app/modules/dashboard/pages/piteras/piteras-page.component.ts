@@ -72,7 +72,13 @@ export class PiterasPageComponent implements OnInit {
   headerListPiteras: ColumnModel[] = [
     { title: 'Portada', key: 'img', sortable: false },
     { title: 'Título', key: 'title', sortable: true },
-    { title: 'Año', key: 'year', sortable: true, width: ColumnWidth.XS },
+    {
+      title: 'Año',
+      key: 'year',
+      sortable: true,
+      width: ColumnWidth.XS,
+      textAlign: 'center',
+    },
     { title: 'Temática', key: 'theme', sortable: true },
     { title: 'Url', key: 'url', sortable: true },
   ];

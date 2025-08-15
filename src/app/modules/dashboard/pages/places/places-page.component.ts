@@ -91,6 +91,8 @@ export class PlacesPageComponent implements OnInit {
       sortable: true,
       width: ColumnWidth.MD,
       showIndicatorOnEmpty: true,
+      pipe: 'filterTransformCode',
+      pipeArg: 'managementPlaces',
     },
     {
       title: 'Latitud',
@@ -166,6 +168,7 @@ export class PlacesPageComponent implements OnInit {
     this.currentModalAction = action;
     this.item = place;
     this.typeModal = typeModal;
+    this.placesFacade.clearSelectedPlace();
     this.modalService.openModal();
   }
 

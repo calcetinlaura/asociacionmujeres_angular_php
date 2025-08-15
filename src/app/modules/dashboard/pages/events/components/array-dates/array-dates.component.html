@@ -33,9 +33,11 @@
                     submitted && item.formGroup.get('start')?.invalid
                 }"
               />
-              <div *ngIf="submitted && item.formGroup.get('start')?.invalid">
+              @if (submitted && item.formGroup.get('start')?.invalid) {
+              <div>
                 <p class="text-[red] text-[11px]">Campo requerido</p>
               </div>
+              }
             </div>
           </div>
           <!-- Día fin -->
@@ -96,10 +98,11 @@
       }
     </div>
   </div>
-  }}
-  <div *ngIf="submitted && formArray.errors?.['duplicateStartDatesAndTimes']">
+  }} @if (submitted && formArray.errors?.['duplicateStartDatesAndTimes']) {
+  <div>
     <p class="text-[red] text-[11px] pl-44">
       No puede repetir el mismo pase (fecha y hora)
     </p>
   </div>
+  }
 </div>
