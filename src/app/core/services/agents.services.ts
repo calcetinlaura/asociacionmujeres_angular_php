@@ -38,16 +38,14 @@ export class AgentsService {
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
-  edit(id: number, agent: FormData): Observable<any> {
+  edit(agent: FormData): Observable<any> {
     return this.http
       .post(this.apiUrl, agent)
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
   delete(id: number): Observable<any> {
-    return this.http
-      .delete(this.apiUrl, { params: { id: id } })
-      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
+    return this.generalService.deleteOverride<any>(this.apiUrl, { id });
   }
 
   sortAgentsByName(agents: AgentModel[]): AgentModel[] {

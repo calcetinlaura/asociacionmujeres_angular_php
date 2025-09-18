@@ -1,0 +1,26 @@
+.tableInvoices {
+  width: 100%;
+}
+.tableInvoices th {
+  border-top: 1px solid #1c1c3a;
+  border-bottom: 1px solid #1c1c3a;
+  color: #1c1c3a;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 12px 0;
+}
+.tableInvoices td {
+  font-size: 10px;
+  color: #1c1c3a;
+}
+.tableInvoices .fila {
+  border-bottom: 1px solid #a4a4a7;
+}
+
+.tableInvoices .total_table {
+  border-top: 1px solid #1c1c3a;
+  border-bottom: 1px solid #1c1c3a;
+}
+.total_table td {
+  padding: 12px 0;
+}

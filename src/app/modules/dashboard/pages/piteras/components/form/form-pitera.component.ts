@@ -37,10 +37,11 @@ export class FormPiteraComponent {
   private generalService = inject(GeneralService);
 
   @Input() itemId!: number;
-  @Output() sendFormPitera = new EventEmitter<{
+  @Output() submitForm = new EventEmitter<{
     itemId: number;
     formData: FormData;
   }>();
+
   selectedImageFile: File | null = null;
   piteraData: any;
   imageSrc: string = '';
@@ -52,10 +53,16 @@ export class FormPiteraComponent {
 
   formPitera = new FormGroup({
     title: new FormControl('', [Validators.required]),
+    publication_number: new FormControl<number | null>(null, [
+      Validators.required,
+      Validators.min(0),
+      Validators.max(100),
+    ]),
     theme: new FormControl(''),
+    description: new FormControl(''),
     url: new FormControl<string | File | null>(null), // 🔹 Acepta string, File o null
     img: new FormControl(''),
-    year: new FormControl(0, [
+    year: new FormControl<number | null>(null, [
       Validators.required,
       Validators.min(1995),
       Validators.max(new Date().getFullYear()),
@@ -87,8 +94,10 @@ export class FormPiteraComponent {
           tap((pitera: PiteraModel | null) => {
             if (pitera) {
               this.formPitera.patchValue({
+                description: pitera.description || '',
                 theme: pitera.theme || '',
                 title: pitera.title || '',
+                publication_number: pitera.publication_number || 0,
                 url: pitera.url || '',
                 img: pitera.img || '',
                 year: Number(pitera.year) || 0,
@@ -159,7 +168,7 @@ export class FormPiteraComponent {
       this.itemId
     );
 
-    this.sendFormPitera.emit({
+    this.submitForm.emit({
       itemId: this.itemId,
       formData: formData,
     });

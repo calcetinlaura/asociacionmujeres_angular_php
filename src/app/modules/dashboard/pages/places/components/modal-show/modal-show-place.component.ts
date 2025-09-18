@@ -6,7 +6,6 @@ import { MapComponent } from 'src/app/shared/components/map/map.component';
 import { TextBackgroundComponent } from 'src/app/shared/components/text/text-background/text-background.component';
 import { TextEditorComponent } from 'src/app/shared/components/text/text-editor/text-editor.component';
 import { TextIconComponent } from 'src/app/shared/components/text/text-icon/text-icon.component';
-import { TextSubTitleComponent } from 'src/app/shared/components/text/text-subTitle/text-subtitle.component';
 import { TextTitleComponent } from 'src/app/shared/components/text/text-title/text-title.component';
 import { FilterTransformCodePipe } from 'src/app/shared/pipe/filterTransformCode.pipe';
 
@@ -15,7 +14,6 @@ import { FilterTransformCodePipe } from 'src/app/shared/pipe/filterTransformCode
   imports: [
     TextBackgroundComponent,
     TextTitleComponent,
-    TextSubTitleComponent,
     TextIconComponent,
     TextEditorComponent,
     FilterTransformCodePipe,

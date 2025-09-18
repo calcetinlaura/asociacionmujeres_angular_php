@@ -13,108 +13,166 @@
     class="login-auth-form"
   >
     <div class="flex flex-col gap-y-4">
-      <div class="flex justify-between gap-x-4">
-        <div class="flex flex-col flex-1 gap-y-4">
-          <div class="flex flex-row">
-            <!-- SUBVENCIÓN -->
-            <div class="flex flex-1 justify-between gap-x-4">
-              <div class="flex box-input gap-y-2 gap-x-4 flex-1">
-                <label for="name">Subvención</label>
-                <select formControlName="name">
-                  @for (subsidy of FilterSubsidies; track subsidy) {
-                  <option [value]="subsidy.code">
-                    {{ subsidy.name }}
-                  </option>
-                  }
-                </select>
-              </div>
-              <!-- AÑO -->
-              <div class="flex box-input gap-x-4 w-1/3">
-                <label for="subsidy_year">Año solicitud</label>
-                <div class="flex flex-col flex-1">
-                  <select
-                    formControlName="year"
-                    [ngClass]="{
-                      'is-invalid':
-                        submitted && formSubsidy.get('year')?.invalid
-                    }"
-                  >
-                    @for (year of years; track year) {
-                    <option [value]="year">
-                      {{ year }}
-                    </option>
-                    }
-                  </select>
-                  @if (submitted && formSubsidy.get('year')?.invalid) {
-                  <div class="is-invalid-text">
-                    Campo requerido si hay subvención
-                  </div>
-                  }
-                </div>
-              </div>
-            </div>
-          </div>
-          <!-- PERIODO -->
-          <div class="flex box-input gap-x-4">
-            <label for="period" class="flex-1">Periodo actividades </label>
-            <input formControlName="start" type="date" class="w-54" />
-            <span> a </span>
-            <input formControlName="end" type="date" class="w-54" />
+      <!-- SUBVENCIÓN -->
+      <div class="flex flex-1 justify-between gap-x-4">
+        <div class="box-input flex-1">
+          <label for="name">Subvención</label>
+          <div class="flex flex-col flex-1">
+            <select
+              formControlName="name"
+              [ngClass]="{
+                'is-invalid': submitted && formSubsidy.get('name')?.invalid,
+                'text-placeholder': !formSubsidy.get('name')?.value
+              }"
+            >
+              <option value="" disabled hidden>
+                Selecciona una subvención
+              </option>
+              @for (subsidy of FilterSubsidies; track subsidy) {
+              <option [value]="subsidy.code">
+                {{ subsidy.name }}
+              </option>
+              }</select
+            >@if (submitted && formSubsidy.get('name')?.invalid) {
+            <div class="is-invalid-text">Selecciona una subvención</div>
+            }
           </div>
         </div>
-        <div class="flex flex-col gap-y-4 w-1/3 bg-lilaMuyClaro p-4">
-          <!-- Fecha PRESENTACIÓN -->
-          <div class="flex box-input gap-x-4">
-            <label for="date_presentation" class="flex-1"
-              >F. Presentación</label
+        <!-- AÑO -->
+        <div class="box-input w-1/3">
+          <label for="subsidy_year">Año solicitud</label>
+          <div class="flex flex-col flex-1">
+            <select
+              formControlName="year"
+              [ngClass]="{
+                'is-invalid': submitted && formSubsidy.get('year')?.invalid,
+                'text-placeholder': !formSubsidy.get('year')?.value
+              }"
             >
-            <input
-              formControlName="date_presentation"
-              type="date"
-              class="w-54"
-            />
-          </div>
-          <!-- Fecha JUSTIFICACIÓN -->
-          <div class="flex box-input gap-x-4">
-            <label for="date_justification" class="flex-1"
-              >F. Justificación</label
-            >
-            <input
-              formControlName="date_justification"
-              type="date"
-              class="w-54"
-            />
+              <option value="null" disabled hidden>Año</option>
+              @for (year of years; track year) {
+              <option [value]="year">
+                {{ year }}
+              </option>
+              }
+            </select>
+            @if (submitted && formSubsidy.get('year')?.invalid) {
+            <div class="is-invalid-text">Campo requerido</div>
+            }
           </div>
         </div>
       </div>
+      <!-- PERIODO -->
+      <div class="box-input">
+        <label for="period"
+          >Periodo <br />
+          actividades
+        </label>
+        <input
+          formControlName="start"
+          type="date"
+          class="w-54"
+          [ngClass]="{
+            'text-placeholder': !formSubsidy.get('start')?.value
+          }"
+        />
+        <span class="px-8"> a </span>
+        <input
+          formControlName="end"
+          type="date"
+          class="w-54"
+          [ngClass]="{
+            'text-placeholder': !formSubsidy.get('end')?.value
+          }"
+        />
+      </div>
+      <hr />
+      <div class="flex gap-x-4">
+        <!-- Fecha PRESENTACIÓN -->
+        <div class="box-input flex-1">
+          <label for="date_presentation">F. Presentación</label>
+          <input
+            formControlName="date_presentation"
+            type="date"
+            class="w-54"
+            [ngClass]="{
+              'text-placeholder': !formSubsidy.get('date_presentation')?.value
+            }"
+          />
+        </div>
+        <!-- Fecha JUSTIFICACIÓN -->
+        <div class="box-input flex-1">
+          <label for="date_justification">F. Justificación</label>
+          <input
+            formControlName="date_justification"
+            type="date"
+            class="w-54"
+            [ngClass]="{
+              'text-placeholder': !formSubsidy.get('date_justification')?.value
+            }"
+          />
+        </div>
+      </div>
+
       <!-- URL -->
-      <div class="box-input gap-x-4">
-        <label for="url_presentation">Url subvención</label>
-        <input type="text" formControlName="url_presentation" />
+      <div class="box-input">
+        <label for="url_presentation">Url bases</label>
+        <input
+          type="text"
+          formControlName="url_presentation"
+          placeholder="Enlace bases subvención"
+        />
       </div>
-      <div class="box-input gap-x-4">
+      <div class="box-input">
         <label for="url_justification">Url resolución</label>
-        <input type="text" formControlName="url_justification" />
+        <input
+          type="text"
+          formControlName="url_justification"
+          placeholder="Enlace resolución subvención"
+        />
       </div>
-      <div
-        class="flex justify-between gap-x-4 bg-lilaMuyClaro pt-4 pb-8 px-4 my-4"
-      >
+      <hr />
+      <div class="flex justify-between gap-x-16">
         <!-- CANTIDAD SOLICITADA -->
         <div class="flex flex-col flex-1 box-input gap-y-2">
           <label for="amount_requested">Cantidad solicitada</label>
-          <input formControlName="amount_requested" type="number" />
+          <input
+            formControlName="amount_requested"
+            type="number"
+            placeholder="Cantidad total solicitada"
+            class="w-full"
+            [ngClass]="{
+              'text-placeholder': !formSubsidy.get('amount_requested')?.value
+            }"
+          />
         </div>
         <!-- CANTIDAD ADJUDICADA -->
         <div class="flex flex-col flex-1 box-input gap-y-2">
           <label for="amount_granted" class="font-medium"
             >Cantidad adjudicada</label
           >
-          <input formControlName="amount_granted" type="number" />
+          <input
+            formControlName="amount_granted"
+            type="number"
+            placeholder="Cantidad total adjudicada"
+            class="w-full"
+            [ngClass]="{
+              'text-placeholder': !formSubsidy.get('amount_granted')?.value
+            }"
+          />
         </div>
         <!-- CANTIDAD JUSTIFICADA -->
         <div class="flex flex-col flex-1 box-input gap-y-2">
           <label for="amount_justified">Cantidad necesaria justificar</label>
-          <input formControlName="amount_justified" type="number" />
+          <input
+            formControlName="amount_justified"
+            type="number"
+            placeholder="Cantidad total a justificar"
+            class="w-full"
+            [ngClass]="{
+              'text-placeholder': !formSubsidy.get('amount_justified')?.value
+            }"
+          />
         </div>
         <!-- CANTIDAD JUSTIFICADA -->
         <!-- <div class="flex flex-col box-input gap-x-4">
@@ -122,16 +180,16 @@
                   <input formControlName="amount_association" type="number" />
                 </div> -->
       </div>
-
+      <hr />
       <!-- OBSERVACIONES -->
-      <div class="flex box-input gap-x-4 mt-4">
+      <div class="box-input mt-4">
         <label for="observations">Observaciones</label>
         <div class="flex flex-col flex-1">
           <quill-editor
             formControlName="observations"
             [modules]="quillModules"
             placeholder="Escribe aquí la descripción..."
-            class="flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
+            class="ql-container-small flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
           />
         </div>
       </div>

@@ -11,12 +11,13 @@ export interface ColumnModel {
   footerTotal?: boolean;
   backColor?: boolean;
   textAlign?: 'right' | 'left' | 'center';
+  innerHTML?: boolean;
 }
 export enum ColumnWidth {
   XS = 'w-[90px]',
   SM = 'w-[120px]',
   MD = 'w-[160px]',
   LG = 'w-[200px]',
-  XL = 'w-[240px]',
+  XL = 'w-[280px]',
   FULL = 'w-full',
 }

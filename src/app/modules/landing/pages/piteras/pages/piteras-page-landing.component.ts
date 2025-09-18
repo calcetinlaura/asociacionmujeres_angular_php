@@ -1,4 +1,4 @@
-
+import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { tap } from 'rxjs';
@@ -10,18 +10,17 @@ import { SectionGenericComponent } from 'src/app/modules/landing/components/sect
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 
 @Component({
-    selector: 'app-piteras-page-landing',
-    imports: [SectionGenericComponent, SpinnerLoadingComponent],
-    templateUrl: './piteras-page-landing.component.html',
-    providers: [PiterasService]
+  selector: 'app-piteras-page-landing',
+  imports: [CommonModule, SectionGenericComponent, SpinnerLoadingComponent],
+  templateUrl: './piteras-page-landing.component.html',
+  providers: [PiterasService],
 })
 export class PiterasPageLandingComponent {
   private readonly destroyRef = inject(DestroyRef);
-  private readonly piterasFacade = inject(PiterasFacade);
+  readonly piterasFacade = inject(PiterasFacade);
   private readonly piterasService = inject(PiterasService);
 
   piteras: PiteraModel[] = [];
-  isLoading = true;
   typeList = TypeList;
   number = 0;
 
@@ -38,7 +37,6 @@ export class PiterasPageLandingComponent {
           if (!piteras) return;
           this.piteras = this.piterasService.sortPiterasByYear(piteras);
           this.number = this.piterasService.countPiteras(piteras);
-          this.isLoading = false;
         })
       )
       .subscribe();

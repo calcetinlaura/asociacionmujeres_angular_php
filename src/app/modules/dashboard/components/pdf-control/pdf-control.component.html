@@ -1,25 +1,35 @@
-<div class="flex flex-col justify-between gap-y-4 relative w-full">
-  <div class="w-full cursor-pointer" (click)="pdfInput.click()">
+<div
+  class="flex flex-col justify-between gap-y-4 relative w-full"
+  [style.height.px]="pdfViewerHeight"
+>
+  <div class="w-full cursor-pointer h-full" (click)="pdfInput.click()">
     @if (previewUrl && isPdfAvailable) {
     <div class="relative w-full">
       <object
         [data]="previewUrl"
         type="application/pdf"
         width="100%"
-        [style.height]="pdfHeight + 'px'"
+        [style.height.px]="pdfHeight"
       ></object>
       <div
         class="absolute top-0 left-0 w-full h-full"
         style="z-index: 10"
-        [style.height]="pdfHeight + 'px'"
+        [style.height.px]="pdfHeight"
       ></div>
     </div>
     } @else {
     <div
-      class="flex flex-col bg-gray-300 w-full h-[450px] items-center justify-center"
+      class="flex flex-col bg-gray-300 w-full items-center justify-center"
+      [style.height.px]="pdfViewerHeight"
     >
-      <i class="uil uil-file-plus-alt text-white text-[80px]"></i>
-      <p class="text-white text-[15px]">Añadir pdf</p>
+      <div class="h-30">
+        <i class="uil uil-file-plus-alt text-white text-[80px]"></i>
+      </div>
+      @if(textPdf){
+
+      <p class="text-white text-[15px]">{{ textPdf }}</p>
+
+      }
     </div>
     }
   </div>
@@ -37,7 +47,7 @@
   <button
     type="button"
     (click)="removePdf()"
-    class="w-full text-[rgb(225,110,110)] border border-[rgb(225,110,110)] rounded p-1 cursor-pointer transition-all hover:border-2 hover:px-[3px]"
+    class="h-10 w-full text-[rgb(225,110,110)] border border-[rgb(225,110,110)] rounded p-1 cursor-pointer transition-all hover:border-2 hover:px-[3px]"
   >
     Eliminar PDF
   </button>

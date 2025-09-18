@@ -1,0 +1,163 @@
+<!-- ✅ Si es DELETE, usa una única modal genérica -->
+@if (action === TypeActionModal.Delete) {
+<app-modal-delete
+  [item]="item"
+  [typeModal]="typeModal"
+  (confirmDelete)="onConfirmDelete($event)"
+  (closeModal)="onClose()"
+/>
+} @else { @switch (typeModal) {
+
+<!-- BOOKS -->
+@case (TypeList.Books) { @if (action === TypeActionModal.Show) {
+<app-modal-show-book [item]="item" />
+} @else {
+<app-form-book
+  [itemId]="item?.id"
+  (submitForm)="sendFormBookData.emit($event)"
+/>
+} }
+
+<!-- EVENTS -->
+@case (TypeList.Events) { @if (action === TypeActionModal.Show) {
+<app-modal-show-event
+  [item]="item"
+  (openMacroevent)="onOpenMacroeventFromChild($event)"
+/>
+} @else {
+<app-form-event [item]="item" (submitForm)="sendFormEventData.emit($event)" />
+} }
+
+<!-- MACROEVENTS -->
+@case (TypeList.Macroevents) { @if (action === TypeActionModal.Show) {
+<app-modal-show-macroevent [item]="item" />
+} @else {
+<app-form-macroevent
+  [itemId]="item?.id"
+  (submitForm)="sendFormMacroeventData.emit($event)"
+/>
+} }
+
+<!-- MOVIES -->
+@case (TypeList.Movies) { @if (action === TypeActionModal.Show) {
+<app-modal-show-movie [item]="item" (close)="onClose()" />
+} @else {
+<app-form-movie
+  [itemId]="item?.id"
+  (submitForm)="sendFormMovieData.emit($event)"
+/>
+} }
+
+<!-- RECIPES -->
+@case (TypeList.Recipes) { @if (action === TypeActionModal.Show) {
+<app-modal-show-recipe [item]="item" />
+} @else {
+<app-form-recipe
+  [itemId]="item?.id"
+  (submitForm)="sendFormRecipeData.emit($event)"
+/>
+} }
+
+<!-- PITERAS -->
+@case (TypeList.Piteras) { @if (action === TypeActionModal.Show) {
+<app-modal-show-pitera [item]="item" />
+} @else {
+<app-form-pitera
+  [itemId]="item?.id"
+  (submitForm)="sendFormPiteraData.emit($event)"
+/>
+} }
+
+<!-- INVOICES -->
+@case (TypeList.Invoices) { @if (action === TypeActionModal.Show) {
+<app-modal-show-invoice [item]="item" />
+} @else {
+<app-form-invoice
+  [itemId]="item?.id"
+  (submitForm)="sendFormInvoiceData.emit($event)"
+/>
+} }
+
+<!-- SUBSIDIES -->
+@case (TypeList.Subsidies) { @if (action === TypeActionModal.Show) {
+<app-modal-show-subsidy [item]="item" />
+} @else {
+<app-form-subsidy
+  [itemId]="item?.id"
+  (submitForm)="sendFormSubsidyData.emit($event)"
+/>
+} }
+
+<!-- CREDITORS -->
+@case (TypeList.Creditors) { @if (action === TypeActionModal.Show) {
+<app-modal-show-creditor [item]="item" />
+} @else {
+<app-form-creditor
+  [itemId]="item?.id"
+  (submitForm)="sendFormCreditorData.emit($event)"
+/>
+} }
+
+<!-- AGENTS -->
+@case (TypeList.Agents) { @if (action === TypeActionModal.Show) {
+<app-modal-show-agent [item]="item" />
+} @else {
+<app-form-agent
+  [itemId]="item?.id"
+  (submitForm)="sendFormAgentData.emit($event)"
+/>
+} }
+
+<!-- PLACES -->
+@case (TypeList.Places) { @if (action === TypeActionModal.Show) {
+<app-modal-show-place [item]="item" />
+} @else {
+<app-form-place
+  [itemId]="item?.id"
+  (submitForm)="sendFormPlaceData.emit($event)"
+/>
+} }
+
+<!-- PODCASTS -->
+@case (TypeList.Podcasts) { @if (action === TypeActionModal.Show) {
+<app-modal-show-podcast [item]="item" />
+} @else {
+<app-form-podcast
+  [itemId]="item?.id"
+  (submitForm)="sendFormPodcastData.emit($event)"
+/>
+} }
+
+<!-- ARTICLES -->
+@case (TypeList.Articles) { @if (action === TypeActionModal.Show) {
+<app-modal-show-article [item]="item" />
+} @else {
+<app-form-article
+  [itemId]="item?.id"
+  (submitForm)="sendFormArticleData.emit($event)"
+/>
+} }
+
+<!-- PROJECTS -->
+@case (TypeList.Projects) { @if (action === TypeActionModal.Show) {
+<app-modal-show-project [item]="item" />
+} @else {
+<app-form-project
+  [itemId]="item?.id"
+  (submitForm)="sendFormProjectData.emit($event)"
+/>
+} }
+
+<!-- PARTNERS -->
+@case (TypeList.Partners) { @if (action === TypeActionModal.Show) {
+<app-modal-show-partner [item]="item" />
+} @else {
+<app-form-partner
+  [itemId]="item?.id"
+  (submitForm)="sendFormPartnerData.emit($event)"
+/>
+} } @default {
+<div class="p-6 text-center text-gray-500">
+  Tipo de modal no soportado o no configurado.
+</div>
+} } }

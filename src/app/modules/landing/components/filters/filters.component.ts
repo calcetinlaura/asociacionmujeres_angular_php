@@ -1,16 +1,15 @@
-
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { Filter } from 'src/app/core/models/general.model';
 import { ButtonFilterComponent } from 'src/app/shared/components/buttons/button-filter/button-filter.component';
 
 @Component({
-    selector: 'app-filters',
-    imports: [ButtonFilterComponent],
-    templateUrl: './filters.component.html',
-    styleUrl: './filters.component.css'
+  selector: 'app-filters',
+  imports: [ButtonFilterComponent],
+  templateUrl: './filters.component.html',
+  styleUrl: './filters.component.css',
 })
 export class FiltersComponent implements OnInit {
-  @Output() filterClicked: EventEmitter<string> = new EventEmitter<string>();
+  @Output() filterClicked = new EventEmitter<string>();
   @Input() filters: Filter[] = [];
   @Input() loadFirstFilter?: string | number;
   @Input() loadFilters? = true;
@@ -18,14 +17,12 @@ export class FiltersComponent implements OnInit {
 
   ngOnInit(): void {
     if (this.loadFilters) {
-      // Verifica si hay un loadFirstFilter definido para poner color al botón de Agenda de ese año y NOVEDADES justo al cargar
       if (this.loadFirstFilter !== undefined) {
-        // Asigna el loadFirstFilter si no es undefined
         this.selectedFilter = this.loadFirstFilter;
-        this.filterSelected(this.selectedFilter);
+        this.filterClicked.emit(this.selectedFilter.toString()); // <-- EMITIR
       } else if (this.filters.length > 0) {
-        // Si no hay loadFirstFilter, selecciona el primer filtro del array
-        this.selectedFilter = this.filters[0].code; // Asumiendo que 'code' es lo que deseas guardar
+        this.selectedFilter = this.filters[0].code;
+        this.filterClicked.emit(this.selectedFilter.toString()); // <-- EMITIR
       }
     } else {
       this.selectedFilter = '';
@@ -33,11 +30,8 @@ export class FiltersComponent implements OnInit {
   }
 
   filterSelected(filter: string | number): void {
-    if (this.selectedFilter !== filter) {
-      this.selectedFilter = filter;
-      this.filterClicked.emit(filter.toString());
-    } else {
-      return;
-    }
+    if (this.selectedFilter === filter) return;
+    this.selectedFilter = filter;
+    this.filterClicked.emit(filter.toString());
   }
 }

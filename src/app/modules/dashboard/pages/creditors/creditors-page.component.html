@@ -10,7 +10,7 @@
       [filters]="filters"
       (filterClicked)="filterSelected($event)"
     ></app-filters>
-    <div class="flex gap-x-4">
+    <div class="flex gap-x-4 items-center">
       <app-button-icon
         [buttonText]="'Nuevo acreedor/a'"
         [iconClass]="'uil-plus'"
@@ -45,11 +45,11 @@
   </div>
 </app-sticky-zone>
 <div class="flex flex-col px-8">
-  <!-- Spinner Loading -->
-  @if (isLoading) {
+  @if (creditorsFacade.isLoading$ | async) {
   <app-spinner-loading />
   } @else {@if(filteredCreditors.length > 0){
-  <div class="pb-4 flex">
+  <div class="pb-4" #printArea>
+    <h2 class="only-on-pdf print-title">Listado acreedores</h2>
     <app-table
       [data]="filteredCreditors"
       [typeSection]="typeSection"
@@ -57,6 +57,7 @@
       [headerColumns]="getVisibleColumns()"
       [columnVisibility]="columnVisibility"
       (openModal)="onOpenModal($event)"
+      [displayedColumns]="displayedColumns"
     />
   </div>
   }@else{
@@ -64,7 +65,6 @@
     No hay acreedores registrados.
   </div>
   } }
-  <!-- Tabla -->
 </div>
 
 <!-- Modal -->
@@ -74,7 +74,7 @@
   [typeModal]="typeModal"
   [action]="currentModalAction"
   (closeModal)="onCloseModal()"
-  (confirmDelete)="confirmDeleteCreditor(item)"
+  (confirmDelete)="onDelete($event)"
   (sendFormCreditorData)="sendFormCreditor($event)"
 ></app-modal>
 }

@@ -11,5 +11,5 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 })
 export class IconActionComponent {
   @Input() icon: string = 'uil-eye';
-  @Input() tooltip: string = 'uil-eye';
+  @Input() tooltip: string = 'Icono';
 }

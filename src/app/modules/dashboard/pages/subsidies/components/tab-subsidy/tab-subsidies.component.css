@@ -52,3 +52,69 @@
   background-color: rgb(229, 176, 176);
   border: 1px solid rgb(229, 176, 176);
 }
+
+/* Variables por defecto (las puedes sobrescribir desde TS) */
+#printer {
+  --pdf-font-size: 10px;
+  --pdf-line-height: 12px;
+  --pdf-cell-padding: 8px;
+  --pdf-th-bg: #f6f7f9;
+  --pdf-th-fw: 600;
+}
+
+/* Tipografías y resets suaves */
+#printer * {
+  font-size: var(--pdf-font-size) !important;
+  line-height: var(--pdf-line-height) !important;
+  box-shadow: none !important;
+  animation: none !important;
+  filter: none !important;
+  transform: none !important; /* evita canvas en blanco en casos raros */
+}
+
+/* Tablas compactas y seguras */
+#printer table {
+  width: 100% !important;
+  table-layout: fixed !important;
+  border-collapse: collapse !important;
+}
+#printer th,
+#printer td {
+  padding: var(--pdf-cell-padding) !important;
+  word-break: break-word !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+  border: 1px solid #e5e7eb;
+}
+#printer th {
+  background: var(--pdf-th-bg);
+  font-weight: var(--pdf-th-fw);
+}
+
+/* Muestra/oculta según exportación */
+#printer .hide-on-pdf {
+  display: none !important;
+}
+.pdf-area:not(.pdf-print) .only-on-pdf {
+  display: none !important;
+}
+
+/* Cortes de página manuales */
+.force-page-break {
+  page-break-before: always;
+  break-before: page;
+}
+#printer .btn,
+#printer input {
+  display: none !important;
+}
+#printer .col-sm {
+  width: 10%;
+}
+#printer .col-lg {
+  width: 30%;
+}
+#printer .no-split {
+  page-break-inside: avoid;
+  break-inside: avoid;
+}

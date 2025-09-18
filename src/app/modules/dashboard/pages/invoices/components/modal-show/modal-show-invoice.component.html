@@ -1,78 +1,141 @@
-<div class="flex flex-1 flex-col justify-between">
-  @if (item.number_invoice) {
-    <app-text-title [text]="item.number_invoice" />
-  }
-  @if (item.description) {
-    <app-text-editor [text]="item.description" />
-  }
-  <app-text-background [text]="'Acreedor'"></app-text-background>
-  <div class="ml-4 pt-2 gap-y-2">
-    {{ item.creditor_company }}<br />
-    @if (
-      item.creditor_contact && item.creditor_contact !== item.creditor_company
-      ) {
-      <small
-        >{{ item.creditor_contact }}</small
-        >
-      }
-    </div>
-    <app-text-background [text]="'Fechas'"></app-text-background>
-    <div class="ml-4 pt-2 gap-y-2">
-      @if (item.date_invoice) {
-        <p>
-          Fecha factura:
-          <span class="body-border">{{
-            item.date_invoice | date : "dd MMM yyyy"
-          }}</span>
-        </p>
-      }
-      @if (item.date_accounting) {
-        <p>
-          Feche contabilidad:
-          <span class="body-border">{{
-            item.date_accounting | date : "dd MMM yyyy"
-          }}</span>
-        </p>
-      }
-      @if (item.date_payment) {
-        <p>
-          Fecha pago:
-          <span class="body-border">{{
-            item.date_payment | date : "dd MMM yyyy"
-          }}</span>
-        </p>
-      }
-    </div>
-    <app-text-background [text]="'Cantidad'"></app-text-background>
-    <div class="flex flex-col gap-y-2 ml-4 py-3">
-      <div class="body-description flex flex-row gap-4 align-middle">
-        @if (item.amount) {
-          <app-text-border
-            [text]="'(BASE) ' + (item.amount | eurosFormat)"
-          ></app-text-border>
-        }
+<div class="flex flex-col-reverse gap-y-8 lg:flex-row lg:gap-x-24 lg:gap-y-0">
+  <div class="flex flex-1 justify-between gap-x-4 relative w-full">
+    <!-- Columna: Invoice -->
+    <div
+      class="w-full h-full"
+      [class.cursor-pointer]="!!item.invoice_pdf"
+      (click)="openPdfModal('invoice')"
+      (keydown)="onPreviewKeydown($event, 'invoice')"
+      tabindex="0"
+      role="button"
+      aria-label="Abrir factura PDF"
+    >
+      @if (item.invoice_pdf) {
+      <div class="relative w-full">
+        <object
+          [data]="invoicePreviewUrl"
+          type="application/pdf"
+          width="100%"
+          height="350px"
+        ></object>
 
-        @if (item.iva) {
-          <app-text-border
-            [text]="'(IVA) ' + (item.iva | eurosFormat)"
-          ></app-text-border>
-        }
-        @if (item.irpf) {
-          <app-text-border
-            [text]="'(IRPF) ' + (item.irpf | eurosFormat)"
-          ></app-text-border>
-        }
-        =
-        @if (item.total_amount) {
-          <app-text-border
-            [text]="item.total_amount | eurosFormat"
-          ></app-text-border>
-        }
+        <!-- Overlay para captar clic/teclado sin interferir con el <object> -->
+        <div
+          class="absolute top-0 left-0 w-full h-full"
+          style="z-index: 10"
+          width="100%"
+          height="350px"
+        ></div>
       </div>
+      } @else {
+      <img
+        appImgBroken
+        [src]="'assets/img/factura.png'"
+        [alt]="'Dibujo factura'"
+        class="w-full"
+      />
+      }
     </div>
-    <app-text-background [text]="'Subvención'"></app-text-background>
-    <app-text-icon
-      [icon]="'uil uil-building icon'"
-      [text]="item.subsidy_id?.toString()"
-    ></app-text-icon>
+
+    <!-- Columna: Proof -->
+    <div
+      class="w-full h-full"
+      [class.cursor-pointer]="!!item.proof_pdf"
+      (click)="openPdfModal('proof')"
+      (keydown)="onPreviewKeydown($event, 'proof')"
+      tabindex="0"
+      role="button"
+      aria-label="Abrir justificante PDF"
+    >
+      @if (item.proof_pdf) {
+      <div class="relative w-full">
+        <object
+          [data]="proofPreviewUrl"
+          type="application/pdf"
+          width="100%"
+          height="350px"
+        ></object>
+
+        <!-- Overlay para captar clic/teclado sin interferir con el <object> -->
+        <div
+          class="absolute top-0 left-0 w-full h-full"
+          style="z-index: 10"
+          width="100%"
+          height="350px"
+        ></div>
+      </div>
+      } @else {
+      <img
+        appImgBroken
+        [src]="'assets/img/factura.png'"
+        [alt]="'Dibujo justificante'"
+        class="w-full"
+      />
+      }
+    </div>
   </div>
+
+  <div class="flex flex-1 flex-col gap-y-4">
+    <div
+      class="text-center inline-block border-b border-[#1C1C3A] pb-4 mb-4 md:pb-4 md:mb-8"
+    >
+      <app-text-title [text]="item.creditor_company" />
+      @if (item.number_invoice) {
+      <app-text-subtitle [text]="item.number_invoice" />
+      }
+    </div>
+
+    @if (item.description) {
+    <app-text-editor [text]="item.description" />
+    } @if (item.date_invoice) {
+    <p class="text-left text-[14px]">
+      {{ item.date_invoice | date : "EEEE dd MMM yyyy" }}
+    </p>
+    } @if (item.date_accounting) {
+    <p>Feche contabilidad: {{ item.date_accounting | date : "dd MMM yyyy" }}</p>
+    } @if (item.date_payment) {
+    <p>{{ item.date_payment | date : "dd MMM yyyy" }}</p>
+    }
+
+    <div class="flex flex-row gap-4 align-middle">
+      @if (item.amount) {
+      <div
+        class="flex flex-1 flex-col items-center justify-center text-[9px] md:text-[12px] px-[6px] py-3 rounded-[4px] border-[1px] border-lilaClaro"
+      >
+        <p>(BASE)</p>
+        <p>{{ item.amount | eurosFormat }}</p>
+      </div>
+      } @if (item.iva) {
+      <div
+        class="flex flex-1 flex-col items-center justify-center text-[9px] md:text-[12px] px-[6px] pt-1 pb-[3px] rounded-[4px] border-[1px] border-lilaClaro"
+      >
+        <p>(IVA)</p>
+        <p>{{ item.iva | eurosFormat }}</p>
+      </div>
+      } @if (item.irpf) {
+      <div
+        class="flex flex-1 flex-col items-center justify-center text-[9px] md:text-[12px] px-[6px] pt-1 pb-[3px] rounded-[4px] border-[1px] border-lilaClaro"
+      >
+        <p>(IRPF)</p>
+        <p>{{ item.irpf | eurosFormat }}</p>
+      </div>
+      } @if (item.total_amount) {
+      <div
+        class="flex flex-1 flex-col items-center justify-center text-[9px] md:text-[12px] px-[6px] pt-1 pb-[3px] rounded-[4px] border-[1px] border-lilaClaro"
+      >
+        {{ item.total_amount | eurosFormat }}
+      </div>
+      }
+    </div>
+
+    <app-text-background [text]="item.subsidy_name"></app-text-background>
+  </div>
+</div>
+
+<app-modal-pdf
+  [(open)]="showPdf"
+  [pdfUrl]="selectedPdf ?? ''"
+  [year]="item.date_invoice | date : 'yyyy'"
+  [type]="typeModal"
+  (openChange)="onPdfOpenChange($event)"
+></app-modal-pdf>

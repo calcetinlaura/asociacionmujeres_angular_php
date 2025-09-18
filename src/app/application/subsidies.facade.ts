@@ -1,185 +1,134 @@
-import { DestroyRef, inject, Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, catchError, Observable, tap } from 'rxjs';
-import {
-  SubsidyModel,
-  SubsidyModelFullData,
-} from 'src/app/core/interfaces/subsidy.interface';
+import { BehaviorSubject, Observable, Subject } from 'rxjs';
+import { catchError, tap } from 'rxjs/operators';
+import { SubsidyModelFullData } from 'src/app/core/interfaces/subsidy.interface';
 import { SubsidiesService } from 'src/app/core/services/subsidies.services';
-import { GeneralService } from '../shared/services/generalService.service';
+import { includesNormalized, toSearchKey } from '../shared/utils/text.utils';
+import { LoadableFacade } from './loadable.facade';
 
-@Injectable({
-  providedIn: 'root',
-})
-export class SubsidiesFacade {
-  private readonly destroyRef = inject(DestroyRef);
+@Injectable({ providedIn: 'root' })
+export class SubsidiesFacade extends LoadableFacade {
   private readonly subsidiesService = inject(SubsidiesService);
-  private readonly generalService = inject(GeneralService);
-  private subsidiesSubject = new BehaviorSubject<SubsidyModelFullData[]>([]);
-  private filteredSubsidiesSubject = new BehaviorSubject<
-    SubsidyModelFullData[]
-  >([]);
-  private selectedSubsidySubject =
+
+  // State
+  private readonly subsidiesSubject = new BehaviorSubject<
+    SubsidyModelFullData[] | null
+  >(null);
+  private readonly filteredSubsidiesSubject = new BehaviorSubject<
+    SubsidyModelFullData[] | null
+  >(null);
+  private readonly selectedSubsidySubject =
     new BehaviorSubject<SubsidyModelFullData | null>(null);
 
-  // private currentFilter: string = 'TODOS';
-  // private isLoadingSubject = new BehaviorSubject<boolean>(false);
+  // Eventos
+  private readonly savedSubject = new Subject<SubsidyModelFullData>();
+  private readonly deletedSubject = new Subject<number>();
 
-  // isLoadingSubsidies$ = this.isLoadingSubject.asObservable();
-  subsidies$ = this.subsidiesSubject.asObservable();
-  selectedSubsidy$ = this.selectedSubsidySubject.asObservable();
-  filteredSubsidies$ = this.filteredSubsidiesSubject.asObservable();
-  currentFilter: number | null = null;
+  // Streams públicos
+  readonly subsidies$ = this.subsidiesSubject.asObservable();
+  readonly filteredSubsidies$ = this.filteredSubsidiesSubject.asObservable();
+  readonly selectedSubsidy$ = this.selectedSubsidySubject.asObservable();
+  readonly saved$ = this.savedSubject.asObservable();
+  readonly deleted$ = this.deletedSubject.asObservable();
 
-  constructor() {}
-
-  setCurrentFilter(year: number | null): void {
-    this.currentFilter = year;
-  }
-
-  private reloadCurrentFilteredYear(): void {
-    if (this.currentFilter !== null) {
-      this.loadSubsidiesByYear(this.currentFilter);
-    } else {
-      this.loadAllSubsidies();
-    }
-  }
-  // loadSubsidiesByFilter(filter: string): void {
-  //   const loaders: Record<string, () => void> = {
-  //     ALL: () => this.loadAllSubsidies(),
-  //   };
-
-  //   (loaders[filter] || (() => this.loadSubsidiesByYear(filter)))();
-  // }
-  // private reloadCurrentFilteredYear(): void {
-  //   this.loadSubsidiesByFilter(this.currentFilter);
-  // }
+  private currentFilter: number | null = null;
 
   loadAllSubsidies(): void {
-    this.subsidiesService
-      .getSubsidies()
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((subsidies) => {
-          this.updateSubsidyState(subsidies);
-          // this.isLoadingSubject.next(false);
-        }),
-        catchError((error) => {
-          // this.isLoadingSubject.next(false);
-          return this.generalService.handleHttpError(error);
-        })
-      )
-      .subscribe();
+    this.setCurrentFilter(null);
+    this.executeWithLoading(this.subsidiesService.getSubsidies(), (subs) =>
+      this.updateSubsidyState(subs)
+    );
   }
-
-  // loadSubsidiesByType(type: string): void {
-  //   this.subsidiesService
-  //     .getSubsidiesByType(type)
-  //     .pipe(
-  //       takeUntilDestroyed(this.destroyRef),
-  //       tap((subsidies) => {
-  //         this.updateSubsidyState(subsidies);
-  //         // this.isLoadingSubject.next(false);
-  //       }),
-  //       catchError((error) => {
-  //         // this.isLoadingSubject.next(false);
-  //         return this.generalService.handleHttpError(error);
-  //       })
-  //     )
-  //     .subscribe();
-  // }
 
   loadSubsidiesByYear(year: number): void {
-    // this.isLoadingSubject.next(true); // Comienza carga
-    this.subsidiesService
-      .getSubsidiesByYear(year)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((subsidies) => {
-          this.updateSubsidyState(subsidies);
-          // this.isLoadingSubject.next(false);
-        }),
-        catchError((error) => {
-          // this.isLoadingSubject.next(false);
-          return this.generalService.handleHttpError(error);
-        })
-      )
-      .subscribe();
+    this.setCurrentFilter(year);
+    this.executeWithLoading(
+      this.subsidiesService.getSubsidiesByYear(year),
+      (subs) => this.updateSubsidyState(subs)
+    );
   }
-
-  // loadSubsidiesByLatest(): void {
-  //   this.subsidiesService
-  //     .getSubsidiesByLatest()
-  //     .pipe(
-  //       takeUntilDestroyed(this.destroyRef),
-  //       tap((subsidies) => {
-  //         this.updateSubsidyState(subsidies);
-  //         this.isLoadingSubject.next(false);
-  //       }),
-  //       catchError((error) => {
-  //         this.isLoadingSubject.next(false);
-  //         return this.generalService.handleHttpError(error);
-  //       })
-  //     )
-  //     .subscribe();
-  // }
 
   loadSubsidyById(id: number): void {
-    this.subsidiesService
-      .getSubsidieById(id)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((subsidy) => this.selectedSubsidySubject.next(subsidy)),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-      .subscribe();
+    this.executeWithLoading(this.subsidiesService.getSubsidieById(id), (sub) =>
+      this.selectedSubsidySubject.next(sub)
+    );
   }
 
-  addSubsidy(subsidy: SubsidyModel): Observable<SubsidyModel> {
-    return this.subsidiesService.add(subsidy).pipe(
+  /** Devuelve el guardado y emite saved$ */
+  addSubsidy(subsidy: FormData): Observable<SubsidyModelFullData> {
+    return this.wrapWithLoading(this.subsidiesService.add(subsidy)).pipe(
       takeUntilDestroyed(this.destroyRef),
-      tap(() => this.reloadCurrentFilteredYear()),
+      tap((saved) => {
+        this.savedSubject.next(saved as SubsidyModelFullData);
+        this.reloadCurrentFilter();
+      }),
       catchError((err) => this.generalService.handleHttpError(err))
     );
   }
 
-  editSubsidy(id: number, subsidy: SubsidyModel): Observable<SubsidyModel> {
-    return this.subsidiesService.edit(id, subsidy).pipe(
+  /** Devuelve el editado y emite saved$ */
+  editSubsidy(subsidy: FormData): Observable<SubsidyModelFullData> {
+    return this.wrapWithLoading(this.subsidiesService.edit(subsidy)).pipe(
       takeUntilDestroyed(this.destroyRef),
-      tap(() => this.reloadCurrentFilteredYear()),
+      tap((saved) => {
+        this.savedSubject.next(saved as SubsidyModelFullData);
+        this.reloadCurrentFilter();
+      }),
       catchError((err) => this.generalService.handleHttpError(err))
     );
   }
 
+  /** Devuelve el id borrado y emite deleted$ */
+  // deleteSubsidy(id: number): Observable<number> {
+  //   return this.wrapWithLoading(this.subsidiesService.delete(id)).pipe(
+  //     takeUntilDestroyed(this.destroyRef),
+  //     tap(() => {
+  //       this.deletedSubject.next(id);
+  //       this.reloadCurrentFilter();
+  //     }),
+  //     map(() => id),
+  //     catchError((err) => this.generalService.handleHttpError(err))
+  //   );
+  // }
   deleteSubsidy(id: number): void {
-    this.subsidiesService
-      .delete(id)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap(() => this.reloadCurrentFilteredYear()),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-      .subscribe();
+    this.executeWithLoading(this.subsidiesService.delete(id), () => {
+      this.deletedSubject.next(id);
+      this.reloadCurrentFilter();
+    });
   }
 
+  // ---------- Utilidades ----------
   clearSelectedSubsidy(): void {
     this.selectedSubsidySubject.next(null);
   }
 
   applyFilterWord(keyword: string): void {
-    const allSubsidies = this.subsidiesSubject.getValue();
+    const all = this.subsidiesSubject.getValue();
+    const k = toSearchKey(keyword);
 
-    if (!keyword.trim() || !allSubsidies) {
-      this.filteredSubsidiesSubject.next(allSubsidies);
+    if (!all || !k) {
+      this.filteredSubsidiesSubject.next(all);
       return;
     }
 
-    const search = keyword.trim().toLowerCase();
-    const filtered = allSubsidies.filter((subsidy) =>
-      subsidy.name.toLowerCase().includes(search)
+    const filtered = all.filter((s) =>
+      [s.name].filter(Boolean).some((field) => includesNormalized(field!, k))
     );
 
     this.filteredSubsidiesSubject.next(filtered);
+  }
+
+  setCurrentFilter(year: number | null): void {
+    this.currentFilter = year;
+  }
+
+  private reloadCurrentFilter(): void {
+    if (this.currentFilter === null) {
+      this.loadAllSubsidies();
+      return;
+    }
+    this.loadSubsidiesByYear(this.currentFilter);
   }
 
   private updateSubsidyState(subsidies: SubsidyModelFullData[]): void {

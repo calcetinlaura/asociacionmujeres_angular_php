@@ -1,13 +1,22 @@
 <?php
 header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET, POST, PATCH, DELETE");
-header("Access-Control-Allow-Headers: Content-Type");
+header("Access-Control-Allow-Methods: GET, POST, PATCH, DELETE, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, X-Requested-With, X-HTTP-Method-Override, Authorization, Origin, Accept");
 header("Content-Type: application/json; charset=UTF-8");
 
 include '../config/conexion.php';
 include 'utils/utils.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
+
+if ($method === 'POST') {
+  $override = $_POST['_method'] ?? $_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'] ?? '';
+  $override = strtoupper($override);
+  if ($override === 'DELETE') {
+    $method = 'DELETE';
+  }
+}
+
 if ($method === 'OPTIONS') {
   http_response_code(204);
   exit();
@@ -20,7 +29,7 @@ $basePath = "../uploads/img/PLACES/";
 
 // Función para obtener salas de un lugar
 function getSalas($connection, $placeId) {
-  $stmt = $connection->prepare("SELECT * FROM salas WHERE place_id = ?");
+  $stmt = $connection->prepare("SELECT * FROM salas WHERE place_id = ? ORDER BY room_location IS NULL, room_location ASC, name ASC");
   $stmt->bind_param("i", $placeId);
   $stmt->execute();
   $result = $stmt->get_result();
@@ -35,13 +44,13 @@ function getSalas($connection, $placeId) {
 function saveSalas($connection, $placeId, $salas) {
   $connection->query("DELETE FROM salas WHERE place_id = $placeId");
 
-  $stmt = $connection->prepare("INSERT INTO salas (place_id, name, type, capacity, location) VALUES (?, ?, ?, ?, ?)");
+  $stmt = $connection->prepare("INSERT INTO salas (place_id, name, type_ubication, capacity, room_location) VALUES (?, ?, ?, ?, ?)");
   foreach ($salas as $sala) {
     $name = $sala['name'] ?? '';
-    $type = $sala['type'] ?? '';
+    $type_ubication = $sala['type_ubication'] ?? '';
     $capacity = isset($sala['capacity']) ? (int)$sala['capacity'] : 0;
-    $location = $sala['location'] ?? '';
-    $stmt->bind_param("issis", $placeId, $name, $type, $capacity, $location);
+    $room_location = $sala['room_location'] ?? '';
+    $stmt->bind_param("issis", $placeId, $name, $type, $capacity, $room_location);
     $stmt->execute();
   }
 }
@@ -108,7 +117,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'deleteImage') {
   if (!empty($_POST['id'])) {
     $id = (int)$_POST['id'];
 
-    if (eliminarSoloImagen($connection, strtolower($type), 'img', $id, $basePath)) {
+    if (eliminarSoloArchivo($connection, strtolower($type), 'img', $id, $basePath)) {
       echo json_encode(["message" => "Imagen eliminada correctamente"]);
     } else {
       http_response_code(500);
@@ -154,16 +163,16 @@ if (isset($_POST['action']) && $_POST['action'] === 'deleteImage') {
         $imgName = $oldImg;
       }
 
-      $stmt = $connection->prepare("UPDATE places SET name = ?, province = ?, lat = ?, lon = ?, capacity = ?, address = ?, town = ?, post_code = ?, description = ?, observations = ?, management = ?, type = ?, img = ? WHERE id = ?");
-      $stmt->bind_param("ssddissssssssi",
+      $stmt = $connection->prepare("UPDATE places SET name = ?, province = ?, lat = ?, lon = ?, capacity = ?, address = ?, town = ?, post_code = ?, description = ?, observations = ?, management = ?, type_room = ?, type_ubication = ?, img = ? WHERE id = ?");
+      $stmt->bind_param("ssddisssssssssi",
         $data['name'], $data['province'], $data['lat'], $data['lon'], $data['capacity'],
         $data['address'], $data['town'], $data['post_code'], $data['description'],
-        $data['observations'], $data['management'], $data['type'], $imgName, $id
+        $data['observations'], $data['management'], $data['type_room'], $data['type_ubication'], $imgName, $id
       );
 
       if ($stmt->execute()) {
         if ($oldImg && $imgName !== $oldImg) {
-          eliminarImagenSiNoSeUsa($connection, 'places', 'img', $oldImg, $basePath);
+          eliminarArchivoSiNoSeUsa($connection, 'places', 'img', $oldImg, $basePath);
         }
         saveSalas($connection, $id, $salas);
         echo json_encode(["message" => "Lugar actualizado con éxito."]);
@@ -173,11 +182,11 @@ if (isset($_POST['action']) && $_POST['action'] === 'deleteImage') {
       }
 
     } else {
-      $stmt = $connection->prepare("INSERT INTO places (name, province, lat, lon, capacity, address, town, post_code, description, observations, management, type, img) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-      $stmt->bind_param("ssddissssssss",
+      $stmt = $connection->prepare("INSERT INTO places (name, province, lat, lon, capacity, address, town, post_code, description, observations, management, type_room, type_ubication, img) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+      $stmt->bind_param("ssddisssssssss",
         $data['name'], $data['province'], $data['lat'], $data['lon'], $data['capacity'],
         $data['address'], $data['town'], $data['post_code'], $data['description'],
-        $data['observations'], $data['management'], $data['type'], $imgName
+        $data['observations'], $data['management'], $data['type_room'], $data['type_ubication'], $imgName
       );
 
       if ($stmt->execute()) {
@@ -192,7 +201,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'deleteImage') {
     break;
 
     case 'DELETE':
-      $id = isset($_GET['id']) ? (int)$_GET['id'] : null;
+      $id = $_POST['id'] ?? $_GET['id'] ?? null;
       if (!$id) {
         http_response_code(400);
         echo json_encode(["message" => "ID no válido."]);
@@ -213,7 +222,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'deleteImage') {
       if ($stmt->execute()) {
         if ($imgToDelete) {
           $basePath = "../uploads/img/PLACES/";
-          eliminarImagenSiNoSeUsa($connection, 'places', 'img', $imgToDelete, $basePath);
+          eliminarArchivoSiNoSeUsa($connection, 'places', 'img', $imgToDelete, $basePath);
         }
         echo json_encode(["message" => "Lugar eliminado con éxito."]);
       } else {

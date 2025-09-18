@@ -1,16 +1,14 @@
-<div class="flex flex-col mx-3 md:mx-8 mt-2 md:mt-4">
+<div class="flex flex-col mx-3 md:mx-8 mt-4">
   <app-filters
     [filters]="filters"
     (filterClicked)="filterSelected($event)"
     [loadFirstFilter]="'NOVEDADES'"
   />
-  <app-input-search
-    (onDebounce)="applyFilterWord($event)"
-    class="my-4 md:my-6"
-  />
-  <!-- Spinner Loading -->
-  @if (isLoading) {
-  <app-spinner-loading />
+  <app-input-search (onDebounce)="applyFilterWord($event)" class="my-8" />
+  @if (booksFacade.isLoading$ | async) {
+  <div class="mt-24">
+    <app-spinner-loading />
+  </div>
   } @else { @if (areThereResults) {
   <app-section-generic
     [typeSection]="typeList.Books"
@@ -21,6 +19,4 @@
   } @else {
   <app-no-results [text]="'libros' | lowercase" />
   } }
-  <!-- Sección cards -->
-  <!-- Sección no hay resultados -->
 </div>

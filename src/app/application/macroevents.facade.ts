@@ -1,17 +1,16 @@
-import { DestroyRef, inject, Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, catchError, Observable, tap } from 'rxjs';
+import { MacroeventModelFullData } from 'src/app/core/interfaces/macroevent.interface';
 import { MacroeventsService } from 'src/app/core/services/macroevents.services';
-import { MacroeventModelFullData } from '../core/interfaces/macroevent.interface';
-import { GeneralService } from '../shared/services/generalService.service';
+import { includesNormalized, toSearchKey } from '../shared/utils/text.utils';
+import { LoadableFacade } from './loadable.facade';
 
-@Injectable({
-  providedIn: 'root',
-})
-export class MacroeventsFacade {
-  private readonly destroyRef = inject(DestroyRef);
+@Injectable({ providedIn: 'root' })
+export class MacroeventsFacade extends LoadableFacade {
   private readonly macroeventsService = inject(MacroeventsService);
-  private readonly generalService = inject(GeneralService);
+
+  // State propio
   private readonly macroeventsSubject = new BehaviorSubject<
     MacroeventModelFullData[] | null
   >(null);
@@ -21,94 +20,57 @@ export class MacroeventsFacade {
   private readonly selectedMacroeventSubject =
     new BehaviorSubject<MacroeventModelFullData | null>(null);
 
-  macroevents$ = this.macroeventsSubject.asObservable();
-  filteredMacroevents$ = this.filteredMacroeventsSubject.asObservable();
-  selectedMacroevent$ = this.selectedMacroeventSubject.asObservable();
-  currentYear: number | null = null;
-  currentFilter: number | null = null;
+  // Streams públicos
+  readonly macroevents$ = this.macroeventsSubject.asObservable();
+  readonly filteredMacroevents$ =
+    this.filteredMacroeventsSubject.asObservable();
+  readonly selectedMacroevent$ = this.selectedMacroeventSubject.asObservable();
 
-  constructor() {}
-
-  setCurrentFilter(year: number | null): void {
-    this.currentFilter = year;
-  }
-
-  private reloadCurrentFilteredYear(): void {
-    if (this.currentFilter !== null) {
-      this.loadMacroeventsByYear(this.currentFilter);
-    } else {
-      this.loadAllMacroevents();
-    }
-  }
+  private currentFilter: number | null = null; // año actual aplicado (o null => todos)
 
   loadAllMacroevents(): void {
-    this.macroeventsService
-      .getMacroevents()
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((macroevents) => {
-          this.updateMacroeventState(macroevents);
-        }),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-      .subscribe();
-  }
-
-  setCurrentYear(year: number): void {
-    this.currentYear = year;
+    this.setCurrentFilter(null);
+    this.executeWithLoading(
+      this.macroeventsService.getMacroevents(),
+      (macroevents) => this.updateMacroeventState(macroevents)
+    );
   }
 
   loadMacroeventsByYear(year: number): void {
     this.setCurrentFilter(year);
-
-    this.macroeventsService
-      .getMacroeventsByYear(year)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((macroevents: MacroeventModelFullData[]) =>
-          this.updateMacroeventState(macroevents)
-        ),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-      .subscribe();
+    this.executeWithLoading(
+      this.macroeventsService.getMacroeventsByYear(year),
+      (macroevents) => this.updateMacroeventState(macroevents)
+    );
   }
 
   loadMacroeventById(id: number): void {
-    this.macroeventsService
-      .getMacroeventById(id)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((event) => this.selectedMacroeventSubject.next(event)),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-      .subscribe();
-  }
-
-  editMacroevent(itemId: number, event: FormData): Observable<FormData> {
-    return this.macroeventsService.edit(itemId, event).pipe(
-      takeUntilDestroyed(this.destroyRef),
-      tap(() => this.reloadCurrentFilteredYear()),
-      catchError((err) => this.generalService.handleHttpError(err))
+    this.executeWithLoading(
+      this.macroeventsService.getMacroeventById(id),
+      (event) => this.selectedMacroeventSubject.next(event)
     );
   }
 
   addMacroevent(event: FormData): Observable<FormData> {
-    return this.macroeventsService.add(event).pipe(
+    return this.wrapWithLoading(this.macroeventsService.add(event)).pipe(
       takeUntilDestroyed(this.destroyRef),
-      tap(() => this.reloadCurrentFilteredYear()),
+      tap(() => this.reloadCurrentFiltered()),
+      catchError((err) => this.generalService.handleHttpError(err))
+    );
+  }
+
+  editMacroevent(event: FormData): Observable<FormData> {
+    return this.wrapWithLoading(this.macroeventsService.edit(event)).pipe(
+      takeUntilDestroyed(this.destroyRef),
+      tap(() => this.reloadCurrentFiltered()),
       catchError((err) => this.generalService.handleHttpError(err))
     );
   }
 
   deleteMacroevent(id: number): void {
-    this.macroeventsService
-      .delete(id)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap(() => this.reloadCurrentFilteredYear()),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-      .subscribe();
+    this.executeWithLoading(this.macroeventsService.delete(id), () =>
+      this.reloadCurrentFiltered()
+    );
   }
 
   clearSelectedMacroevent(): void {
@@ -116,19 +78,35 @@ export class MacroeventsFacade {
   }
 
   applyFilterWord(keyword: string): void {
-    const allMacroevents = this.macroeventsSubject.getValue();
+    const all = this.macroeventsSubject.getValue();
 
-    if (!keyword.trim() || !allMacroevents) {
-      this.filteredMacroeventsSubject.next(allMacroevents);
+    if (!all) {
+      this.filteredMacroeventsSubject.next(all);
       return;
     }
-    const search = keyword.trim().toLowerCase();
 
-    const filteredMacroevents = allMacroevents.filter((event) =>
-      event.title.toLowerCase().includes(search)
+    if (!toSearchKey(keyword)) {
+      this.filteredMacroeventsSubject.next(all);
+      return;
+    }
+
+    const filtered = all.filter((e) =>
+      [e.title].some((field) => includesNormalized(field, keyword))
     );
 
-    this.filteredMacroeventsSubject.next(filteredMacroevents);
+    this.filteredMacroeventsSubject.next(filtered);
+  }
+
+  setCurrentFilter(year: number | null): void {
+    this.currentFilter = year;
+  }
+
+  private reloadCurrentFiltered(): void {
+    if (this.currentFilter === null) {
+      this.loadAllMacroevents();
+      return;
+    }
+    this.loadMacroeventsByYear(this.currentFilter);
   }
 
   private updateMacroeventState(macroevents: MacroeventModelFullData[]): void {

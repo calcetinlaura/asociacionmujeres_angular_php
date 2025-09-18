@@ -1,5 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  ElementRef,
+  inject,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -28,6 +35,7 @@ import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.co
 
 @Component({
   selector: 'app-podcasts-page',
+  standalone: true,
   imports: [
     DashboardHeaderComponent,
     ModalComponent,
@@ -44,46 +52,88 @@ import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.co
     StickyZoneComponent,
   ],
   templateUrl: './podcasts-page.component.html',
-  styleUrl: './podcasts-page.component.css',
 })
 export class PodcastsPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly modalService = inject(ModalService);
-  private readonly podcastsFacade = inject(PodcastsFacade);
+  readonly podcastsFacade = inject(PodcastsFacade);
   private readonly podcastsService = inject(PodcastsService);
-  private readonly pdfPrintService = inject(PdfPrintService);
   private readonly generalService = inject(GeneralService);
+  private readonly pdfPrintService = inject(PdfPrintService);
+
+  columnVisibility: Record<string, boolean> = {};
+  displayedColumns: string[] = [];
+
+  headerListPodcasts: ColumnModel[] = [
+    { title: 'Portada', key: 'img', sortable: false },
+    { title: 'Título', key: 'title', sortable: true, width: ColumnWidth.XL },
+    {
+      title: 'Episodio',
+      key: 'season',
+      sortable: false,
+      width: ColumnWidth.XS,
+    },
+    {
+      title: 'Duración',
+      key: 'duration',
+      sortable: true,
+      pipe: 'time : hh mm',
+      width: ColumnWidth.SM,
+    },
+    {
+      title: 'Fecha',
+      key: 'date',
+      sortable: true,
+      pipe: 'date : dd MMM yyyy',
+      width: ColumnWidth.SM,
+      textAlign: 'center',
+    },
+    {
+      title: 'Descripción',
+      key: 'description',
+      sortable: true,
+      innerHTML: true,
+      showIndicatorOnEmpty: true,
+      width: ColumnWidth.LG,
+    },
+    {
+      title: 'Equipo artistico',
+      key: 'artists',
+      sortable: true,
+      innerHTML: true,
+      showIndicatorOnEmpty: true,
+    },
+    {
+      title: 'Equipo técnico',
+      key: 'technics',
+      sortable: true,
+      innerHTML: true,
+    },
+    {
+      title: 'Podcast',
+      key: 'podcast',
+      sortable: true,
+      showIndicatorOnEmpty: true,
+    },
+  ];
 
   podcasts: PodcastModel[] = [];
   filteredPodcasts: PodcastModel[] = [];
 
-  isLoading = true;
   isModalVisible = false;
   number = 0;
 
   item: PodcastModel | null = null;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
   searchForm!: FormGroup;
-  typeSection = TypeList.Podcasts;
   typeModal = TypeList.Podcasts;
-  columnVisibility: Record<string, boolean> = {};
-  displayedColumns: string[] = [];
+  typeSection = TypeList.Podcasts;
 
-  headerListPodcasts: ColumnModel[] = [
-    { title: 'Portada', key: 'img', sortable: false },
-    { title: 'Título', key: 'title', sortable: true },
-    { title: 'Fecha', key: 'date', sortable: true },
-    {
-      title: 'Descripción',
-      key: 'description',
-      sortable: true,
-      booleanIndicator: true,
-      width: ColumnWidth.SM,
-    },
-  ];
+  @ViewChild('printArea', { static: false })
+  printArea!: ElementRef<HTMLElement>;
 
   ngOnInit(): void {
-    // Ocultar 'date_payment' y 'date_accounting' al cargar la página
+    // Columnas visibles iniciales
     this.columnVisibility = this.generalService.setColumnVisibility(
       this.headerListPodcasts,
       [''] // Coloca las columnas que deseas ocultar aquí
@@ -150,15 +200,16 @@ export class PodcastsPageComponent implements OnInit {
     this.modalService.closeModal();
   }
 
-  confirmDeletePodcast(podcast: PodcastModel | null): void {
-    if (!podcast) return;
-    this.podcastsFacade.deletePodcast(podcast.id);
-    this.onCloseModal();
+  onDelete({ type, id }: { type: TypeList; id: number }) {
+    const actions: Partial<Record<TypeList, (id: number) => void>> = {
+      [TypeList.Podcasts]: (x) => this.podcastsFacade.deletePodcast(x),
+    };
+    actions[type]?.(id);
   }
 
   sendFormPodcast(event: { itemId: number; formData: FormData }): void {
     const save$ = event.itemId
-      ? this.podcastsFacade.editPodcast(event.itemId, event.formData)
+      ? this.podcastsFacade.editPodcast(event.formData)
       : this.podcastsFacade.addPodcast(event.formData);
 
     save$
@@ -175,11 +226,20 @@ export class PodcastsPageComponent implements OnInit {
     this.podcasts = this.podcastsService.sortPodcastsById(podcasts);
     this.filteredPodcasts = [...this.podcasts];
     this.number = this.podcastsService.countPodcasts(podcasts);
-    this.isLoading = false;
   }
-  printTableAsPdf(): void {
-    this.pdfPrintService.printTableAsPdf('table-to-print', 'podcasts.pdf');
+
+  async printTableAsPdf(): Promise<void> {
+    if (!this.printArea) return;
+
+    await this.pdfPrintService.printElementAsPdf(this.printArea, {
+      filename: 'facturas.pdf',
+      preset: 'compact', // 'compact' reduce paddings en celdas
+      orientation: 'landscape', // o 'landscape' si la tabla es muy ancha
+      format: 'a4',
+      margins: [5, 5, 5, 5], // mm
+    });
   }
+
   getVisibleColumns() {
     return this.headerListPodcasts.filter(
       (col) => this.columnVisibility[col.key]
@@ -187,20 +247,10 @@ export class PodcastsPageComponent implements OnInit {
   }
   // Método para actualizar las columnas visibles cuando se hace toggle
   toggleColumn(key: string): void {
-    // Cambia la visibilidad de la columna en columnVisibility
     this.columnVisibility[key] = !this.columnVisibility[key];
-    // Actualiza las columnas visibles en la tabla después de cambiar el estado
     this.displayedColumns = this.generalService.updateDisplayedColumns(
       this.headerListPodcasts,
       this.columnVisibility
     );
-  }
-
-  private updateDisplayedColumns(): void {
-    const base = ['number']; // si usas un número de fila
-    const dynamic = this.headerListPodcasts
-      .filter((col) => this.columnVisibility[col.key])
-      .map((col) => col.key);
-    this.displayedColumns = [...base, ...dynamic, 'actions'];
   }
 }

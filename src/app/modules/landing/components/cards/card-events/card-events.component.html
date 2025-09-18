@@ -1,0 +1,143 @@
+<div class="card">
+  <div class="cover">
+    <img
+      appImgBroken
+      [src]="item.img | itemImage : type"
+      alt=""
+      class="cover_image"
+    />
+  </div>
+  <div class="flex flex-col gap-y-3 text-center py-4">
+    <div
+      appFitText
+      [maxPx]="14"
+      [minPx]="10"
+      [lines]="2"
+      [lineHeightPx]="11"
+      class="item-title"
+    >
+      {{ item.title }}
+    </div>
+    <div class="flex justify-center">
+      <p
+        appFitText
+        [maxPx]="12"
+        [minPx]="8"
+        [lines]="2"
+        [lineHeightPx]="10"
+        class="text-gray-500 line-j"
+      >
+        {{ item.place_name }}
+      </p>
+    </div>
+    @if ( item.time_start && item.time_start !== '00:00:00') {
+    <div class="flex justify-center">
+      <p
+        class="text-[9px] md:text-[12px] px-[6px] pt-1 pb-[3px] rounded-[4px] border-[1px] border-lilaOscuro"
+      >
+        {{ item.time_start?.slice(0, 5) + " h" }}
+      </p>
+    </div>
+    }
+    <div class="flex justify-center items-start h-[40px] md:h-[60px]">
+      @if (item.periodicEvents === null){ @if (item.start && item.end ===
+      item.start) {
+      <div
+        class="box-date-single bg-lilaClaro px-[6px] h-full rounded-[4px] flex flex-col justify-center items-center"
+      >
+        @if (isToday(item.start)) {
+        <p>HOY</p>
+        } @else {
+        <p>
+          {{ item.start | date : "EEEE " }}
+        </p>
+        <p>
+          {{ item.start | date : "dd" }}
+        </p>
+        <p>{{ item.start | date : "MMMM" }}</p>
+        }
+      </div>
+      } @if (item.start && item.end !== item.start) { @if
+      (shouldCollapseToOnlyHoy(item.end)) {
+      <!-- Solo una cajita con HOY -->
+      <div
+        class="box-date-single bg-lilaClaro px-[6px] h-full rounded-[4px] flex flex-col justify-center items-center"
+      >
+        <p>HOY</p>
+      </div>
+      } @else {
+      <!-- Rango normal, pero el inicio puede decir HOY -->
+      <div
+        class="box-date bg-lilaClaro px-[6px] h-full rounded-bl-[4px] rounded-tl-[4px] flex flex-col justify-center items-center"
+      >
+        @if (shouldShowHoyForStart(item.start, item.end)){
+        <p>HOY</p>
+        } @else {
+        <p>
+          {{ item.start | date : "EEE" }}
+        </p>
+        <p>{{ item.start | date : "dd" }}</p>
+        <p>{{ item.start | date : "MMM" }}</p>
+        }
+      </div>
+
+      <div
+        class="flex items-center bg-lilaClaro px-[6px] h-full text-[9px] text-gray-500"
+      >
+        al
+      </div>
+
+      <div
+        class="box-date bg-lilaClaro px-[6px] h-full rounded-br-[4px] rounded-tr-[4px] flex flex-col justify-center items-center"
+      >
+        <p>{{ item.end | date : "EEE" }}</p>
+        <p>{{ item.end | date : "dd" }}</p>
+        <p>{{ item.end | date : "MMM" }}</p>
+      </div>
+      } } } @if (item.periodicEvents && item.periodicEvents.length > 0) { @let
+      shown = getPeriodicEventsToShow(item.periodicEvents);
+      <div
+        class="flex gap-x-2 overflow-x-auto w-full min-w-0 max-w-full overflow-y-hidden"
+        [class.justify-start]="
+          (item?.periodicEvents?.length || 0) > (isMobile ? 5 : 7)
+        "
+        [class.justify-center]="
+          (item?.periodicEvents?.length || 0) <= (isMobile ? 5 : 7)
+        "
+      >
+        @for (func of shown; track func) {
+        <div
+          class="box-date bg-lilaClaro px-[6px] flex-none flex flex-col rounded-[4px] items-center justify-center whitespace-nowrap"
+        >
+          @if (isToday(func.start)) {
+          <p>HOY</p>
+          } @else {
+          <p>
+            {{ item.start | date : "EEE" }}
+          </p>
+          <p>{{ item.start | date : "dd" }}</p>
+          <p>{{ item.start | date : "MMM" }}</p>
+          }
+        </div>
+        }
+      </div>
+      }
+    </div>
+    @if (item.status){
+    <div class="flex justify-center">
+      @if (item.status === 'Cancelado') {
+      <app-text-background
+        [text]="'Evento ' + item.status"
+        [colorBack]="'#de7a71'"
+      ></app-text-background>
+      } @if (item.status === 'Agotadas') {
+      <app-text-background
+        [text]="'Inscripciones ' + item.status"
+        [colorBack]="'#de7a71'"
+        [colorText]="'white'"
+      ></app-text-background>
+      }
+    </div>
+    }
+  </div>
+</div>

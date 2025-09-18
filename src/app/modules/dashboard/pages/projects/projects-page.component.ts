@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import {
   Component,
   DestroyRef,
+  ElementRef,
   inject,
   OnInit,
   ViewChild,
@@ -39,6 +40,7 @@ import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.co
 
 @Component({
   selector: 'app-projects-page',
+  standalone: true,
   imports: [
     DashboardHeaderComponent,
     ModalComponent,
@@ -56,36 +58,20 @@ import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.co
     StickyZoneComponent,
   ],
   templateUrl: './projects-page.component.html',
-  styleUrl: './projects-page.component.css',
 })
 export class ProjectsPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly modalService = inject(ModalService);
-  private readonly projectsFacade = inject(ProjectsFacade);
+  readonly projectsFacade = inject(ProjectsFacade);
   private readonly projectsService = inject(ProjectsService);
   private readonly generalService = inject(GeneralService);
   private readonly pdfPrintService = inject(PdfPrintService);
 
-  projects: ProjectModel[] = [];
-  filteredProjects: ProjectModel[] = [];
-  filters: Filter[] = [];
-
-  selectedFilter: number | null = null;
-  currentYear = this.generalService.currentYear;
-  typeSection = TypeList.Projects;
-  typeModal = TypeList.Projects;
-  isLoading = true;
-  isModalVisible = false;
-  number = 0;
-
-  item: ProjectModel | null = null;
-  currentModalAction: TypeActionModal = TypeActionModal.Create;
-  searchForm!: FormGroup;
   columnVisibility: Record<string, boolean> = {};
   displayedColumns: string[] = [];
 
   headerListProjects: ColumnModel[] = [
-    { title: 'Título', key: 'title', sortable: true, width: ColumnWidth.XL },
+    { title: 'Título', key: 'title', sortable: true },
     {
       title: 'Año',
       key: 'year',
@@ -97,36 +83,56 @@ export class ProjectsPageComponent implements OnInit {
       title: 'Descripción',
       key: 'description',
       sortable: true,
-      booleanIndicator: true,
-      width: ColumnWidth.SM,
+      innerHTML: true,
+      showIndicatorOnEmpty: true,
+      width: ColumnWidth.LG,
     },
 
     {
       title: 'Subvención',
       key: 'subsidy_name',
       sortable: true,
-      width: ColumnWidth.XS,
+      width: ColumnWidth.SM,
     },
     {
-      title: 'Actividades',
+      title: 'Tareas',
       key: 'activities',
       sortable: true,
-      width: ColumnWidth.XL,
+      width: ColumnWidth.LG,
     },
     { title: 'Eventos', key: 'events', sortable: true, width: ColumnWidth.XL },
     {
       title: 'Facturas',
       key: 'invoices',
       sortable: true,
-      width: ColumnWidth.FULL,
+      width: ColumnWidth.LG,
     },
   ];
+
+  projects: ProjectModel[] = [];
+  filteredProjects: ProjectModel[] = [];
+  filters: Filter[] = [];
+  selectedFilter: number | null = null;
+
+  isModalVisible = false;
+  number = 0;
+
+  item: ProjectModel | null = null;
+  currentModalAction: TypeActionModal = TypeActionModal.Create;
+  searchForm!: FormGroup;
+
+  currentYear = this.generalService.currentYear;
+  typeModal = TypeList.Projects;
+  typeSection = TypeList.Projects;
 
   @ViewChild(InputSearchComponent)
   private inputSearchComponent!: InputSearchComponent;
 
+  @ViewChild('printArea', { static: false })
+  printArea!: ElementRef<HTMLElement>;
+
   ngOnInit(): void {
-    // Ocultar 'date_payment' y 'date_accounting' al cargar la página
+    // Columnas visibles iniciales
     this.columnVisibility = this.generalService.setColumnVisibility(
       this.headerListProjects,
       ['description'] // Coloca las columnas que deseas ocultar aquí
@@ -139,7 +145,7 @@ export class ProjectsPageComponent implements OnInit {
     );
 
     this.filters = [
-      { code: 'ALL', name: 'Histórico' },
+      { code: '', name: 'Histórico' },
       ...this.generalService.getYearFilters(2018, this.currentYear),
     ];
 
@@ -152,6 +158,7 @@ export class ProjectsPageComponent implements OnInit {
 
     this.filterSelected(this.currentYear.toString());
 
+    // Estado de proyectos desde la fachada
     this.projectsFacade.filteredProjects$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
@@ -161,15 +168,13 @@ export class ProjectsPageComponent implements OnInit {
   }
 
   filterSelected(filter: string): void {
-    this.selectedFilter = filter === 'ALL' ? null : Number(filter);
+    this.selectedFilter = filter === '' ? null : Number(filter);
 
     this.generalService.clearSearchInput(this.inputSearchComponent);
 
-    if (filter === 'ALL') {
-      this.projectsFacade.setCurrentFilter(null);
+    if (filter === '') {
       this.projectsFacade.loadAllProjects();
     } else {
-      this.projectsFacade.setCurrentFilter(Number(filter));
       this.projectsFacade.loadProjectsByYear(Number(filter));
     }
   }
@@ -196,8 +201,9 @@ export class ProjectsPageComponent implements OnInit {
     item: ProjectModel | null
   ): void {
     this.currentModalAction = action;
+    this.typeModal = typeModal;
     this.item = item;
-    this.typeModal = TypeList.Projects;
+
     this.projectsFacade.clearSelectedProject();
     this.modalService.openModal();
   }
@@ -206,15 +212,16 @@ export class ProjectsPageComponent implements OnInit {
     this.modalService.closeModal();
   }
 
-  confirmDeleteProject(project: ProjectModel | null): void {
-    if (!project) return;
-    this.projectsFacade.deleteProject(project.id);
-    this.onCloseModal();
+  onDelete({ type, id }: { type: TypeList; id: number }) {
+    const actions: Partial<Record<TypeList, (id: number) => void>> = {
+      [TypeList.Projects]: (x) => this.projectsFacade.deleteProject(x),
+    };
+    actions[type]?.(id);
   }
 
   sendFormProject(project: { itemId: number; formData: FormData }): void {
     const request$ = project.itemId
-      ? this.projectsFacade.editProject(project.itemId, project.formData)
+      ? this.projectsFacade.editProject(project.formData)
       : this.projectsFacade.addProject(project.formData);
 
     request$
@@ -231,21 +238,29 @@ export class ProjectsPageComponent implements OnInit {
     this.projects = this.projectsService.sortProjectsById(projects);
     this.filteredProjects = [...this.projects];
     this.number = this.projectsService.countProjects(projects);
-    this.isLoading = false;
   }
-  printTableAsPdf(): void {
-    this.pdfPrintService.printTableAsPdf('table-to-print', 'proyectos.pdf');
+
+  async printTableAsPdf(): Promise<void> {
+    if (!this.printArea) return;
+
+    await this.pdfPrintService.printElementAsPdf(this.printArea, {
+      filename: 'proyectos.pdf',
+      preset: 'compact', // 'compact' reduce paddings en celdas
+      orientation: 'landscape', // o 'landscape' si la tabla es muy ancha
+      format: 'a4',
+      margins: [5, 5, 5, 5], // mm
+    });
   }
+
   getVisibleColumns() {
     return this.headerListProjects.filter(
       (col) => this.columnVisibility[col.key]
     );
   }
+
   // Método para actualizar las columnas visibles cuando se hace toggle
   toggleColumn(key: string): void {
-    // Cambia la visibilidad de la columna en columnVisibility
     this.columnVisibility[key] = !this.columnVisibility[key];
-    // Actualiza las columnas visibles en la tabla después de cambiar el estado
     this.displayedColumns = this.generalService.updateDisplayedColumns(
       this.headerListProjects,
       this.columnVisibility

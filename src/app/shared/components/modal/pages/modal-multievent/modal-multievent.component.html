@@ -1,0 +1,66 @@
+<ui-modal
+  [open]="open"
+  (openChange)="openChange.emit($event)"
+  size="xl"
+  [hasActions]="false"
+  [closeOnBackdrop]="true"
+  [closeOnEscape]="true"
+>
+  <h2 class="text-center text-xl mb-8 uppercase font-semibold">
+    Programación <br />
+    eventos
+  </h2>
+  <div class="flex flex-col gap-y-4">
+    @for (event of events; track event.id ?? $index) {
+    <div (click)="onSelect(event)" class="cursor-pointer flex gap-x-4">
+      <div class="w-[180px] h-[180px] overflow-hidden">
+        <img
+          appImgBroken
+          [src]="(event.img ? event.img : '') | itemImage : typeModal"
+          [alt]="event.title"
+          class="object-cover rounded w-full h-full"
+        />
+      </div>
+
+      <div
+        class="flex flex-1 flex-col gap-y-2 justify-center bg-gray-100 w-full p-4"
+      >
+        <div class="text-lg font-bold">
+          {{ event.title }}
+        </div>
+
+        @if (event.placeData?.name) {
+        <div>
+          <p class="text-xs md:text-lg">
+            {{ event.placeData?.name }} | {{ event.town }}
+          </p>
+          @if (event.salaData?.name) {
+          <p class="text-xs md:text-lg text-gray-500">
+            {{ event.salaData?.name }} -
+            {{
+              event.salaData?.room_location
+                | filterTransformCode : "roomLocationPlaces"
+            }}
+          </p>
+          }
+        </div>
+        }
+
+        <app-text-background
+          [text]="event.start | date : 'EEEE dd MMMM yyyy'"
+        ></app-text-background>
+
+        @if (event.time_start && event.time_start !== '00:00:00') {
+        <div>
+          <p
+            class="inline-block text-[9px] md:text-[12px] px-[6px] pt-1 pb-[3px] rounded-[4px] border border-lilaClaro"
+          >
+            {{ event.time_start.slice(0, 5) + " h" }}
+          </p>
+        </div>
+        }
+      </div>
+    </div>
+    }
+  </div>
+</ui-modal>

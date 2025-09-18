@@ -1,17 +1,18 @@
-import { DestroyRef, inject, Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, catchError, Observable, tap } from 'rxjs';
 import { ArticleModel } from 'src/app/core/interfaces/article.interface';
 import { ArticlesService } from 'src/app/core/services/articles.services';
-import { GeneralService } from '../shared/services/generalService.service';
+import { includesNormalized, toSearchKey } from '../shared/utils/text.utils';
+import { LoadableFacade } from './loadable.facade';
 
 @Injectable({
   providedIn: 'root',
 })
-export class ArticlesFacade {
-  private readonly destroyRef = inject(DestroyRef);
+export class ArticlesFacade extends LoadableFacade {
   private readonly articlesService = inject(ArticlesService);
-  private readonly generalService = inject(GeneralService);
+
+  // State propio
   private readonly articlesSubject = new BehaviorSubject<ArticleModel[] | null>(
     null
   );
@@ -20,47 +21,36 @@ export class ArticlesFacade {
   >(null);
   private readonly selectedArticleSubject =
     new BehaviorSubject<ArticleModel | null>(null);
-
+  // Streams públicos
   articles$ = this.articlesSubject.asObservable();
   selectedArticle$ = this.selectedArticleSubject.asObservable();
   filteredArticles$ = this.filteredArticlesSubject.asObservable();
 
-  constructor() {}
+  // ---------- API pública
 
   loadAllArticles(): void {
-    this.articlesService
-      .getArticles()
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((articles: ArticleModel[]) => this.updateArticleState(articles)),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-      .subscribe();
+    this.executeWithLoading(this.articlesService.getArticles(), (articles) =>
+      this.updateArticleState(articles)
+    );
   }
 
   loadArticleById(id: number): void {
-    this.articlesService
-      .getArticleById(id)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((article: ArticleModel) =>
-          this.selectedArticleSubject.next(article)
-        ),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-      .subscribe();
+    this.executeWithLoading(
+      this.articlesService.getArticleById(id),
+      (article) => this.selectedArticleSubject.next(article)
+    );
   }
 
-  addArticle(article: FormData): Observable<any> {
-    return this.articlesService.add(article).pipe(
+  addArticle(article: FormData): Observable<FormData> {
+    return this.wrapWithLoading(this.articlesService.add(article)).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.loadAllArticles()),
       catchError((err) => this.generalService.handleHttpError(err))
     );
   }
 
-  editArticle(id: number, article: FormData): Observable<any> {
-    return this.articlesService.edit(id, article).pipe(
+  editArticle(article: FormData): Observable<FormData> {
+    return this.wrapWithLoading(this.articlesService.edit(article)).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.loadAllArticles()),
       catchError((err) => this.generalService.handleHttpError(err))
@@ -68,14 +58,9 @@ export class ArticlesFacade {
   }
 
   deleteArticle(id: number): void {
-    this.articlesService
-      .delete(id)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap(() => this.loadAllArticles()),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-      .subscribe();
+    this.executeWithLoading(this.articlesService.delete(id), () =>
+      this.loadAllArticles()
+    );
   }
 
   clearSelectedArticle(): void {
@@ -83,19 +68,26 @@ export class ArticlesFacade {
   }
 
   applyFilterWord(keyword: string): void {
-    const allArticles = this.articlesSubject.getValue();
+    const all = this.articlesSubject.getValue();
 
-    if (!keyword.trim() || !allArticles) {
-      this.filteredArticlesSubject.next(allArticles);
+    if (!all) {
+      this.filteredArticlesSubject.next(all);
       return;
     }
-    const search = keyword.trim().toLowerCase();
-    const filteredArticles = allArticles.filter((article) =>
-      article.title.toLowerCase().includes(search)
+
+    if (!toSearchKey(keyword)) {
+      this.filteredArticlesSubject.next(all);
+      return;
+    }
+
+    const filtered = all.filter((p) =>
+      [p.title].some((field) => includesNormalized(field, keyword))
     );
 
-    this.filteredArticlesSubject.next(filteredArticles);
+    this.filteredArticlesSubject.next(filtered);
   }
+
+  // ---------- Privado / utilidades
 
   updateArticleState(articles: ArticleModel[]): void {
     this.articlesSubject.next(articles);

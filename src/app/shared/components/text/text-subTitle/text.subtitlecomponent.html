@@ -1,1 +1,8 @@
-<p class="text-subtitle">{{ text }}</p>
+<p
+  class="text-subtitle"
+  [style.font-size.px]="number"
+  [style.color]="color"
+  [style.text-align]="align"
+  [style.line-height.px]="number! + 4"
+  [innerHTML]="sanitizedDescription"
+></p>

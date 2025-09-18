@@ -1,5 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  ElementRef,
+  inject,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -28,6 +35,7 @@ import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.co
 
 @Component({
   selector: 'app-articles-page',
+  standalone: true,
   imports: [
     DashboardHeaderComponent,
     ModalComponent,
@@ -44,27 +52,15 @@ import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.co
     StickyZoneComponent,
   ],
   templateUrl: './articles-page.component.html',
-  styleUrl: './articles-page.component.css',
 })
 export class ArticlesPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly modalService = inject(ModalService);
-  private readonly articlesFacade = inject(ArticlesFacade);
+  readonly articlesFacade = inject(ArticlesFacade);
   private readonly articlesService = inject(ArticlesService);
-  private readonly pdfPrintService = inject(PdfPrintService);
   private readonly generalService = inject(GeneralService);
-  articles: ArticleModel[] = [];
-  filteredArticles: ArticleModel[] = [];
+  private readonly pdfPrintService = inject(PdfPrintService);
 
-  isLoading = true;
-  isModalVisible = false;
-  number = 0;
-
-  item: ArticleModel | null = null;
-  currentModalAction: TypeActionModal = TypeActionModal.Create;
-  searchForm!: FormGroup;
-  typeSection = TypeList.Articles;
-  typeModal = TypeList.Articles;
   columnVisibility: Record<string, boolean> = {};
   displayedColumns: string[] = [];
   headerListArticles: ColumnModel[] = [
@@ -75,13 +71,29 @@ export class ArticlesPageComponent implements OnInit {
       title: 'Descripción',
       key: 'description',
       sortable: true,
-      booleanIndicator: true,
-      width: ColumnWidth.SM,
+      innerHTML: true,
+      showIndicatorOnEmpty: true,
+      width: ColumnWidth.LG,
     },
   ];
 
+  articles: ArticleModel[] = [];
+  filteredArticles: ArticleModel[] = [];
+  isModalVisible = false;
+  number = 0;
+
+  item: ArticleModel | null = null;
+  currentModalAction: TypeActionModal = TypeActionModal.Create;
+  searchForm!: FormGroup;
+
+  typeModal = TypeList.Articles;
+  typeSection = TypeList.Articles;
+
+  @ViewChild('printArea', { static: false })
+  printArea!: ElementRef<HTMLElement>;
+
   ngOnInit(): void {
-    // Ocultar 'date_payment' y 'date_accounting' al cargar la página
+    // Columnas visibles iniciales
     this.columnVisibility = this.generalService.setColumnVisibility(
       this.headerListArticles,
       [''] // Coloca las columnas que deseas ocultar aquí
@@ -146,15 +158,16 @@ export class ArticlesPageComponent implements OnInit {
     this.modalService.closeModal();
   }
 
-  confirmDeleteArticle(article: ArticleModel | null): void {
-    if (!article) return;
-    this.articlesFacade.deleteArticle(article.id);
-    this.onCloseModal();
+  onDelete({ type, id }: { type: TypeList; id: number }) {
+    const actions: Partial<Record<TypeList, (id: number) => void>> = {
+      [TypeList.Articles]: (x) => this.articlesFacade.deleteArticle(x),
+    };
+    actions[type]?.(id);
   }
 
   sendFormArticle(event: { itemId: number; formData: FormData }): void {
     const save$ = event.itemId
-      ? this.articlesFacade.editArticle(event.itemId, event.formData)
+      ? this.articlesFacade.editArticle(event.formData)
       : this.articlesFacade.addArticle(event.formData);
 
     save$
@@ -171,11 +184,20 @@ export class ArticlesPageComponent implements OnInit {
     this.articles = this.articlesService.sortArticlesById(articles);
     this.filteredArticles = [...this.articles];
     this.number = this.articlesService.countArticles(articles);
-    this.isLoading = false;
   }
-  printTableAsPdf(): void {
-    this.pdfPrintService.printTableAsPdf('table-to-print', 'articulos.pdf');
+
+  async printTableAsPdf(): Promise<void> {
+    if (!this.printArea) return;
+
+    await this.pdfPrintService.printElementAsPdf(this.printArea, {
+      filename: 'articulos.pdf',
+      preset: 'compact', // 'compact' reduce paddings en celdas
+      orientation: 'portrait', // o 'landscape' si la tabla es muy ancha
+      format: 'a4',
+      margins: [5, 5, 5, 5], // mm
+    });
   }
+
   getVisibleColumns() {
     return this.headerListArticles.filter(
       (col) => this.columnVisibility[col.key]
@@ -183,9 +205,7 @@ export class ArticlesPageComponent implements OnInit {
   }
   // Método para actualizar las columnas visibles cuando se hace toggle
   toggleColumn(key: string): void {
-    // Cambia la visibilidad de la columna en columnVisibility
     this.columnVisibility[key] = !this.columnVisibility[key];
-    // Actualiza las columnas visibles en la tabla después de cambiar el estado
     this.displayedColumns = this.generalService.updateDisplayedColumns(
       this.headerListArticles,
       this.columnVisibility

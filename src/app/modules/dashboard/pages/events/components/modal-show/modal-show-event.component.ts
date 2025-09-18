@@ -10,8 +10,11 @@ import { SocialMediaShareComponent } from 'src/app/shared/components/social-medi
 import { TextBackgroundComponent } from 'src/app/shared/components/text/text-background/text-background.component';
 import { TextBorderComponent } from 'src/app/shared/components/text/text-border/text-border.component';
 import { TextEditorComponent } from 'src/app/shared/components/text/text-editor/text-editor.component';
+import { TextIconComponent } from 'src/app/shared/components/text/text-icon/text-icon.component';
 import { TextSubTitleComponent } from 'src/app/shared/components/text/text-subTitle/text-subtitle.component';
 import { TextTitleComponent } from 'src/app/shared/components/text/text-title/text-title.component';
+import { FilterTransformCodePipe } from '../../../../../../shared/pipe/filterTransformCode.pipe';
+import { ItemImagePipe } from '../../../../../../shared/pipe/item-img.pipe';
 
 @Component({
   selector: 'app-modal-show-event',
@@ -24,6 +27,9 @@ import { TextTitleComponent } from 'src/app/shared/components/text/text-title/te
     TextEditorComponent,
     MapComponent,
     SocialMediaShareComponent,
+    ItemImagePipe,
+    TextIconComponent,
+    FilterTransformCodePipe,
   ],
   templateUrl: './modal-show-event.component.html',
   styleUrls: ['./modal-show-event.component.css'],

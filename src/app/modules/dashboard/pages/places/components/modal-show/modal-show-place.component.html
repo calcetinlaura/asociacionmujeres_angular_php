@@ -2,7 +2,7 @@
   <div>
     <app-text-title [text]="item.name" />
     <app-text-icon
-      [icon]="'uil uil-building icon'"
+      [icon]="'building'"
       [text]="
         (item.address ? item.address : '') +
         (item.town ? ', ' + item.town : '') +
@@ -10,29 +10,48 @@
         (item.province ? ' - ' + item.province : '')
       "
     ></app-text-icon>
+    <hr class="mt-6 border-b-1 border-[#1C1C3A]" />
     <div class="flex flex-col gap-y-4 mt-4">
-      <app-text-background [text]="'Descripción'"></app-text-background>
+      <app-text-background
+        [text]="item.management! | filterTransformCode : 'managementPlaces'"
+      ></app-text-background>
       @if (item.description) {
       <app-text-editor [text]="item.description" />
       }
     </div>
     <div class="flex flex-col gap-y-4 mt-4">
-      <app-text-background [text]="'Observaciones'"></app-text-background>
+      <p class="text-[14px] font-semibold">Contacto:</p>
+
+      <app-text-icon
+        [icon]="'person'"
+        [text]="'Nombre de contacto'"
+      ></app-text-icon>
+      <app-text-icon
+        [icon]="'phone'"
+        [text]="'Número de contacto'"
+      ></app-text-icon>
+      <app-text-icon
+        [icon]="'email'"
+        [text]="'Email de contacto'"
+      ></app-text-icon>
+    </div>
+    <div class="flex flex-col gap-y-4 mt-4">
+      <p class="text-[14px] font-semibold">Descripción del espacio:</p>
       @if (item.observations) {
       <app-text-editor [text]="item.observations" />
       }
     </div>
-    <div class="flex flex-col gap-y-4 mt-4">
-      <app-text-background [text]="'Gestión'"></app-text-background>
-      @if (item.management) {
-      <app-text-subtitle
-        [text]="item.management | filterTransformCode : 'PlaceManagement'"
-      />
+    <div class="flex flex-col gap-y-4 my-4">
+      <p class="text-[14px] font-semibold">Observaciones:</p>
+      @if (item.observations) {
+      <app-text-editor [text]="item.observations" />
       }
     </div>
+    <app-text-background
+      [text]="item.type_room | filterTransformCode : 'roomPlaces'"
+    ></app-text-background>
     @if (item.salas!.length > 0) {
     <div class="mt-4">
-      <app-text-background [text]="'Salas'"></app-text-background>
       <table class="w-full -collapse tableInvoices">
         <thead>
           <tr>
@@ -47,14 +66,25 @@
           <tr class="hover:bg-gray-50">
             <td class="p-2 w-auto text-left">{{ sala.name }}</td>
             <td class="p-2 text-center">
-              {{ sala.location }}
-            </td>
-            <td class="p-2 text-center">
-              @if (sala.type) {
-              <span> {{ sala.type | filterTransformCode : "typePlaces" }}</span>
+              @if (sala.room_location) {
+              <span>
+                {{
+                  sala.room_location
+                    | filterTransformCode : "roomLocationPlaces"
+                }}</span
+              >
               }
             </td>
-            <td class="p-2 w-auto text-right">
+            <td class="p-2 text-center">
+              @if (sala.type_ubication) {
+              <span>
+                {{
+                  sala.type_ubication | filterTransformCode : "typePlaces"
+                }}</span
+              >
+              }
+            </td>
+            <td class="p-2 w-auto text-center">
               {{ sala.capacity }}
             </td>
           </tr>

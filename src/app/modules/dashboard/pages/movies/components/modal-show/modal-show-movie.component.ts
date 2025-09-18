@@ -5,6 +5,7 @@ import { TextBackgroundComponent } from 'src/app/shared/components/text/text-bac
 import { TextEditorComponent } from 'src/app/shared/components/text/text-editor/text-editor.component';
 import { TextSubTitleComponent } from 'src/app/shared/components/text/text-subTitle/text-subtitle.component';
 import { TextTitleComponent } from 'src/app/shared/components/text/text-title/text-title.component';
+import { ItemImagePipe } from '../../../../../../shared/pipe/item-img.pipe';
 
 @Component({
   selector: 'app-modal-show-movie',
@@ -13,9 +14,9 @@ import { TextTitleComponent } from 'src/app/shared/components/text/text-title/te
     TextTitleComponent,
     TextSubTitleComponent,
     TextEditorComponent,
+    ItemImagePipe,
   ],
   templateUrl: './modal-show-movie.component.html',
-  styleUrls: ['./modal-show-movie.component.css'],
 })
 export class ModalShowMovieComponent {
   @Input() item!: MovieModel;

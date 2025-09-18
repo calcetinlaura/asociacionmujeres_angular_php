@@ -1,17 +1,16 @@
-import { DestroyRef, inject, Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, catchError, Observable, tap } from 'rxjs';
 import { MovieModel } from 'src/app/core/interfaces/movie.interface';
 import { MoviesService } from 'src/app/core/services/movies.services';
-import { GeneralService } from '../shared/services/generalService.service';
+import { includesNormalized, toSearchKey } from '../shared/utils/text.utils';
+import { LoadableFacade } from './loadable.facade';
 
-@Injectable({
-  providedIn: 'root',
-})
-export class MoviesFacade {
-  private readonly destroyRef = inject(DestroyRef);
+@Injectable({ providedIn: 'root' })
+export class MoviesFacade extends LoadableFacade {
   private readonly moviesService = inject(MoviesService);
-  private readonly generalService = inject(GeneralService);
+
+  // State propio
   private readonly moviesSubject = new BehaviorSubject<MovieModel[] | null>(
     null
   );
@@ -21,97 +20,62 @@ export class MoviesFacade {
   private readonly selectedMovieSubject =
     new BehaviorSubject<MovieModel | null>(null);
 
-  movies$ = this.moviesSubject.asObservable();
-  selectedMovie$ = this.selectedMovieSubject.asObservable();
-  filteredMovies$ = this.filteredMoviesSubject.asObservable();
+  // Streams públicos
+  readonly movies$ = this.moviesSubject.asObservable();
+  readonly filteredMovies$ = this.filteredMoviesSubject.asObservable();
+  readonly selectedMovie$ = this.selectedMovieSubject.asObservable();
 
-  currentFilter: string = 'ALL';
+  private currentFilter: string | null = null;
 
-  constructor() {}
-
-  setCurrentFilter(filter: string): void {
-    this.currentFilter = filter;
-    this.loadMoviesByFilter(filter);
+  loadAllMovies(): void {
+    this.setCurrentFilter(null);
+    this.executeWithLoading(this.moviesService.getMovies(), (movies) =>
+      this.updateMovieState(movies)
+    );
   }
 
   loadMoviesByFilter(filter: string): void {
-    const loaders: Record<string, () => void> = {
-      ALL: () => this.loadAllMovies(),
-      NOVEDADES: () => this.loadMoviesByLatest(),
-    };
-
-    (loaders[filter] || (() => this.loadMoviesByGender(filter)))();
-  }
-
-  private reloadCurrentFilter(): void {
-    this.loadMoviesByFilter(this.currentFilter);
-  }
-
-  loadAllMovies(): void {
-    this.moviesService
-      .getMovies()
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((movies: MovieModel[]) => this.updateMovieState(movies)),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-      .subscribe();
+    this.setCurrentFilter(filter);
+    this.loadMoviesByGender(filter);
   }
 
   loadMoviesByLatest(): void {
-    this.moviesService
-      .getMoviesByLatest()
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((movies: MovieModel[]) => this.updateMovieState(movies)),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-      .subscribe();
+    this.executeWithLoading(this.moviesService.getMoviesByLatest(), (movies) =>
+      this.updateMovieState(movies)
+    );
   }
 
+  // Conservamos el método del service getMoviesByGender(...)
   loadMoviesByGender(gender: string): void {
-    this.moviesService
-      .getMoviesByGender(gender)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((movies: MovieModel[]) => this.updateMovieState(movies)),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-      .subscribe();
+    this.executeWithLoading(
+      this.moviesService.getMoviesByGender(gender),
+      (movies) => this.updateMovieState(movies)
+    );
   }
 
   loadMoviesByYear(year: number): void {
-    this.moviesService
-      .getMoviesByYear(year)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((movies: MovieModel[]) => this.updateMovieState(movies)),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-      .subscribe();
+    this.executeWithLoading(
+      this.moviesService.getMoviesByYear(year),
+      (movies) => this.updateMovieState(movies)
+    );
   }
 
   loadMovieById(id: number): void {
-    this.moviesService
-      .getMovieById(id)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((movie: MovieModel) => this.selectedMovieSubject.next(movie)),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-      .subscribe();
+    this.executeWithLoading(this.moviesService.getMovieById(id), (movie) =>
+      this.selectedMovieSubject.next(movie)
+    );
   }
 
   addMovie(movie: FormData): Observable<FormData> {
-    return this.moviesService.add(movie).pipe(
+    return this.wrapWithLoading(this.moviesService.add(movie)).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.reloadCurrentFilter()),
       catchError((err) => this.generalService.handleHttpError(err))
     );
   }
 
-  editMovie(itemId: number, movie: FormData): Observable<FormData> {
-    return this.moviesService.edit(itemId, movie).pipe(
+  editMovie(movie: FormData): Observable<FormData> {
+    return this.wrapWithLoading(this.moviesService.edit(movie)).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.reloadCurrentFilter()),
       catchError((err) => this.generalService.handleHttpError(err))
@@ -119,14 +83,9 @@ export class MoviesFacade {
   }
 
   deleteMovie(id: number): void {
-    this.moviesService
-      .delete(id)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap(() => this.reloadCurrentFilter()),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-      .subscribe();
+    this.executeWithLoading(this.moviesService.delete(id), () =>
+      this.reloadCurrentFilter()
+    );
   }
 
   clearSelectedMovie(): void {
@@ -134,24 +93,40 @@ export class MoviesFacade {
   }
 
   applyFilterWord(keyword: string): void {
-    const allMovies = this.moviesSubject.getValue();
+    const all = this.moviesSubject.getValue();
 
-    if (!keyword.trim() || !allMovies) {
-      this.filteredMoviesSubject.next(allMovies);
+    if (!all) {
+      this.filteredMoviesSubject.next(all);
       return;
     }
-    const search = keyword.trim().toLowerCase();
-    const filteredMovies = allMovies.filter(
-      (movie) =>
-        movie.title.toLowerCase().includes(search) ||
-        (movie.director && movie.director.toLowerCase().includes(search))
+
+    if (!toSearchKey(keyword)) {
+      this.filteredMoviesSubject.next(all);
+      return;
+    }
+
+    const filtered = all.filter((m) =>
+      [m.title, m.director].some((field) => includesNormalized(field, keyword))
     );
 
-    this.filteredMoviesSubject.next(filteredMovies);
+    this.filteredMoviesSubject.next(filtered);
+  }
+
+  // --------- privados
+  setCurrentFilter(filter: string | null): void {
+    this.currentFilter = filter;
+  }
+
+  private reloadCurrentFilter(): void {
+    if (this.currentFilter === null) {
+      this.loadAllMovies();
+      return;
+    }
+    this.loadMoviesByFilter(this.currentFilter);
   }
 
   private updateMovieState(movies: MovieModel[]): void {
     this.moviesSubject.next(movies);
-    this.filteredMoviesSubject.next(movies); // Actualiza también las peliculas filtradas
+    this.filteredMoviesSubject.next(movies);
   }
 }

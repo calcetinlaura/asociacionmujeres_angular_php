@@ -1,13 +1,22 @@
 <?php
 header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET, POST, PATCH, DELETE");
-header("Access-Control-Allow-Headers: Content-Type");
+header("Access-Control-Allow-Methods: GET, POST, PATCH, DELETE, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, X-Requested-With, X-HTTP-Method-Override, Authorization, Origin, Accept");
 header("Content-Type: application/json; charset=UTF-8");
 
 include '../config/conexion.php';
 include 'utils/utils.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
+
+if ($method === 'POST') {
+  $override = $_POST['_method'] ?? $_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'] ?? '';
+  $override = strtoupper($override);
+  if ($override === 'DELETE') {
+    $method = 'DELETE';
+  }
+}
+
 if ($method === 'OPTIONS') {
   http_response_code(204);
   exit();
@@ -54,11 +63,13 @@ switch ($method) {
         $stmt->execute();
         $result = $stmt->get_result();
         $books = [];
+
         while ($row = $result->fetch_assoc()) {
             $books[] = $row;
         }
         echo json_encode($books);
-    } elseif (isset($_GET['gender'])) {
+    }
+    elseif (isset($_GET['gender'])) {
          $gender = $_GET['gender'];
         $stmt = $connection->prepare("SELECT * FROM books WHERE gender = ?");
         $stmt->bind_param("s", $gender);
@@ -70,7 +81,7 @@ switch ($method) {
         }
         echo json_encode($books);
     } else {
-             $stmt = $connection->prepare("SELECT * FROM books");
+        $stmt = $connection->prepare("SELECT * FROM books");
         $stmt->execute();
         $result = $stmt->get_result();
         $books = [];
@@ -78,21 +89,20 @@ switch ($method) {
             $books[] = $row;
         }
         echo json_encode($books);
-    }
-    break;
+  }
+  break;
 
-    case 'POST':
-      error_reporting(E_ALL);
-      ini_set('display_errors', 1);
+  case 'POST':
+  error_reporting(E_ALL);
+  ini_set('display_errors', 1);
 
-      // 🔥 Manejar eliminación de imagen si viene la acción
-      if (isset($_POST['action']) && $_POST['action'] === 'deleteImage') {
+  // --- Acciones especiales ---
+  // Eliminar imagen
+   if (isset($_POST['action']) && $_POST['action'] === 'deleteImage') {
         $type = $_POST['type'];
-
         if (!empty($_POST['id'])) {
           $id = (int)$_POST['id'];
-
-          if (eliminarSoloImagen($connection, strtolower($type), 'img', $id, $basePath)) {
+          if (eliminarSoloArchivo($connection, strtolower($type), 'img', $id, $basePath)) {
             echo json_encode(["message" => "Imagen eliminada correctamente"]);
           } else {
             http_response_code(500);
@@ -111,10 +121,11 @@ switch ($method) {
       $data = $_POST;
       $data['img'] = $imgName;
 
-      $campoFaltante = validarCamposRequeridos($data, ['title', 'year', 'gender']);
-      if ($campoFaltante !== null) {
+      // Validación de campos requeridos
+      $campoRequerido = validarCamposRequeridos($data, ['title', 'year', 'gender']);
+      if ($campoRequerido !== null) {
         http_response_code(400);
-        echo json_encode(["message" => "El campo '$campoFaltante' es obligatorio."]);
+        echo json_encode(["message" => "El campo '$campoRequerido' es obligatorio."]);
         exit();
       }
 
@@ -145,7 +156,7 @@ switch ($method) {
 
         if ($stmt->execute()) {
           if ($oldImg && $imgName !== $oldImg) {
-            eliminarImagenSiNoSeUsa($connection, 'books', 'img', $oldImg, $basePath);
+            eliminarArchivoSiNoSeUsa($connection, 'books', 'img', $oldImg, $basePath);
           }
           echo json_encode(["message" => "Libro actualizado con éxito."]);
         } else {
@@ -167,9 +178,8 @@ switch ($method) {
       }
       break;
 
-
       case 'DELETE':
-        $id = isset($_GET['id']) ? $_GET['id'] : null;
+    $id = $_POST['id'] ?? $_GET['id'] ?? null;
         if (!is_numeric($id)) {
           http_response_code(400);
           echo json_encode(["message" => "ID no válido."]);
@@ -189,7 +199,7 @@ switch ($method) {
         if ($stmt->execute()) {
           // Si se borró correctamente, intentamos borrar la imagen si no se usa en otro libro
           if ($imgToDelete) {
-            eliminarImagenSiNoSeUsa($connection, 'books', 'img', $imgToDelete, $basePath);
+            eliminarArchivoSiNoSeUsa($connection, 'books', 'img', $imgToDelete, $basePath);
           }
           echo json_encode(["message" => "Libro eliminado con éxito."]);
         } else {

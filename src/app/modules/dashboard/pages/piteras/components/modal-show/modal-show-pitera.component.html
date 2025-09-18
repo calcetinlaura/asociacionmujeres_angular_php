@@ -1,6 +1,41 @@
-<div class="flex flex-col">
-  <app-text-title [text]="item.title + ' | ' + item.year" />
-  @if (item.theme) {
-  <app-text-subtitle [text]="item.theme" />
-  }
+<div class="px-8">
+  <div class="text-center">
+    <div class="inline-block border-b border-[#1C1C3A] pb-4 mb-8">
+      <app-text-title [text]="item.title + ' nº ' + item.publication_number" />
+      <app-text-subtitle [text]="'Marzo ' + item.year.toString()" />
+    </div>
+  </div>
+  <div class="flex gap-x-24">
+    <div class="flex-1">
+      <img
+        appImgBroken
+        [src]="(item.img ? item.img : '') | itemImage : typeModal"
+        [alt]="item.title"
+        class="imagen w-full"
+      />
+    </div>
+    <div class="flex flex-1 flex-col justify-between">
+      <div class="mb-4">
+        <div class="my-4">
+          <app-text-background [text]="'Temática'" />
+        </div>
+        <app-text-editor [text]="item.theme" />
+        <div class="flex justify-center">
+          <app-button-icon
+            [buttonText]="'Ver pdf'"
+            [iconClass]="'uil-eyes'"
+            (addClicked)="openPdf()"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
+
+<app-modal-pdf
+  [(open)]="showPdf"
+  [pdfUrl]="selectedPdf ?? ''"
+  [year]="item.year"
+  [type]="typeModal"
+  (openChange)="onPdfOpenChange($event)"
+></app-modal-pdf>

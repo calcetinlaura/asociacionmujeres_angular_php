@@ -44,10 +44,11 @@ export class FormPartnerComponent {
   private generalService = inject(GeneralService);
 
   @Input() itemId!: number;
-  @Output() sendFormPartner = new EventEmitter<{
+  @Output() submitForm = new EventEmitter<{
     itemId: number;
     formData: FormData;
   }>();
+
   selectedImageFile: File | null = null;
   partnerData: PartnerModel | null = null;
   imageSrc: string = '';
@@ -63,10 +64,18 @@ export class FormPartnerComponent {
     birthday: new FormControl<string | null>(null),
     province: new FormControl(''),
     town: new FormControl(''),
-    post_code: new FormControl(''),
+    post_code: new FormControl('', [
+      Validators.pattern(/^(?:0[1-9]|[1-4][0-9]|5[0-2])[0-9]{3}$/),
+    ]),
     address: new FormControl(''),
-    phone: new FormControl(''),
-    email: new FormControl(''),
+    phone: new FormControl('', [
+      // Permite vacío; si hay valor, debe cumplir el patrón
+      Validators.pattern(/^\s*(\+?\d[\d\s\-().]{6,14}\d)\s*$/),
+    ]),
+    email: new FormControl('', [
+      // Permite vacío; si hay valor, debe ser email válido
+      Validators.email,
+    ]),
     cuotas: new FormArray([]), // FormArray para checkboxes dinámicos
     img: new FormControl(''),
     observations: new FormControl(''),
@@ -242,7 +251,7 @@ export class FormPartnerComponent {
       formData.append('id', this.itemId.toString());
     }
 
-    this.sendFormPartner.emit({
+    this.submitForm.emit({
       itemId: this.itemId,
       formData: formData,
     });

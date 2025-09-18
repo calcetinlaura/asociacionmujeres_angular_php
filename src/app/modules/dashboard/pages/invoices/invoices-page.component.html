@@ -8,15 +8,15 @@
   />
   <div class="flex flex-1 flex-col justify-start">
     <app-filters
-      [filters]="filtersYears"
+      [filters]="filters"
       (filterClicked)="filterSelected($event)"
     ></app-filters>
   </div>
 </app-sticky-zone>
 
 <!-- Zona principal -->
-<div class="flex flex-col px-8">
-  @if (isLoading) {
+<div class="flex flex-col px-8 items-center">
+  @if (invoicesFacade.isLoading$ | async) {
   <div class="flex justify-center items-center py-16">
     <app-spinner-loading />
   </div>
@@ -64,7 +64,8 @@
 
   <!-- Plantilla de tabla -->
   <ng-template #templateTableInvoice>
-    <div class="pb-4 flex">
+    <div class="pb-4" #printArea>
+      <h2 class="only-on-pdf print-title">Listado contabilidad</h2>
       <app-table
         [data]="filteredInvoices"
         [typeSection]="typeSection"
@@ -73,6 +74,7 @@
         [columnVisibility]="columnVisibility"
         (openModal)="onOpenModal($event)"
         [topHeader]="60"
+        [printExcludeColumns]="['invoice_pdf', 'proof_pdf']"
       />
     </div>
   </ng-template>
@@ -89,7 +91,7 @@
       <app-icon-action
         [icon]="'uil-folder-download'"
         [tooltip]="'Descargar facturas'"
-        (click)="downloadFilteredPdfs()"
+        (click)="downloadFilteredPdfs(false)"
       />
       <app-icon-action
         [icon]="'uil-print'"
@@ -122,7 +124,7 @@
   [typeModal]="typeModal"
   [action]="currentModalAction"
   (closeModal)="onCloseModal()"
-  (confirmDelete)="confirmDeleteInvoice(item)"
+  (confirmDelete)="onDelete($event)"
   (sendFormInvoiceData)="sendFormInvoice($event)"
 ></app-modal>
 }

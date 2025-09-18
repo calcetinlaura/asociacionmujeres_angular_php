@@ -13,75 +13,32 @@
     class="login-auth-form"
   >
     <div class="flex flex-col gap-y-4">
-      <div class="flex justify-between gap-x-8">
-        <div class="flex flex-col flex-1 gap-y-4">
-          <div class="box-input gap-x-4">
-            <label for="email">Título</label>
-            <div class="flex flex-col flex-1">
-              <input
-                formControlName="title"
-                type="text"
-                [ngClass]="{
-                  'is-invalid':
-                    submitted && formMacroevent.get('title')?.invalid
-                }"
-              />
-              @if (submitted && formMacroevent.get('title')?.invalid) {
-              <div class="is-invalid-text">Campo requerido</div>
-              }
-            </div>
-          </div>
-          <!-- Provincia -->
-          <div class="box-input gap-x-4 flex flex-1">
-            <label for="province">Provincia</label>
-            <select
-              formControlName="province"
-              (change)="onProvinceChange()"
+      <div class="flex flex-col flex-1 gap-y-4">
+        <div class="box-input gap-x-4">
+          <label for="email">Título</label>
+          <div class="flex flex-col flex-1">
+            <input
+              formControlName="title"
+              placeholder="Título del macroevento"
+              type="text"
               [ngClass]="{
-                'is-invalid':
-                  submitted && formMacroevent.get('province')?.invalid
+                'is-invalid': submitted && formMacroevent.get('title')?.invalid
               }"
-            >
-              <option value="">Seleccione una provincia</option>
-              @for (prov of provincias; track prov) {
-              <option [value]="prov.label">
-                {{ prov.label }}
-              </option>
-              }
-            </select>
-            @if (submitted && formMacroevent.get('town')?.invalid) {
-            <div class="is-invalid-text">Campo requerido</div>
-            }
-          </div>
-          <!-- Municipio -->
-          <div class="box-input gap-x-4 flex flex-1">
-            <label for="town">Municipio</label>
-            <select
-              formControlName="town"
-              [ngClass]="{
-                'is-invalid': submitted && formMacroevent.get('town')?.invalid
-              }"
-            >
-              <option value="">Seleccione un municipio</option>
-              @for (mun of municipios; track mun) {
-              <option [value]="mun.label">
-                {{ mun.label }}
-              </option>
-              }
-            </select>
-            @if (submitted && formMacroevent.get('town')?.invalid) {
+            />
+            @if (submitted && formMacroevent.get('title')?.invalid) {
             <div class="is-invalid-text">Campo requerido</div>
             }
           </div>
         </div>
-        <div class="flex flex-col gap-y-4 w-72 bg-lilaMuyClaro p-4">
-          <div class="flex gap-x-4">
+        <div class="flex justify-between gap-x-4">
+          <div class="box-input gap-x-4 flex-1">
             <label for="start" class="w-12">Inicio</label>
             <div class="flex flex-col flex-1">
               <input
                 formControlName="start"
                 type="date"
                 [ngClass]="{
+                  'text-placeholder': !formMacroevent.get('start')?.value,
                   'is-invalid':
                     submitted && formMacroevent.get('start')?.invalid
                 }"
@@ -91,13 +48,14 @@
               }
             </div>
           </div>
-          <div class="flex gap-x-4">
+          <div class="box-input gap-x-4 flex-1">
             <label for="end" class="w-12">Fin</label>
             <div class="flex flex-col flex-1">
               <input
                 formControlName="end"
                 type="date"
                 [ngClass]="{
+                  'text-placeholder': !formMacroevent.get('end')?.value,
                   'is-invalid': submitted && (formMacroevent.get('end')?.invalid || formMacroevent.errors?.['invalidDateRange'])
                 }"
               />
@@ -117,7 +75,63 @@
             </div>
           </div>
         </div>
+
+        <div class="flex justify-between gap-x-4">
+          <!-- Provincia -->
+          <div class="box-input gap-x-4 flex flex-1">
+            <label for="province">Provincia</label>
+            <select
+              formControlName="province"
+              (change)="onProvinceChange()"
+              [ngClass]="{
+                'is-invalid':
+                  submitted && formMacroevent.get('province')?.invalid,
+                'text-placeholder': !formMacroevent.get('province')?.value
+              }"
+            >
+              <!-- Placeholder en gris -->
+              <option value="" disabled hidden>Seleccione una provincia</option>
+
+              <!-- Opción libre -->
+              <option value="">Sin provincia</option>
+              @for (prov of provincias; track prov) {
+              <option [value]="prov.label">
+                {{ prov.label }}
+              </option>
+              }
+            </select>
+            @if (submitted && formMacroevent.get('town')?.invalid) {
+            <div class="is-invalid-text">Campo requerido</div>
+            }
+          </div>
+          <!-- Municipio -->
+          <div class="box-input gap-x-4 flex flex-1">
+            <label for="town">Municipio</label>
+            <select
+              formControlName="town"
+              [ngClass]="{
+                'is-invalid': submitted && formMacroevent.get('town')?.invalid,
+                'text-placeholder': !formMacroevent.get('town')?.value
+              }"
+            >
+              <!-- Placeholder en gris -->
+              <option value="" disabled hidden>Seleccione un municipio</option>
+
+              <!-- Opción libre -->
+              <option value="">Sin municipio</option>
+              @for (mun of municipios; track mun) {
+              <option [value]="mun.label">
+                {{ mun.label }}
+              </option>
+              }
+            </select>
+            @if (submitted && formMacroevent.get('town')?.invalid) {
+            <div class="is-invalid-text">Campo requerido</div>
+            }
+          </div>
+        </div>
       </div>
+      <hr />
       <div class="flex gap-x-8">
         <!-- Descripción -->
         <div class="box-input gap-x-4 flex-1">
@@ -126,7 +140,7 @@
             formControlName="description"
             [modules]="quillModules"
             placeholder="Escribe aquí la descripción..."
-            class="flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
+            class="ql-container-large flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
           />
         </div>
         <div class="w-72">
@@ -141,6 +155,7 @@
             (imgSelected)="onImageSelected($event)"
             [imageWidthValue]="'full'"
             class="w-full"
+            textImg="Añadir cartel"
           ></app-image-control>
         </div>
       </div>

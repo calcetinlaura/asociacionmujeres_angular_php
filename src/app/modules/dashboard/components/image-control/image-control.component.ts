@@ -27,14 +27,16 @@ export class ImageControlComponent implements OnInit {
   @Input() type: TypeList | null = null;
   @Output() imgSelected = new EventEmitter<File>();
   @Input() imageWidthValue: number | string | null = 200;
+  @Input() imageHeightValue: number = 360;
   @Input() entityId: number | null = null;
+  @Input() textImg: string = '';
   private apiUrl: string = `${environments.api}/backend`;
-  imageHeightValue: number = 300;
   previewUrl: string = '';
+  errorImgUrl: string = '';
 
   basePath = '/uploads/img';
   placeholder = 'assets/img/error.jpg';
-  placeholderPartner = 'assets/img/mujer.jpg';
+  // placeholderPartner = 'assets/img/mujer.jpg';
   constructor(private http: HttpClient) {}
 
   ngOnInit(): void {
@@ -54,7 +56,6 @@ export class ImageControlComponent implements OnInit {
 
   private setPreviewUrl() {
     if (this.previewImg) {
-      console.log(this.previewImg, 'foto que carga');
       // Si el tipo es 'event', extraer el año del nombre del archivo
       let yearFolder = '';
       if (this.type === TypeList.Events || this.type === TypeList.Macroevents) {
@@ -67,9 +68,11 @@ export class ImageControlComponent implements OnInit {
         ? `${this.basePath}/${this.type}/${yearFolder}/${this.previewImg}`
         : `${this.basePath}/${this.type}/${this.previewImg}`;
     } else {
-      if (this.type === 'PARTNERS') {
-        this.previewUrl = this.placeholderPartner;
-      }
+      // if (this.type === 'PARTNERS') {
+      //   this.errorImgUrl = this.placeholderPartner;
+      // } else {
+      this.errorImgUrl = this.placeholder;
+      // }
     }
   }
 
@@ -123,9 +126,7 @@ export class ImageControlComponent implements OnInit {
 
   removeImage() {
     const hasUploadedImage =
-      this.previewImg &&
-      this.previewImg !== this.placeholder &&
-      this.previewImg !== this.placeholderPartner;
+      this.previewImg && this.previewImg !== this.placeholder;
 
     // Solo hacer llamada al backend si hay imagen subida Y hay ID
     if (hasUploadedImage && this.entityId) {
@@ -153,8 +154,7 @@ export class ImageControlComponent implements OnInit {
   private resetImagePreview() {
     this.selectedFile = null;
     this.previewImg = null; // ¡Muy importante!
-    this.previewUrl =
-      this.type !== 'PARTNERS' ? this.placeholder : this.placeholderPartner;
+    this.previewUrl = this.placeholder;
     this.imgSelected.emit(null as any);
   }
   private getEndpointUrl(): string {

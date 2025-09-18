@@ -27,8 +27,8 @@
               <input
                 formControlName="start"
                 type="date"
-                class="p-1 border rounded w-full"
                 [ngClass]="{
+                  'text-placeholder': item.formGroup.get('start')?.value,
                   'is-invalid':
                     submitted && item.formGroup.get('start')?.invalid
                 }"
@@ -51,6 +51,7 @@
               <input
                 formControlName="end"
                 type="date"
+                 'text-placeholder': item.formGroup.get('end')?.value,
                 class="p-1 border rounded w-full"
               />
             </div>

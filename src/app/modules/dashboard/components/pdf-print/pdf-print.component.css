@@ -1,0 +1,25 @@
+.pdf-print,
+.pdf-print * {
+  box-sizing: border-box !important;
+}
+
+.pdf-print * {
+  font-size: var(--pdf-font-size, 13px) !important;
+  line-height: var(--pdf-line-height, 1.25) !important;
+  box-shadow: none !important;
+  transform: none !important;
+  filter: none !important;
+}
+
+.pdf-print table {
+  width: 100% !important;
+  table-layout: fixed !important;
+  border-collapse: collapse !important;
+}
+.pdf-print th,
+.pdf-print td {
+  padding: var(--pdf-cell-padding, 8px) !important;
+  word-break: break-word !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+}

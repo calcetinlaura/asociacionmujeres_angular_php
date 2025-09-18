@@ -1,13 +1,21 @@
 <?php
 header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET, POST, PATCH, DELETE");
-header("Access-Control-Allow-Headers: Content-Type");
+header("Access-Control-Allow-Methods: GET, POST, PATCH, DELETE, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, X-Requested-With, X-HTTP-Method-Override, Authorization, Origin, Accept");
 header("Content-Type: application/json; charset=UTF-8");
 
 include '../config/conexion.php';
 include 'utils/utils.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
+
+if ($method === 'POST') {
+  $override = $_POST['_method'] ?? $_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'] ?? '';
+  $override = strtoupper($override);
+  if ($override === 'DELETE') {
+    $method = 'DELETE';
+  }
+}
 
 if ($method === 'OPTIONS') {
   http_response_code(204);
@@ -21,17 +29,33 @@ $basePath = "../uploads/img/EVENTS/";
 
 function insertAgents($connection, $eventId, $agents, $type) {
   if (!is_array($agents)) return;
-
-  $stmt = $connection->prepare("INSERT INTO event_agents (event_id, agent_id, type) VALUES (?, ?, ?)");
-
+  $stmt = $connection->prepare("
+    INSERT IGNORE INTO event_agents (event_id, agent_id, type)
+    VALUES (?, ?, ?)
+  ");
   foreach ($agents as $agentId) {
     if (is_numeric($agentId)) {
-      $stmt->bind_param("iis", $eventId, $agentId, $type);
+      $aid = (int)$agentId;
+      $stmt->bind_param("iis", $eventId, $aid, $type);
       $stmt->execute();
     }
   }
 }
 
+function normalizeAgentField($value) {
+  // Si viene como array PHP (p.ej. organizer[]=1&organizer[]=2)
+  if (is_array($value)) {
+    $arr = $value;
+  } else {
+    // Si viene como JSON string
+    $decoded = json_decode($value, true);
+    $arr = is_array($decoded) ? $decoded : [];
+  }
+  // Filtra solo numéricos, normaliza a int y deduplica
+  $arr = array_map('intval', array_filter($arr, 'is_numeric'));
+  $arr = array_values(array_unique($arr));
+  return $arr;
+}
 switch ($method) {
   case 'GET':
     function enrichEventRow($row, $connection) {
@@ -58,7 +82,7 @@ switch ($method) {
       $row['salaData'] = !empty($row['sala_id']) ? [
         'id' => $row['sala_id'],
         'name' => $row['sala_name'] ?? '',
-        'location' => $row['sala_location'] ?? ''
+        'room_location' => $row['sala_location'] ?? ''
       ] : null;
 
       $row['organizer'] = [];
@@ -119,7 +143,7 @@ switch ($method) {
                m.title AS macroevent_title,
                pr.title AS project_title,
                p.name AS place_name, p.address AS place_address, p.lat AS place_lat, p.lon AS place_lon,
-               s.name AS sala_name, s.location AS sala_location
+               s.name AS sala_name, s.room_location AS sala_location
         FROM events e
         LEFT JOIN periodic_groups pg ON e.periodic_id = pg.id
         LEFT JOIN macroevents m ON e.macroevent_id = m.id
@@ -153,7 +177,7 @@ switch ($method) {
         m.title AS macroevent_title,
         pr.title AS project_title,
         p.name AS place_name, p.address AS place_address, p.lat AS place_lat, p.lon AS place_lon,
-        s.name AS sala_name, s.location AS sala_location
+        s.name AS sala_name, s.room_location AS sala_location
     FROM events e
     LEFT JOIN periodic_groups pg ON e.periodic_id = pg.id
     LEFT JOIN macroevents m ON e.macroevent_id = m.id
@@ -185,7 +209,7 @@ switch ($method) {
                 m.title AS macroevent_title,
                 pr.title AS project_title,
                 p.name AS place_name, p.address AS place_address, p.lat AS place_lat, p.lon AS place_lon,
-                s.name AS sala_name, s.location AS sala_location
+                s.name AS sala_name, s.room_location AS sala_location
             FROM events e
             LEFT JOIN periodic_groups pg ON e.periodic_id = pg.id
             LEFT JOIN macroevents m ON e.macroevent_id = m.id
@@ -220,7 +244,7 @@ switch ($method) {
                m.title AS macroevent_title,
                pr.title AS project_title,
                p.name AS place_name, p.address AS place_address, p.lat AS place_lat, p.lon AS place_lon,
-               s.name AS sala_name, s.location AS sala_location
+               s.name AS sala_name, s.room_location AS sala_location
         FROM events e
          LEFT JOIN periodic_groups pg ON e.periodic_id = pg.id
        LEFT JOIN macroevents m ON e.macroevent_id = m.id
@@ -248,7 +272,7 @@ switch ($method) {
                m.title AS macroevent_title,
                pr.title AS project_title,
                p.name AS place_name, p.address AS place_address, p.lat AS place_lat, p.lon AS place_lon,
-               s.name AS sala_name, s.location AS sala_location
+               s.name AS sala_name, s.room_location AS sala_location
         FROM events e
          LEFT JOIN periodic_groups pg ON e.periodic_id = pg.id
 LEFT JOIN macroevents m ON e.macroevent_id = m.id
@@ -277,7 +301,7 @@ LEFT JOIN macroevents m ON e.macroevent_id = m.id
                m.title AS macroevent_title,
                pr.title AS project_title,
                p.name AS place_name, p.address AS place_address, p.lat AS place_lat, p.lon AS place_lon,
-               s.name AS sala_name, s.location AS sala_location
+               s.name AS sala_name, s.room_location AS sala_location
         FROM events e
         LEFT JOIN periodic_groups pg ON e.periodic_id = pg.id
         LEFT JOIN macroevents m ON e.macroevent_id = m.id
@@ -304,7 +328,7 @@ LEFT JOIN macroevents m ON e.macroevent_id = m.id
                m.title AS macroevent_title,
                pr.title AS project_title,
                p.name AS place_name, p.address AS place_address, p.lat AS place_lat, p.lon AS place_lon,
-               s.name AS sala_name, s.location AS sala_location
+               s.name AS sala_name, s.room_location AS sala_location
         FROM events e
         LEFT JOIN periodic_groups pg ON e.periodic_id = pg.id
         LEFT JOIN macroevents m ON e.macroevent_id = m.id
@@ -331,7 +355,7 @@ LEFT JOIN macroevents m ON e.macroevent_id = m.id
   ini_set('display_errors', 1);
 
   $data = $_POST;
-  $imgName = procesarArchivoPorAnio($basePath, 'img', 'start');
+  $imgName = procesarArchivoPorAnio($basePath, 'img', 'start', 'img');
   $data['img'] = $imgName;
 
   $periodic = isset($data['periodic']) ? (int)filter_var($data['periodic'], FILTER_VALIDATE_BOOLEAN) : 0;
@@ -348,9 +372,9 @@ LEFT JOIN macroevents m ON e.macroevent_id = m.id
     exit();
   }
 
-  $organizers = isset($data['organizer']) ? json_decode($data['organizer'], true) : [];
-  $collaborators = isset($data['collaborator']) ? json_decode($data['collaborator'], true) : [];
-  $sponsors = isset($data['sponsor']) ? json_decode($data['sponsor'], true) : [];
+  $organizers    = normalizeAgentField($data['organizer']   ?? null);
+$collaborators = normalizeAgentField($data['collaborator']?? null);
+$sponsors      = normalizeAgentField($data['sponsor']     ?? null);
 
   $isUpdate = isset($data['_method']) && strtoupper($data['_method']) === 'PATCH';
   $id = isset($data['id']) ? (int)$data['id'] : null;
@@ -583,7 +607,7 @@ case 'DELETE':
 
   if ($stmt->execute()) {
     if ($imgToDelete && $eventYear) {
-      eliminarImagenSiNoSeUsa($connection, 'events', 'img', $imgToDelete, $basePath . $eventYear . '/');
+      eliminarArchivoSiNoSeUsa($connection, 'events', 'img', $imgToDelete, $basePath . $eventYear . '/');
     }
     echo json_encode(["message" => "Evento eliminado con éxito."]);
   } else {

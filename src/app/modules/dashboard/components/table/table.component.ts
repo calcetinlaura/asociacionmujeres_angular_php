@@ -28,6 +28,7 @@ import { HasValuePipe } from 'src/app/shared/pipe/hasValue.pipe';
 import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
 import { ParseJsonPipe } from 'src/app/shared/pipe/parseJson.pipe';
 import { PhoneFormatPipe } from 'src/app/shared/pipe/phoneFormat.pipe';
+import { HmsPipe } from '../../../../shared/pipe/dateTime_form.pipe';
 import { CircleIndicatorComponent } from '../circle-indicator/circle-indicator.component';
 
 @Component({
@@ -51,15 +52,19 @@ import { CircleIndicatorComponent } from '../circle-indicator/circle-indicator.c
     HasValuePipe,
     CalculateAgePipe,
     ParseJsonPipe,
+    HmsPipe,
+    ItemImagePipe,
   ],
+  providers: [ItemImagePipe],
   selector: 'app-table',
   templateUrl: './table.component.html',
   styleUrls: ['./table.component.css'],
 })
 export class TableComponent {
   private readonly subsidiesService = inject(SubsidiesService);
-
   private _liveAnnouncer = inject(LiveAnnouncer);
+  private itemImagePipe = inject(ItemImagePipe);
+
   @Input() displayedColumns: string[] = [];
   @Input() columnVisibility: { [key: string]: boolean } = {};
   @Input() typeSection: TypeList = TypeList.Books;
@@ -67,11 +72,16 @@ export class TableComponent {
   @Input() data: any[] = [];
   @Input() headerColumns: ColumnModel[] = [];
   @Input() topHeader = 246;
+  @Input() showNumberColumn = true;
+  @Input() printExcludeColumns: string[] | null = null; // p.ej. ['invoice_pdf','proof_pdf','total_amount', ...]
+  @Input() printIncludeNumber = true; // si quieres imprimir la columna de numeración
+  @Input() printIncludeActions = false;
   @Output() openModal = new EventEmitter<{
     typeModal: TypeList;
     action: TypeActionModal;
     item: any;
   }>();
+  nameMovement = this.subsidiesService.movementMap;
   nameSubsidy = this.subsidiesService.subsidiesMap;
 
   dataSource = new MatTableDataSource();
@@ -120,7 +130,9 @@ export class TableComponent {
   initDisplayedColumns(): void {
     this.displayedColumns = this.getVisibleColumns();
     this.displayedColumns.push('actions');
-    this.displayedColumns.unshift('number');
+    if (this.showNumberColumn) {
+      this.displayedColumns.unshift('number');
+    }
   }
 
   announceSortChange(sortState: Sort): void {
@@ -185,5 +197,107 @@ export class TableComponent {
   }
   get showFooter(): boolean {
     return this.headerColumns.some((col) => col.footerTotal);
+  }
+  shouldPrintColumn(key: string): boolean {
+    if (key === 'number') return !!this.printIncludeNumber;
+    if (key === 'actions') return !!this.printIncludeActions;
+
+    if (this.printExcludeColumns && this.printExcludeColumns.length) {
+      return !this.printExcludeColumns.includes(key);
+    }
+
+    // 3) Por defecto, imprime todo
+    return true;
+  }
+  private sanitizeName(name: string): string {
+    return (
+      name
+        ?.toString()
+        .trim()
+        .replace(/[^\w\-]+/g, '_')
+        .slice(0, 80) || 'imagen'
+    );
+  }
+
+  private extFromMime(mime?: string): string {
+    switch (mime) {
+      case 'image/jpeg':
+        return 'jpg';
+      case 'image/png':
+        return 'png';
+      case 'image/webp':
+        return 'webp';
+      case 'image/gif':
+        return 'gif';
+      default:
+        return '';
+    }
+  }
+
+  private extFromUrl(src: string): string {
+    try {
+      const u = new URL(src, window.location.origin);
+      const m = u.pathname.match(/\.([a-z0-9]+)$/i);
+      return m?.[1]?.toLowerCase() || '';
+    } catch {
+      const m = src.match(/\.([a-z0-9]+)(?:\?|#|$)/i);
+      return m?.[1]?.toLowerCase() || '';
+    }
+  }
+
+  async downloadImg(element: any): Promise<void> {
+    const src = this.itemImagePipe.transform(element?.img, this.typeSection);
+    if (!src) {
+      alert('Este elemento no tiene imagen.');
+      return;
+    }
+    // 1) URL igual que en la tabla (usa tu pipe)
+
+    if (!src) {
+      alert('Este elemento no tiene imagen.');
+      return;
+    }
+
+    //   // Evita descargar placeholders obvios (ajusta al nombre de tu placeholder si lo usas)
+    if (/no[-_ ]?image|placeholder/i.test(src)) {
+      alert('Este elemento no tiene imagen válida.');
+      return;
+    }
+
+    //   // 2) Nombre de archivo: título/nombre y extensión
+    const base = this.sanitizeName(element?.title || element?.name || 'imagen');
+    let ext = this.extFromUrl(src);
+
+    try {
+      //     // 3) Descarga como Blob (mejor experiencia y nombre correcto)
+      const res = await fetch(src, { mode: 'cors', cache: 'no-cache' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      if (!ext) {
+        const fromMime = this.extFromMime(blob.type);
+        if (fromMime) ext = fromMime;
+      }
+      if (!ext) ext = 'jpg';
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${base}.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('💥 Error al descargar la imagen, abriendo fallback:', err);
+      // 4) Fallback: abre en una pestaña nueva (por CORS, etc.)
+      const a = document.createElement('a');
+      a.href = src;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.download = `${base}.${ext || 'jpg'}`; // algunos navegadores lo respetan si es mismo origen
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
   }
 }

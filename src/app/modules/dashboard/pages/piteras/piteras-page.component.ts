@@ -1,5 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  ElementRef,
+  inject,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -28,6 +35,7 @@ import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.co
 
 @Component({
   selector: 'app-piteras-page',
+  standalone: true,
   imports: [
     DashboardHeaderComponent,
     ModalComponent,
@@ -44,34 +52,28 @@ import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.co
     StickyZoneComponent,
   ],
   templateUrl: './piteras-page.component.html',
-  styleUrl: './piteras-page.component.css',
 })
 export class PiterasPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly modalService = inject(ModalService);
-  private readonly piterasFacade = inject(PiterasFacade);
+  readonly piterasFacade = inject(PiterasFacade);
   private readonly piterasService = inject(PiterasService);
-  private readonly pdfPrintService = inject(PdfPrintService);
   private readonly generalService = inject(GeneralService);
+  private readonly pdfPrintService = inject(PdfPrintService);
 
-  piteras: PiteraModel[] = [];
-  filteredPiteras: PiteraModel[] = [];
-
-  isLoading = true;
-  isModalVisible = false;
-  number = 0;
-
-  item: PiteraModel | null = null;
-  currentModalAction: TypeActionModal = TypeActionModal.Create;
-  searchForm!: FormGroup;
-  typeSection = TypeList.Piteras;
-  typeModal = TypeList.Piteras;
   columnVisibility: Record<string, boolean> = {};
   displayedColumns: string[] = [];
-
   headerListPiteras: ColumnModel[] = [
+    {
+      title: 'Nº',
+      key: 'publication_number',
+      sortable: true,
+      width: ColumnWidth.XS,
+      textAlign: 'center',
+    },
     { title: 'Portada', key: 'img', sortable: false },
     { title: 'Título', key: 'title', sortable: true },
+
     {
       title: 'Año',
       key: 'year',
@@ -83,8 +85,24 @@ export class PiterasPageComponent implements OnInit {
     { title: 'Url', key: 'url', sortable: true },
   ];
 
+  piteras: PiteraModel[] = [];
+  filteredPiteras: PiteraModel[] = [];
+
+  isModalVisible = false;
+  number = 0;
+
+  item: PiteraModel | null = null;
+  currentModalAction: TypeActionModal = TypeActionModal.Create;
+  searchForm!: FormGroup;
+
+  typeModal = TypeList.Piteras;
+  typeSection = TypeList.Piteras;
+
+  @ViewChild('printArea', { static: false })
+  printArea!: ElementRef<HTMLElement>;
+
   ngOnInit(): void {
-    // Ocultar 'date_payment' y 'date_accounting' al cargar la página
+    // Columnas visibles iniciales
     this.columnVisibility = this.generalService.setColumnVisibility(
       this.headerListPiteras,
       [''] // Coloca las columnas que deseas ocultar aquí
@@ -143,6 +161,7 @@ export class PiterasPageComponent implements OnInit {
     this.currentModalAction = action;
     this.item = pitera;
     this.typeModal = typeModal;
+    this.piterasFacade.clearSelectedPitera();
     this.modalService.openModal();
   }
 
@@ -150,15 +169,16 @@ export class PiterasPageComponent implements OnInit {
     this.modalService.closeModal();
   }
 
-  confirmDeletePitera(pitera: PiteraModel | null): void {
-    if (!pitera) return;
-    this.piterasFacade.deletePitera(pitera.id);
-    this.onCloseModal();
+  onDelete({ type, id }: { type: TypeList; id: number }) {
+    const actions: Partial<Record<TypeList, (id: number) => void>> = {
+      [TypeList.Piteras]: (x) => this.piterasFacade.deletePitera(x),
+    };
+    actions[type]?.(id);
   }
 
   sendFormPitera(event: { itemId: number; formData: FormData }): void {
     const save$ = event.itemId
-      ? this.piterasFacade.editPitera(event.itemId, event.formData)
+      ? this.piterasFacade.editPitera(event.formData)
       : this.piterasFacade.addPitera(event.formData);
 
     save$
@@ -175,11 +195,20 @@ export class PiterasPageComponent implements OnInit {
     this.piteras = this.piterasService.sortPiterasByYear(piteras);
     this.filteredPiteras = [...this.piteras];
     this.number = this.piterasService.countPiteras(piteras);
-    this.isLoading = false;
   }
-  printTableAsPdf(): void {
-    this.pdfPrintService.printTableAsPdf('table-to-print', 'piteras.pdf');
+
+  async printTableAsPdf(): Promise<void> {
+    if (!this.printArea) return;
+
+    await this.pdfPrintService.printElementAsPdf(this.printArea, {
+      filename: 'piteras.pdf',
+      preset: 'compact', // 'compact' reduce paddings en celdas
+      orientation: 'portrait', // o 'landscape' si la tabla es muy ancha
+      format: 'a4',
+      margins: [5, 5, 5, 5], // mm
+    });
   }
+
   getVisibleColumns() {
     return this.headerListPiteras.filter(
       (col) => this.columnVisibility[col.key]
@@ -187,20 +216,10 @@ export class PiterasPageComponent implements OnInit {
   }
   // Método para actualizar las columnas visibles cuando se hace toggle
   toggleColumn(key: string): void {
-    // Cambia la visibilidad de la columna en columnVisibility
     this.columnVisibility[key] = !this.columnVisibility[key];
-    // Actualiza las columnas visibles en la tabla después de cambiar el estado
     this.displayedColumns = this.generalService.updateDisplayedColumns(
       this.headerListPiteras,
       this.columnVisibility
     );
-  }
-
-  private updateDisplayedColumns(): void {
-    const base = ['number']; // si usas un número de fila
-    const dynamic = this.headerListPiteras
-      .filter((col) => this.columnVisibility[col.key])
-      .map((col) => col.key);
-    this.displayedColumns = [...base, ...dynamic, 'actions'];
   }
 }

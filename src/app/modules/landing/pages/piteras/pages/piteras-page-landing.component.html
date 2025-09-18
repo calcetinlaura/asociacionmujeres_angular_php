@@ -1,6 +1,5 @@
-<div class="flex flex-col mx-3 md:mx-8 mt-2 md:mt-4">
-  <!-- Spinner Loading -->
-  @if (isLoading) {
+<div class="flex flex-col mx-3 md:mx-8 mt-4">
+  @if (piterasFacade.isLoading$ | async) {
   <app-spinner-loading />
   } @else {
   <app-section-generic
@@ -10,5 +9,4 @@
     [total]="number"
   />
   }
-  <!-- Sección cards -->
 </div>

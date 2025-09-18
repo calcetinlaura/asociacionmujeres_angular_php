@@ -1,0 +1,92 @@
+<div class="mb-10">
+  <table class="w-full -collapse tableInvoices my-4">
+    <colgroup>
+      @if (showIndex) {
+      <col class="w-auto" />
+      }
+      <!-- Numero -->
+      <col class="w-[80px]" />
+      <!-- Fecha -->
+      <col class="w-[80px]" />
+      <!-- CIF -->
+      @if (showCif) {
+      <col class="w-[80px]" />
+      <!-- Acreedor -->
+      } @if (showCreditor) {
+      <col class="w-[160px]" />
+      }
+      <!-- Descripción -->
+      <col class="w-[auto]" />
+      <!-- Total -->
+      <col class="w-[60px]" />
+    </colgroup>
+
+    <thead>
+      <tr>
+        @if (showIndex) {
+        <th class="p-2 text-center text-[12px] font-semibold"></th>
+        }
+        <th class="p-2 text-center text-[12px] font-semibold">N°</th>
+        <th class="p-2 text-center text-[12px] font-semibold">Fecha</th>
+        @if (showCif) {
+        <th class="p-2 text-center text-[12px] font-semibold">CIF</th>
+        } @if (showCreditor) {
+        <th class="p-2 text-center text-[12px] font-semibold">Acreedor</th>
+        }
+        <th class="p-2 text-center text-[12px] font-semibold">Descripción</th>
+        <th class="p-2 text-right pr-4 text-[12px] font-semibold">Total</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      @for (invoice of invoices; track invoice; let i = $index){
+      <tr class="hover:bg-gray-50 fila cursor-pointer">
+        @if (showIndex) {
+        <td class="p-2">{{ i + 1 }}</td>
+        }
+        <td class="p-2 text-center">{{ invoice.number_invoice }}</td>
+        <td class="p-2 text-center">
+          {{ invoice.date_invoice | date : "dd/MM/yyyy" }}
+        </td>
+        @if (showCif) {
+        <td class="p-2 text-center">
+          <span [innerHTML]="invoice.creditor_cif"></span>
+        </td>
+        } @if (showCreditor) {
+        <td class="p-2">
+          <span [innerHTML]="invoice.creditor_company"></span><br />
+          @if (invoice.creditor_company !== invoice.creditor_contact) {
+          <span
+            class="text-gray-400"
+            [innerHTML]="invoice.creditor_contact"
+          ></span>
+          }
+        </td>
+        }
+
+        <td class="p-2">
+          <span [innerHTML]="invoice.description"></span>
+        </td>
+
+        <td class="p-2 w-auto text-right">
+          {{ invoice.total_amount | eurosFormat }}
+        </td>
+      </tr>
+      } @if (showTotals) {
+      <tr class="total_table">
+        <td
+          class="text-right text-[12px] font-semibold pr-4"
+          [attr.colspan]="
+            (showIndex ? 1 : 0) + 3 + (showCreditor ? 1 : 0) + (showCif ? 1 : 0)
+          "
+        >
+          {{ totalLabel }}
+        </td>
+        <td class="p-2 text-right text-[12px] font-bold">
+          <span>{{ total() | eurosFormat }}</span>
+        </td>
+      </tr>
+      }
+    </tbody>
+  </table>
+</div>

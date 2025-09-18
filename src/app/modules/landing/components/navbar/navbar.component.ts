@@ -1,12 +1,10 @@
-
 import { Component, OnInit } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
-import { RouterLinkActive } from '@angular/router';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 @Component({
-    selector: 'app-navbar',
-    templateUrl: './navbar.component.html',
-    styleUrl: './navbar.component.css',
-    imports: [RouterLink, RouterLinkActive]
+  selector: 'app-navbar',
+  templateUrl: './navbar.component.html',
+  styleUrl: './navbar.component.css',
+  imports: [RouterLink, RouterLinkActive],
 })
 export class NavbarComponent implements OnInit {
   mainMenu: {
@@ -21,11 +19,10 @@ export class NavbarComponent implements OnInit {
     this.selectedMenuItem = name;
   }
 
-  constructor(private router: Router) {}
+  constructor() {}
 
   ngOnInit(): void {
     this.setSelectedMenuItem('Programación');
-    this.router.navigate(['/events']);
     this.mainMenu.defaultOptions = [
       // {
       //   name: 'Home',
@@ -40,17 +37,31 @@ export class NavbarComponent implements OnInit {
       {
         name: 'Biblioteca',
         router: ['/', 'books'],
-        title: 'Catálogo biblioteca',
+        title: `
+    <span class="block text-[12px] leading-tight opacity-80">Catálogo</span>
+    <span class="block ">Biblioteca</span>
+  `,
       },
       {
         name: 'Filmoteca',
         router: ['/', 'movies'],
-        title: 'Catálogo filmoteca',
+        title: `
+    <span class="block text-[12px] leading-tight opacity-80">Catálogo</span>
+    <span class="block ">Filmoteca</span>
+  `,
       },
       {
         name: 'Piteras',
         router: ['/', 'piteras'],
-        title: 'Catálogo Piteras',
+        title: `
+    <span class="block text-[12px] leading-tight opacity-80">Catálogo</span>
+    <span class="block ">Piteras</span>
+  `,
+      },
+      {
+        name: 'Podcasts',
+        router: ['/', 'podcasts'],
+        title: 'Podcasts',
       },
       {
         name: 'Recetas',

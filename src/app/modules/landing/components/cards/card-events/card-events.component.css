@@ -1,0 +1,141 @@
+.card {
+  border-radius: var(--border-radius-1);
+  cursor: pointer;
+  transition: all ease var(--animation-1);
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  height: auto;
+  background-color: white;
+  text-align: center;
+  border: 0;
+  overflow: hidden;
+}
+
+.card:hover {
+  transform: scale(1.05);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+}
+.card .cover {
+  aspect-ratio: 210 / 297; /* Default cuadrado */
+  max-height: 125%;
+  overflow: hidden;
+}
+.card .cover_image {
+  width: 100%;
+  height: auto;
+  border-radius: var(--border-radius-1);
+  object-fit: cover;
+  display: block;
+}
+
+.card div .item-title {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 16px;
+}
+.card div .item-subTitle {
+  font-size: 12px;
+  opacity: 0.7;
+}
+.card div .item-time {
+  font-size: 12px;
+  opacity: 0.7;
+}
+.card div .item-prime > p {
+  border: 0;
+  font-size: 10px;
+  display: inline-block;
+  border-radius: 0.4rem;
+  background-color: rgb(240, 189, 78);
+  margin-top: 5px;
+  padding: 1% 3%;
+  text-transform: capitalize;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+.box-date p:first-child {
+  font-size: 13px;
+  text-transform: uppercase;
+  padding: 0;
+  line-height: 16px;
+  font-weight: bold;
+}
+.box-date p:nth-child(2) {
+  font-size: 13px;
+  padding: 0;
+  line-height: 16px;
+  font-weight: bold;
+}
+.box-date p:nth-child(3) {
+  font-size: 13px;
+  text-transform: capitalize;
+  padding: 0;
+  line-height: 16px;
+  color: gray;
+}
+.box-date-single p:first-child {
+  font-size: 13px;
+  line-height: 16px;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+.box-date-single p:nth-child(2) {
+  font-size: 13px;
+  line-height: 16px;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+.box-date-single p:nth-child(3) {
+  font-size: 13px;
+  line-height: 16px;
+  text-transform: capitalize;
+  color: gray;
+}
+/* Media Queries para dispositivos más pequeños */
+
+/* Ordenador pequeño */
+@media (max-width: 1200px) {
+}
+/* Tablet */
+@media (max-width: 1024px) {
+}
+/* Móvil */
+@media (max-width: 768px) {
+  .box-date p:first-child {
+    font-size: 10px;
+    line-height: 12px;
+  }
+  .box-date p:nth-child(2) {
+    font-size: 10px;
+    line-height: 12px;
+  }
+  .box-date p:nth-child(3) {
+    font-size: 10px;
+    line-height: 12px;
+  }
+  .box-date-single p:first-child {
+    font-size: 10px;
+    line-height: 12px;
+  }
+  .box-date-single p:nth-child(2) {
+    font-size: 10px;
+    line-height: 12px;
+  }
+  .box-date-single p:nth-child(3) {
+    font-size: 10px;
+    text-transform: capitalize;
+    color: gray;
+    line-height: 12px;
+  }
+  .card:hover {
+    transform: 0;
+    box-shadow: 0;
+    cursor: pointer;
+  }
+}
+/* Móvil pequeño */
+@media (max-width: 300px) {
+}

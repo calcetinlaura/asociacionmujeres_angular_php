@@ -50,16 +50,14 @@ export class MoviesService {
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
-  edit(id: number, movie: FormData): Observable<any> {
+  edit(movie: FormData): Observable<any> {
     return this.http
       .post(this.apiUrl, movie)
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
   delete(id: number): Observable<any> {
-    return this.http
-      .delete(this.apiUrl, { params: { id: id } })
-      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
+    return this.generalService.deleteOverride<any>(this.apiUrl, { id });
   }
 
   sortMoviesByTitle(movies: MovieModel[]): MovieModel[] {

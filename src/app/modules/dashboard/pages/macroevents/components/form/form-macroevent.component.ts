@@ -47,7 +47,7 @@ export class FormMacroeventComponent implements OnInit {
   private readonly macroeventsFacade = inject(MacroeventsFacade);
   private readonly generalService = inject(GeneralService);
   @Input() itemId!: number;
-  @Output() sendFormMacroevent = new EventEmitter<{
+  @Output() submitForm = new EventEmitter<{
     itemId: number;
     formData: FormData;
   }>();
@@ -162,6 +162,10 @@ export class FormMacroeventComponent implements OnInit {
     if (rawValues.description) {
       rawValues.description = rawValues.description.replace(/&nbsp;/g, ' ');
     }
+    if (this.imageSrc && !this.selectedImageFile) {
+      rawValues.existingImg = this.imageSrc;
+    }
+
     const formData = this.generalService.createFormData(
       rawValues,
       {
@@ -169,5 +173,10 @@ export class FormMacroeventComponent implements OnInit {
       },
       this.itemId
     );
+
+    this.submitForm.emit({
+      itemId: this.itemId,
+      formData: formData,
+    });
   }
 }

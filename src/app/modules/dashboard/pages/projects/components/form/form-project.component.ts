@@ -27,6 +27,7 @@ import { SubsidyModelFullData } from 'src/app/core/interfaces/subsidy.interface'
 import { TypeList } from 'src/app/core/models/general.model';
 import { SubsidiesService } from 'src/app/core/services/subsidies.services';
 import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
+import { ButtonSelectComponent } from 'src/app/shared/components/buttons/button-select/button-select.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { dateRangeValidator } from 'src/app/shared/utils/validators.utils';
@@ -42,6 +43,7 @@ import { ButtonIconComponent } from '../../../../../../shared/components/buttons
     ButtonIconComponent,
     QuillModule,
     SpinnerLoadingComponent,
+    ButtonSelectComponent,
   ],
   templateUrl: './form-project.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],
@@ -53,7 +55,12 @@ export class FormProjectComponent implements OnInit {
   private readonly generalService = inject(GeneralService);
 
   @Input() itemId!: number;
-  @Output() sendFormProject = new EventEmitter<{
+  @Input() prefillFromSubsidy?: {
+    year: number;
+    subsidyId: number;
+    subsidyName?: string;
+  };
+  @Output() submitForm = new EventEmitter<{
     itemId: number;
     formData: FormData;
   }>();
@@ -70,12 +77,13 @@ export class FormProjectComponent implements OnInit {
         value: null,
         disabled: true,
       }),
+      subsidy_name: new FormControl({ value: '', disabled: true }), // ← solo visual
       img: new FormControl(''),
       activities: new FormArray([]),
     },
     { validators: dateRangeValidator }
   );
-
+  projectTypeSubsidy: 'SUBSIDIZED' | 'UNSUBSIDIZED' | 'UNDEFINED' = 'UNDEFINED';
   selectedImageFile: File | null = null;
   imageSrc = '';
   submitted = false;
@@ -102,15 +110,16 @@ export class FormProjectComponent implements OnInit {
     this.isLoading = true;
     this.years = this.generalService.loadYears(this.currentYear, 2018);
 
+    // Tu suscripción a year.valueChanges se queda igual
     this.formProject.controls.year.valueChanges
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((year) => {
           const subsidyControl = this.formProject.controls.subsidy_id;
           if (typeof year === 'number' && year >= 2000) {
-            this.loadSubisidiesByYear(year).subscribe(() => {
-              subsidyControl.enable(); // No hagas if (disabled), solo habilitalo
-            });
+            this.loadSubisidiesByYear(year).subscribe(() =>
+              subsidyControl.enable()
+            );
           } else {
             subsidyControl.disable();
           }
@@ -118,6 +127,7 @@ export class FormProjectComponent implements OnInit {
       )
       .subscribe();
 
+    // --- Si EDITAS un proyecto, se mantiene tu lógica tal cual ---
     if (this.itemId) {
       this.projectsFacade.loadProjectById(this.itemId);
       this.projectsFacade.selectedProject$
@@ -134,8 +144,10 @@ export class FormProjectComponent implements OnInit {
               subsidy_id: project.subsidy_id,
               img: project.img,
             });
+            if (project.subsidy_id) {
+              this.projectTypeSubsidy = 'SUBSIDIZED';
+            }
             this.setActivities(project.activities || []);
-
             if (typeof project.year === 'number') {
               this.loadSubisidiesByYear(project.year).subscribe(() => {
                 this.formProject.controls.subsidy_id.enable();
@@ -143,7 +155,6 @@ export class FormProjectComponent implements OnInit {
             }
             this.titleForm = 'Editar Proyecto';
             this.buttonAction = 'Guardar cambios';
-
             if (project.img) {
               this.imageSrc = project.img;
               this.selectedImageFile = null;
@@ -152,6 +163,33 @@ export class FormProjectComponent implements OnInit {
           })
         )
         .subscribe();
+    }
+
+    // --- Si CREAS y vienes desde Subvención: prefill + bloquear ---
+    if (this.prefillFromSubsidy) {
+      const { year, subsidyId, subsidyName } = this.prefillFromSubsidy;
+
+      // Fijar y bloquear el año
+      this.formProject.controls.year.setValue(year, { emitEvent: false });
+      this.formProject.controls.year.disable({ emitEvent: false });
+
+      // Cargar subvenciones del año, fijar y bloquear subsidy_id
+      this.loadSubisidiesByYear(year)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe(() => {
+          this.formProject.controls.subsidy_id.enable({ emitEvent: false });
+          this.formProject.controls.subsidy_id.setValue(subsidyId, {
+            emitEvent: false,
+          });
+          this.formProject.controls.subsidy_id.disable({ emitEvent: false });
+          if (subsidyName) {
+            this.formProject.controls.subsidy_name?.setValue(subsidyName, {
+              emitEvent: false,
+            });
+          }
+          this.projectTypeSubsidy = 'SUBSIDIZED';
+          this.isLoading = false;
+        });
     } else {
       this.isLoading = false;
     }
@@ -164,6 +202,13 @@ export class FormProjectComponent implements OnInit {
   setActivities(activities: any[]): void {
     this.activities.clear();
     activities.forEach((act) => this.addActivity(act));
+  }
+
+  setProjectTypeSubsidy(
+    type: 'SUBSIDIZED' | 'UNSUBSIDIZED' | 'UNDEFINED'
+  ): void {
+    this.projectTypeSubsidy = type;
+    this.formProject.patchValue({ subsidy_id: null });
   }
 
   get activities(): FormArray {
@@ -208,12 +253,21 @@ export class FormProjectComponent implements OnInit {
     }
 
     const rawValues = { ...this.formProject.getRawValue() } as any;
-    if (rawValues.description) {
-      rawValues.description = rawValues.description.replace(/&nbsp;/g, ' ');
-    }
-    if (rawValues.observations) {
-      rawValues.observations = rawValues.observations.replace(/&nbsp;/g, ' ');
-    }
+    // Util para limpiar '&nbsp;' y recortar
+    const clean = (v: unknown) =>
+      typeof v === 'string' ? v.replace(/&nbsp;/g, ' ').trim() : v;
+
+    // Limpia descripción del proyecto
+    rawValues.description = clean(rawValues.description);
+
+    // Limpia cada actividad (observations, y ya que estamos attendant y name)
+    rawValues.activities = (rawValues.activities ?? []).map((a: any) => ({
+      ...a,
+      name: clean(a.name) ?? '',
+      attendant: clean(a.attendant) ?? '',
+      observations: clean(a.observations) ?? '',
+    }));
+
     const formData = this.generalService.createFormData(
       rawValues,
       {
@@ -222,7 +276,7 @@ export class FormProjectComponent implements OnInit {
       this.itemId
     );
 
-    this.sendFormProject.emit({
+    this.submitForm.emit({
       itemId: this.itemId,
       formData: formData,
     });

@@ -1,10 +1,13 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { Observable, throwError } from 'rxjs';
+import { catchError, map, tap } from 'rxjs/operators';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { environments } from 'src/environments/environments';
-import { InvoiceModelFullData } from '../interfaces/invoice.interface';
+import {
+  InvoiceModelFullData,
+  InvoicePdf,
+} from '../interfaces/invoice.interface';
 
 @Injectable({
   providedIn: 'root',
@@ -56,16 +59,14 @@ export class InvoicesService {
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
-  edit(id: number, invoice: FormData): Observable<any> {
+  edit(invoice: FormData): Observable<any> {
     return this.http
       .post(this.apiUrl, invoice)
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
   delete(id: number): Observable<any> {
-    return this.http
-      .delete(this.apiUrl, { params: { id: id } })
-      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
+    return this.generalService.deleteOverride<any>(this.apiUrl, { id });
   }
 
   sortInvoicesByDate(events: InvoiceModelFullData[]): InvoiceModelFullData[] {
@@ -90,5 +91,59 @@ export class InvoicesService {
     const url = `${environments.api}/backend/utils/zip-download.php`;
 
     return this.http.post(url, { files: pdfFiles }, { responseType: 'blob' });
+  }
+
+  buildInvoicePdfPaths(data: InvoicePdf[] = [], includeProof = true): string[] {
+    const set = new Set<string>();
+
+    for (const inv of data) {
+      const pushPath = (fileName?: string) => {
+        if (!fileName) return;
+        // Intenta extraer año del nombre (YYYY_...). Si no, usa inv.year si existe.
+        const m = String(fileName).match(/^(\d{4})_/);
+        const year = m?.[1] ?? (inv?.year != null ? String(inv.year) : '');
+        set.add(year ? `${year}/${fileName}` : `${fileName}`);
+      };
+
+      // Factura
+      pushPath(inv?.invoice_pdf);
+      // Justificante (opcional)
+      if (includeProof) pushPath(inv?.proof_pdf);
+    }
+
+    return Array.from(set); // sin duplicados
+  }
+
+  /**
+   * Construye rutas y descarga el ZIP.
+   * @param data lista de facturas filtradas
+   * @param options.includeProof true => invoice + proof, false => solo invoice
+   * @param options.filename nombre del ZIP (por defecto según includeProof)
+   */
+  downloadInvoicesZipFromData(
+    data: InvoicePdf[] = [],
+    options?: { includeProof?: boolean; filename?: string }
+  ): Observable<void> {
+    const includeProof = options?.includeProof ?? true;
+    const filename =
+      options?.filename ?? (includeProof ? 'documentos.zip' : 'facturas.zip');
+
+    const paths = this.buildInvoicePdfPaths(data, includeProof);
+    if (!paths.length) return throwError(() => new Error('NO_FILES'));
+
+    return this.downloadFilteredPdfs(paths).pipe(
+      tap((blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }),
+      map(() => void 0),
+      catchError((err) => this.generalService.handleHttpError(err))
+    );
   }
 }

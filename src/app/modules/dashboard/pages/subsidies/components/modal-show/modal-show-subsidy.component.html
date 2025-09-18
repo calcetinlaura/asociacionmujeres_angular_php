@@ -1,15 +1,234 @@
-<div class="flex flex-1 flex-col justify-between">
-  @if (item.name) {
-  <app-text-title [text]="item.name" />
-  }
-  <app-text-background [text]="'Fechas'"></app-text-background>
-  @if (item.observations) {
-  <app-text-editor [text]="item.observations" />
-  }
-  <div class="ml-4 pt-2 gap-y-2"></div>
-  <app-text-background [text]="'Cantidad'"></app-text-background>
-  <div class="flex flex-col gap-y-2 ml-4 py-3">
-    <div class="body-description flex flex-row gap-4 align-middle"></div>
+<app-pdf-print
+  #printer
+  [filename]="'subvencion' + '_' + item.name + '_' + item.year + '.pdf'"
+  preset="normal"
+  orientation="portrait"
+  [margins]="[5, 5, 5, 5]"
+>
+  <div class="flex flex-1 flex-col justify-between" id="pdfArea">
+    <div
+      class="inline-block border-b border-[#1C1C3A] pb-4 mb-4 md:pb-4 md:mb-8"
+    >
+      <app-text-title [text]="item.name + ' ' + item.year" />
+      <div class="flex gap-x-4 justify-center" data-html2canvas-ignore="true">
+        <app-icon-action
+          [icon]="'uil-print'"
+          [tooltip]="'Imprimir PDF'"
+          (click)="printer.print()"
+        ></app-icon-action>
+        <app-icon-action
+          [icon]="'uil-folder-download'"
+          [tooltip]="'Descargar facturas y justificantes'"
+          (click)="this.downloadFilteredPdfs(true)"
+        />
+      </div>
+    </div>
+
+    <div class="flex mb-4">
+      <div class="flex flex-col justify-center flex-1 gap-y-4">
+        <h2>URL Subvención: {{ item.url_presentation }}</h2>
+        <h2>URL Resolución: {{ item.url_justification }}</h2>
+      </div>
+      <div
+        class="flex flex-col p-4 pr-10 gap-y-4 w-auto rounded"
+        style="background-color: #d0a9d952"
+      >
+        <div
+          class="flex flex-row gap-x-4 justify-start items-center align-middle"
+        >
+          <mat-icon class="calendar-icon">calendar_today</mat-icon>
+          <h2>Fecha Max. Presentación:</h2>
+          <p class="capitalize">
+            {{ item.date_presentation | date : "EEEE dd MMM yyyy" }}
+          </p>
+        </div>
+        <div
+          class="flex flex-row gap-x-4 justify-start items-center align-middle"
+        >
+          <mat-icon class="calendar-icon">calendar_today</mat-icon>
+          <h2>Fecha Max. Justificación:</h2>
+          <p class="capitalize">
+            {{ item.date_justification | date : "EEEE dd MMM yyyy" }}
+          </p>
+        </div>
+        <div
+          class="flex flex-row gap-x-4 justify-start items-center align-middle"
+        >
+          <mat-icon class="calendar-icon">calendar_today</mat-icon>
+          <h2>Periodo subvencionable:</h2>
+          <p>
+            {{ item.start | date : "dd MMM yyyy" }}
+            @if (item.end) { - {{ item.end | date : "dd MMM yyyy" }}
+            }
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="flex flex-row gap-x-4 justify-between">
+      <div class="box-amount w-auto box-invoices">
+        <p>FACTURAS</p>
+        <p class="text-center">{{ item.invoices?.length }}</p>
+      </div>
+      <div class="box-amount w-auto">
+        <p>SOLICITADO</p>
+        <p class="text-center">
+          {{ item.amount_requested | eurosFormat }}
+        </p>
+      </div>
+
+      <div class="box-amount w-auto">
+        <p>CONCEDIDO</p>
+        <p class="text-center">{{ item.amount_granted | eurosFormat }}</p>
+      </div>
+
+      <div class="box-amount w-auto">
+        <p>JUSTIFICAR</p>
+        <p class="text-center">{{ item.amount_justified | eurosFormat }}</p>
+      </div>
+
+      <div class="box-amount w-auto">
+        <p>GASTADO</p>
+        <p class="text-center">
+          <span>Total ( {{ item.amount_spent | eurosFormat }})</span>
+        </p>
+        <p class="text-center">
+          {{ item.amount_spent_irpf | eurosFormat }}
+        </p>
+        <p class="text-center"><span> Total + IRPF </span></p>
+      </div>
+
+      <div
+        class="box-amount flex-1"
+        [ngClass]="{
+       positive: (item.amount_justified! - item.amount_spent_irpf!) < 0,
+       negative: (item.amount_justified! - item.amount_spent_irpf!) > 0,
+     }"
+      >
+        @if ((item.amount_justified! - item.amount_spent_irpf!) < 0){
+        <p>SOBREPASA EL GASTO</p>
+        }@else {
+        <p>FALTA POR GASTAR</p>
+        }
+        <p class="text-center">
+          <span
+            >Justificar {{ item.amount_justified | eurosFormat }} - Gastado
+            {{ item.amount_spent_irpf | eurosFormat }} = </span
+          ><br />{{
+            item.amount_justified! - item.amount_spent_irpf! | eurosFormat
+          }}
+        </p>
+      </div>
+
+      <div class="box-amount flex-1 text-center">
+        <p>APORTE ASOCIACIÓN</p>
+        <p>
+          <span
+            >Gasto + IRPF {{ item.amount_spent_irpf | eurosFormat }} - Concedido
+            {{ item.amount_granted | eurosFormat }} =</span
+          >
+          {{ item.amount_association_irpf | eurosFormat }}
+        </p>
+      </div>
+    </div>
+
+    @if (item.observations) {
+    <app-text-editor [text]="item.observations" />
+    }
+
+    <p class="text-[18px] font-normal my-6">Proyectos solicitados</p>
+    <table class="w-full -collapse tableProjects my-4">
+      @for (project of item.projects; track project; let pIndex = $index) { @let
+      acts = project.activities ?? []; @let rows = acts.length > 0 ? acts.length
+      : 1;
+
+      <tbody>
+        <!-- Con actividades -->
+        @if (acts.length > 0) { @for (activity of acts; track activity; let i =
+        $index) {
+        <tr>
+          @if (i === 0) {
+          <td
+            [attr.rowspan]="rows"
+            class="align-middle text-left text-[14px] uppercase w-2/6"
+          >
+            {{ project.title }}
+          </td>
+          }
+
+          <td class="pl-6 w-2/6">
+            <div>
+              <p class="text-[13px] text-gray-800">{{ activity.name }}</p>
+              @if (activity.attendant) {
+              <p class="text-[12px] text-gray-500 flex items-center gap-1 mt-1">
+                <i class="uil uil-user text-[10px]"></i>
+                {{ activity.attendant }}
+              </p>
+              }
+            </div>
+          </td>
+
+          <td class="text-right text-[12px] w-1/6">
+            {{ activity.budget | eurosFormat }}
+          </td>
+
+          @if (i === 0) {
+          <td
+            [attr.rowspan]="rows"
+            class="align-middle text-right text-[12px] font-bold w-1/6"
+          >
+            {{ getProjectTotalBudget(project) | eurosFormat }}
+          </td>
+          }
+        </tr>
+        } }
+        <!-- Sin actividades -->
+        @else {
+        <tr>
+          <td
+            [attr.rowspan]="rows"
+            class="align-middle text-left text-[14px] uppercase w-2/6"
+          >
+            {{ project.title }}
+          </td>
+
+          <td class="pl-6 w-2/6 text-gray-500 italic">---</td>
+
+          <td class="text-right text-[12px] w-1/6">—</td>
+
+          <td class="align-middle text-right text-[12px] font-bold w-1/6">
+            {{ 0 | eurosFormat }}
+          </td>
+        </tr>
+        }
+      </tbody>
+
+      }
+      <tfoot>
+        <tr>
+          <!-- Etiqueta total ocupando las 3 primeras columnas -->
+          <td colspan="3" class="text-right text-[12px] font-semibold pr-4">
+            TOTAL
+          </td>
+          <!-- Total de todos los proyectos -->
+          <td class="text-right text-[12px] font-bold">
+            {{ getSubsidyTotalBudget(item) | eurosFormat }}
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+    <p class="text-[18px] font-normal mt-12 mb-6">Facturas</p>
+    <div class="w-full">
+      @if (item.invoices && item.invoices.length>0) {
+      <div class="mb-10">
+        <app-invoices-table
+          [invoices]="item.invoices"
+          [showCreditor]="true"
+          [showTotals]="true"
+          totalLabel="TOTAL"
+        >
+        </app-invoices-table>
+      </div>
+      }
+    </div>
   </div>
-  <app-text-background [text]="'Subvención'"></app-text-background>
-</div>
+</app-pdf-print>

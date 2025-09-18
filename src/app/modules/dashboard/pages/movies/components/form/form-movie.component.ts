@@ -46,7 +46,7 @@ export class FormMovieComponent {
   private destroyRef = inject(DestroyRef);
   private generalService = inject(GeneralService);
   @Input() itemId!: number;
-  @Output() sendFormMovie = new EventEmitter<{
+  @Output() submitForm = new EventEmitter<{
     itemId: number;
     formData: FormData;
   }>();
@@ -148,6 +148,6 @@ export class FormMovieComponent {
       this.itemId
     );
 
-    this.sendFormMovie.emit({ itemId: this.itemId, formData: formData });
+    this.submitForm.emit({ itemId: this.itemId, formData: formData });
   }
 }

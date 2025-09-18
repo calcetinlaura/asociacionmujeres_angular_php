@@ -29,7 +29,7 @@ import { CalendarComponent } from '../components/calendar/calendar.component';
 })
 export class EventsPageLandingComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
-  private readonly eventsFacade = inject(EventsFacade);
+  readonly eventsFacade = inject(EventsFacade);
   private readonly eventsService = inject(EventsService);
   private readonly generalService = inject(GeneralService);
 
@@ -71,7 +71,6 @@ export class EventsPageLandingComponent implements OnInit {
   }
 
   loadEvents(year: number): void {
-    this.isLoading = true;
     this.selectedFilter = year;
     this.eventsFacade.loadNonRepeatedEventsByYear(year);
     this.eventsFacade.loadEventsAllByYear(year);

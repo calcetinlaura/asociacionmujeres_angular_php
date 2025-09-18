@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import {
   Component,
   DestroyRef,
+  ElementRef,
   inject,
   OnInit,
   ViewChild,
@@ -39,6 +40,7 @@ import { TableComponent } from '../../components/table/table.component';
 
 @Component({
   selector: 'app-partners-page',
+  standalone: true,
   imports: [
     DashboardHeaderComponent,
     ModalComponent,
@@ -56,31 +58,15 @@ import { TableComponent } from '../../components/table/table.component';
     StickyZoneComponent,
   ],
   templateUrl: './partners-page.component.html',
-  styleUrl: './partners-page.component.css',
 })
 export class PartnersPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly modalService = inject(ModalService);
-  private readonly partnersFacade = inject(PartnersFacade);
+  readonly partnersFacade = inject(PartnersFacade);
   private readonly partnersService = inject(PartnersService);
   private readonly generalService = inject(GeneralService);
   private readonly pdfPrintService = inject(PdfPrintService);
 
-  partners: PartnerModel[] = [];
-  filteredPartners: PartnerModel[] = [];
-  filters: Filter[] = [];
-  selectedFilter: number | null = null;
-
-  currentYear = this.generalService.currentYear;
-  typeSection = TypeList.Partners;
-  typeModal = TypeList.Partners;
-  isLoading = true;
-  isModalVisible = false;
-  number = 0;
-
-  item: PartnerModel | null = null;
-  currentModalAction: TypeActionModal = TypeActionModal.Create;
-  searchForm!: FormGroup;
   columnVisibility: Record<string, boolean> = {};
   displayedColumns: string[] = [];
   headerListPartners: ColumnModel[] = [
@@ -133,11 +119,30 @@ export class PartnersPageComponent implements OnInit {
     },
   ];
 
+  partners: PartnerModel[] = [];
+  filteredPartners: PartnerModel[] = [];
+  filters: Filter[] = [];
+  selectedFilter: number | null = null;
+
+  isModalVisible = false;
+  number = 0;
+
+  item: PartnerModel | null = null;
+  currentModalAction: TypeActionModal = TypeActionModal.Create;
+  searchForm!: FormGroup;
+
+  currentYear = this.generalService.currentYear;
+  typeModal = TypeList.Partners;
+  typeSection = TypeList.Partners;
+
   @ViewChild(InputSearchComponent)
   private inputSearchComponent!: InputSearchComponent;
 
+  @ViewChild('printArea', { static: false })
+  printArea!: ElementRef<HTMLElement>;
+
   ngOnInit(): void {
-    // Ocultar 'date_payment' y 'date_accounting' al cargar la página
+    // Columnas visibles iniciales
     this.columnVisibility = this.generalService.setColumnVisibility(
       this.headerListPartners,
       [''] // Coloca las columnas que deseas ocultar aquí
@@ -149,7 +154,7 @@ export class PartnersPageComponent implements OnInit {
       this.columnVisibility
     );
     this.filters = [
-      { code: 'ALL', name: 'Histórico' },
+      { code: '', name: 'Histórico' },
       ...this.generalService.getYearFilters(1995, this.currentYear),
     ];
 
@@ -162,6 +167,7 @@ export class PartnersPageComponent implements OnInit {
 
     this.filterSelected(this.currentYear.toString());
 
+    // Estado de socias desde la fachada
     this.partnersFacade.filteredPartners$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
@@ -171,10 +177,11 @@ export class PartnersPageComponent implements OnInit {
   }
 
   filterSelected(filter: string): void {
-    this.selectedFilter = filter === 'ALL' ? null : Number(filter);
+    this.selectedFilter = filter === '' ? null : Number(filter);
 
     this.generalService.clearSearchInput(this.inputSearchComponent);
-    if (filter === 'ALL') {
+
+    if (!filter) {
       this.partnersFacade.loadAllPartners();
     } else {
       this.partnersFacade.loadPartnersByYear(Number(filter));
@@ -213,10 +220,11 @@ export class PartnersPageComponent implements OnInit {
     this.modalService.closeModal();
   }
 
-  confirmDeletePartner(partner: PartnerModel | null): void {
-    if (!partner) return;
-    this.partnersFacade.deletePartner(partner.id);
-    this.onCloseModal();
+  onDelete({ type, id }: { type: TypeList; id: number }) {
+    const actions: Partial<Record<TypeList, (id: number) => void>> = {
+      [TypeList.Partners]: (x) => this.partnersFacade.deletePartner(x),
+    };
+    actions[type]?.(id);
   }
 
   sendFormPartner(event: { itemId: number; formData: FormData }): void {
@@ -248,21 +256,29 @@ export class PartnersPageComponent implements OnInit {
     });
     this.filteredPartners = [...this.partners];
     this.number = this.partnersService.countPartners(partners);
-    this.isLoading = false;
   }
-  printTableAsPdf(): void {
-    this.pdfPrintService.printTableAsPdf('table-to-print', 'socias.pdf');
+
+  async printTableAsPdf(): Promise<void> {
+    if (!this.printArea) return;
+
+    await this.pdfPrintService.printElementAsPdf(this.printArea, {
+      filename: 'facturas.pdf',
+      preset: 'compact', // 'compact' reduce paddings en celdas
+      orientation: 'landscape', // o 'landscape' si la tabla es muy ancha
+      format: 'a4',
+      margins: [5, 5, 5, 5], // mm
+    });
   }
+
   getVisibleColumns() {
     return this.headerListPartners.filter(
       (col) => this.columnVisibility[col.key]
     );
   }
+
   // Método para actualizar las columnas visibles cuando se hace toggle
   toggleColumn(key: string): void {
-    // Cambia la visibilidad de la columna en columnVisibility
     this.columnVisibility[key] = !this.columnVisibility[key];
-    // Actualiza las columnas visibles en la tabla después de cambiar el estado
     this.displayedColumns = this.generalService.updateDisplayedColumns(
       this.headerListPartners,
       this.columnVisibility

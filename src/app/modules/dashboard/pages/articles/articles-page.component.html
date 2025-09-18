@@ -6,7 +6,7 @@
     [type]="'Artículos'"
   />
   <div class="flex flex-col gap-y-8">
-    <div class="flex gap-x-4">
+    <div class="flex gap-x-4 items-center">
       <app-button-icon
         [buttonText]="'Nuevo artículo'"
         [iconClass]="'uil-plus'"
@@ -41,11 +41,11 @@
   </div>
 </app-sticky-zone>
 <div class="flex flex-col px-8">
-  <!-- Spinner Loading -->
-  @if (isLoading) {
+  @if (articlesFacade.isLoading$ | async) {
   <app-spinner-loading />
   } @else {@if(filteredArticles.length > 0){
-  <div class="pb-4 flex">
+  <div class="pb-4" #printArea>
+    <h2 class="only-on-pdf print-title">Listado artículos</h2>
     <app-table
       [data]="filteredArticles"
       [typeSection]="typeSection"
@@ -53,6 +53,7 @@
       [headerColumns]="getVisibleColumns()"
       [columnVisibility]="columnVisibility"
       (openModal)="onOpenModal($event)"
+      [displayedColumns]="displayedColumns"
       [topHeader]="210"
     />
   </div>
@@ -61,7 +62,6 @@
     No hay artículos registrados.
   </div>
   } }
-  <!-- Tabla -->
 </div>
 
 <!-- Modal -->
@@ -71,7 +71,7 @@
   [typeModal]="typeModal"
   [action]="currentModalAction"
   (closeModal)="onCloseModal()"
-  (confirmDelete)="confirmDeleteArticle(item)"
+  (confirmDelete)="onDelete($event)"
   (sendFormArticleData)="sendFormArticle($event)"
 ></app-modal>
 }

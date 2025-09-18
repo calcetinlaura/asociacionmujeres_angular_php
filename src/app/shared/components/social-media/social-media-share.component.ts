@@ -18,7 +18,15 @@ export class SocialMediaShareComponent {
   get encodedTitle() {
     return encodeURIComponent(this.title);
   }
-
+  async nativeShare() {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: this.title, url: this.url });
+      } catch {}
+    } else {
+      this.copyLink();
+    }
+  }
   copyLink() {
     navigator.clipboard.writeText(this.url).then(() => {
       alert('Enlace copiado al portapapeles');

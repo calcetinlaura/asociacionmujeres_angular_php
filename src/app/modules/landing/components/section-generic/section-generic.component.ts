@@ -1,5 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, Input, OnInit } from '@angular/core';
+import { Component, DestroyRef, inject, Input, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router } from '@angular/router';
 import { BookModel } from 'src/app/core/interfaces/book.interface';
 import {
   EventModel,
@@ -13,17 +15,21 @@ import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { EventsService } from 'src/app/core/services/events.services';
 import { MacroeventsService } from 'src/app/core/services/macroevents.services';
 import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
-import { CardPlayerComponent } from '../card/card.component';
+import { CardPlayerComponent } from '../cards/card-events/card-events.component';
+import { CardComponent } from '../cards/card/card.component';
 
 @Component({
   selector: 'app-section-generic',
-  imports: [CardPlayerComponent, CommonModule, ModalComponent],
+  imports: [CardComponent, CommonModule, ModalComponent, CardPlayerComponent],
   templateUrl: './section-generic.component.html',
   styleUrl: './section-generic.component.css',
 })
 export class SectionGenericComponent implements OnInit {
   private readonly macroeventsService = inject(MacroeventsService);
   private readonly eventsService = inject(EventsService);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
 
   @Input() data: any[] = [];
   @Input() total?: number = 0;
@@ -53,17 +59,91 @@ export class SectionGenericComponent implements OnInit {
       this.typeModal = TypeList.Books;
     }
     this.selectedTypeModal = this.typeSection;
+    // 🔎 1) Escuchar la URL: si hay :id, abrir la modal con ese id
+    this.route.paramMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((params) => {
+        const idParam = params.get('id');
+        if (idParam) {
+          const id = +idParam;
+          this.openById(id);
+        } else {
+          this.closeModalOnly();
+        }
+      });
   }
   openModalView(item: any) {
-    this.showModalView = true;
+    // 1) Cambia la URL (/events/:id o /books/:id)
+    const segment = this.getRouteSegment();
+    this.router.navigate(['/', segment, item.id]);
+
+    // 2) Abre la modal con el item (UI rápida); luego, si quieres, refrescas del backend
     this.selectedItem = item;
     this.selectedActionModal = TypeActionModal.Show;
+    this.showModalView = true;
   }
   onCloseModal() {
+    this.showModalView = false;
+    this.selectedItem = ''; // 🧹 Volver a la URL base (/events o /books) al cerrar
+    const segment = this.getRouteSegment();
+    this.router.navigate(['/', segment]);
+  }
+  // 🚪 Abrir por id (cuando viene en la URL o cambias entre ids)
+  private openById(id: number) {
+    // 1) Busca primero en los datos que ya tienes
+    const local = this.data?.find((x) => x?.id === id);
+    if (local) {
+      this.selectedItem = local;
+      this.selectedTypeModal = this.typeSection;
+      this.selectedActionModal = TypeActionModal.Show;
+      this.showModalView = true;
+      return;
+    }
+
+    // 2) Si no está, pide al backend según el tipo de sección
+    switch (this.typeSection) {
+      case TypeList.Events:
+        this.eventsService.getEventById(id).subscribe({
+          next: (event: EventModelFullData) => {
+            this.selectedItem = event;
+            this.selectedTypeModal = TypeList.Events;
+            this.selectedActionModal = TypeActionModal.Show;
+            this.showModalView = true;
+          },
+          error: (err) => console.error('Error cargando evento', err),
+        });
+        break;
+
+      default:
+        console.warn('openById: tipo no implementado', this.typeSection);
+        break;
+    }
+  }
+
+  private closeModalOnly() {
     this.showModalView = false;
     this.selectedItem = '';
   }
 
+  // 🧭 De TypeList → 'events' | 'books' | ...
+  private getRouteSegment(): string {
+    switch (this.typeSection) {
+      case TypeList.Events:
+        return 'events';
+      case TypeList.Books:
+        return 'books';
+      case TypeList.Movies:
+        return 'movies';
+      case TypeList.Piteras:
+        return 'piteras';
+      case TypeList.Recipes:
+        return 'recipes';
+      case TypeList.Podcasts:
+        return 'podcasts';
+      default:
+        return 'events';
+    }
+  }
   onOpenMacroevent(macroeventId: number) {
     this.macroeventsService.getMacroeventById(macroeventId).subscribe({
       next: (macroevent: MacroeventModelFullData) => {

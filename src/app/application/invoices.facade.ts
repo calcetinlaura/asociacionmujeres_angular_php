@@ -1,19 +1,20 @@
-import { DestroyRef, inject, Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, throwError } from 'rxjs';
+import { inject, Injectable } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 import { InvoiceModelFullData } from 'src/app/core/interfaces/invoice.interface';
 import { InvoicesService } from 'src/app/core/services/invoices.services';
-import { GeneralService } from '../shared/services/generalService.service';
+import { includesNormalized, toSearchKey } from '../shared/utils/text.utils';
+import { LoadableFacade } from './loadable.facade';
 
 @Injectable({ providedIn: 'root' })
-export class InvoicesFacade {
-  private readonly destroyRef = inject(DestroyRef);
+export class InvoicesFacade extends LoadableFacade {
   private readonly invoicesService = inject(InvoicesService);
-  private readonly generalService = inject(GeneralService);
 
+  // Estado
   private readonly invoicesSubject = new BehaviorSubject<
-    InvoiceModelFullData[]
-  >([]);
+    InvoiceModelFullData[] | null
+  >(null);
   private readonly filteredInvoicesSubject = new BehaviorSubject<
     InvoiceModelFullData[] | null
   >(null);
@@ -22,146 +23,159 @@ export class InvoicesFacade {
   private readonly currentFilterSubject = new BehaviorSubject<string | null>(
     null
   );
-  private tabFilterSubject = new BehaviorSubject<string | null>(null);
-  private readonly isLoadingSubject = new BehaviorSubject<boolean>(false);
+  private readonly tabFilterSubject = new BehaviorSubject<string | null>(null);
 
-  tabFilter$ = this.tabFilterSubject.asObservable();
-  invoices$ = this.invoicesSubject.asObservable();
-  filteredInvoices$ = this.filteredInvoicesSubject.asObservable();
-  selectedInvoice$ = this.selectedInvoiceSubject.asObservable();
-  currentFilter$ = this.currentFilterSubject.asObservable();
-  isLoading$ = this.isLoadingSubject.asObservable();
+  // Eventos
+  private readonly savedSubject = new Subject<InvoiceModelFullData>();
+  private readonly deletedSubject = new Subject<number>();
 
-  setCurrentFilter(filter: string): void {
-    this.currentFilterSubject.next(filter);
-    this.loadInvoicesByYear(+filter);
+  // Streams públicos
+  readonly invoices$ = this.invoicesSubject.asObservable();
+  readonly filteredInvoices$ = this.filteredInvoicesSubject.asObservable();
+  readonly selectedInvoice$ = this.selectedInvoiceSubject.asObservable();
+  readonly currentFilter$ = this.currentFilterSubject.asObservable();
+  readonly tabFilter$ = this.tabFilterSubject.asObservable();
+  readonly saved$ = this.savedSubject.asObservable();
+  readonly deleted$ = this.deletedSubject.asObservable();
+
+  // Filtro actual (año) para recargas
+  private currentFilter: number | null = null;
+
+  // ---------- Filtros / Año ----------
+  setCurrentFilter(year: number | null): void {
+    this.currentFilter = year;
+    this.currentFilterSubject.next(year?.toString() ?? null);
   }
 
-  loadAllInvoices(): void {
-    this.isLoadingSubject.next(true);
-    this.invoicesService
-      .getInvoices()
-      .pipe(
-        tap((invoices) => this.updateInvoiceState(invoices)),
-        catchError((err) => this.handleError(err))
-      )
-      .subscribe();
-  }
-
-  loadInvoicesByYear(year: number, showLoading = true): void {
-    if (showLoading) {
-      this.isLoadingSubject.next(true); // 🔥 Solo activar spinner
+  private reloadCurrentFilter(): void {
+    if (this.currentFilter === null) {
+      this.loadAllInvoices();
+      return;
     }
+    this.loadInvoicesByYear(this.currentFilter);
+  }
 
-    this.invoicesService
-      .getInvoicesByYear(year)
-      .pipe(
-        tap((invoices) => this.updateInvoiceState(invoices)),
-        catchError((err) => this.handleError(err))
-      )
-      .subscribe();
+  // ---------- Cargas ----------
+  loadAllInvoices(): void {
+    this.setCurrentFilter(null);
+    this.executeWithLoading(this.invoicesService.getInvoices(), (invoices) =>
+      this.updateInvoiceState(invoices)
+    );
+  }
+
+  loadInvoicesByYear(year: number): void {
+    this.setCurrentFilter(year);
+    this.executeWithLoading(
+      this.invoicesService.getInvoicesByYear(year),
+      (invoices) => this.updateInvoiceState(invoices)
+    );
   }
 
   loadInvoicesBySubsidy(subsidy: string, year: number): void {
-    this.isLoadingSubject.next(true);
-    this.invoicesService
-      .getInvoicesBySubsidy(subsidy, year)
-      .pipe(
-        tap((invoices) => this.updateInvoiceState(invoices)),
-        catchError((err) => this.handleError(err))
-      )
-      .subscribe();
+    this.executeWithLoading(
+      this.invoicesService.getInvoicesBySubsidy(subsidy, year),
+      (invoices) => this.updateInvoiceState(invoices)
+    );
   }
 
   loadInvoiceById(id: number): void {
-    this.isLoadingSubject.next(true);
-    this.invoicesService
-      .getInvoiceById(id)
-      .pipe(
-        tap((invoice) => this.selectedInvoiceSubject.next(invoice)),
-        catchError((err) => this.handleError(err))
-      )
-      .subscribe();
-  }
-
-  addInvoice(invoice: FormData): Observable<any> {
-    return this.invoicesService.add(invoice).pipe(
-      tap(() => this.reloadCurrentFilter()),
-      catchError((err) => this.handleError(err))
+    this.executeWithLoading(
+      this.invoicesService.getInvoiceById(id),
+      (invoice) => this.selectedInvoiceSubject.next(invoice)
     );
   }
 
-  editInvoice(id: number, invoice: FormData): Observable<any> {
-    return this.invoicesService.edit(id, invoice).pipe(
-      tap(() => this.reloadCurrentFilter()),
-      catchError((err) => this.handleError(err))
+  // ---------- CRUD ----------
+  /** Devuelve el invoice guardado y emite saved$ */
+  addInvoice(invoice: FormData): Observable<InvoiceModelFullData> {
+    return this.wrapWithLoading(this.invoicesService.add(invoice)).pipe(
+      takeUntilDestroyed(this.destroyRef),
+      tap((inv) => {
+        this.savedSubject.next(inv);
+        this.reloadCurrentFilter();
+      }),
+      catchError((err) => this.generalService.handleHttpError(err))
     );
   }
 
+  /** Devuelve el invoice editado y emite saved$ */
+  editInvoice(invoice: FormData): Observable<InvoiceModelFullData> {
+    return this.wrapWithLoading(this.invoicesService.edit(invoice)).pipe(
+      takeUntilDestroyed(this.destroyRef),
+      tap((inv) => {
+        this.savedSubject.next(inv);
+        this.reloadCurrentFilter();
+      }),
+      catchError((err) => this.generalService.handleHttpError(err))
+    );
+  }
+
+  /** Devuelve el id borrado y emite deleted$ */
+  // deleteInvoice(id: number): Observable<number> {
+  //   return this.wrapWithLoading(this.invoicesService.delete(id)).pipe(
+  //     takeUntilDestroyed(this.destroyRef),
+  //     tap(() => {
+  //       this.deletedSubject.next(id);
+  //       this.reloadCurrentFilter();
+  //     }),
+  //     map(() => id),
+  //     catchError((err) => this.generalService.handleHttpError(err))
+  //   );
+  // }
   deleteInvoice(id: number): void {
-    this.invoicesService
-      .delete(id)
-      .pipe(
-        tap(() => this.reloadCurrentFilter()),
-        catchError((err) => this.handleError(err))
-      )
-      .subscribe();
+    this.executeWithLoading(this.invoicesService.delete(id), () => {
+      this.deletedSubject.next(id);
+      this.reloadCurrentFilter();
+    });
   }
-
+  // ---------- Búsquedas / filtros ----------
   applyFilterWord(keyword: string): void {
-    const search = keyword.trim().toLowerCase();
-    const invoices = this.invoicesSubject.getValue();
+    const list = this.invoicesSubject.getValue();
+    const k = toSearchKey(keyword);
 
-    if (!search) {
-      this.filteredInvoicesSubject.next(invoices);
+    if (!list || !k) {
+      this.filteredInvoicesSubject.next(list);
       return;
     }
 
-    const filtered = invoices.filter(
-      (invoice) =>
-        invoice.creditor_company?.toLowerCase().includes(search) ||
-        invoice.description?.toLowerCase().includes(search) ||
-        invoice.creditor_contact?.toLowerCase().includes(search)
+    const filtered = list.filter((inv) =>
+      [
+        inv.creditor_company,
+        inv.description,
+        inv.creditor_contact,
+        inv.creditor_cif,
+      ]
+        .filter(Boolean)
+        .some((field) => includesNormalized(field!, k))
     );
 
     this.filteredInvoicesSubject.next(filtered);
   }
 
   applyFilterWordTab(typeInvoice: string): void {
-    const invoices = this.invoicesSubject.getValue();
-
-    const filtered = invoices.filter(
-      (invoice) => invoice.type_invoice === typeInvoice
+    const list = this.invoicesSubject.getValue();
+    if (!list) {
+      this.filteredInvoicesSubject.next(list);
+      return;
+    }
+    this.filteredInvoicesSubject.next(
+      list.filter((inv) => inv.type_invoice === typeInvoice)
     );
-    this.filteredInvoicesSubject.next(filtered);
   }
 
+  // ---------- Utilidades ----------
   clearSelectedInvoice(): void {
     this.selectedInvoiceSubject.next(null);
   }
 
-  private reloadCurrentFilter(): void {
-    const filter = this.currentFilterSubject.getValue();
-    if (filter) this.loadInvoicesByYear(+filter, false); // 🔥 NO spinner cuando recargas tras borrar
+  clearInvoices(): void {
+    this.invoicesSubject.next([]);
   }
 
-  private updateInvoiceState(invoices: InvoiceModelFullData[] | null): void {
-    if (!invoices) return;
-
-    const sortedInvoices = this.invoicesService.sortInvoicesByDate(invoices);
-
-    this.invoicesSubject.next(sortedInvoices);
-    this.filteredInvoicesSubject.next(sortedInvoices);
-    this.isLoadingSubject.next(false); // Desactivamos el spinner
-  }
-
-  private handleError(error: any): Observable<never> {
-    this.generalService.handleHttpError(error);
-    return throwError(() => error);
-  }
   setTabFilter(filter: string | null): void {
     this.tabFilterSubject.next(filter);
   }
+
   clearTabFilter(): void {
     this.tabFilterSubject.next(null);
   }
@@ -169,7 +183,11 @@ export class InvoicesFacade {
   get currentTabFilter(): string | null {
     return this.tabFilterSubject.value;
   }
-  clearInvoices(): void {
-    this.invoicesSubject.next([]);
+
+  private updateInvoiceState(invoices: InvoiceModelFullData[] | null): void {
+    if (!invoices) return;
+    const sorted = this.invoicesService.sortInvoicesByDate(invoices);
+    this.invoicesSubject.next(sorted);
+    this.filteredInvoicesSubject.next(sorted);
   }
 }

@@ -1,4 +1,18 @@
-<div class="flex flex-row gap-x-4">
-  <i [ngClass]="['uil', icon]"></i>
+<div class="flex flex-row items-center gap-x-4 py-2">
+  <span
+    class="inline-block w-7 h-7 shrink-0 text-red-500"
+    [style.maskImage]="'url(assets/icons/' + icon + '.svg)'"
+    [style.webkitMaskImage]="'url(assets/icons/' + icon + '.svg)'"
+    style="
+      mask-size: contain;
+      mask-repeat: no-repeat;
+      mask-position: center;
+      -webkit-mask-size: contain;
+      -webkit-mask-repeat: no-repeat;
+      -webkit-mask-position: center;
+      background-color: currentColor;
+    "
+  >
+  </span>
   <p class="text">{{ text }}</p>
 </div>

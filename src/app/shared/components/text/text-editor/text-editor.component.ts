@@ -13,7 +13,9 @@ export class TextEditorComponent implements OnInit {
   sanitizedDescription: SafeHtml = '';
 
   @Input() text?: string = '';
-  @Input() number?: number = 36;
+  @Input() number?: number = 14;
+  @Input() align?: 'right' | 'left' | 'center' | 'justify' = 'justify';
+  @Input() color?: string = '';
 
   ngOnInit() {
     this.sanitizedDescription = this.sanitizer.bypassSecurityTrustHtml(

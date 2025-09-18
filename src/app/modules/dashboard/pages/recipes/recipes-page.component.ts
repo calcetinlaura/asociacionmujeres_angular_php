@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import {
   Component,
   DestroyRef,
+  ElementRef,
   inject,
   OnInit,
   ViewChild,
@@ -42,6 +43,7 @@ import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.co
 
 @Component({
   selector: 'app-recipes-page',
+  standalone: true,
   imports: [
     DashboardHeaderComponent,
     ModalComponent,
@@ -59,30 +61,15 @@ import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.co
     StickyZoneComponent,
   ],
   templateUrl: './recipes-page.component.html',
-  styleUrl: './recipes-page.component.css',
 })
 export class RecipesPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly modalService = inject(ModalService);
-  private readonly recipesFacade = inject(RecipesFacade);
+  readonly recipesFacade = inject(RecipesFacade);
   private readonly recipesService = inject(RecipesService);
   private readonly generalService = inject(GeneralService);
   private readonly pdfPrintService = inject(PdfPrintService);
 
-  recipes: RecipeModel[] = [];
-  filteredRecipes: RecipeModel[] = [];
-  filters: Filter[] = [];
-  selectedFilter = 'ALL';
-
-  isLoading = true;
-  isModalVisible = false;
-  number = 0;
-
-  item: RecipeModel | null = null;
-  currentModalAction: TypeActionModal = TypeActionModal.Create;
-  searchForm!: FormGroup;
-  typeModal = TypeList.Recipes;
-  typeSection = TypeList.Recipes;
   columnVisibility: Record<string, boolean> = {};
   displayedColumns: string[] = [];
 
@@ -97,6 +84,13 @@ export class RecipesPageComponent implements OnInit {
       width: ColumnWidth.SM,
     },
     { title: 'Autor/a', key: 'owner', sortable: true },
+    {
+      title: 'Introducción',
+      key: 'introduction',
+      sortable: true,
+      booleanIndicator: true,
+      width: ColumnWidth.SM,
+    },
     {
       title: 'Ingredientes',
       key: 'ingredients',
@@ -120,11 +114,28 @@ export class RecipesPageComponent implements OnInit {
     },
   ];
 
+  recipes: RecipeModel[] = [];
+  filteredRecipes: RecipeModel[] = [];
+  filters: Filter[] = [];
+  selectedFilter = '';
+
+  isModalVisible = false;
+  number = 0;
+
+  item: RecipeModel | null = null;
+  currentModalAction: TypeActionModal = TypeActionModal.Create;
+  searchForm!: FormGroup;
+  typeModal = TypeList.Recipes;
+  typeSection = TypeList.Recipes;
+
   @ViewChild(InputSearchComponent)
   private inputSearchComponent!: InputSearchComponent;
 
+  @ViewChild('printArea', { static: false })
+  printArea!: ElementRef<HTMLElement>;
+
   ngOnInit(): void {
-    // Ocultar 'date_payment' y 'date_accounting' al cargar la página
+    // Columnas visibles iniciales
     this.columnVisibility = this.generalService.setColumnVisibility(
       this.headerListRecipes,
       [''] // Coloca las columnas que deseas ocultar aquí
@@ -137,7 +148,7 @@ export class RecipesPageComponent implements OnInit {
     );
     this.filters = [
       { code: 'NOVEDADES', name: 'Novedades' },
-      { code: 'ALL', name: 'Histórico' },
+      { code: '', name: 'Histórico' },
       ...categoryFilterRecipes,
     ];
 
@@ -149,7 +160,7 @@ export class RecipesPageComponent implements OnInit {
       .subscribe();
 
     this.filterSelected('NOVEDADES');
-
+    // Estado de recetas desde la fachada
     this.recipesFacade.filteredRecipes$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
@@ -161,7 +172,12 @@ export class RecipesPageComponent implements OnInit {
   filterSelected(filter: string): void {
     this.selectedFilter = filter;
     this.generalService.clearSearchInput(this.inputSearchComponent);
-    this.recipesFacade.setCurrentFilter(filter); // usa facade
+    // Dispara la carga (y deja que isLoading$ de la fachada controle el spinner)
+    if (!filter) {
+      this.recipesFacade.loadAllRecipes();
+    } else {
+      this.recipesFacade.loadRecipesByFilter(filter);
+    }
   }
 
   applyFilterWord(keyword: string): void {
@@ -196,15 +212,16 @@ export class RecipesPageComponent implements OnInit {
     this.modalService.closeModal();
   }
 
-  confirmDeleteRecipe(recipe: RecipeModel | null): void {
-    if (!recipe) return;
-    this.recipesFacade.deleteRecipe(recipe.id);
-    this.onCloseModal();
+  onDelete({ type, id }: { type: TypeList; id: number }) {
+    const actions: Partial<Record<TypeList, (id: number) => void>> = {
+      [TypeList.Recipes]: (x) => this.recipesFacade.deleteRecipe(x),
+    };
+    actions[type]?.(id);
   }
 
   sendFormRecipe(event: { itemId: number; formData: FormData }): void {
     const save$ = event.itemId
-      ? this.recipesFacade.editRecipe(event.itemId, event.formData)
+      ? this.recipesFacade.editRecipe(event.formData)
       : this.recipesFacade.addRecipe(event.formData);
 
     save$
@@ -221,21 +238,29 @@ export class RecipesPageComponent implements OnInit {
     this.recipes = this.recipesService.sortRecipesById(recipes);
     this.filteredRecipes = [...this.recipes];
     this.number = this.recipesService.countRecipes(recipes);
-    this.isLoading = false;
   }
-  printTableAsPdf(): void {
-    this.pdfPrintService.printTableAsPdf('table-to-print', 'recetas.pdf');
+
+  async printTableAsPdf(): Promise<void> {
+    if (!this.printArea) return;
+
+    await this.pdfPrintService.printElementAsPdf(this.printArea, {
+      filename: 'recetas.pdf',
+      preset: 'compact', // 'compact' reduce paddings en celdas
+      orientation: 'portrait', // o 'landscape' si la tabla es muy ancha
+      format: 'a4',
+      margins: [5, 5, 5, 5], // mm
+    });
   }
+
   getVisibleColumns() {
     return this.headerListRecipes.filter(
       (col) => this.columnVisibility[col.key]
     );
   }
+
   // Método para actualizar las columnas visibles cuando se hace toggle
   toggleColumn(key: string): void {
-    // Cambia la visibilidad de la columna en columnVisibility
     this.columnVisibility[key] = !this.columnVisibility[key];
-    // Actualiza las columnas visibles en la tabla después de cambiar el estado
     this.displayedColumns = this.generalService.updateDisplayedColumns(
       this.headerListRecipes,
       this.columnVisibility

@@ -1,23 +1,24 @@
-import { DestroyRef, inject, Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   BehaviorSubject,
   catchError,
+  EMPTY,
+  forkJoin,
   Observable,
-  of,
   switchMap,
   tap,
 } from 'rxjs';
-import { EventModelFullData } from '../core/interfaces/event.interface';
-import { EventsService } from '../core/services/events.services';
-import { GeneralService } from '../shared/services/generalService.service';
+import { EventModelFullData } from 'src/app/core/interfaces/event.interface';
+import { EventsService } from 'src/app/core/services/events.services';
+import { includesNormalized, toSearchKey } from '../shared/utils/text.utils';
+import { LoadableFacade } from './loadable.facade';
 
 @Injectable({ providedIn: 'root' })
-export class EventsFacade {
-  private readonly destroyRef = inject(DestroyRef);
+export class EventsFacade extends LoadableFacade {
   private readonly eventsService = inject(EventsService);
-  private readonly generalService = inject(GeneralService);
 
+  // State propio
   private readonly eventsAllSubject = new BehaviorSubject<
     EventModelFullData[] | null
   >(null);
@@ -27,11 +28,13 @@ export class EventsFacade {
   private readonly selectedEventSubject =
     new BehaviorSubject<EventModelFullData | null>(null);
 
-  eventsAll$ = this.eventsAllSubject.asObservable();
-  nonRepeatedEvents$ = this.nonRepeatedEventsSubject.asObservable();
-  selectedEvent$ = this.selectedEventSubject.asObservable();
+  // Streams públicos
+  readonly eventsAll$ = this.eventsAllSubject.asObservable();
+  readonly nonRepeatedEvents$ = this.nonRepeatedEventsSubject.asObservable();
+  readonly selectedEvent$ = this.selectedEventSubject.asObservable();
 
-  currentFilter: number | null = null;
+  // Filtro actual (año) para recargar tras add/edit/delete
+  private currentFilter: number | null = null;
 
   // ---------- Filtros ----------
   setCurrentFilter(year: number | null): void {
@@ -40,84 +43,108 @@ export class EventsFacade {
 
   private reloadCurrentFilter(): void {
     if (this.currentFilter !== null) {
-      this.loadEventsAllByYear(this.currentFilter);
-      this.loadNonRepeatedEventsByYear(this.currentFilter);
+      this.loadYearBundle(this.currentFilter);
     }
   }
 
   // ---------- Carga de eventos ----------
+  /** Carga en paralelo "all" y "latest" con un único spinner. */
+  loadYearBundle(year: number): void {
+    this.setCurrentFilter(year);
+    this.executeWithLoading(
+      forkJoin({
+        all: this.eventsService.getEventsByYear(year, 'all'),
+        latest: this.eventsService.getEventsByYear(year, 'latest'),
+      }),
+      ({ all, latest }) => {
+        this.eventsAllSubject.next(all);
+        this.nonRepeatedEventsSubject.next(latest);
+      }
+    );
+  }
+
   loadEventsAllByYear(year: number): void {
-    this.eventsService
-      .getEventsByYear(year, 'all')
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((events) => this.eventsAllSubject.next(events)),
-        this.catchAndLog()
-      )
-      .subscribe();
+    this.executeWithLoading(
+      this.eventsService.getEventsByYear(year, 'all'),
+      (events) => this.eventsAllSubject.next(events)
+    );
   }
 
   loadNonRepeatedEventsByYear(year: number): void {
     this.setCurrentFilter(year);
-    this.eventsService
-      .getEventsByYear(year, 'latest')
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((events) => this.nonRepeatedEventsSubject.next(events)),
-        this.catchAndLog()
-      )
-      .subscribe();
+    this.executeWithLoading(
+      this.eventsService.getEventsByYear(year, 'latest'),
+      (events) => this.nonRepeatedEventsSubject.next(events)
+    );
   }
 
   loadEventById(id: number): void {
-    this.eventsService
-      .getEventById(id)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((event) => this.selectedEventSubject.next(event)),
-        this.catchAndLog()
-      )
-      .subscribe();
+    this.executeWithLoading(this.eventsService.getEventById(id), (event) =>
+      this.selectedEventSubject.next(event)
+    );
   }
 
   loadEventsByPeriodicId(periodicId: string): Observable<EventModelFullData[]> {
-    return this.eventsService
-      .getEventsByPeriodicId(periodicId)
-      .pipe(this.catchAndLog());
+    // Devuelve el stream: envolvemos solo para spinner mínimo
+    return this.wrapWithLoading(
+      this.eventsService.getEventsByPeriodicId(periodicId)
+    );
   }
 
   // ---------- Guardar / Editar ----------
   addEvent(event: FormData): Observable<FormData> {
-    return this.eventsService.add(event).pipe(this.catchAndLog());
+    return this.wrapWithLoading(this.eventsService.add(event)).pipe(
+      takeUntilDestroyed(this.destroyRef),
+      tap(() => this.reloadCurrentFilter()),
+      catchError((err) => {
+        this.generalService.handleHttpError(err);
+        return EMPTY;
+      })
+    );
   }
 
-  editEvent(id: number, event: FormData): Observable<FormData> {
-    return this.eventsService.edit(id, event).pipe(this.catchAndLog());
+  editEvent(event: FormData): Observable<FormData> {
+    return this.wrapWithLoading(this.eventsService.edit(event)).pipe(
+      takeUntilDestroyed(this.destroyRef),
+      tap(() => this.reloadCurrentFilter()),
+      catchError((err) => {
+        this.generalService.handleHttpError(err);
+        return EMPTY;
+      })
+    );
   }
 
   updateEvent(id: number, event: FormData): Observable<FormData> {
-    return this.eventsService.updateEvent(id, event).pipe(this.catchAndLog());
+    return this.wrapWithLoading(this.eventsService.updateEvent(id, event)).pipe(
+      takeUntilDestroyed(this.destroyRef),
+      tap(() => this.reloadCurrentFilter()),
+      catchError((err) => {
+        this.generalService.handleHttpError(err);
+        return EMPTY;
+      })
+    );
   }
 
   // ---------- Eliminar ----------
   deleteEvent(id: number): void {
-    this.eventsService
-      .delete(id)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap(() => this.reloadCurrentFilter()),
-        this.catchAndLog()
-      )
-      .subscribe();
+    this.executeWithLoading(this.eventsService.delete(id), () =>
+      this.reloadCurrentFilter()
+    );
   }
 
   deleteEventsByPeriodicIdExcept(
     periodicId: string,
     keepId: number
   ): Observable<void> {
-    return this.eventsService
-      .deleteEventsByPeriodicIdExcept(periodicId, keepId)
-      .pipe(this.catchAndLog());
+    return this.wrapWithLoading(
+      this.eventsService.deleteEventsByPeriodicIdExcept(periodicId, keepId)
+    ).pipe(
+      takeUntilDestroyed(this.destroyRef),
+      catchError((err) => {
+        this.generalService.handleHttpError(err);
+        return EMPTY;
+      })
+    );
   }
 
   // ---------- Guardado inteligente (editar o crear + eliminar repetidos si cambia a único) ----------
@@ -131,7 +158,7 @@ export class EventsFacade {
         ? this.eventsService.updateEvent(eventId, event)
         : this.eventsService.add(event);
 
-    return save$.pipe(
+    const chain$ = save$.pipe(
       switchMap((response: any) => {
         const periodic = event.get('periodic') === '1';
         const periodicId = event.get('periodic_id')?.toString() || '';
@@ -143,9 +170,19 @@ export class EventsFacade {
             .pipe(tap(() => this.reloadCurrentFilter()));
         }
 
-        return of(null).pipe(tap(() => this.reloadCurrentFilter()));
-      }),
-      this.catchAndLog()
+        return new Observable<null>((subscriber) => {
+          subscriber.next(null);
+          subscriber.complete();
+        }).pipe(tap(() => this.reloadCurrentFilter()));
+      })
+    );
+
+    return this.wrapWithLoading(chain$).pipe(
+      takeUntilDestroyed(this.destroyRef),
+      catchError((err) => {
+        this.generalService.handleHttpError(err);
+        return EMPTY;
+      })
     );
   }
 
@@ -155,24 +192,23 @@ export class EventsFacade {
   }
 
   applyFilterWord(keyword: string): void {
-    const currentEvents = this.nonRepeatedEventsSubject.getValue();
-    const search = keyword.trim().toLowerCase();
-
-    if (!search || !currentEvents) {
-      this.nonRepeatedEventsSubject.next(currentEvents);
+    const list = this.nonRepeatedEventsSubject.getValue();
+    if (!list) {
+      this.nonRepeatedEventsSubject.next(list);
       return;
     }
 
-    const filtered = currentEvents.filter((event) =>
-      event.title.toLowerCase().includes(search)
-    );
-    this.nonRepeatedEventsSubject.next(filtered);
-  }
+    // si el término está vacío tras normalizar, devolvemos la lista tal cual
+    if (!toSearchKey(keyword)) {
+      this.nonRepeatedEventsSubject.next(list);
+      return;
+    }
 
-  private catchAndLog<T>() {
-    return catchError<T, Observable<never>>((err) => {
-      this.generalService.handleHttpError(err);
-      throw err;
-    });
+    const filtered = list.filter((event) =>
+      // añade más campos si quieres buscar también por ellos
+      [event.title].some((field) => includesNormalized(field, keyword))
+    );
+
+    this.nonRepeatedEventsSubject.next(filtered);
   }
 }

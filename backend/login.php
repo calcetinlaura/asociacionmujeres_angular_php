@@ -1,12 +1,21 @@
 <?php
-header("Access-Control-Allow-Origin: *"); // Permite todas las orígenes, puedes restringirlo a tu dominio específico si es necesario
-header("Access-Control-Allow-Methods: GET, POST, PATCH, DELETE"); // Métodos permitidos
-header("Access-Control-Allow-Headers: Content-Type"); // Cabeceras permitidas
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: GET, POST, PATCH, DELETE, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, X-Requested-With, X-HTTP-Method-Override, Authorization, Origin, Accept");
 header("Content-Type: application/json; charset=UTF-8");
 
 include '../config/conexion.php'; // Incluye aquí la conexión a la base de datos
 
 $method = $_SERVER['REQUEST_METHOD'];
+
+if ($method === 'POST') {
+  $override = $_POST['_method'] ?? $_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'] ?? '';
+  $override = strtoupper($override);
+  if ($override === 'DELETE') {
+    $method = 'DELETE';
+  }
+}
+
 if ($method === 'OPTIONS') {
   http_response_code(204);
   exit();

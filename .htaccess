@@ -1,0 +1,28 @@
+# --- Angular SPA + PHP ---
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # 0) Primero intenta index.html (Angular); si no, index.php
+
+  DirectoryIndex index.html index.php
+
+
+
+  RewriteRule ^share/events/([0-9]+)/?$ share-event.php?id=$1 [L,QSA]
+
+  # 1) Si piden un archivo o carpeta real, entrégalo tal cual
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # 2) No tocar peticiones a PHP ni a tu backend
+  RewriteRule ^(.+\.php)$ - [L]
+  RewriteCond %{REQUEST_URI} ^/backend/ [OR]
+  RewriteCond %{REQUEST_URI} ^/uploads/ [OR]
+  RewriteCond %{REQUEST_URI} ^/config/
+  RewriteRule ^ - [L]
+
+  # 3) Todo lo demás -> index.html (para que Angular pinte la ruta)
+  RewriteRule . /index.html [L]
+</IfModule>

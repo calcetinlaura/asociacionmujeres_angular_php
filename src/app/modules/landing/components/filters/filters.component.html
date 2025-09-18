@@ -1,9 +1,9 @@
-<div class="container_filters">
+<div class="container_filters mt-4 lg:mt-2">
   @for (item of filters; track item) {
-    <app-button-filter
-      [name]="item.name"
-      [isActive]="item.code === selectedFilter"
-      (filterClick)="filterSelected(item.code)"
-    ></app-button-filter>
+  <app-button-filter
+    [name]="item.name"
+    [isActive]="item.code === selectedFilter"
+    (filterClick)="filterSelected(item.code)"
+  ></app-button-filter>
   }
 </div>

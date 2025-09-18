@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import {
   Component,
   DestroyRef,
+  ElementRef,
   inject,
   OnInit,
   ViewChild,
@@ -42,6 +43,7 @@ import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.co
 
 @Component({
   selector: 'app-books-page',
+  standalone: true,
   imports: [
     DashboardHeaderComponent,
     ModalComponent,
@@ -59,17 +61,18 @@ import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.co
     StickyZoneComponent,
   ],
   templateUrl: './books-page.component.html',
-  styleUrl: './books-page.component.css',
 })
 export class BooksPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly modalService = inject(ModalService);
-  private readonly booksFacade = inject(BooksFacade);
+  readonly booksFacade = inject(BooksFacade); // público para plantilla
   private readonly booksService = inject(BooksService);
   private readonly generalService = inject(GeneralService);
   private readonly pdfPrintService = inject(PdfPrintService);
+
   columnVisibility: Record<string, boolean> = {};
   displayedColumns: string[] = [];
+
   headerListBooks: ColumnModel[] = [
     { title: 'Portada', key: 'img', sortable: false },
     { title: 'Título', key: 'title', sortable: true },
@@ -78,13 +81,13 @@ export class BooksPageComponent implements OnInit {
       key: 'author',
       sortable: true,
       showIndicatorOnEmpty: true,
+      width: ColumnWidth.XL,
     },
     {
       title: 'Descripción',
       key: 'description',
       sortable: true,
-      booleanIndicator: true,
-      width: ColumnWidth.SM,
+      innerHTML: true,
     },
     {
       title: 'Género',
@@ -95,12 +98,12 @@ export class BooksPageComponent implements OnInit {
     },
     { title: 'Año compra', key: 'year', sortable: true, width: ColumnWidth.XS },
   ];
+
   books: BookModel[] = [];
   filteredBooks: BookModel[] = [];
   filters: Filter[] = [];
-  selectedFilter = 'ALL';
+  selectedFilter = '';
 
-  isLoading = true;
   isModalVisible = false;
   number = 0;
 
@@ -114,8 +117,11 @@ export class BooksPageComponent implements OnInit {
   @ViewChild(InputSearchComponent)
   private inputSearchComponent!: InputSearchComponent;
 
+  @ViewChild('printArea', { static: false })
+  printArea!: ElementRef<HTMLElement>;
+
   ngOnInit(): void {
-    // Ocultar 'date_payment' y 'date_accounting' al cargar la página
+    // Columnas visibles iniciales
     this.columnVisibility = this.generalService.setColumnVisibility(
       this.headerListBooks,
       ['year'] // Coloca las columnas que deseas ocultar aquí
@@ -126,9 +132,10 @@ export class BooksPageComponent implements OnInit {
       this.headerListBooks,
       this.columnVisibility
     );
+
     this.filters = [
       { code: 'NOVEDADES', name: 'Novedades' },
-      { code: 'ALL', name: 'Todos' },
+      { code: '', name: 'Todos' },
       ...genderFilterBooks,
     ];
 
@@ -139,8 +146,9 @@ export class BooksPageComponent implements OnInit {
       )
       .subscribe();
 
-    this.filterSelected('NOVEDADES');
+    this.filterSelected('');
 
+    // Estado de libros desde la fachada
     this.booksFacade.filteredBooks$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
@@ -150,10 +158,15 @@ export class BooksPageComponent implements OnInit {
   }
 
   filterSelected(filter: string): void {
-    this.isLoading = true;
     this.selectedFilter = filter;
+
     this.generalService.clearSearchInput(this.inputSearchComponent);
-    this.booksFacade.setCurrentFilter(filter);
+
+    if (!filter) {
+      this.booksFacade.loadAllBooks();
+    } else {
+      this.booksFacade.loadBooksByFilter(filter);
+    }
   }
 
   applyFilterWord(keyword: string): void {
@@ -188,15 +201,16 @@ export class BooksPageComponent implements OnInit {
     this.modalService.closeModal();
   }
 
-  confirmDeleteBook(book: BookModel | null): void {
-    if (!book) return;
-    this.booksFacade.deleteBook(book.id);
-    this.onCloseModal();
+  onDelete({ type, id }: { type: TypeList; id: number }) {
+    const actions: Partial<Record<TypeList, (id: number) => void>> = {
+      [TypeList.Books]: (x) => this.booksFacade.deleteBook(x),
+    };
+    actions[type]?.(id);
   }
 
   sendFormBook(event: { itemId: number; formData: FormData }): void {
     const save$ = event.itemId
-      ? this.booksFacade.editBook(event.itemId, event.formData)
+      ? this.booksFacade.editBook(event.formData)
       : this.booksFacade.addBook(event.formData);
 
     save$
@@ -213,19 +227,27 @@ export class BooksPageComponent implements OnInit {
     this.books = this.booksService.sortBooksById(books);
     this.filteredBooks = [...this.books];
     this.number = this.booksService.countBooks(books);
-    this.isLoading = false;
   }
-  printTableAsPdf(): void {
-    this.pdfPrintService.printTableAsPdf('table-to-print', 'libros.pdf');
+
+  async printTableAsPdf(): Promise<void> {
+    if (!this.printArea) return;
+
+    await this.pdfPrintService.printElementAsPdf(this.printArea, {
+      filename: 'libros.pdf',
+      preset: 'compact', // 'compact' reduce paddings en celdas
+      orientation: 'portrait', // o 'landscape' si la tabla es muy ancha
+      format: 'a4',
+      margins: [5, 5, 5, 5], // mm
+    });
   }
+
   getVisibleColumns() {
     return this.headerListBooks.filter((col) => this.columnVisibility[col.key]);
   }
+
   // Método para actualizar las columnas visibles cuando se hace toggle
   toggleColumn(key: string): void {
-    // Cambia la visibilidad de la columna en columnVisibility
     this.columnVisibility[key] = !this.columnVisibility[key];
-    // Actualiza las columnas visibles en la tabla después de cambiar el estado
     this.displayedColumns = this.generalService.updateDisplayedColumns(
       this.headerListBooks,
       this.columnVisibility

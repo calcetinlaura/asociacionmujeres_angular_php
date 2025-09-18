@@ -1,0 +1,128 @@
+.modal {
+  position: fixed;
+  inset: 0;
+  height: 100vh;
+  height: 100dvh;
+  width: 100%;
+  background-color: rgba(130, 128, 128, 0.597);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden; /* bloquea fondo */
+  overscroll-behavior: none;
+}
+
+/* PANEL */
+.modal_body {
+  position: relative;
+  box-sizing: border-box;
+  width: auto;
+  max-width: min(96vw, 56rem);
+  max-height: calc(100dvh - 4rem);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 45px 64px;
+  overflow: hidden;
+  background-color: #f6f0ff;
+  border-radius: 16px;
+  contain: content;
+}
+.modal_body > section {
+  /* el scroll vive aquí */
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch; /* inercia iOS */
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
+.modal-DELETE {
+  width: 25%;
+  max-width: 25%;
+}
+.modal-SHOW {
+  width: 50%;
+  max-width: 50%;
+  background-color: #f6f0ff;
+}
+.modal-CREATE,
+.modal-EDIT,
+.modal-DUPLICATE {
+  width: 60%;
+  max-width: 60%;
+}
+
+.iconClose {
+  font-size: 24px;
+}
+
+/* Media Queries */
+@media (max-width: 1200px) {
+  .modal_body {
+    width: 90%;
+    max-width: 90%;
+    max-height: 90%;
+    padding: 4% 6%;
+  }
+}
+@media (max-width: 1024px) {
+  .modal_body {
+    width: 90%;
+    max-width: 90%;
+    max-height: 90%;
+    padding: 4% 6%;
+  }
+}
+@media (max-width: 768px) {
+  .modal_body {
+    width: 95%;
+    max-width: 95%;
+    max-height: 95%;
+    padding: 8% 8% 6% 8%;
+  }
+  .iconClose {
+    font-size: 28px;
+  }
+}
+@media (max-width: 480px) {
+  .modal_body {
+    width: 95%;
+    max-width: 95%;
+    max-height: 95%;
+    padding: 10% 8% 6% 8%;
+  }
+}
+/* PDF a casi pantalla completa */
+.modal_body.pdf-panel {
+  width: 96vw !important;
+  max-width: 96vw !important;
+  height: 92vh !important; /* puedes cambiar a 92dvh si prefieres */
+  max-height: 92vh !important;
+  padding: 0 !important;
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden; /* el scroll irá dentro */
+  box-sizing: border-box;
+}
+
+.modal_body.pdf-panel > section {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100% !important;
+  width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.modal_body.pdf-panel iframe,
+.modal_body.pdf-panel embed,
+.modal_body.pdf-panel object {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  border: 0;
+}

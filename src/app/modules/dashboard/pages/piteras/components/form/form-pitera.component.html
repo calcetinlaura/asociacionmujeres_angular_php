@@ -13,13 +13,14 @@
     class="login-auth-form"
   >
     <div class="flex flex-col gap-y-4">
-      <div class="flex justify-between gap-x-4 bg-lilaMuyClaro p-4">
+      <div class="flex justify-between gap-x-4">
         <!-- Título -->
         <div class="box-input gap-x-4 flex-1">
           <label for="title">Título</label>
           <div class="flex flex-col flex-1">
             <input
               formControlName="title"
+              placeholder="Título de la revista"
               type="text"
               [ngClass]="{
                 'is-invalid': submitted && formPitera.get('title')?.invalid
@@ -30,17 +31,36 @@
             }
           </div>
         </div>
-
+        <!-- Nº Publicación -->
+        <div class="box-input gap-x-4 w-96">
+          <label for="publication_number">Nº publicación</label>
+          <div class="flex flex-col flex-1">
+            <input
+              formControlName="publication_number"
+              placeholder="Número"
+              type="number"
+              [ngClass]="{
+                'is-invalid':
+                  submitted && formPitera.get('publication_number')?.invalid
+              }"
+            />
+            @if (submitted && formPitera.get('publication_number')?.invalid) {
+            <div class="is-invalid-text">Campo obligatorio</div>
+            }
+          </div>
+        </div>
         <!-- Año -->
-        <div class="box-input gap-x-4">
+        <div class="box-input gap-x-4 w-96">
           <label for="year">Año publicación</label>
           <div class="flex flex-col flex-1">
             <select
               formControlName="year"
               [ngClass]="{
-                'is-invalid': submitted && formPitera.get('year')?.invalid
+                'is-invalid': submitted && formPitera.get('year')?.invalid,
+                'text-placeholder': !formPitera.get('year')?.value
               }"
             >
+              <option value="null" disabled hidden>Año publicación</option>
               @for (year of years; track year) {
               <option [value]="year">
                 {{ year }}
@@ -53,18 +73,28 @@
           </div>
         </div>
       </div>
-      <div class="flex gap-x-4">
-        <!-- Descripción -->
-        <div class="flex flex-1 box-input gap-x-4 px-4">
-          <label for="theme">Temática</label>
-          <quill-editor
+      <div class="box-input gap-x-4">
+        <label for="theme">Temática</label>
+        <div class="flex flex-col flex-1">
+          <input
             formControlName="theme"
-            [modules]="quillModules"
-            placeholder="Escribe aquí la descripción..."
-            class="flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
+            placeholder="Temática de la revista"
+            type="text"
           />
         </div>
-        <div class="w-[250px]">
+      </div>
+      <div class="flex gap-x-4 items-start">
+        <!-- Descripción -->
+        <div class="flex flex-1 box-input gap-x-4 !items-start">
+          <label for="description">Descripción</label>
+          <quill-editor
+            formControlName="description"
+            [modules]="quillModules"
+            placeholder="Descripción"
+            class="ql-container-large flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
+          />
+        </div>
+        <div class="w-72">
           <app-image-control
             [previewImg]="
               formPitera.get('img')?.value
@@ -74,15 +104,19 @@
             [entityId]="itemId"
             [type]="typeList"
             (imgSelected)="onImageSelected($event)"
+            [imageWidthValue]="'full'"
+            [imageHeightValue]="380"
+            [textImg]="'Añadir portada'"
             class="w-full"
           ></app-image-control>
         </div>
-        <div class="w-[250px]">
+        <div class="w-72">
           <app-pdf-control
             [type]="typeList"
             [previewPdf]="getPiteraPdfPreview()"
             (pdfSelected)="formPitera.patchValue({ url: $event })"
-            [pdfViewerHeight]="383"
+            [pdfViewerHeight]="380"
+            [textPdf]="'Añadir pdf revista'"
           ></app-pdf-control>
         </div>
       </div>

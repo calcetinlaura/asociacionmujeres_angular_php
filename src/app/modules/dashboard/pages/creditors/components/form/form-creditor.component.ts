@@ -24,6 +24,7 @@ import {
   CreditorModel,
 } from 'src/app/core/interfaces/creditor.interface';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
+import { GeneralService } from 'src/app/shared/services/generalService.service';
 @Component({
   selector: 'app-form-creditor',
   imports: [
@@ -38,32 +39,43 @@ import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loadi
 export class FormCreditorComponent {
   private creditorsFacade = inject(CreditorsFacade);
   private destroyRef = inject(DestroyRef);
+  private generalService = inject(GeneralService);
 
   @Input() itemId!: number;
-  @Output() sendFormCreditor = new EventEmitter<{
+  @Output() submitForm = new EventEmitter<{
     itemId: number;
-    newCreditorData: CreditorModel;
+    formData: FormData;
   }>();
 
-  creditorData: any;
-  submitted: boolean = false;
-  titleForm: string = 'Registrar acreedor/a';
-  buttonAction: string = 'Guardar';
-  categoryFilterCreditors = categoryFilterCreditors;
   formCreditor = new FormGroup({
     company: new FormControl('', [Validators.required]),
     cif: new FormControl(''),
     contact: new FormControl(''),
-    phone: new FormControl(''),
-    email: new FormControl(''),
+    phone: new FormControl('', [
+      // Permite vacío; si hay valor, debe cumplir el patrón
+      Validators.pattern(/^\s*(\+?\d[\d\s\-().]{6,14}\d)\s*$/),
+    ]),
+    email: new FormControl('', [
+      // Permite vacío; si hay valor, debe ser email válido
+      Validators.email,
+    ]),
     province: new FormControl(''),
     town: new FormControl(''),
     address: new FormControl(''),
-    post_code: new FormControl(''),
+    post_code: new FormControl('', [
+      Validators.pattern(/^(?:0[1-9]|[1-4][0-9]|5[0-2])[0-9]{3}$/),
+    ]),
     category: new FormControl(''),
     key_words: new FormControl(''),
     observations: new FormControl(''),
   });
+
+  creditorData: any;
+  submitted = false;
+  titleForm: string = 'Registrar acreedor/a';
+  buttonAction: string = 'Guardar';
+  categoryFilterCreditors = categoryFilterCreditors;
+
   provincias: {
     label: string;
     code: string;
@@ -71,7 +83,6 @@ export class FormCreditorComponent {
   }[] = [];
   municipios: { label: string; code: string }[] = [];
 
-  private creditor_id!: number;
   isLoading = true;
   quillModules = {
     toolbar: [
@@ -108,9 +119,7 @@ export class FormCreditorComponent {
               // 🔹 Luego seteamos los valores del formulario
               this.formCreditor.patchValue(creditor);
 
-              this.creditor_id = creditor.id;
               this.titleForm = 'Editar Acreedor/a';
-
               this.buttonAction = 'Guardar cambios';
             }
             this.isLoading = false;
@@ -142,25 +151,12 @@ export class FormCreditorComponent {
       rawValues.observations = rawValues.observations.replace(/&nbsp;/g, ' ');
     }
 
-    const newCreditorData: CreditorModel = {
-      id: this.creditor_id || 0,
-      company: rawValues.company!,
-      cif: rawValues.cif || '',
-      contact: rawValues.contact || '',
-      phone: rawValues.phone!,
-      email: rawValues.email || '',
-      province: rawValues.province || '',
-      town: rawValues.town || '',
-      address: rawValues.address || '',
-      post_code: rawValues.post_code || '',
-      category: rawValues.category || '',
-      key_words: rawValues.key_words || '',
-      observations: rawValues.observations || '',
-    };
+    const formData = this.generalService.createFormData(
+      rawValues,
+      {},
+      this.itemId
+    );
 
-    this.sendFormCreditor.emit({
-      itemId: this.itemId,
-      newCreditorData: newCreditorData,
-    });
+    this.submitForm.emit({ itemId: this.itemId, formData: formData });
   }
 }

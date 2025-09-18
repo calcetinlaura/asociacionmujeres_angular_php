@@ -1,199 +1,31 @@
-<div class="modal" (click)="onCloseModalFromOutside($event)">
-  <div
-    (click)="$event.stopPropagation()"
-    class="modal_body relative"
-    [class.modal-delete]="action === TypeActionModal.Delete"
-    [class.modal-show]="action === TypeActionModal.Show"
-    [class.modal-edit]="
-      [
-        TypeActionModal.Edit,
-        TypeActionModal.Create,
-        TypeActionModal.Duplicate
-      ].includes(action)
-    "
-  >
-    <div
-      class="absolute top-3 right-3 block text-gray-500 cursor-pointer hover:text-black"
-      (click)="onCloseModal()"
-    >
-      <i class="uil uil-multiply iconClose"></i>
-    </div>
-    @switch (action) { @case (TypeActionModal.Show) {
-    <ng-container
-      *ngTemplateOutlet="templateView; context: { item: item }"
-    ></ng-container>
-    } @case (TypeActionModal.Edit) {
-    <ng-container
-      *ngTemplateOutlet="templateForm; context: { item: item }"
-    ></ng-container>
-    } @case (TypeActionModal.Duplicate) {
-    <ng-container
-      *ngTemplateOutlet="templateForm; context: { item: item }"
-    ></ng-container>
-    } @case (TypeActionModal.Delete) {
-    <ng-container
-      *ngTemplateOutlet="templateDelete; context: { item: item }"
-    ></ng-container>
-    } @case (TypeActionModal.Create) {
-    <ng-container *ngTemplateOutlet="templateForm"></ng-container>
-    } }
-  </div>
-</div>
-
-<!-- Template de vista de un ítem (ej. libro, película) -->
-<ng-template #templateView let-item="item">
-  @if (typeModal === TypeList.Events) {
-  <app-modal-show-wrapper [item]="item" [typeModal]="typeModal">
-    <app-modal-show-event
-      [item]="item"
-      (openMacroevent)="onOpenMacroeventFromShow($event)"
-    />
-  </app-modal-show-wrapper>
-  } @if (typeModal === TypeList.Books) {
-  <app-modal-show-wrapper [item]="item" [typeModal]="typeModal">
-    <app-modal-show-book [item]="item" />
-  </app-modal-show-wrapper>
-  } @if (typeModal === TypeList.Articles) {
-  <app-modal-show-wrapper [item]="item" [typeModal]="typeModal">
-    <app-modal-show-article [item]="item" />
-  </app-modal-show-wrapper>
-  } @if (typeModal === TypeList.Movies) {
-  <app-modal-show-wrapper [item]="item" [typeModal]="typeModal">
-    <app-modal-show-movie [item]="item" />
-  </app-modal-show-wrapper>
-  } @if (typeModal === TypeList.Macroevents) {
-  <app-modal-show-wrapper [item]="item" [typeModal]="typeModal">
-    <app-modal-show-macroevent
-      [item]="item"
-      (openEvent)="onOpenEventFromShow($event)"
-    />
-  </app-modal-show-wrapper>
-  } @if (typeModal === TypeList.Piteras) {
-  <app-modal-show-wrapper [item]="item" [typeModal]="typeModal">
-    <app-modal-show-pitera [item]="item" />
-  </app-modal-show-wrapper>
-  } @if (typeModal === TypeList.Recipes) {
-  <app-modal-show-wrapper [item]="item" [typeModal]="typeModal">
-    <app-modal-show-recipe [item]="item" />
-  </app-modal-show-wrapper>
-  } @if (typeModal === TypeList.Partners) {
-  <app-modal-show-wrapper [item]="item" [typeModal]="typeModal">
-    <app-modal-show-partner [item]="item" />
-  </app-modal-show-wrapper>
-  } @if (typeModal === TypeList.Invoices) {
-  <app-modal-show-wrapper [item]="item" [typeModal]="typeModal">
-    <app-modal-show-invoice [item]="item" />
-  </app-modal-show-wrapper>
-  } @if (typeModal === TypeList.Creditors) {
-  <app-modal-show-wrapper [item]="item" [typeModal]="typeModal">
-    <app-modal-show-creditor [item]="item" />
-  </app-modal-show-wrapper>
-  } @if (typeModal === TypeList.Subsidies) {
-  <app-modal-show-wrapper [item]="item" [typeModal]="typeModal">
-    <app-modal-show-subsidy [item]="item" />
-  </app-modal-show-wrapper>
-  } @if (typeModal === TypeList.Places) {
-  <app-modal-show-wrapper [item]="item" [typeModal]="typeModal">
-    <app-modal-show-place [item]="item" />
-  </app-modal-show-wrapper>
-  } @if (typeModal === TypeList.Projects) {
-  <app-modal-show-wrapper [item]="item" [typeModal]="typeModal">
-    <app-modal-show-project [item]="item" />
-  </app-modal-show-wrapper>
-  } @if (typeModal === TypeList.Podcasts) {
-  <app-modal-show-wrapper [item]="item" [typeModal]="typeModal">
-    <app-modal-show-podcast [item]="item" />
-  </app-modal-show-wrapper>
-  } @if (typeModal === TypeList.Agents) {
-  <app-modal-show-wrapper [item]="item" [typeModal]="typeModal">
-    <app-modal-show-agent [item]="item" />
-  </app-modal-show-wrapper>
-  }
-</ng-template>
-
-<!-- Template para eliminar un ítem -->
-<ng-template #templateDelete let-item="item">
-  <app-modal-delete
+<ui-modal
+  [(open)]="isOpen"
+  [variant]="action"
+  (openChange)="!$event && onCloseModal()"
+>
+  <app-modal-router
+    [item]="item"
     [typeModal]="typeModal"
-    [item]="item"
-    (closeModal)="onCloseModal()"
+    [typePage]="typePage"
+    [action]="action"
+    (closeRequested)="onCloseModal()"
+    (openMacroevent)="openMacroevent.emit($event)"
+    (openEvent)="openEvent.emit($event)"
     (confirmDelete)="onConfirmDelete($event)"
+    (sendFormBookData)="sendFormBookData.emit($event)"
+    (sendFormEventData)="sendFormEventData.emit($event)"
+    (sendFormMacroeventData)="sendFormMacroeventData.emit($event)"
+    (sendFormMovieData)="sendFormMovieData.emit($event)"
+    (sendFormRecipeData)="sendFormRecipeData.emit($event)"
+    (sendFormPiteraData)="sendFormPiteraData.emit($event)"
+    (sendFormPartnerData)="sendFormPartnerData.emit($event)"
+    (sendFormInvoiceData)="sendFormInvoiceData.emit($event)"
+    (sendFormSubsidyData)="sendFormSubsidyData.emit($event)"
+    (sendFormCreditorData)="sendFormCreditorData.emit($event)"
+    (sendFormAgentData)="sendFormAgentData.emit($event)"
+    (sendFormPlaceData)="sendFormPlaceData.emit($event)"
+    (sendFormArticleData)="sendFormArticleData.emit($event)"
+    (sendFormProjectData)="sendFormProjectData.emit($event)"
+    (sendFormPodcastData)="sendFormPodcastData.emit($event)"
   />
-</ng-template>
-
-<ng-template #templateForm let-item="item">
-  @if (typeModal === TypeList.Books) {
-  <app-form-book [itemId]="item?.id" (sendFormBook)="onSendFormBook($event)" />
-  } @if (typeModal === TypeList.Movies) {
-  <app-form-movie
-    [itemId]="item?.id"
-    (sendFormMovie)="onSendFormMovie($event)"
-  />
-  } @if (typeModal === TypeList.Events) {
-  <app-form-event
-    [itemId]="item?.id || 0"
-    [item]="item"
-    (sendFormEvent)="onSendFormEvent($event)"
-  />
-  } @if (typeModal === TypeList.Macroevents) {
-  <app-form-macroevent
-    [itemId]="item?.id"
-    (sendFormMacroevent)="onSendFormMacroevent($event)"
-  />
-  } @if (typeModal === TypeList.Recipes) {
-  <app-form-recipe
-    [itemId]="item?.id"
-    (sendFormRecipe)="onSendFormRecipe($event)"
-  />
-  } @if (typeModal === TypeList.Piteras) {
-  <app-form-pitera
-    [itemId]="item?.id"
-    (sendFormPitera)="onSendFormPitera($event)"
-  />
-  } @if (typeModal === TypeList.Partners) {
-  <app-form-partner
-    [itemId]="item?.id"
-    (sendFormPartner)="onSendFormPartner($event)"
-  />
-  } @if (typeModal === TypeList.Invoices) {
-  <app-form-invoice
-    [itemId]="item?.id"
-    (sendFormInvoice)="onSendFormInvoice($event)"
-  />
-  } @if (typeModal === TypeList.Subsidies) {
-  <app-form-subsidy
-    [itemId]="item?.id"
-    (sendFormSubsidy)="onSendFormSubsidy($event)"
-  />
-  } @if (typeModal === TypeList.Creditors) {
-  <app-form-creditor
-    [itemId]="item?.id"
-    (sendFormCreditor)="onSendFormCreditor($event)"
-  />
-  } @if (typeModal === TypeList.Agents) {
-  <app-form-agent
-    [itemId]="item?.id"
-    (sendFormAgent)="onSendFormAgent($event)"
-  />
-  } @if (typeModal === TypeList.Places) {
-  <app-form-place
-    [itemId]="item?.id"
-    (sendFormPlace)="onSendFormPlace($event)"
-  />
-  } @if (typeModal === TypeList.Podcasts) {
-  <app-form-podcast
-    [itemId]="item?.id"
-    (sendFormPodcast)="onSendFormPodcast($event)"
-  />
-  } @if (typeModal === TypeList.Projects) {
-  <app-form-project
-    [itemId]="item?.id"
-    (sendFormProject)="onSendFormProject($event)"
-  />
-  } @if (typeModal === TypeList.Articles) {
-  <app-form-article
-    [itemId]="item?.id"
-    (sendFormArticle)="onSendFormArticle($event)"
-  />
-  }
-</ng-template>
+</ui-modal>

@@ -1,11 +1,9 @@
-<div class="flex flex-col mx-3 md:mx-8 mt-2 md:mt-4">
+<div class="flex flex-col mx-3 md:mx-8 mt-4">
   <app-filters
     [filters]="filters"
     (filterClicked)="filterSelected($event)"
   ></app-filters>
-
-  <!-- Spinner Loading -->
-  @if (isLoading) {
+  @if (eventsFacade.isLoading$ | async) {
   <div class="mt-24">
     <app-spinner-loading />
   </div>
@@ -17,6 +15,7 @@
   } @if (areThereResults) {
   <app-section-generic
     [typeSection]="typeList.Events"
+    [typeModal]="typeList.Events"
     [data]="nonRepeatedEvents"
     [total]="number"
   />

@@ -1,63 +1,54 @@
-import { DestroyRef, inject, Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, catchError, Observable, tap } from 'rxjs';
 import { PiteraModel } from 'src/app/core/interfaces/pitera.interface';
 import { PiterasService } from 'src/app/core/services/piteras.services';
-import { GeneralService } from '../shared/services/generalService.service';
+import { includesNormalized, toSearchKey } from '../shared/utils/text.utils';
+import { LoadableFacade } from './loadable.facade';
 
-@Injectable({
-  providedIn: 'root',
-})
-export class PiterasFacade {
-  private readonly destroyRef = inject(DestroyRef);
+@Injectable({ providedIn: 'root' })
+export class PiterasFacade extends LoadableFacade {
   private readonly piterasService = inject(PiterasService);
-  private readonly generalService = inject(GeneralService);
+
+  // State propio
   private readonly piterasSubject = new BehaviorSubject<PiteraModel[] | null>(
     null
   );
   private readonly filteredPiterasSubject = new BehaviorSubject<
     PiteraModel[] | null
   >(null);
-  private readonly selectedPiterasSubject =
+  private readonly selectedPiteraSubject =
     new BehaviorSubject<PiteraModel | null>(null);
-  piteras$ = this.piterasSubject.asObservable();
-  selectedPitera$ = this.selectedPiterasSubject.asObservable();
-  filteredPiteras$ = this.filteredPiterasSubject.asObservable();
 
-  constructor() {}
+  // Streams públicos
+  readonly piteras$ = this.piterasSubject.asObservable();
+  readonly filteredPiteras$ = this.filteredPiterasSubject.asObservable();
+  readonly selectedPitera$ = this.selectedPiteraSubject.asObservable();
+
+  // ---------- API pública
 
   loadAllPiteras(): void {
-    this.piterasService
-      .getPiteras()
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((piteras: PiteraModel[]) => this.updatePiteraState(piteras)),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-      .subscribe();
+    this.executeWithLoading(this.piterasService.getPiteras(), (piteras) =>
+      this.updatePiteraState(piteras)
+    );
   }
 
   loadPiteraById(id: number): void {
-    this.piterasService
-      .getPiteraById(id)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((pitera: PiteraModel) => this.selectedPiterasSubject.next(pitera)),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-      .subscribe();
+    this.executeWithLoading(this.piterasService.getPiteraById(id), (pitera) =>
+      this.selectedPiteraSubject.next(pitera)
+    );
   }
 
   addPitera(pitera: FormData): Observable<FormData> {
-    return this.piterasService.add(pitera).pipe(
+    return this.wrapWithLoading(this.piterasService.add(pitera)).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.loadAllPiteras()),
       catchError((err) => this.generalService.handleHttpError(err))
     );
   }
 
-  editPitera(itemId: number, pitera: FormData): Observable<FormData> {
-    return this.piterasService.edit(itemId, pitera).pipe(
+  editPitera(pitera: FormData): Observable<FormData> {
+    return this.wrapWithLoading(this.piterasService.edit(pitera)).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.loadAllPiteras()),
       catchError((err) => this.generalService.handleHttpError(err))
@@ -65,38 +56,37 @@ export class PiterasFacade {
   }
 
   deletePitera(id: number): void {
-    this.piterasService
-      .delete(id)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap(() => this.loadAllPiteras()),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-      .subscribe();
+    this.executeWithLoading(this.piterasService.delete(id), () =>
+      this.loadAllPiteras()
+    );
   }
 
   clearSelectedPitera(): void {
-    this.selectedPiterasSubject.next(null);
+    this.selectedPiteraSubject.next(null);
   }
 
   applyFilterWord(keyword: string): void {
-    const allPiteras = this.piterasSubject.getValue();
-
-    if (!keyword.trim() || !allPiteras) {
-      this.filteredPiterasSubject.next(allPiteras);
+    const all = this.piterasSubject.getValue();
+    if (!all) {
+      this.filteredPiterasSubject.next(all);
       return;
     }
-    const search = keyword.trim().toLowerCase();
-    const filteredPiteras = allPiteras.filter(
-      (pitera) =>
-        pitera.title.toLowerCase().includes(search) ||
-        (pitera.theme && pitera.theme.toLowerCase().includes(search))
+
+    if (!toSearchKey(keyword)) {
+      this.filteredPiterasSubject.next(all);
+      return;
+    }
+
+    const filtered = all.filter((p) =>
+      [p.title, p.theme].some((field) => includesNormalized(field, keyword))
     );
 
-    this.filteredPiterasSubject.next(filteredPiteras);
+    this.filteredPiterasSubject.next(filtered);
   }
 
-  updatePiteraState(piteras: PiteraModel[]): void {
+  // ---------- Privado / utilidades
+
+  private updatePiteraState(piteras: PiteraModel[]): void {
     this.piterasSubject.next(piteras);
     this.filteredPiterasSubject.next(piteras);
   }

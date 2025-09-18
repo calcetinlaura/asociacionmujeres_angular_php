@@ -13,13 +13,14 @@
     class="login-auth-form"
   >
     <div class="flex flex-col gap-y-4">
-      <div class="flex justify-between gap-x-8 h-[450px]">
-        <div class="flex flex-col flex-1 gap-y-4 bg-lilaMuyClaro p-4">
+      <div class="flex justify-between gap-x-8 h-[420px]">
+        <div class="flex flex-col flex-1 gap-y-4">
           <div class="box-input gap-x-4">
             <label for="title">Título</label>
             <div class="flex flex-col flex-1">
               <input
                 formControlName="title"
+                placeholder="Título del evento"
                 type="text"
                 [ngClass]="{
                   'is-invalid': submitted && formEvent.get('title')?.invalid
@@ -31,13 +32,13 @@
             </div>
           </div>
 
-          <div class="box-input gap-x-4 flex-1">
+          <div class="box-input gap-x-4 flex-1 !items-start">
             <label for="description">Descripción</label>
             <quill-editor
               formControlName="description"
               [modules]="quillModules"
               placeholder="Escribe aquí la descripción..."
-              class="ql-container-large text-sm focus:outline-none focus:ring focus:ring-blue-200 bg-white w-full"
+              class="ql-container-large text-sm focus:outline-none focus:ring focus:ring-blue-200 w-full"
             />
           </div>
         </div>
@@ -50,6 +51,8 @@
             [type]="typeList"
             (imgSelected)="onImageSelected($event)"
             [imageWidthValue]="'full'"
+            [imageHeightValue]="410"
+            [textImg]="'Añadir cartel'"
             class="w-full"
           ></app-image-control>
         </div>
@@ -64,7 +67,11 @@
     formEvent.errors?.['invalidDateRange'] ||
     formEvent.errors?.['invalidTimeRange'] ||
     repeatedDates.errors?.['duplicateStartDatesAndTimes'] ||
-    formEvent.get('start')?.invalid
+    formEvent.get('start')?.invalid || formEvent.get('start')?.errors?.['minDate']||
+    formEvent.get('start')?.invalid || formEvent.get('start')?.errors?.['maxDate']||
+    formEvent.get('end')?.invalid || formEvent.get('start')?.errors?.['minDate']||
+    formEvent.get('end')?.invalid || formEvent.get('start')?.errors?.['maxDate']
+
   )
 }"
       >
@@ -115,13 +122,24 @@
                 <input
                   formControlName="start"
                   type="date"
-                  class="w-full p-1 border rounded"
                   [ngClass]="{
+                    'text-placeholder': !formEvent.get('start')?.value,
                     'is-invalid': submitted && formEvent.get('start')?.invalid
                   }"
                 />
-                @if (submitted && formEvent.get('start')?.invalid) {
-                <div class="is-invalid-text">Campo requerido</div>
+                @if (submitted && formEvent.get('start')?.hasError('required'))
+                {
+                <div class="text-[red] text-[11px] pt-2">Campo requerido</div>
+                } @if (submitted && formEvent.get('start')?.hasError('minDate'))
+                {
+                <div class="text-[red] text-[11px] pt-2">
+                  Debe ser desde 01/01/2018.
+                </div>
+                } @if (submitted && formEvent.get('start')?.hasError('maxDate'))
+                {
+                <div class="text-[red] text-[11px] pt-2">
+                  Debe ser fecha máxima próximo año.
+                </div>
                 }
               </div>
             </div>
@@ -137,18 +155,25 @@
                 <input
                   formControlName="end"
                   type="date"
-                  class="w-full p-1 border rounded"
                   [ngClass]="{
+                    'text-placeholder': !formEvent.get('end')?.value,
                     'is-invalid': submitted && formEvent.get('end')?.invalid
                   }"
                 />
-                @if (submitted && formEvent.get('end')?.invalid) {
-                <div class="is-invalid-text">Campo requerido</div>
+                <!-- Mensajes del control END -->
+                @if (submitted && formEvent.get('end')?.hasError('minDate')) {
+                <div class="text-[red] text-[11px] pt-2">
+                  Debe ser desde 01/01/2018.
+                </div>
+                } @if (submitted && formEvent.get('end')?.hasError('maxDate')) {
+                <div class="text-[red] text-[11px] pt-2">
+                  Debe ser fecha máxima próximo año.
+                </div>
                 }
 
-                <!-- Error si el rango de fechas es incorrecto -->
-                @if (submitted && formEvent.errors?.['invalidDateRange']) {
-                <p class="text-[red] text-[11px]">
+                <!-- Mensaje de rango (del FormGroup) -->
+                @if (submitted && formEvent.hasError('invalidDateRange')) {
+                <p class="text-[red] text-[11px] pt-2">
                   La fecha fin no puede ser anterior a la fecha de inicio
                 </p>
                 }
@@ -270,10 +295,15 @@
               formControlName="province"
               (change)="onProvinceChange()"
               [ngClass]="{
-                'is-invalid': submitted && formEvent.get('province')?.invalid
+                'is-invalid': submitted && formEvent.get('province')?.invalid,
+                'text-placeholder': !formEvent.get('province')?.value
               }"
             >
-              <option value="">Seleccione una provincia</option>
+              <!-- Placeholder en gris -->
+              <option value="" disabled hidden>Seleccione una provincia</option>
+
+              <!-- Opción libre -->
+              <option value="">Sin provincia</option>
               @for (prov of provincias; track trackByLabel($index, prov)) {
               <option [value]="prov.label">{{ prov.label }}</option>
               }
@@ -288,12 +318,17 @@
             <label for="town">Municipio</label>
             <select
               formControlName="town"
-              [ngClass]="{
-                'is-invalid': submitted && formEvent.get('town')?.invalid
-              }"
               (change)="onTownChange()"
+              [ngClass]="{
+                'is-invalid': submitted && formEvent.get('town')?.invalid,
+                'text-placeholder': !formEvent.get('town')?.value
+              }"
             >
-              <option value="">Seleccione un municipio</option>
+              <!-- Placeholder en gris -->
+              <option value="" disabled hidden>Seleccione un municipio</option>
+
+              <!-- Opción libre -->
+              <option value="">Sin municipio</option>
               @for (mun of municipios; track trackByLabel($index, mun)) {
               <option [value]="mun.label">{{ mun.label }}</option>
               }
@@ -322,7 +357,7 @@
               <option [ngValue]="null" disabled>Selecciona una sala</option>
               @for (sala of salasDelLugar; track trackBySalaId ($index, sala)) {
               <option [ngValue]="sala.sala_id">
-                {{ sala.name }} - {{ sala.location }}
+                {{ sala.name }} - {{ sala.room_location }}
               </option>
               }
             </select>
@@ -365,23 +400,24 @@
           <app-button-select
             [buttonText]="'No está dentro de un macroevento'"
             subText="Es un evento único"
-            [active]="eventTypeMacro === 'event'"
-            (addClicked)="setEventTypeMacro('event')"
+            [active]="eventTypeMacro === 'SINGLE'"
+            (addClicked)="setEventTypeMacro('SINGLE')"
             iconClass="uil-calendar-alt"
           /><app-button-select
             [buttonText]="'Está dentro de un macroevento'"
             subText="Está dentro de una programación más amplia"
-            [active]="eventTypeMacro === 'macro'"
-            (addClicked)="setEventTypeMacro('macro')"
+            [active]="eventTypeMacro === 'MACRO'"
+            (addClicked)="setEventTypeMacro('MACRO')"
             iconClass="uil-calendar-alt"
           />
         </div>
         <!-- macro -->
-        @if (eventTypeMacro === 'macro') {
+        @if (eventTypeMacro === 'MACRO') {
         <div class="pt-4 px-4">
           <p class="text-[15px] text-center mb-10 text-lilaText px-4">
             Si el macroevento al que pertenece el evento no aparece se debe
-            añadir previamente desde la sección de macroeventos.
+            registar previamente el macroevento desde la sección de
+            MACROEVENTOS.
           </p>
 
           <div class="flex gap-x-8">
@@ -418,22 +454,22 @@
           <app-button-select
             [buttonText]="'No está dentro de un proyecto'"
             subText="Es un evento único"
-            [active]="eventTypeProject === 'event'"
-            (addClicked)="setEventTypeProject('event')"
+            [active]="eventTypeProject === 'NO_PROJECT'"
+            (addClicked)="setEventTypeProject('NO_PROJECT')"
             iconClass="uil-calendar-alt"
           /><app-button-select
             [buttonText]="'Está dentro de un proyecto'"
             subText="Está dentro de una programación más amplia"
-            [active]="eventTypeProject === 'project'"
-            (addClicked)="setEventTypeProject('project')"
+            [active]="eventTypeProject === 'PROJECT'"
+            (addClicked)="setEventTypeProject('PROJECT')"
             iconClass="uil-calendar-alt"
           />
         </div>
-        @if (eventTypeProject === 'project') {
+        @if (eventTypeProject === 'PROJECT') {
         <div class="pt-4 px-4">
           <p class="text-[15px] text-center mb-10 text-lilaText px-4">
-            Si el proyecto al que pertenece el evento no aparece se debe añadir
-            previamente el mismo desde la sección de proyectos.
+            Si el proyecto al que pertenece el evento no aparece se debe
+            registrar previamente el proyecto desde la sección de PROYECTOS.
           </p>
 
           <div class="flex gap-x-8">

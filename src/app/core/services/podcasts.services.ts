@@ -32,22 +32,25 @@ export class PodcastsService {
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
-  edit(id: number, podcast: FormData): Observable<any> {
+  edit(podcast: FormData): Observable<any> {
     return this.http
       .post(this.apiUrl, podcast)
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
   delete(id: number): Observable<any> {
-    return this.http
-      .delete(this.apiUrl, { params: { id: id } })
-      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
+    return this.generalService.deleteOverride<any>(this.apiUrl, { id });
   }
 
   sortPodcastsById(podcasts: PodcastModel[]): PodcastModel[] {
     return podcasts.sort((a, b) => b.id - a.id);
   }
 
+  sortPodcastsByTitle(podcasts: PodcastModel[]): PodcastModel[] {
+    return podcasts.sort((a, b) =>
+      a.title.toLowerCase().localeCompare(b.title.toLowerCase())
+    );
+  }
   hasResults(podcasts: PodcastModel[] | null): boolean {
     return !!podcasts && podcasts.length > 0;
   }

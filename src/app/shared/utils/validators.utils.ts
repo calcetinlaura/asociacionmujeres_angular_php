@@ -88,3 +88,38 @@ export const uniqueStartDatesValidator: ValidatorFn = (
 
   return hasDuplicate ? { duplicateStartDatesAndTimes: true } : null;
 };
+function coerceDate(v: unknown): Date | null {
+  if (!v && v !== 0) return null;
+  if (v instanceof Date) return isNaN(v.getTime()) ? null : v;
+  // Para <input type="date"> viene como 'YYYY-MM-DD'
+  const d = new Date(String(v));
+  return isNaN(d.getTime()) ? null : d;
+}
+
+/**
+ * Valida que la fecha esté entre [min, max), es decir:
+ * - >= min (incluye el mínimo)
+ * - <  max (excluye el máximo)
+ * Es para que las facturas no sean anteriores a 2018 y mayores del día actual
+ */
+export function dateBetween(min: Date, max: Date): ValidatorFn {
+  // Normalizamos límites al inicio del día
+  const minUTC = new Date(min);
+  minUTC.setHours(0, 0, 0, 0);
+  const maxUTC = new Date(max);
+  maxUTC.setHours(0, 0, 0, 0);
+
+  return (control: AbstractControl): ValidationErrors | null => {
+    const value = coerceDate(control.value);
+    if (value === null) return null; // no valida vacío (deja a `required` decidir)
+
+    const v = new Date(value);
+    v.setHours(0, 0, 0, 0);
+
+    if (v < minUTC) return { minDate: { requiredMin: minUTC, actual: v } };
+    // EXCLUSIVO en el máximo: v debe ser < hoy
+    if (v >= maxUTC)
+      return { maxDate: { requiredMaxExclusive: maxUTC, actual: v } };
+    return null;
+  };
+}

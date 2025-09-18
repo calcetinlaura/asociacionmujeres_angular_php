@@ -1,6 +1,6 @@
 .home-wrapper {
-  margin-top: 20vh;
-  min-height: 80vh;
+  margin-top: 18vh;
+  min-height: 82vh;
   overflow-y: auto;
 }
 @media (max-width: 1200px) {
@@ -8,23 +8,15 @@
 /* Tablet */
 @media (max-width: 1024px) {
   .home-wrapper {
-    margin-top: 15vh;
-    min-height: 85vh;
+    margin-top: 12vh;
+    min-height: 88vh;
   }
 }
 /* Móvil */
 @media (max-width: 768px) {
-  .home-wrapper {
-    margin-top: 10vh;
-    min-height: 90vh;
-  }
 }
 /* Móvil pequeño */
 @media (max-width: 480px) {
-  .home-wrapper {
-    margin-top: 11vh;
-    min-height: 89vh;
-  }
 }
 @media (max-width: 380px) {
 }

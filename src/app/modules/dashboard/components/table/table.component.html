@@ -1,17 +1,37 @@
-<div id="table-to-print">
-  <h2 class="print-title">Listado</h2>
+<div>
   <table
     mat-table
     [dataSource]="dataSource"
     matSort
     (matSortChange)="announceSortChange($event)"
     class="mat-elevation-z8 table"
+    [class.is-events]="typeSection === TypeList.Events"
+    [class.is-macro]="typeSection === TypeList.Macroevents"
+    [class.is-other]="
+      typeSection !== TypeList.Events && typeSection !== TypeList.Macroevents
+    "
   >
     <!-- Columna de número -->
     <ng-container matColumnDef="number">
-      <th mat-header-cell *matHeaderCellDef>Nº</th>
-      <td mat-cell *matCellDef="let element; let i = index">{{ i + 1 }}</td>
-      <td mat-footer-cell *matFooterCellDef></td>
+      <th
+        mat-header-cell
+        *matHeaderCellDef
+        [attr.data-print]="printIncludeNumber ? '1' : '0'"
+      >
+        Nº
+      </th>
+      <td
+        mat-cell
+        *matCellDef="let element; let i = index"
+        [attr.data-print]="printIncludeNumber ? '1' : '0'"
+      >
+        {{ i + 1 }}
+      </td>
+      <td
+        mat-footer-cell
+        *matFooterCellDef
+        [attr.data-print]="printIncludeNumber ? '1' : '0'"
+      ></td>
     </ng-container>
 
     @for (column of headerColumns; track column) {
@@ -22,6 +42,7 @@
         *matHeaderCellDef
         mat-sort-header="{{ column.key }}"
         [ngClass]="column.width"
+        [attr.data-print]="shouldPrintColumn(column.key) ? '1' : '0'"
       >
         {{ column.title }}
       </th>
@@ -35,6 +56,7 @@
         *matCellDef="let element"
         [ngClass]="column.width"
         [style.textAlign]="column.textAlign || 'left'"
+        [attr.data-print]="shouldPrintColumn(column.key) ? '1' : '0'"
       >
         @switch (true) { @case (column.booleanIndicator === true) {
         <app-circle-indicator
@@ -56,7 +78,14 @@
             {{ element[column.key]?.length || 0 }}
           </div>
         </div>
-        } } @case (column.pipe === 'eurosFormat') {
+        } } @case (column.innerHTML === true) { @if( element[column.key] |
+        hasValue){
+        <div
+          [innerHTML]="element[column.key]"
+          class="rich clamp-3 text-[11px] text-gray-600"
+        ></div>
+        } @else { <app-circle-indicator [item]="false"></app-circle-indicator>}
+        } @case (column.pipe === 'eurosFormat') {
         {{ element[column.key] | eurosFormat }}
         } @case (column.pipe === 'phoneFormat') {
         {{ element[column.key] | phoneFormat }}
@@ -78,7 +107,8 @@
           alt=""
           class="cover"
         />
-        } @case (column.key === 'invoice_pdf') { @if (element['invoice_pdf']) {
+        } @case (column.key === 'invoice_pdf' ||column.key === 'proof_pdf' ) {
+        @if (element['invoice_pdf'] ||element['proof_pdf'] ) {
         <div class="flex">
           <i class="uil uil-file-alt text-[25px]"></i>
         </div>
@@ -160,11 +190,20 @@
           </div>
           } }
         </div>
-        }
+        } @case (column.key === 'duration') { @if (element.duration) {
+        <div class="backColor">
+          <span> {{ element.duration | hms }}</span>
+        </div>
+        } }@case (column.key === 'season') { @if (element.season) {
+        <div class="backColor">
+          <span>TEMP. {{ element.season }} - EPIS. {{ element.episode }}</span>
+        </div>
+
+        } }
         <!-- Diseño especial para 'gender' -->
         @case (column.key === 'birthday') { @if (element.birthday) {
         <div class="text-center">
-          {{ element.birthday | date : "dd MMM yyyy" }}
+          {{ element.birthday | date : "dd MMM yyyy" }}<br />
           <span class="dateColumn">
             {{ element.birthday | calculateAge }} años
           </span>
@@ -190,8 +229,13 @@
         } } @case (column.key === 'activities' && !column.showLengthOnly) { @if
         (element[column.key] | hasValue) {
         <div class="box-activities">
-          <div class="flex items-center gap-x-2">
+          <div class="flex items-center gap-x-2 justify-center">
             <div
+              class="w-8 h-8 flex items-center justify-center rounded-full border border-lilaClaro bg-transparent text-black text-sm"
+            >
+              {{ element.activities.length }}
+            </div>
+            <!-- <div
               class="flex flex-col gap-y-4 w-3/4 border-r border-gray-300 pr-3"
             >
               @for (activity of element.activities; track activity) {
@@ -200,8 +244,8 @@
                 <p>{{ activity.budget | eurosFormat }}</p>
               </div>
               }
-            </div>
-            <div class="totalAmount w-autor mx-2 bg-emerald-400">
+            </div> -->
+            <div class="totalAmount mx-2 bg-emerald-400">
               <p>
                 {{ getTotalActivitiesAmount(element) | eurosFormat }}
               </p>
@@ -227,11 +271,15 @@
         } } @case (column.key === 'invoices' && !column.showLengthOnly) { @if
         (element[column.key] | hasValue) {
         <div class="box-invoices">
-          <div class="flex items-center gap-x-4">
+          <div class="flex items-center gap-x-4 justify-center">
             <div
-              class="flex flex-col gap-y-4 w-4/5 border-r border-gray-300 pr-3"
+              class="w-8 h-8 flex items-center justify-center rounded-full border border-lilaClaro bg-transparent text-black text-sm"
             >
-              @for (invoice of element.invoices; track invoice) {
+              {{ element.invoices.length }}
+            </div>
+            <!--  <div
+              class="flex flex-col gap-y-4 w-4/5 border-r border-gray-300 pr-3"
+            >@for (invoice of element.invoices; track invoice) {
               <div class="invoices-list">
                 <p class="flex flex-row">
                   {{ invoice.type_invoice }} {{ invoice.number_invoice }} -
@@ -241,8 +289,9 @@
                 <p>{{ invoice.total_amount | eurosFormat }}</p>
               </div>
               }
-            </div>
-            <div class="px-3 totalAmount w-1/5">
+              </div>-->
+
+            <div class="px-3 totalAmount">
               <p>{{ getTotalInvoiceAmount(element) | eurosFormat }}</p>
             </div>
           </div>
@@ -280,7 +329,7 @@
             {{ element.town }}
           </div>
           @if (element.address) {
-          <div style="font-size: 0.75rem; color: #666">
+          <div style="font-size: 0.75rem; color: #666" class="address">
             {{ element.address }}
           </div>
           } } @else {
@@ -307,12 +356,6 @@
           </div>
           }
         </div>
-        } @case (column.key === 'description' && !column.booleanIndicator) {
-        <div
-          [innerHTML]="element.description"
-          class="truncate text-[11px] text-gray-600"
-        ></div>
-
         } @case (column.key === 'salas' && !column.showLengthOnly) { @if
         (element[column.key] | hasValue) {
         <div class="box-activities">
@@ -388,11 +431,11 @@
         } @case (column.key === 'type_invoice') {
         <span
           [ngClass]="{
-                'type-ticket': element.type_invoice === 'Ticket',
-                'type-factura': element.type_invoice === 'Factura',
-                'type-ingreso': element.type_invoice === 'Ingreso',
+                'type-ticket': element.type_invoice === 'TICKET',
+                'type-factura': element.type_invoice === 'INVOICE',
+                'type-ingreso': element.type_invoice === 'INCOME',
               }"
-          >{{ element.type_invoice }}</span
+          >{{ element.type_invoice | i18nSelect : nameMovement }}</span
         >
         } @case (column.key === 'creditor_company') {
         <p class="text-[12px]">{{ element.creditor_company }}</p>
@@ -419,7 +462,11 @@
         {{ element[column.key] }}
         } }
       </td>
-      <td mat-footer-cell *matFooterCellDef>
+      <td
+        mat-footer-cell
+        *matFooterCellDef
+        [attr.data-print]="shouldPrintColumn(column.key) ? '1' : '0'"
+      >
         @if (column.footerTotal) {
         <p class="text-right">{{ getColumnTotal(column.key) | eurosFormat }}</p>
         }
@@ -429,15 +476,16 @@
 
     <!-- Buttons Column -->
     <ng-container matColumnDef="actions">
-      <th mat-header-cell *matHeaderCellDef class="no-print"></th>
-      <td mat-cell *matCellDef="let element" class="no-print">
-        @if (typeSection === TypeList.Events) {
-        <app-icon-action
-          [icon]="'uil-copy'"
-          [tooltip]="'Duplicar'"
-          (click)="onOpenModal(typeModal, typeActionModal.Duplicate, element)"
-        ></app-icon-action>
-        }
+      <th
+        mat-header-cell
+        *matHeaderCellDef
+        [attr.data-print]="printIncludeActions ? '1' : '0'"
+      ></th>
+      <td
+        mat-cell
+        *matCellDef="let element"
+        [attr.data-print]="printIncludeActions ? '1' : '0'"
+      >
         <app-icon-action
           [icon]="'uil-eye'"
           [tooltip]="'Ver'"
@@ -448,13 +496,31 @@
           [tooltip]="'Editar'"
           (click)="onOpenModal(typeModal, typeActionModal.Edit, element)"
         ></app-icon-action>
+        @if (typeSection === TypeList.Events) {
+        <app-icon-action
+          [icon]="'uil-copy'"
+          [tooltip]="'Duplicar'"
+          (click)="onOpenModal(typeModal, typeActionModal.Duplicate, element)"
+        ></app-icon-action>
+        } @if (typeSection === TypeList.Events || typeSection ===
+        TypeList.Macroevents) {
+        <app-icon-action
+          [icon]="'uil-image-redo'"
+          [tooltip]="'Descargar imagen'"
+          (click)="downloadImg(element)"
+        ></app-icon-action>
+        }
         <app-icon-action
           [icon]="'uil-trash-alt'"
           [tooltip]="'Eliminar'"
           (click)="onOpenModal(typeModal, typeActionModal.Delete, element)"
         ></app-icon-action>
       </td>
-      <td mat-footer-cell *matFooterCellDef></td>
+      <td
+        mat-footer-cell
+        *matFooterCellDef
+        [attr.data-print]="printIncludeActions ? '1' : '0'"
+      ></td>
     </ng-container>
     <tr
       mat-header-row

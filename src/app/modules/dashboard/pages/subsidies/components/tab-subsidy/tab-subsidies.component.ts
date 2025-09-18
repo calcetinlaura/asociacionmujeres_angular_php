@@ -2,12 +2,14 @@ import { CommonModule } from '@angular/common';
 import {
   Component,
   DestroyRef,
+  ElementRef,
   EventEmitter,
   Input,
   OnChanges,
   OnInit,
   Output,
   SimpleChanges,
+  ViewChild,
   inject,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -23,6 +25,7 @@ import { SubsidyModelFullData } from 'src/app/core/interfaces/subsidy.interface'
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { InvoicesService } from 'src/app/core/services/invoices.services';
 import { SubsidiesService } from 'src/app/core/services/subsidies.services';
+import { PdfPrintComponent } from 'src/app/modules/dashboard/components/pdf-print/pdf-print.component';
 import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
 import { TextEditorComponent } from 'src/app/shared/components/text/text-editor/text-editor.component';
 import { EurosFormatPipe } from 'src/app/shared/pipe/eurosFormat.pipe';
@@ -41,6 +44,7 @@ import { TableComponent } from '../../../../components/table/table.component';
     EurosFormatPipe,
     TableComponent,
     ButtonIconComponent,
+    PdfPrintComponent,
   ],
   templateUrl: './tab-subsidies.component.html',
   styleUrls: ['./tab-subsidies.component.css'],
@@ -50,10 +54,12 @@ export class ModalShowSubsidyComponent implements OnChanges, OnInit {
   private invoicesService = inject(InvoicesService);
   private destroyRef = inject(DestroyRef);
   private readonly generalService = inject(GeneralService);
+  @ViewChild('pdfArea', { static: false }) pdfArea!: ElementRef<HTMLElement>;
 
   @Input() item!: SubsidyModelFullData;
   @Input() loadInvoices: boolean = false;
   @Output() openModal = new EventEmitter<{
+    typePage?: TypeList;
     typeModal: TypeList;
     action: TypeActionModal;
     item: any;
@@ -67,9 +73,8 @@ export class ModalShowSubsidyComponent implements OnChanges, OnInit {
   number_invoices: number = 0;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
   loading = true;
-  amount_spend = 0;
-  amount_spend_irpf = 0;
   amount_association = 0;
+  nameMovement = this.subsidiesService.movementMap;
   nameSubsidy = this.subsidiesService.subsidiesMap;
   typeActionModal = TypeActionModal;
   isModalVisible = false;
@@ -78,8 +83,15 @@ export class ModalShowSubsidyComponent implements OnChanges, OnInit {
 
   headerListInvoices: ColumnModel[] = [
     {
-      title: 'PDF',
+      title: 'FACT.',
       key: 'invoice_pdf',
+      sortable: true,
+      showIndicatorOnEmpty: true,
+      textAlign: 'center',
+    },
+    {
+      title: 'JUST.',
+      key: 'proof_pdf',
       sortable: true,
       showIndicatorOnEmpty: true,
       textAlign: 'center',
@@ -129,6 +141,7 @@ export class ModalShowSubsidyComponent implements OnChanges, OnInit {
       title: 'Descripción',
       key: 'description',
       sortable: true,
+      innerHTML: true,
       showIndicatorOnEmpty: true,
       width: ColumnWidth.LG,
     },
@@ -148,6 +161,7 @@ export class ModalShowSubsidyComponent implements OnChanges, OnInit {
       width: ColumnWidth.XS,
       pipe: 'eurosFormat',
       textAlign: 'right',
+      footerTotal: true,
     },
     {
       title: 'IRPF',
@@ -161,6 +175,15 @@ export class ModalShowSubsidyComponent implements OnChanges, OnInit {
     {
       title: 'TOTAL',
       key: 'total_amount',
+      sortable: true,
+      width: ColumnWidth.XS,
+      pipe: 'eurosFormat',
+      footerTotal: true,
+      textAlign: 'right',
+    },
+    {
+      title: 'TOTAL+IRPF',
+      key: 'total_amount_irpf',
       sortable: true,
       width: ColumnWidth.XS,
       pipe: 'eurosFormat',
@@ -183,8 +206,9 @@ export class ModalShowSubsidyComponent implements OnChanges, OnInit {
       showIndicatorOnEmpty: true,
     },
   ];
+
   ngOnInit(): void {
-    // Ocultar 'date_payment' y 'date_accounting' al cargar la página
+    // Columnas visibles iniciales
     this.columnVisibility = this.generalService.setColumnVisibility(
       this.headerListInvoices,
       ['date_payment', 'date_accounting'] // Coloca las columnas que deseas ocultar aquí
@@ -240,31 +264,25 @@ export class ModalShowSubsidyComponent implements OnChanges, OnInit {
         takeUntilDestroyed(this.destroyRef),
         tap((invoices: InvoiceModelFullData[]) => {
           // 🔧 Normaliza campos numéricos una sola vez
-          this.filteredInvoices = invoices.map((inv) => ({
-            ...inv,
-            amount: this.toNumber(inv.amount),
-            iva: this.toNumber(inv.iva),
-            irpf: this.toNumber(inv.irpf),
-            total_amount: this.toNumber(inv.total_amount),
-          }));
+          this.filteredInvoices = invoices
+            .map((inv) => ({
+              ...inv,
+              amount: this.toNumber(inv.amount),
+              iva: this.toNumber(inv.iva),
+              irpf: this.toNumber(inv.irpf),
+              total_amount: this.toNumber(inv.total_amount),
+            }))
+            .sort((a, b) => {
+              const ta = a?.date_invoice
+                ? new Date(a.date_invoice).getTime()
+                : Number.POSITIVE_INFINITY;
+              const tb = b?.date_invoice
+                ? new Date(b.date_invoice).getTime()
+                : Number.POSITIVE_INFINITY;
+              return ta - tb; // más alejado (antiguo) primero
+            });
 
           this.number_invoices = this.filteredInvoices.length;
-          this.amount_spend = this.filteredInvoices.reduce(
-            (acc, inv) => acc + inv.total_amount,
-            0
-          );
-
-          // Si tu IRPF viene negativo (retención), y quieres sumarlo como coste,
-          // usa Math.abs(inv.irpf) aquí:
-          this.amount_spend_irpf = this.filteredInvoices.reduce(
-            (acc, inv) => acc + inv.irpf!,
-            0
-          );
-
-          this.amount_association =
-            this.amount_spend +
-            this.amount_spend_irpf -
-            this.toNumber(this.item.amount_granted);
 
           this.loading = false;
         }),
@@ -286,32 +304,10 @@ export class ModalShowSubsidyComponent implements OnChanges, OnInit {
     );
   }
 
-  getSubsidyTotalBudget(subsidy: SubsidyModelFullData): number {
-    return (
-      subsidy.projects?.reduce((totalSubsidy, project) => {
-        const totalProject =
-          project.activities?.reduce((sum, act) => {
-            return sum + (parseFloat(String(act.budget)) || 0);
-          }, 0) || 0;
-        return totalSubsidy + totalProject;
-      }, 0) || 0
-    );
-  }
-
   onOpenModal(typeModal: TypeList, action: TypeActionModal, item: any): void {
     this.openModal.emit({ typeModal, action, item });
   }
-  // private openModal(
-  //   typeModal: TypeList,
-  //   action: TypeActionModal,
-  //   item: InvoiceModelFullData | null
-  // ): void {
-  //   this.currentModalAction = action;
-  //   this.typeModal = typeModal;
-  //   this.item = item;
-  //   this.subsidiesFacade.clearSelectedSubsidy();
-  //   this.modalService.openModal();
-  // }
+
   getVisibleColumns() {
     return this.headerListInvoices.filter(
       (col) => this.columnVisibility[col.key]
@@ -319,12 +315,30 @@ export class ModalShowSubsidyComponent implements OnChanges, OnInit {
   }
   // Método para actualizar las columnas visibles cuando se hace toggle
   toggleColumn(key: string): void {
-    // Cambia la visibilidad de la columna en columnVisibility
     this.columnVisibility[key] = !this.columnVisibility[key];
-    // Actualiza las columnas visibles en la tabla después de cambiar el estado
+
     this.displayedColumns = this.generalService.updateDisplayedColumns(
       this.headerListInvoices,
       this.columnVisibility
     );
+  }
+  downloadFilteredPdfs(includeProof: boolean = true): void {
+    const data = this.filteredInvoices || [];
+
+    this.invoicesService
+      .downloadInvoicesZipFromData(data, {
+        includeProof, // true: invoice+proof | false: solo invoice
+        filename: includeProof ? 'documentos.zip' : 'facturas.zip',
+      })
+      .subscribe({
+        error: (e) => {
+          if (e?.message === 'NO_FILES') {
+            alert('No hay PDFs para descargar.');
+          } else {
+            console.error('💥 Error al descargar ZIP:', e);
+            alert('Error al descargar el ZIP. Revisa la consola.');
+          }
+        },
+      });
   }
 }

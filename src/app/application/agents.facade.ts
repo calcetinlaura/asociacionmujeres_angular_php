@@ -1,17 +1,17 @@
-import { DestroyRef, inject, Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, catchError, Observable, tap } from 'rxjs';
 import { AgentModel } from '../core/interfaces/agent.interface';
 import { AgentsService } from '../core/services/agents.services';
-import { GeneralService } from '../shared/services/generalService.service';
+import { includesNormalized, toSearchKey } from '../shared/utils/text.utils';
+import { LoadableFacade } from './loadable.facade';
 
 @Injectable({
   providedIn: 'root',
 })
-export class AgentsFacade {
-  private readonly destroyRef = inject(DestroyRef);
+export class AgentsFacade extends LoadableFacade {
   private readonly agentsService = inject(AgentsService);
-  private readonly generalService = inject(GeneralService);
+  // State propio
   private readonly agentsSubject = new BehaviorSubject<AgentModel[] | null>(
     null
   );
@@ -21,61 +21,33 @@ export class AgentsFacade {
   private readonly selectedAgentSubject =
     new BehaviorSubject<AgentModel | null>(null);
 
-  agents$ = this.agentsSubject.asObservable();
-  filteredAgents$ = this.filteredAgentsSubject.asObservable();
-  selectedAgent$ = this.selectedAgentSubject.asObservable();
-  currentFilter: string = 'ALL';
+  // Streams públicos
+  readonly agents$ = this.agentsSubject.asObservable();
+  readonly filteredAgents$ = this.filteredAgentsSubject.asObservable();
+  readonly selectedAgent$ = this.selectedAgentSubject.asObservable();
 
-  constructor() {}
+  // Último filtro aplicado (para recargar)
+  private currentFilter: string | null = null;
 
-  setCurrentFilter(filter: string): void {
-    this.currentFilter = filter;
-    this.loadAgentsByFilter(filter);
+  loadAllAgents(): void {
+    this.setCurrentFilter(null);
+    this.executeWithLoading(this.agentsService.getAgents(), (agents) =>
+      this.updateAgentState(agents)
+    );
   }
 
   loadAgentsByFilter(filter: string): void {
-    const loaders: Record<string, () => void> = {
-      ALL: () => this.loadAllAgents(),
-    };
-
-    (loaders[filter] || (() => this.loadAgentsByCategory(filter)))();
-  }
-
-  private reloadCurrentFilter(): void {
-    this.loadAgentsByFilter(this.currentFilter);
-  }
-
-  loadAllAgents(): void {
-    this.agentsService
-      .getAgents()
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((agents) => this.updateAgentState(agents)),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-      .subscribe();
-  }
-
-  loadAgentsByCategory(category: string): void {
-    this.agentsService
-      .getAgentsByCategory(category)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((agents) => this.updateAgentState(agents)),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-      .subscribe();
+    this.setCurrentFilter(filter);
+    this.executeWithLoading(
+      this.agentsService.getAgentsByCategory(filter),
+      (agents) => this.updateAgentState(agents)
+    );
   }
 
   loadAgentById(id: number): void {
-    this.agentsService
-      .getAgentById(id)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((agent) => this.selectedAgentSubject.next(agent)),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-      .subscribe();
+    this.executeWithLoading(this.agentsService.getAgentById(id), (agent) =>
+      this.selectedAgentSubject.next(agent)
+    );
   }
 
   addAgent(agent: FormData): Observable<FormData> {
@@ -86,8 +58,8 @@ export class AgentsFacade {
     );
   }
 
-  editAgent(id: number, agent: FormData): Observable<FormData> {
-    return this.agentsService.edit(id, agent).pipe(
+  editAgent(agent: FormData): Observable<FormData> {
+    return this.agentsService.edit(agent).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.reloadCurrentFilter()),
       catchError((err) => this.generalService.handleHttpError(err))
@@ -95,14 +67,9 @@ export class AgentsFacade {
   }
 
   deleteAgent(id: number): void {
-    this.agentsService
-      .delete(id)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap(() => this.reloadCurrentFilter()),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-      .subscribe();
+    this.executeWithLoading(this.agentsService.delete(id), () =>
+      this.reloadCurrentFilter()
+    );
   }
 
   clearSelectedAgent(): void {
@@ -110,20 +77,35 @@ export class AgentsFacade {
   }
 
   applyFilterWord(keyword: string): void {
-    const allAgents = this.agentsSubject.getValue();
+    const all = this.agentsSubject.getValue();
 
-    if (!keyword.trim() || !allAgents) {
-      this.filteredAgentsSubject.next(allAgents ?? []);
+    if (!all) {
+      this.filteredAgentsSubject.next(all);
       return;
     }
-    const search = keyword.trim().toLowerCase();
-    const filtered = allAgents.filter(
-      (agent) =>
-        agent.name.toLowerCase().includes(search) ||
-        (agent.contact && agent.contact.toLowerCase().includes(search))
+
+    if (!toSearchKey(keyword)) {
+      this.filteredAgentsSubject.next(all);
+      return;
+    }
+
+    const filtered = all.filter((b) =>
+      [b.name].some((field) => includesNormalized(field, keyword))
     );
 
     this.filteredAgentsSubject.next(filtered);
+  }
+
+  setCurrentFilter(filter: string | null): void {
+    this.currentFilter = filter;
+  }
+
+  private reloadCurrentFilter(): void {
+    if (this.currentFilter === null) {
+      this.loadAllAgents();
+      return;
+    }
+    this.loadAgentsByFilter(this.currentFilter);
   }
 
   updateAgentState(agents: AgentModel[]): void {

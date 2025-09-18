@@ -60,7 +60,8 @@ th.mat-sort-header-sorted {
   width: 30px;
 }
 .mat-column-number,
-.mat-column-invoice_pdf {
+.mat-column-invoice_pdf,
+.mat-column-proof_pdf {
   text-align: center;
   width: 40px;
 }
@@ -125,10 +126,22 @@ th.mat-sort-header-sorted {
   word-wrap: break-word !important;
   white-space: unset !important;
 }
-.mat-column-actions {
+.actions {
   text-align: right;
   flex: 0 0 130px !important;
   width: 135px;
+}
+.mat-column-actions {
+  width: 105px;
+  max-width: 105px;
+}
+table.is-macro .mat-column-actions {
+  width: 135px;
+  max-width: 135px;
+}
+table.is-events .mat-column-actions {
+  width: 165px;
+  max-width: 165px;
 }
 
 .mat-column-img {
@@ -177,9 +190,7 @@ th.mat-sort-header-sorted {
 .agent-list {
   font-size: 8px;
 }
-.mat-column-activities {
-  width: 320px;
-}
+
 .box-activities,
 .box-events,
 .box-invoices {
@@ -273,7 +284,32 @@ th.mat-sort-header-sorted {
 .footer {
   font-weight: 500;
 }
+/* innerhtml multi-línea con ellipsis (sin plugin) */
+.clamp-3 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3; /* <- nº de líneas */
+  overflow: hidden;
+  line-height: 1.2; /* fija altura de línea estable */
+}
 
+/* Fallback universal (y para html2canvas): limita por altura */
+.clamp-3 {
+  max-height: calc(1.2em * 3); /* 3 líneas * line-height */
+}
+
+/* reglas base de legibilidad en celdas */
+.rich {
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+.rich p,
+.rich div,
+.rich span,
+.rich small {
+  margin: 0;
+}
 .top-210 {
   top: 208px;
 }
@@ -286,18 +322,10 @@ th.mat-sort-header-sorted {
 }
 :host ::ng-deep {
   @media print {
-    .no-print,
     app-dashboard-header,
     .top-210,
     .top-246 {
       display: none !important;
-    }
-    .print-title {
-      display: block;
-      text-align: center;
-      margin-bottom: 1rem;
-      font-size: 18px;
-      font-weight: bold;
     }
   }
 }

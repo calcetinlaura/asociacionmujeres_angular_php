@@ -50,8 +50,10 @@ import { TypeList } from 'src/app/core/models/general.model';
 import { CreditorsService } from 'src/app/core/services/creditors.services';
 import { ProjectsService } from 'src/app/core/services/projects.services';
 import { SubsidiesService } from 'src/app/core/services/subsidies.services';
+import { ButtonSelectComponent } from 'src/app/shared/components/buttons/button-select/button-select.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
+import { dateBetween } from 'src/app/shared/utils/validators.utils';
 import { PdfControlComponent } from '../../../../components/pdf-control/pdf-control.component';
 
 @Component({
@@ -68,6 +70,7 @@ import { PdfControlComponent } from '../../../../components/pdf-control/pdf-cont
     PdfControlComponent,
     QuillModule,
     SpinnerLoadingComponent,
+    ButtonSelectComponent,
   ],
   templateUrl: './form-invoice.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],
@@ -79,13 +82,23 @@ export class FormInvoiceComponent {
   private creditorsService = inject(CreditorsService);
   private subsidiesService = inject(SubsidiesService);
   private projectsService = inject(ProjectsService);
+  readonly minDate = new Date(2018, 0, 1); // > 2018 ⇒ desde 2019-01-01
+  readonly tomorrowDate = (() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + 1);
+    return d;
+  })();
 
   @Input() itemId!: number;
-  @Output() sendFormInvoice = new EventEmitter<{
+  @Output() submitForm = new EventEmitter<{
     itemId: number;
     formData: FormData;
   }>();
-
+  invoiceTypeMovement: 'INVOICE' | 'TICKET' | 'INCOME' | 'UNSPECIFIED' =
+    'UNSPECIFIED';
+  invoiceTypeSubsidy: 'NO_SUBSIDY' | 'SUBSIDY' = 'NO_SUBSIDY';
+  invoiceTypeProject: 'NO_PROJECT' | 'PROJECT' = 'NO_PROJECT';
   invoiceData: any;
   imageSrc: string = '';
   submitted: boolean = false;
@@ -102,19 +115,27 @@ export class FormInvoiceComponent {
   typeList = TypeList.Invoices;
   previewPdfValue: string | File | null = null;
   selectedPdfValue: string | File | null = null;
+  selectedProofPdfValue: string | File | null = null;
+
   formInvoice = new FormGroup({
     number_invoice: new FormControl(''),
     type_invoice: new FormControl('', [Validators.required]),
-    date_invoice: new FormControl('', [Validators.required]), // String para el input de tipo date
+    date_invoice: new FormControl('', [
+      Validators.required,
+      dateBetween(this.minDate, this.tomorrowDate),
+    ]),
     date_accounting: new FormControl(''),
     date_payment: new FormControl(''),
     creditor_id: new FormControl<number | null>(null),
     description: new FormControl('', [Validators.maxLength(2000)]),
-    amount: new FormControl(0, [Validators.required, Validators.min(1)]),
-    irpf: new FormControl(0),
-    iva: new FormControl(0),
-    total_amount: new FormControl(0),
-    total_amount_irpf: new FormControl(0),
+    amount: new FormControl<number | null>(null, [
+      Validators.required,
+      Validators.min(1),
+    ]),
+    irpf: new FormControl<number | null>(null),
+    iva: new FormControl<number | null>(null),
+    total_amount: new FormControl<number | null>(null),
+    total_amount_irpf: new FormControl<number | null>(null),
     subsidy_id: new FormControl<number | null>({
       value: null,
       disabled: true,
@@ -124,6 +145,7 @@ export class FormInvoiceComponent {
       disabled: true,
     }),
     invoice_pdf: new FormControl<string | File | null>(null),
+    proof_pdf: new FormControl<string | File | null>(null),
   });
   subsidies: SubsidyModelFullData[] = [];
   projects: ProjectModel[] = [];
@@ -161,14 +183,15 @@ export class FormInvoiceComponent {
                 date_payment: invoice.date_payment || '',
                 creditor_id: invoice.creditor_id,
                 description: invoice.description || '',
-                amount: invoice.amount || 0,
-                irpf: invoice.irpf || 0,
-                iva: invoice.iva || 0,
-                total_amount: invoice.total_amount || 0,
-                total_amount_irpf: invoice.total_amount_irpf || 0,
+                amount: invoice.amount || null,
+                irpf: invoice.irpf || null,
+                iva: invoice.iva || null,
+                total_amount: invoice.total_amount || null,
+                total_amount_irpf: invoice.total_amount_irpf || null,
                 subsidy_id: invoice.subsidy_id,
                 project_id: invoice.project_id,
                 invoice_pdf: invoice.invoice_pdf || '',
+                proof_pdf: invoice.proof_pdf || '',
               });
 
               if (invoice.creditor_company) {
@@ -183,7 +206,33 @@ export class FormInvoiceComponent {
 
                 this.searchInput.setValue(displayValue);
               }
+              switch (
+                invoice.type_invoice as
+                  | 'INVOICE'
+                  | 'TICKET'
+                  | 'INCOME'
+                  | 'UNSPECIFIED'
+              ) {
+                case 'INVOICE':
+                  this.setInvoiceTypeMovement('INVOICE');
+                  break;
 
+                case 'TICKET':
+                  this.setInvoiceTypeMovement('TICKET');
+                  break;
+                case 'INCOME':
+                  this.setInvoiceTypeMovement('INCOME');
+                  break;
+                default:
+                  this.setInvoiceTypeMovement('UNSPECIFIED');
+                  break;
+              }
+              if (invoice.subsidy_id) {
+                this.invoiceTypeSubsidy = 'SUBSIDY';
+              }
+              if (invoice.project_id) {
+                this.invoiceTypeProject = 'PROJECT';
+              }
               // ✅ Solución: cargar el acreedor por ID si existe
               if (invoice.creditor_id) {
                 this.getCreditorsById(invoice.creditor_id)
@@ -197,6 +246,7 @@ export class FormInvoiceComponent {
                   .subscribe();
               }
               this.selectedPdfValue = invoice.invoice_pdf || '';
+              this.selectedProofPdfValue = invoice.proof_pdf || '';
               this.titleForm = 'Editar Factura';
               this.buttonAction = 'Guardar cambios';
             }
@@ -207,6 +257,7 @@ export class FormInvoiceComponent {
     } else {
       this.isLoading = false;
     }
+
     // Activar `project_id` solo con date_invoice válido
     this.formInvoice
       .get('date_invoice')!
@@ -245,7 +296,7 @@ export class FormInvoiceComponent {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap(([date_invoice, type_invoice]) => {
-          if (date_invoice && type_invoice === 'Factura') {
+          if (date_invoice && type_invoice === 'INVOICE') {
             this.generalService.enableInputControls(this.formInvoice, [
               'subsidy_id',
             ]);
@@ -258,19 +309,23 @@ export class FormInvoiceComponent {
         })
       )
       .subscribe();
-    // total_amount = amount + iva - irpf
+
     combineLatest([
       this.formInvoice
         .get('amount')!
         .valueChanges.pipe(
-          startWith(this.formInvoice.get('amount')!.value || 0)
+          startWith(this.formInvoice.get('amount')!.value || null)
         ),
       this.formInvoice
         .get('iva')!
-        .valueChanges.pipe(startWith(this.formInvoice.get('iva')!.value || 0)),
+        .valueChanges.pipe(
+          startWith(this.formInvoice.get('iva')!.value || null)
+        ),
       this.formInvoice
         .get('irpf')!
-        .valueChanges.pipe(startWith(this.formInvoice.get('irpf')!.value || 0)),
+        .valueChanges.pipe(
+          startWith(this.formInvoice.get('irpf')!.value || null)
+        ),
     ])
       .pipe(
         takeUntilDestroyed(this.destroyRef),
@@ -282,16 +337,26 @@ export class FormInvoiceComponent {
 
           // Calcular el total_amount
           const total = parsedAmount + parsedIva - parsedIrpf;
+          const totalIrpf = parsedAmount + parsedIva;
 
           // Asignar el valor al campo total_amount
           this.formInvoice
             .get('total_amount')
             ?.setValue(total, { emitEvent: false });
+          this.formInvoice
+            .get('total_amount_irpf')
+            ?.setValue(totalIrpf, { emitEvent: false });
         })
       )
       .subscribe();
   }
-
+  get isInvoiceTypeMovementSelected(): boolean {
+    return (
+      this.invoiceTypeMovement === 'INVOICE' ||
+      this.invoiceTypeMovement === 'TICKET' ||
+      this.invoiceTypeMovement === 'INCOME'
+    );
+  }
   private loadYearlyData(year: number): Observable<void> {
     if (this.loadedYearData === year) {
       return new Observable<void>((obs) => obs.complete());
@@ -319,6 +384,31 @@ export class FormInvoiceComponent {
         this.projects = projects;
       })
     );
+  }
+  setInvoiceTypeMovement(
+    type: 'INVOICE' | 'TICKET' | 'INCOME' | 'UNSPECIFIED'
+  ): void {
+    this.invoiceTypeMovement = type;
+    if (type === 'INVOICE') {
+      this.formInvoice.patchValue({ type_invoice: 'INVOICE' });
+    }
+    if (type === 'TICKET') {
+      this.formInvoice.patchValue({ type_invoice: 'TICKETS' });
+    }
+    if (type === 'INCOME') {
+      this.formInvoice.patchValue({ type_invoice: 'INCOME' });
+    }
+    if (type === 'UNSPECIFIED') {
+      this.formInvoice.patchValue({ type_invoice: '' });
+    }
+  }
+  setInvoiceTypeSubsidy(type: 'NO_SUBSIDY' | 'SUBSIDY'): void {
+    this.invoiceTypeSubsidy = type;
+    this.formInvoice.patchValue({ subsidy_id: null });
+  }
+  setInvoiceTypeProject(type: 'NO_PROJECT' | 'PROJECT'): void {
+    this.invoiceTypeProject = type;
+    this.formInvoice.patchValue({ project_id: null });
   }
   searchCreditor(): void {
     const value: string = this.searchInput.value?.trim() || '';
@@ -418,6 +508,11 @@ export class FormInvoiceComponent {
     this.selectedPdfValue = event;
   }
 
+  onProofPdfSelected(event: File | null): void {
+    this.formInvoice.patchValue({ proof_pdf: event });
+    this.selectedProofPdfValue = event;
+  }
+
   getInvoicePdfPreview(): string | null {
     const val = this.formInvoice.get('invoice_pdf')?.value;
     return typeof val === 'string' ? val : null;
@@ -437,10 +532,10 @@ export class FormInvoiceComponent {
 
     // Default values que pueden ser asignados si los campos son nulos
     const defaultValues: { [key: string]: any } = {
-      irpf: 0,
-      iva: 0,
-      total_amount_irpf: 0,
-      invoice_pdf: '', // Asegúrate de asignar un valor predeterminado a 'invoice_pdf'
+      irpf: null,
+      iva: null,
+      invoice_pdf: '',
+      proof_pdf: '', // Asegúrate de asignar un valor predeterminado a 'invoice_pdf'
     };
 
     // Asegurarse de que los valores nulos sean reemplazados por un valor predeterminado
@@ -464,43 +559,48 @@ export class FormInvoiceComponent {
     console.log('Valores después de correcciones:', rawValues);
 
     // Manejo del PDF
-    const pdf = rawValues.invoice_pdf;
-    let selectedPdf = null;
+    const pdfInvoice = rawValues.invoice_pdf;
+    const pdfProof = rawValues.proof_pdf;
 
-    // Verificar si el valor es un archivo
-    if (pdf instanceof File) {
-      selectedPdf = pdf;
-    } else if (typeof pdf === 'string' && pdf.trim() !== '') {
-      // Asignar el valor de URL existente
-      rawValues.existingUrl = pdf;
+    let fileInvoice: File | null = null;
+    let fileProof: File | null = null;
+
+    // Factura
+    if (pdfInvoice instanceof File) {
+      fileInvoice = pdfInvoice;
+    } else if (typeof pdfInvoice === 'string' && pdfInvoice.trim() !== '') {
+      rawValues.invoice_pdf_existing = pdfInvoice; // URL existente
     } else {
-      // Si el valor es nulo, vacío o indefinido, asignar un valor vacío
-      rawValues.existingUrl = '';
+      rawValues.invoice_pdf_existing = '';
     }
 
-    // Eliminar invoice_pdf de rawValues antes de pasarlo
+    // Justificante
+    if (pdfProof instanceof File) {
+      fileProof = pdfProof;
+    } else if (typeof pdfProof === 'string' && pdfProof.trim() !== '') {
+      rawValues.proof_pdf_existing = pdfProof; // URL existente
+    } else {
+      rawValues.proof_pdf_existing = '';
+    }
+
+    // Eliminamos los campos file del objeto plano antes de empaquetar
     delete rawValues.invoice_pdf;
+    delete rawValues.proof_pdf;
 
     // Crear FormData usando el método createFormData de generalService
     const formData = this.generalService.createFormData(
       rawValues,
-      { url: selectedPdf }, // Se añade el archivo PDF (o la URL si es una cadena)
+      {
+        invoice_pdf: fileInvoice, // puede ser null
+        proof_pdf: fileProof, // puede ser null
+      }, // Se añade el archivo PDF (o la URL si es una cadena)
       this.itemId // itemId: El id de la factura, ya sea para edición o nueva
     );
 
     // Emitir el formulario con formData
-    this.sendFormInvoice.emit({
+    this.submitForm.emit({
       itemId: this.itemId,
       formData: formData,
     });
-
-    // Limpiar el acreedor después de enviar
-    // this.resetCreditor();
   }
-
-  // resetCreditor(): void {
-  //   this.searchInput.reset(''); // limpia el input de texto
-  //   this.formInvoice.get('creditor_id')?.reset(null); // limpia el id de acreedor
-  //   this.creditors = []; // limpia sugerencias
-  // }
 }

@@ -21,7 +21,11 @@ export class SubsidiesService {
     AYUNT_ACTIVIDADES: 'Ayunt. Actividades',
     MINISTERIO: 'Ministerio',
   };
-
+  public movementMap = {
+    TICKET: 'Ticket',
+    INVOICE: 'Factura',
+    INCOME: 'Ingreso',
+  };
   getSubsidies(): Observable<any> {
     return this.http
       .get(this.apiUrl)
@@ -56,22 +60,20 @@ export class SubsidiesService {
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
-  add(subsidy: any): Observable<any> {
+  add(subsidy: FormData): Observable<any> {
     return this.http
       .post(this.apiUrl, subsidy)
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
-  edit(id: number, subsidy: any): Observable<any> {
+  edit(subsidy: FormData): Observable<any> {
     return this.http
       .post(this.apiUrl, subsidy)
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
   delete(id: number): Observable<any> {
-    return this.http
-      .delete(this.apiUrl, { params: { id: id } })
-      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
+    return this.generalService.deleteOverride<any>(this.apiUrl, { id });
   }
 
   sortSubsidiesById(subsidies: SubsidyModelFullData[]): SubsidyModelFullData[] {

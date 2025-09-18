@@ -20,6 +20,7 @@
           <div class="flex flex-col flex-1">
             <input
               formControlName="name"
+              placeholder="Nombre de la institución"
               type="text"
               [ngClass]="{
                 'is-invalid': submitted && formAgent.get('name')?.invalid
@@ -31,12 +32,63 @@
             }
           </div>
         </div>
+        <div class="box-input">
+          <label for="contact">Contacto</label>
+          <input
+            formControlName="contact"
+            type="text"
+            placeholder="Nombre de la persona de contacto"
+          />
+        </div>
+        <div class="flex justify-between gap-x-4">
+          <!-- Teléfono -->
+          <div class="box-input">
+            <label for="address">Teléfono</label>
+            <div class="flex flex-col flex-1">
+              <input
+                formControlName="phone"
+                type="text"
+                placeholder="Número de teléfono"
+              />
+              @if (formAgent.get('phone')?.hasError('pattern') &&
+              formAgent.get('phone')?.touched){
+              <div class="is-invalid-text">Formato de teléfono no válido.</div>
+              }
+            </div>
+          </div>
+          <!-- Email -->
+          <div class="box-input flex-1">
+            <label for="email">Email</label>
+            <div class="flex flex-col flex-1">
+              <input
+                formControlName="email"
+                type="text"
+                placeholder="Dirección de email"
+              />
+              @if (formAgent.get('email')?.hasError('email') &&
+              formAgent.get('email')?.touched){
+              <div class="is-invalid-text">Formato de teléfono no válido.</div>
+              }
+            </div>
+          </div>
+        </div>
+        <hr />
         <div class="flex justify-between gap-x-4">
           <!-- Provincia -->
           <div class="box-input flex flex-1">
             <label for="province">Provincia</label>
-            <select formControlName="province" (change)="onProvinceChange()">
-              <option value="">Seleccione una provincia</option>
+            <select
+              formControlName="province"
+              (change)="onProvinceChange()"
+              [ngClass]="{
+                'text-placeholder': !formAgent.get('province')?.value
+              }"
+            >
+              <!-- Placeholder en gris -->
+              <option value="" disabled hidden>Seleccione una provincia</option>
+
+              <!-- Opción libre -->
+              <option value="">Sin provincia</option>
               @for (prov of provincias; track prov) {
               <option [value]="prov.label">
                 {{ prov.label }}
@@ -47,8 +99,17 @@
           <!-- Municipio -->
           <div class="box-input flex flex-1">
             <label for="town">Municipio</label>
-            <select formControlName="town">
-              <option value="">Seleccione un municipio</option>
+            <select
+              formControlName="town"
+              [ngClass]="{
+                'text-placeholder': !formAgent.get('town')?.value
+              }"
+            >
+              <!-- Placeholder en gris -->
+              <option value="" disabled hidden>Seleccione un municipio</option>
+
+              <!-- Opción libre -->
+              <option value="">Sin municipio</option>
               @for (mun of municipios; track mun) {
               <option [value]="mun.label">
                 {{ mun.label }}
@@ -57,37 +118,44 @@
             </select>
           </div>
           <div class="box-input w-auto">
-            <label for="post_code">C.Postal</label>
-            <input formControlName="post_code" type="text" />
+            <label for="post_code">C. Postal</label>
+            <div class="flex flex-col flex-1">
+              <input
+                formControlName="post_code"
+                type="text"
+                placeholder="Código postal"
+              />@if (formAgent.get('post_code')?.hasError('pattern') &&
+              formAgent.get('post_code')?.touched){
+              <div class="is-invalid-text">Formato de teléfono no válido.</div>
+              }
+            </div>
           </div>
         </div>
         <!-- Dirección -->
         <div class="box-input">
           <label for="address">Dirección</label>
-          <input formControlName="address" type="text" />
+          <input
+            formControlName="address"
+            type="text"
+            placeholder="Dirección"
+          />
         </div>
       </div>
+
       <hr />
-      <div class="box-input gap-x-4 px-4">
-        <label for="contact">Contacto</label>
-        <input formControlName="contact" type="text" />
-      </div>
-      <div class="flex justify-between gap-x-4 px-4">
-        <!-- Teléfono -->
-        <div class="box-input gap-x-4">
-          <label for="address">Teléfono</label>
-          <input formControlName="phone" type="text" />
-        </div>
-        <!-- Email -->
-        <div class="box-input gap-x-4 flex-1">
-          <label for="address">Email</label>
-          <input formControlName="email" type="text" />
-        </div>
-      </div>
-      <hr />
-      <div class="box-input gap-x-4 px-4">
+      <div class="box-input">
         <label for="category">Categoría </label>
-        <select formControlName="category">
+        <select
+          formControlName="category"
+          [ngClass]="{
+            'text-placeholder': !formAgent.get('town')?.value
+          }"
+        >
+          <!-- Placeholder en gris -->
+          <option value="" disabled hidden>Seleccione una categoría</option>
+
+          <!-- Opción libre -->
+          <option value="">Sin categoría</option>
           @for (type of CategoryFilterAgents; track type) {
           <option [value]="type.code">
             {{ type.name }}
@@ -95,15 +163,15 @@
           }
         </select>
       </div>
-      <div class="flex gap-x-4 px-4">
+      <div class="flex gap-x-4">
         <!-- Descripción -->
-        <div class="box-input gap-x-4 flex-1">
+        <div class="box-input flex-1">
           <label for="observations">Descripción</label>
           <quill-editor
             formControlName="observations"
             [modules]="quillModules"
             placeholder="Escribe aquí la descripción..."
-            class="flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
+            class="ql-container-large flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
           />
         </div>
         <!-- Portada (Imagen) -->
@@ -117,6 +185,7 @@
             (imgSelected)="onImageSelected($event)"
             [imageWidthValue]="'full'"
             class="w-full"
+            textImg="Añadir logo"
           ></app-image-control>
         </div>
       </div>

@@ -1,17 +1,15 @@
-<div class="flex flex-col mx-3 md:mx-8 mt-2 md:mt-4">
+<div class="flex flex-col mx-3 md:mx-8 mt-4">
   <app-filters
     [filters]="filters"
     (filterClicked)="filterSelected($event)"
-    [loadFirstFilter]="'NOVEDADES'"
+    [loadFirstFilter]="''"
   />
   <app-input-search (onDebounce)="applyFilterWord($event)" class="my-8" />
-  <!-- Spinner Loading -->
-  @if (isLoading) {
+  @if (moviesFacade.isLoading$ | async) {
   <app-spinner-loading />
   } @else { @if (areThereResults) {
   <app-section-generic
     [typeSection]="typeList.Movies"
-    [typeModal]="typeList.Movies"
     [typeModal]="typeList.Movies"
     [data]="filteredMovies"
     [total]="number"

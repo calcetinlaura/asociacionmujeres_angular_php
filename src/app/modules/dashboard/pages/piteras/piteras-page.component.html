@@ -41,11 +41,11 @@
   </div>
 </app-sticky-zone>
 <div class="flex flex-col px-8">
-  <!-- Spinner Loading -->
-  @if (isLoading) {
+  @if (piterasFacade.isLoading$ | async) {
   <app-spinner-loading />
   } @else {@if(filteredPiteras.length > 0){
-  <div class="pb-4 flex">
+  <div class="pb-4" #printArea>
+    <h2 class="only-on-pdf print-title">Listado piteras</h2>
     <app-table
       [data]="filteredPiteras"
       [typeSection]="typeSection"
@@ -53,7 +53,10 @@
       [headerColumns]="getVisibleColumns()"
       [columnVisibility]="columnVisibility"
       (openModal)="onOpenModal($event)"
+      [displayedColumns]="displayedColumns"
       [topHeader]="210"
+      [showNumberColumn]="false"
+      [printIncludeNumber]="false"
     />
   </div>
   }@else{
@@ -61,7 +64,6 @@
     No hay piteras registradas.
   </div>
   } }
-  <!-- Tabla -->
 </div>
 
 <!-- Modal -->
@@ -71,7 +73,7 @@
   [typeModal]="typeModal"
   [action]="currentModalAction"
   (closeModal)="onCloseModal()"
-  (confirmDelete)="confirmDeletePitera(item)"
+  (confirmDelete)="onDelete($event)"
   (sendFormPiteraData)="sendFormPitera($event)"
 ></app-modal>
 }

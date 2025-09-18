@@ -14,11 +14,18 @@ export interface InvoiceModel {
   total_amount_irpf?: number;
   subsidy_id?: number;
   project_id?: number;
-  invoice_pdf?: File;
+  invoice_pdf?: string;
+  proof_pdf?: string;
 }
 export interface InvoiceModelFullData extends InvoiceModel {
   creditor_company?: string;
   creditor_contact?: string;
+  creditor_cif?: string;
   subsidy_name: string;
   project_title: string;
+}
+export interface InvoicePdf {
+  invoice_pdf?: string;
+  proof_pdf?: string;
+  year?: number | string;
 }

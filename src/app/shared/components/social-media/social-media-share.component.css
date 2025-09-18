@@ -1,20 +1,15 @@
-.share-icons {
-  display: flex;
-  gap: 0.5rem;
-}
-
 .share-icons a,
 .share-icons button {
-  background-color: #f1f1f1;
+  /* background-color: #f1f1f1; */
   border-radius: 50%;
-  width: 25px;
-  height: 25px;
+  width: 30px;
+  height: 30px;
   display: grid;
   place-items: center;
   text-decoration: none;
   border: none;
   cursor: pointer;
-  font-size: 15px;
+  font-size: 17px;
   color: black;
 }
 

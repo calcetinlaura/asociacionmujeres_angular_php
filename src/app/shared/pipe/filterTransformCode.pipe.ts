@@ -2,6 +2,8 @@ import { Pipe, PipeTransform } from '@angular/core'; // Asegúrate que la ruta e
 import { CategoryFilterAgents } from 'src/app/core/interfaces/agent.interface';
 import {
   ManagementFilterPlaces,
+  RoomFilterPlaces,
+  RoomLocationFilterPlaces,
   TypeFilterPlaces,
 } from 'src/app/core/interfaces/place.interface';
 import { Filter } from 'src/app/core/models/general.model';
@@ -15,6 +17,8 @@ export class FilterTransformCodePipe implements PipeTransform {
     typePlaces: TypeFilterPlaces,
     managementPlaces: ManagementFilterPlaces,
     categoryAgents: CategoryFilterAgents,
+    roomPlaces: RoomFilterPlaces,
+    roomLocationPlaces: RoomLocationFilterPlaces,
   };
 
   transform(

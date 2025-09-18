@@ -1,10 +1,23 @@
 .text-background {
+  display: inline-block;
+  padding: 4px 6px 3px;
   border-radius: 4px;
   font-weight: 500;
-  padding: 4px 6px 3px 6px;
-  width: max-content;
   text-transform: uppercase;
-  font-size: 12px;
+  text-align: center;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+
+  /* clamp 2 líneas + elipsis (navegadores webkit) */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+
+  /* fallback universal (y para html2pdf) */
+  line-height: 12px;
+  max-height: calc(12px * 2);
 }
 
 /* Media Queries para dispositivos más pequeños */

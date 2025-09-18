@@ -38,16 +38,14 @@ export class PartnersService {
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
-  edit(id: number, partner: FormData): Observable<any> {
+  edit(partner: FormData): Observable<any> {
     return this.http
       .post(this.apiUrl, partner)
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
   delete(id: number): Observable<any> {
-    return this.http
-      .delete(`${this.apiUrl}?id=${id}`) // 🔹 Ahora el id se pasa como parámetro en la URL
-      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
+    return this.generalService.deleteOverride<any>(this.apiUrl, { id });
   }
 
   sortPartnersByName(partners: PartnerModel[]): PartnerModel[] {

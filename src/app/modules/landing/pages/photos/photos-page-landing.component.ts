@@ -1,14 +1,14 @@
 import { Component, OnInit } from '@angular/core';
 
 import { MatGridListModule } from '@angular/material/grid-list';
-import { FiltersComponent } from '../../components/filters/filters.component';
 import { filterPhotos } from 'src/app/core/models/general.model';
+import { FiltersComponent } from '../../components/filters/filters.component';
 
 @Component({
-    selector: 'app-photos-page-landing',
-    imports: [MatGridListModule, FiltersComponent],
-    templateUrl: './photos-page-landing.component.html',
-    providers: []
+  selector: 'app-photos-page-landing',
+  imports: [MatGridListModule, FiltersComponent],
+  templateUrl: './photos-page-landing.component.html',
+  providers: [],
 })
 export class PhotosPageLandingComponent implements OnInit {
   photos: { url: string; text: string }[] = [];

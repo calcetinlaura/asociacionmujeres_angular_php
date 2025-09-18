@@ -62,16 +62,14 @@ export class PlacesService {
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
-  edit(id: number, place: FormData): Observable<any> {
+  edit(place: FormData): Observable<any> {
     return this.http
       .post(this.apiUrl, place)
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
   delete(id: number): Observable<any> {
-    return this.http
-      .delete(this.apiUrl, { params: { id: id } })
-      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
+    return this.generalService.deleteOverride<any>(this.apiUrl, { id });
   }
 
   sortPlacesByTitle(places: PlaceModel[]): PlaceModel[] {

@@ -20,6 +20,7 @@
           <div class="flex flex-col flex-1">
             <input
               formControlName="name"
+              placeholder="Nombre del espacio"
               type="text"
               [ngClass]="{
                 'is-invalid': submitted && formPlace.get('name')?.invalid
@@ -40,17 +41,24 @@
                 formControlName="province"
                 (change)="onProvinceChange()"
                 [ngClass]="{
-                  'is-invalid': submitted && formPlace.get('province')?.invalid
+                  'is-invalid': submitted && formPlace.get('province')?.invalid,
+                  'text-placeholder': !formPlace.get('province')?.value
                 }"
               >
-                <option value="">Seleccione una provincia</option>
+                <!-- Placeholder en gris -->
+                <option value="" disabled hidden>
+                  Seleccione una provincia
+                </option>
+
+                <!-- Opción libre -->
+                <option value="">Sin provincia</option>
                 @for (prov of provincias; track prov) {
                 <option [value]="prov.label">
                   {{ prov.label }}
                 </option>
                 }
               </select>
-              @if (submitted && formPlace.get('town')?.invalid) {
+              @if (submitted && formPlace.get('province')?.invalid) {
               <div class="is-invalid-text">Campo requerido</div>
               }
             </div>
@@ -62,10 +70,17 @@
               <select
                 formControlName="town"
                 [ngClass]="{
-                  'is-invalid': submitted && formPlace.get('town')?.invalid
+                  'is-invalid': submitted && formPlace.get('town')?.invalid,
+                  'text-placeholder': !formPlace.get('town')?.value
                 }"
               >
-                <option value="">Seleccione un municipio</option>
+                <!-- Placeholder en gris -->
+                <option value="" disabled hidden>
+                  Seleccione un municipio
+                </option>
+
+                <!-- Opción libre -->
+                <option value="">Sin municipio</option>
                 @for (mun of municipios; track mun) {
                 <option [value]="mun.label">
                   {{ mun.label }}
@@ -82,48 +97,52 @@
           <!-- Dirección -->
           <div class="box-input flex-1">
             <label for="address">Dirección</label>
-            <input formControlName="address" type="text" />
+            <input
+              formControlName="address"
+              placeholder="Dirección del espacio"
+              type="text"
+            />
           </div>
           <!-- Código postal -->
           <div class="box-input w-auto">
             <label for="post_code">C. Postal</label>
-            <input formControlName="post_code" type="text" />
+            <div class="flex flex-col flex-1">
+              <input
+                formControlName="post_code"
+                type="text"
+                placeholder="Código postal"
+              />@if (formPlace.get('post_code')?.hasError('pattern') &&
+              formPlace.get('post_code')?.touched){
+              <div class="is-invalid-text">Formato de teléfono no válido.</div>
+              }
+            </div>
           </div>
         </div>
         <div class="flex justify-between gap-x-4">
           <!-- Lat -->
           <div class="box-input flex flex-1">
             <label for="lat">Latitud</label>
-            <input formControlName="lat" type="number" />
+            <input
+              formControlName="lat"
+              type="number"
+              [ngClass]="{
+                'text-placeholder': !formPlace.get('lat')?.value
+              }"
+            />
           </div>
           <div class="box-input flex flex-1">
             <label for="lon">Longitud</label>
-            <input formControlName="lon" type="number" />
+            <input
+              formControlName="lon"
+              type="number"
+              [ngClass]="{
+                'text-placeholder': !formPlace.get('lon')?.value
+              }"
+            />
           </div>
         </div>
       </div>
       <hr />
-      <div class="box-input gap-x-4">
-        <label for="gender">Gestión</label>
-        <div class="flex flex-col flex-1">
-          <select
-            formControlName="management"
-            [ngClass]="{
-              'is-invalid': submitted && formPlace.get('management')?.invalid
-            }"
-          >
-            <option value="">Seleccione el tipo de gestión del espacio</option>
-            @for (management of managementPlaces; track management) {
-            <option [value]="management.code">
-              {{ management.name }}
-            </option>
-            }
-          </select>
-          @if (submitted && formPlace.get('management')?.invalid) {
-          <div class="is-invalid-text">Selecciona un género</div>
-          }
-        </div>
-      </div>
       <div class="flex gap-4">
         <!-- Descripción -->
         <div class="box-input gap-x-4 pr-4 flex-1">
@@ -132,11 +151,11 @@
             formControlName="description"
             [modules]="quillModules"
             placeholder="Escribe aquí la descripción..."
-            class="flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
+            class="ql-container-small flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
           />
         </div>
         <!-- Imagen -->
-        <div class="w-72">
+        <!-- <div class="w-72">
           <app-image-control
             [previewImg]="
               formPlace.get('img')?.value ? formPlace.get('img')?.value! : null
@@ -147,71 +166,194 @@
             [imageWidthValue]="'full'"
             class="w-full"
           ></app-image-control>
-        </div>
+        </div> -->
       </div>
       <div class="box-input gap-x-4">
         <label for="observations">Observaciones</label>
-        <input formControlName="observations" type="text" />
-      </div>
-      <div class="flex justify-start gap-x-4">
         <input
-          type="checkbox"
-          formControlName="hassalas"
-          (change)="onHassalasChange($event)"
+          formControlName="observations"
+          placeholder="Cualquier observación a tener en cuenta."
+          type="text"
         />
-        <label for="hassalas">¿El espacio dispone de más salas?</label>
       </div>
-      @if (formPlace.get('hassalas')?.value === true) {
-      <div>
-        <div formArrayName="salas" class="flex flex-col gap-y-4">
-          @for (sala of salas.controls; track sala; let i = $index) {
-          <div [formGroupName]="i" class="flex gap-x-4 px-8">
-            <input formControlName="id" type="hidden" />
-            <div class="sala_box flex justify-center items-center pr-4">
-              Sala {{ i + 1 }}
+      <!-- GESTIÓN -->
+      <div
+        class="border-2 pt-2 px-4 pb-6 mb-6"
+        [ngClass]="{
+          'border-[red]': submitted && !isPlaceTypeManagemenSelected
+        }"
+      >
+        <h2 class="font-bold text-lilaText mt-4 uppercase">
+          Gestión del espacio
+        </h2>
+        <div class="flex justify-center gap-x-4 py-2">
+          <app-button-select
+            [buttonText]="'Espacio público'"
+            subText="Para eventos que ocurren una vez"
+            [active]="placeTypeManagement === 'PUBLIC'"
+            (addClicked)="setPlaceTypeManagement('PUBLIC')"
+            iconClass="uil-calender"
+          >
+          </app-button-select>
+
+          <app-button-select
+            [buttonText]="'Espacio privado'"
+            subText="Se repite en varias ocasiones"
+            [active]="placeTypeManagement === 'PRIVATE'"
+            (addClicked)="setPlaceTypeManagement('PRIVATE')"
+            iconClass="uil-calendar-alt"
+          >
+          </app-button-select>
+        </div>
+        @if(submitted && !isPlaceTypeManagemenSelected){
+        <div class="flex justify-center gap-x-4 py-2">
+          <p class="text-[red] text-[11px]">Debes seleccionar una opción</p>
+        </div>
+        }
+      </div>
+
+      <!-- SALAS -->
+      <div
+        class="border-2 pt-2 px-4 pb-6 mb-6"
+        [ngClass]="{
+          'border-[red]': submitted && !isPlaceTypeRoomSelected
+        }"
+      >
+        <h2 class="font-bold text-lilaText mt-4 uppercase">
+          Distribución del espacio
+        </h2>
+        <div class="flex justify-center gap-x-4 py-2">
+          <app-button-select
+            [buttonText]="'Espacio único'"
+            subText="Solo hay un espacio"
+            [active]="placeTypeRoom === 'SINGLE'"
+            (addClicked)="setPlaceTypeRoom('SINGLE')"
+            iconClass="uil-calender"
+          >
+          </app-button-select>
+
+          <app-button-select
+            [buttonText]="'Espacio multisalas'"
+            subText="Dispone de varias salas"
+            [active]="placeTypeRoom === 'MULTIPLE'"
+            (addClicked)="setPlaceTypeRoom('MULTIPLE')"
+            iconClass="uil-calendar-alt"
+          >
+          </app-button-select>
+        </div>
+        @if(submitted && !isPlaceTypeRoomSelected){
+        <div class="flex justify-center gap-x-4 py-2">
+          <p class="text-[red] text-[11px]">Debes seleccionar una opción</p>
+        </div>
+        } @if (placeTypeRoom === 'SINGLE') {
+        <div class="flex gap-x-4">
+          <div class="box-input gap-x-4 flex flex-1">
+            <label for="gender">Ubicación</label>
+            <div class="flex flex-col flex-1">
+              <select
+                formControlName="type_ubication"
+                [ngClass]="{
+                  'is-invalid':
+                    submitted && formPlace.get('type_ubication')?.invalid,
+                  'text-placeholder': !formPlace.get('type_ubication')?.value
+                }"
+              >
+                <option value="" disabled hidden>
+                  Seleccione la ubicación del espacio
+                </option>
+                @for (type of typePlaces; track type) {
+                <option [value]="type.code">
+                  {{ type.name }}
+                </option>
+                }
+              </select>
+              @if (submitted && formPlace.get('type_ubication')?.invalid) {
+              <div class="is-invalid-text">Selecciona un género</div>
+              }
             </div>
-            <div class="flex flex-col flex-1 gap-y-4 bg-lilaMuyClaro p-4">
-              <div class="box-input gap-x-4">
-                <label for="name">Nombre</label>
-                <div class="flex flex-col flex-1">
-                  <input
-                    formControlName="name"
-                    placeholder="Salón de actos"
-                    [ngClass]="{
-                      'is-invalid':
-                        submitted &&
-                        formPlace.get('salas')?.get(i.toString())?.get('name')
-                          ?.invalid
-                    }"
-                  />
-                  @if ( submitted &&
-                  formPlace.get('salas')?.get(i.toString())?.get('name')
-                  ?.invalid ) {
-                  <div class="is-invalid-text">
-                    Campo requerido si se añada una sala
+          </div>
+          <div class="box-input gap-x-4">
+            <label for="capacity">Aforo</label>
+            <input
+              formControlName="capacity"
+              type="number"
+              [ngClass]="{
+                'text-placeholder': !formPlace.get('capacity')?.value
+              }"
+            />
+          </div>
+        </div>
+        } @if (placeTypeRoom === 'MULTIPLE') {
+        <div>
+          <div formArrayName="salas" class="flex flex-col gap-y-4">
+            @for (sala of salas.controls; track sala; let i = $index) {
+            <div [formGroupName]="i" class="flex gap-x-4 px-8">
+              <input formControlName="id" type="hidden" />
+              <div class="sala_box flex justify-center items-center pr-4">
+                Sala {{ i + 1 }}
+              </div>
+              <div class="flex flex-col flex-1 gap-y-4 bg-lilaMuyClaro p-4">
+                <div class="box-input gap-x-4">
+                  <label for="name">Nombre</label>
+                  <div class="flex flex-col flex-1">
+                    <input
+                      formControlName="name"
+                      placeholder="Salón de actos"
+                      [ngClass]="{
+                        'is-invalid':
+                          submitted &&
+                          formPlace.get('salas')?.get(i.toString())?.get('name')
+                            ?.invalid
+                      }"
+                    />
+                    @if ( submitted &&
+                    formPlace.get('salas')?.get(i.toString())?.get('name')
+                    ?.invalid ) {
+                    <div class="is-invalid-text">
+                      Campo requerido si se añada una sala
+                    </div>
+                    }
                   </div>
-                  }
                 </div>
-              </div>
-              <div class="box-input gap-x-4">
-                <label for="location">Localización</label>
-                <input
-                  formControlName="location"
-                  placeholder="1ª planta"
-                  required
-                />
-              </div>
-              <div class="flex gap-x-4">
+                <p class="text-gray-400">
+                  Localización = 0 - Planta Baja, 1 - Primera Planta, 2 -
+                  Segunda Planta...
+                </p>
+                <div class="flex gap-x-4">
+                  <div class="box-input gap-x-4 flex-1">
+                    <label for="room_location">Localización</label>
+                    <input
+                      formControlName="room_location"
+                      placeholder="1ª planta"
+                    />
+                  </div>
+                  <div class="box-input gap-x-4">
+                    <label for="capacity" class="!min-w-6">Aforo</label>
+                    <input
+                      formControlName="capacity"
+                      type="number"
+                      [ngClass]="{
+                        'text-placeholder': !formPlace.get('capacity')?.value
+                      }"
+                    />
+                  </div>
+                </div>
+
                 <div class="box-input gap-x-4 flex flex-1">
-                  <label for="name">Situación</label>
+                  <label for="name">Ubicación</label>
                   <div class="flex flex-col flex-1">
                     <select
-                      formControlName="type"
+                      formControlName="type_ubication"
                       [ngClass]="{
-                        'is-invalid': submitted && sala.get('type')?.invalid
+                        'is-invalid':
+                          submitted && sala.get('type_ubication')?.invalid,
+                        'text-placeholder':
+                          !formPlace.get('type_ubication')?.value
                       }"
                     >
-                      <option value="">Seleccione el tipo de espacio</option>
+                      <option value="">
+                        Seleccione la ubicación de espacio
+                      </option>
                       @for (type of typePlaces; track type) {
                       <option [value]="type.code">
                         {{ type.name }}
@@ -225,57 +367,30 @@
                     }
                   </div>
                 </div>
-                <div class="box-input gap-x-4">
-                  <label for="capacity">Aforo</label>
-                  <input formControlName="capacity" type="number" />
-                </div>
+              </div>
+              <div class="flex justify-center items-center">
+                <button
+                  type="button"
+                  (click)="removeSala(i)"
+                  class="btn-danger"
+                >
+                  Eliminar
+                </button>
               </div>
             </div>
-            <div class="flex justify-center items-center">
-              <button type="button" (click)="removeSala(i)" class="btn-danger">
-                Eliminar
-              </button>
-            </div>
-          </div>
-          }
-        </div>
-        <div class="mt-4 ml-28">
-          <app-button-icon
-            [buttonText]="'Añadir sala'"
-            [iconClass]="'uil-plus'"
-            (addClicked)="addSala()"
-          />
-        </div>
-      </div>
-      } @if (!formPlace.get('hassalas')?.value) {
-      <div class="flex gap-x-4">
-        <div class="box-input gap-x-4 flex flex-1">
-          <label for="gender">Espacio</label>
-          <div class="flex flex-col flex-1">
-            <select
-              formControlName="type"
-              [ngClass]="{
-                'is-invalid': submitted && formPlace.get('type')?.invalid
-              }"
-            >
-              <option value="">Seleccione el tipo de espacio</option>
-              @for (type of typePlaces; track type) {
-              <option [value]="type.code">
-                {{ type.name }}
-              </option>
-              }
-            </select>
-            @if (submitted && formPlace.get('type')?.invalid) {
-            <div class="is-invalid-text">Selecciona un género</div>
             }
           </div>
+          <div class="mt-4 ml-28">
+            <app-button-icon
+              [buttonText]="'Añadir sala'"
+              [iconClass]="'uil-plus'"
+              (addClicked)="addSala()"
+            />
+          </div>
         </div>
-        <div class="box-input gap-x-4">
-          <label for="capacity">Aforo</label>
-          <input formControlName="capacity" type="number" />
-        </div>
+        }
       </div>
-      } @if (formPlace.invalid && submitted) {
+      @if (formPlace.invalid && submitted) {
       <div class="flex justify-center">
         <div class="error">Hay algún campo incorrecto</div>
       </div>

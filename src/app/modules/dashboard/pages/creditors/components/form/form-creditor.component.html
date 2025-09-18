@@ -13,13 +13,14 @@
     class="login-auth-form"
   >
     <div class="flex flex-col gap-y-4">
-      <div class="flex flex-col bg-lilaMuyClaro p-4 gap-y-4">
+      <div class="flex mb-8 gap-x-4">
         <!-- Nombre -->
-        <div class="box-input">
+        <div class="box-input flex-1">
           <label for="company">Compañía</label>
           <div class="flex flex-col flex-1">
             <input
               formControlName="company"
+              placeholder="Nombre de la compañia"
               type="text"
               [ngClass]="{
                 'is-invalid': submitted && formCreditor.get('company')?.invalid
@@ -33,66 +34,132 @@
         </div>
         <!-- Cif -->
         <div class="box-input">
-          <label for="cif">Cif</label>
-          <input formControlName="cif" type="text" />
-        </div>
-        <div class="flex justify-between gap-x-4">
-          <!-- Provincia -->
-          <div class="box-input flex flex-1">
-            <label for="province">Provincia</label>
-            <select formControlName="province" (change)="onProvinceChange()">
-              <option value="">Seleccione una provincia</option>
-              @for (prov of provincias; track prov) {
-              <option [value]="prov.label">
-                {{ prov.label }}
-              </option>
-              }
-            </select>
-          </div>
-          <!-- Municipio -->
-          <div class="box-input flex flex-1">
-            <label for="town">Municipio</label>
-            <select formControlName="town">
-              <option value="">Seleccione un municipio</option>
-              @for (mun of municipios; track mun) {
-              <option [value]="mun.label">
-                {{ mun.label }}
-              </option>
-              }
-            </select>
-          </div>
-          <div class="box-input w-auto">
-            <label for="post_code">C.Postal</label>
-            <input formControlName="post_code" type="text" />
-          </div>
-        </div>
-        <!-- Dirección -->
-        <div class="box-input">
-          <label for="address">Dirección</label>
-          <input formControlName="address" type="text" />
+          <label for="cif" class="w-7!">Cif</label>
+          <input
+            formControlName="cif"
+            type="text"
+            placeholder="Código de identificación fiscal"
+            class="w-96"
+          />
         </div>
       </div>
-      <hr />
-      <div class="box-input gap-x-4 px-4">
+      <div class="box-input">
         <label for="contact">Contacto</label>
-        <input formControlName="contact" type="text" />
+        <input
+          formControlName="contact"
+          type="text"
+          placeholder="Nombre de la persona de contacto"
+        />
       </div>
-      <div class="flex justify-between gap-x-4 px-4">
+      <div class="flex justify-between gap-x-4">
         <!-- Teléfono -->
-        <div class="box-input gap-x-4">
+        <div class="box-input">
           <label for="address">Teléfono</label>
-          <input formControlName="phone" type="text" />
+          <div class="flex flex-col flex-1">
+            <input
+              formControlName="phone"
+              type="text"
+              placeholder="Número de teléfono"
+            />
+            @if (formCreditor.get('phone')?.hasError('pattern') &&
+            formCreditor.get('phone')?.touched){
+            <div class="is-invalid-text">Formato de teléfono no válido.</div>
+            }
+          </div>
         </div>
         <!-- Email -->
-        <div class="box-input gap-x-4 flex-1">
-          <label for="address">Email</label>
-          <input formControlName="email" type="text" />
+        <div class="box-input flex-1">
+          <label for="email">Email</label>
+          <div class="flex flex-col flex-1">
+            <input
+              formControlName="email"
+              type="text"
+              placeholder="Dirección de email"
+            />
+            @if (formCreditor.get('email')?.hasError('email') &&
+            formCreditor.get('email')?.touched){
+            <div class="is-invalid-text">Formato de teléfono no válido.</div>
+            }
+          </div>
         </div>
       </div>
       <hr />
-      <div class="box-input gap-x-4 px-4">
+      <div class="flex justify-between gap-x-4">
+        <!-- Provincia -->
+        <div class="box-input flex flex-1">
+          <label for="province">Provincia</label>
+          <select
+            formControlName="province"
+            (change)="onProvinceChange()"
+            [ngClass]="{
+              'text-placeholder': !formCreditor.get('province')?.value
+            }"
+          >
+            <!-- Placeholder en gris -->
+            <option value="" disabled hidden>Seleccione una provincia</option>
+
+            <!-- Opción libre -->
+            <option value="">Sin provincia</option>
+            @for (prov of provincias; track prov) {
+            <option [value]="prov.label">
+              {{ prov.label }}
+            </option>
+            }
+          </select>
+        </div>
+        <!-- Municipio -->
+        <div class="box-input flex flex-1">
+          <label for="town">Municipio</label>
+          <select
+            formControlName="town"
+            [ngClass]="{
+              'text-placeholder': !formCreditor.get('town')?.value
+            }"
+          >
+            <!-- Placeholder en gris -->
+            <option value="" disabled hidden>Seleccione un municipio</option>
+
+            <!-- Opción libre -->
+            <option value="">Sin municipio</option>
+            @for (mun of municipios; track mun) {
+            <option [value]="mun.label">
+              {{ mun.label }}
+            </option>
+            }
+          </select>
+        </div>
+        <div class="box-input w-auto">
+          <label for="post_code">C. Postal</label>
+          <div class="flex flex-col flex-1">
+            <input
+              formControlName="post_code"
+              type="text"
+              placeholder="Código postal"
+            />@if (formCreditor.get('post_code')?.hasError('pattern') &&
+            formCreditor.get('post_code')?.touched){
+            <div class="is-invalid-text">Formato de teléfono no válido.</div>
+            }
+          </div>
+        </div>
+      </div>
+      <!-- Dirección -->
+      <div class="box-input">
+        <label for="address">Dirección</label>
+        <input formControlName="address" type="text" placeholder="Dirección" />
+      </div>
+
+      <hr />
+      <div class="box-input gap-x-4">
         <label for="category">Categoría </label>
-        <select formControlName="category">
+        <select
+          formControlName="category"
+          [ngClass]="{
+            'text-placeholder': !formCreditor.get('category')?.value
+          }"
+        >
+          <option value="" disabled hidden>Selecciona una categoría</option>
+          <!-- Opción libre -->
+          <option value="">Sin categoría</option>
           @for (type of categoryFilterCreditors; track type) {
           <option [value]="type.code">
             {{ type.name }}
@@ -100,17 +167,21 @@
           }
         </select>
       </div>
-      <div class="box-input gap-x-4 px-4">
+      <div class="box-input gap-x-4">
         <label for="key_words">Palabras clave</label>
-        <input formControlName="key_words" type="text" />
+        <input
+          formControlName="key_words"
+          type="text"
+          placeholder="Palabras claves vinculas a las áreas de trabajo del acreedor/a"
+        />
       </div>
-      <div class="box-input gap-x-4 px-4">
+      <div class="box-input gap-x-4">
         <label for="observations">Observaciones</label>
         <quill-editor
           formControlName="observations"
           [modules]="quillModules"
           placeholder="Escribe aquí la descripción..."
-          class="flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
+          class="ql-container-small flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
         />
       </div>
       @if (formCreditor.invalid && submitted) {

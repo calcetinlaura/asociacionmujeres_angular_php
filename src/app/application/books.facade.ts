@@ -1,25 +1,20 @@
-import { DestroyRef, inject, Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import {
-  asyncScheduler,
-  BehaviorSubject,
-  catchError,
-  finalize,
-  Observable,
-  observeOn,
-  tap,
-} from 'rxjs';
+import { BehaviorSubject, catchError, Observable, tap } from 'rxjs';
 import { BookModel } from 'src/app/core/interfaces/book.interface';
 import { BooksService } from 'src/app/core/services/books.services';
-import { GeneralService } from '../shared/services/generalService.service';
+import { includesNormalized, toSearchKey } from '../shared/utils/text.utils';
+import { LoadableFacade } from './loadable.facade';
 
-@Injectable({
-  providedIn: 'root',
-})
-export class BooksFacade {
-  private readonly destroyRef = inject(DestroyRef);
+export enum BooksFilter {
+  NOVEDADES = 'NOVEDADES',
+}
+
+@Injectable({ providedIn: 'root' })
+export class BooksFacade extends LoadableFacade {
   private readonly booksService = inject(BooksService);
-  private readonly generalService = inject(GeneralService);
+
+  // State propio
   private readonly booksSubject = new BehaviorSubject<BookModel[] | null>(null);
   private readonly filteredBooksSubject = new BehaviorSubject<
     BookModel[] | null
@@ -27,109 +22,64 @@ export class BooksFacade {
   private readonly selectedBookSubject = new BehaviorSubject<BookModel | null>(
     null
   );
-  private readonly loadingSubject = new BehaviorSubject<boolean>(false);
-  isLoading$ = this.loadingSubject.asObservable();
-  books$ = this.booksSubject.asObservable();
-  selectedBook$ = this.selectedBookSubject.asObservable();
-  filteredBooks$ = this.filteredBooksSubject.asObservable();
-  currentFilter: string = 'ALL';
 
-  constructor() {}
+  // Streams públicos
+  readonly books$ = this.booksSubject.asObservable();
+  readonly filteredBooks$ = this.filteredBooksSubject.asObservable();
+  readonly selectedBook$ = this.selectedBookSubject.asObservable();
 
-  setCurrentFilter(filter: string): void {
-    this.currentFilter = filter;
-    this.loadBooksByFilter(filter);
+  private currentFilter: string | null = null;
+
+  loadAllBooks(): void {
+    this.setCurrentFilter(null);
+    this.executeWithLoading(this.booksService.getBooks(), (books) =>
+      this.updateBookState(books)
+    );
   }
 
   loadBooksByFilter(filter: string): void {
+    this.setCurrentFilter(filter);
     const loaders: Record<string, () => void> = {
-      ALL: () => this.loadAllBooks(),
-      NOVEDADES: () => this.loadBooksByLatest(),
+      [BooksFilter.NOVEDADES]: () => this.loadBooksByLatest(),
     };
-
-    (loaders[filter] || (() => this.loadBooksByGender(filter)))();
-  }
-
-  private reloadCurrentFilter(): void {
-    this.loadBooksByFilter(this.currentFilter);
-  }
-
-  private withLoading<T>(source$: Observable<T>, minMs = 150): Observable<T> {
-    this.loadingSubject.next(true);
-    const start = performance.now();
-    return source$.pipe(
-      // Mueve la emisión al siguiente ciclo: da tiempo a pintar el spinner
-      observeOn(asyncScheduler),
-      finalize(() => {
-        const elapsed = performance.now() - start;
-        const wait = Math.max(0, minMs - elapsed);
-        setTimeout(() => this.loadingSubject.next(false), wait);
-      })
-    );
-  }
-  loadAllBooks(): void {
-    this.withLoading(
-      this.booksService.getBooks().pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((books) => this.updateBookState(books)),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-    ).subscribe();
+    (loaders[filter] ?? (() => this.loadBooksByGender(filter)))();
   }
 
   loadBooksByLatest(): void {
-    this.withLoading(
-      this.booksService.getBooksByLatest().pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((books) => this.updateBookState(books)),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-    ).subscribe();
+    this.executeWithLoading(this.booksService.getBooksByLatest(), (books) =>
+      this.updateBookState(books)
+    );
   }
 
   loadBooksByGender(gender: string): void {
-    this.booksService
-      .getBooksByGender(gender)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((books: BookModel[]) => this.updateBookState(books)),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-      .subscribe();
+    this.executeWithLoading(
+      this.booksService.getBooksByGender(gender),
+      (books) => this.updateBookState(books)
+    );
   }
 
   loadBooksByYear(year: number): void {
-    this.booksService
-      .getBooksByYear(year)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((books: BookModel[]) => this.updateBookState(books)),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-      .subscribe();
+    this.executeWithLoading(this.booksService.getBooksByYear(year), (books) =>
+      this.updateBookState(books)
+    );
   }
 
   loadBookById(id: number): void {
-    this.booksService
-      .getBookById(id)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((book: BookModel) => this.selectedBookSubject.next(book)),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-      .subscribe();
+    this.executeWithLoading(this.booksService.getBookById(id), (book) =>
+      this.selectedBookSubject.next(book)
+    );
   }
 
   addBook(book: FormData): Observable<FormData> {
-    return this.booksService.add(book).pipe(
+    return this.wrapWithLoading(this.booksService.add(book)).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.reloadCurrentFilter()),
       catchError((err) => this.generalService.handleHttpError(err))
     );
   }
 
-  editBook(id: number, book: FormData): Observable<FormData> {
-    return this.booksService.edit(id, book).pipe(
+  editBook(book: FormData): Observable<FormData> {
+    return this.wrapWithLoading(this.booksService.edit(book)).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.reloadCurrentFilter()),
       catchError((err) => this.generalService.handleHttpError(err))
@@ -137,14 +87,9 @@ export class BooksFacade {
   }
 
   deleteBook(id: number): void {
-    this.booksService
-      .delete(id)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap(() => this.reloadCurrentFilter()),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-      .subscribe();
+    this.executeWithLoading(this.booksService.delete(id), () =>
+      this.reloadCurrentFilter()
+    );
   }
 
   clearSelectedBook(): void {
@@ -152,24 +97,38 @@ export class BooksFacade {
   }
 
   applyFilterWord(keyword: string): void {
-    const allBooks = this.booksSubject.getValue();
+    const all = this.booksSubject.getValue();
 
-    if (!keyword.trim() || !allBooks) {
-      this.filteredBooksSubject.next(allBooks);
+    if (!all) {
+      this.filteredBooksSubject.next(all);
       return;
     }
 
-    const search = keyword.trim().toLowerCase();
-    const filteredBooks = allBooks.filter(
-      (book) =>
-        book.title.toLowerCase().includes(search) ||
-        (book.author && book.author.toLowerCase().includes(search))
+    if (!toSearchKey(keyword)) {
+      this.filteredBooksSubject.next(all);
+      return;
+    }
+
+    const filtered = all.filter((b) =>
+      [b.title, b.author].some((field) => includesNormalized(field, keyword))
     );
 
-    this.filteredBooksSubject.next(filteredBooks);
+    this.filteredBooksSubject.next(filtered);
   }
 
-  updateBookState(books: BookModel[]): void {
+  setCurrentFilter(filter: string | null): void {
+    this.currentFilter = filter;
+  }
+
+  private reloadCurrentFilter(): void {
+    if (this.currentFilter === null) {
+      this.loadAllBooks();
+      return;
+    }
+    this.loadBooksByFilter(this.currentFilter);
+  }
+
+  private updateBookState(books: BookModel[]): void {
     this.booksSubject.next(books);
     this.filteredBooksSubject.next(books);
   }

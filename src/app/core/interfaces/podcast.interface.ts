@@ -4,4 +4,10 @@ export interface PodcastModel {
   date: string;
   description: string;
   img?: string;
+  artists: string;
+  technics: string;
+  duration: number;
+  podcast: string;
+  season: number;
+  episode: number;
 }

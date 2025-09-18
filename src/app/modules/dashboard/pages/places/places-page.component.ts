@@ -1,5 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  ElementRef,
+  inject,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -28,6 +35,7 @@ import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.co
 
 @Component({
   selector: 'app-places-page',
+  standalone: true,
   imports: [
     DashboardHeaderComponent,
     ModalComponent,
@@ -44,33 +52,19 @@ import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.co
     StickyZoneComponent,
   ],
   templateUrl: './places-page.component.html',
-  styleUrl: './places-page.component.css',
 })
 export class PlacesPageComponent implements OnInit {
-  private readonly placesFacade = inject(PlacesFacade);
+  readonly placesFacade = inject(PlacesFacade);
   private readonly modalService = inject(ModalService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly placesService = inject(PlacesService);
-  private readonly pdfPrintService = inject(PdfPrintService);
   private readonly generalService = inject(GeneralService);
+  private readonly pdfPrintService = inject(PdfPrintService);
 
-  places: PlaceModel[] = [];
-  filteredPlaces: PlaceModel[] = [];
-
-  isLoading = true;
-  isModalVisible = false;
-  number = 0;
-
-  item: PlaceModel | null = null;
-  currentModalAction: TypeActionModal = TypeActionModal.Create;
-  searchForm!: FormGroup;
-  typeSection = TypeList.Places;
-  typeModal = TypeList.Places;
   columnVisibility: Record<string, boolean> = {};
   displayedColumns: string[] = [];
 
   headerListPlaces: ColumnModel[] = [
-    { title: 'Imagen', key: 'img', sortable: false },
     { title: 'Nombre', key: 'name', sortable: true, width: ColumnWidth.FULL },
     {
       title: 'Dirección',
@@ -78,6 +72,15 @@ export class PlacesPageComponent implements OnInit {
       sortable: true,
       width: ColumnWidth.FULL,
       showIndicatorOnEmpty: true,
+    },
+    {
+      title: 'Tipo',
+      key: 'type_room',
+      sortable: true,
+      width: ColumnWidth.SM,
+      textAlign: 'center',
+      pipe: 'filterTransformCode',
+      pipeArg: 'roomPlaces',
     },
     {
       title: 'Salas',
@@ -110,8 +113,24 @@ export class PlacesPageComponent implements OnInit {
     },
   ];
 
+  places: PlaceModel[] = [];
+  filteredPlaces: PlaceModel[] = [];
+
+  isModalVisible = false;
+  number = 0;
+
+  item: PlaceModel | null = null;
+  currentModalAction: TypeActionModal = TypeActionModal.Create;
+  searchForm!: FormGroup;
+
+  typeModal = TypeList.Places;
+  typeSection = TypeList.Places;
+
+  @ViewChild('printArea', { static: false })
+  printArea!: ElementRef<HTMLElement>;
+
   ngOnInit(): void {
-    // Ocultar 'date_payment' y 'date_accounting' al cargar la página
+    // Columnas visibles iniciales
     this.columnVisibility = this.generalService.setColumnVisibility(
       this.headerListPlaces,
       ['lat', 'lon'] // Coloca las columnas que deseas ocultar aquí
@@ -160,6 +179,7 @@ export class PlacesPageComponent implements OnInit {
   }): void {
     this.openModal(event.typeModal, event.action, event.item ?? null);
   }
+
   openModal(
     typeModal: TypeList,
     action: TypeActionModal,
@@ -176,15 +196,16 @@ export class PlacesPageComponent implements OnInit {
     this.modalService.closeModal();
   }
 
-  confirmDeletePlace(place: any | null): void {
-    if (!place) return;
-    this.placesFacade.deletePlace(place.id);
-    this.onCloseModal();
+  onDelete({ type, id }: { type: TypeList; id: number }) {
+    const actions: Partial<Record<TypeList, (id: number) => void>> = {
+      [TypeList.Places]: (x) => this.placesFacade.deletePlace(x),
+    };
+    actions[type]?.(id);
   }
 
   sendFormPlace(event: { itemId: number; formData: FormData }): void {
     const save$ = event.itemId
-      ? this.placesFacade.editPlace(event.itemId, event.formData)
+      ? this.placesFacade.editPlace(event.formData)
       : this.placesFacade.addPlace(event.formData);
 
     save$
@@ -220,32 +241,32 @@ export class PlacesPageComponent implements OnInit {
 
     this.filteredPlaces = [...this.places];
     this.number = this.placesService.countPlaces(places);
-    this.isLoading = false;
   }
-  printTableAsPdf(): void {
-    this.pdfPrintService.printTableAsPdf('table-to-print', 'lugares.pdf');
+
+  async printTableAsPdf(): Promise<void> {
+    if (!this.printArea) return;
+
+    await this.pdfPrintService.printElementAsPdf(this.printArea, {
+      filename: 'espacios.pdf',
+      preset: 'compact', // 'compact' reduce paddings en celdas
+      orientation: 'portrait', // o 'landscape' si la tabla es muy ancha
+      format: 'a4',
+      margins: [5, 5, 5, 5], // mm
+    });
   }
+
   getVisibleColumns() {
     return this.headerListPlaces.filter(
       (col) => this.columnVisibility[col.key]
     );
   }
+
   // Método para actualizar las columnas visibles cuando se hace toggle
   toggleColumn(key: string): void {
-    // Cambia la visibilidad de la columna en columnVisibility
     this.columnVisibility[key] = !this.columnVisibility[key];
-    // Actualiza las columnas visibles en la tabla después de cambiar el estado
     this.displayedColumns = this.generalService.updateDisplayedColumns(
       this.headerListPlaces,
       this.columnVisibility
     );
-  }
-
-  private updateDisplayedColumns(): void {
-    const base = ['number']; // si usas un número de fila
-    const dynamic = this.headerListPlaces
-      .filter((col) => this.columnVisibility[col.key])
-      .map((col) => col.key);
-    this.displayedColumns = [...base, ...dynamic, 'actions'];
   }
 }

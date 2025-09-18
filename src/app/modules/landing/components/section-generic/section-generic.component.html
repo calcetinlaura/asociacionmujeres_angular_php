@@ -4,17 +4,23 @@
   </div>
   <div class="section--generic--list">
     <ul class="list">
-      @for (item of data; track item) {
+      @if (typeSection === TypeList.Events){ @for (item of data; track item) {
       <li [ngClass]="{ 'opacity-50 grayscale': item.isPast }">
-        <app-card-player
+        <app-card-events
           [item]="item"
           [type]="typeSection"
-          (click)="
-            typeSection !== TypeList.Piteras ? openModalView(item) : null
-          "
-        ></app-card-player>
+          (click)="openModalView(item)"
+        ></app-card-events>
       </li>
-      }
+      }} @else{ @for (item of data; track item) {
+      <li [ngClass]="{ 'opacity-50 grayscale': item.isPast }">
+        <app-card
+          [item]="item"
+          [type]="typeSection"
+          (click)="openModalView(item)"
+        ></app-card>
+      </li>
+      } }
     </ul>
   </div>
 </div>

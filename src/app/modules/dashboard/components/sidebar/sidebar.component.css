@@ -6,6 +6,7 @@
   left: 0;
   color: white;
   padding: 20px 0 10px 0;
+  overflow-y: auto;
 }
 
 .side-bar__list {

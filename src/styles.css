@@ -22,7 +22,6 @@
 
 html,
 body {
-  margin: 0;
   padding: 0;
   font-family: var(--font-family-1);
   color: var(--color-3);
@@ -38,7 +37,7 @@ body {
 .box-modal-show ul {
   list-style: square !important;
 }
-.box-modal-show .text-description > p {
+.text-editor > p {
   margin-bottom: 8px !important;
 }
 .tableTextEditor {
@@ -75,6 +74,14 @@ body {
 }
 .ql-container {
   min-height: 400px;
+  background-color: white;
+  border-bottom-right-radius: 16px;
+  border-bottom-left-radius: 16px;
+}
+.ql-toolbar.ql-snow {
+  border-top-right-radius: 16px;
+  border-top-left-radius: 16px;
+  background-color: white;
 }
 /* Para el textarea de evento descripción que tiene una altura especial */
 .ql-container-large .ql-container {
@@ -103,57 +110,138 @@ body {
   overflow-y: auto;
   width: 100%;
 }
+/* placeholder editor de texto */
+.ql-editor.ql-blank::before {
+  color: #a9b0ba !important;
+  font-size: 12px;
+  font-family: var(--font-family-1);
+  content: attr(data-placeholder);
+  font-style: normal !important;
+  left: 15px;
+  pointer-events: none;
+  position: absolute;
+  right: 15px;
+}
 
 :host ::ng-deep .mat-autocomplete-panel {
   max-height: 500px !important; /* Ajusta este valor según el número de opciones que desees */
   overflow-y: auto;
 }
+
 /* IMPRIMR PDFs */
 
-.printing .mat-elevation-z8 {
-  box-shadow: none !important;
-}
-
-.printing .table,
-.printing .mat-table {
+.pdf-print table {
   width: 100% !important;
-  table-layout: auto !important;
-  border: none !important;
+  table-layout: fixed !important;
+  border-collapse: collapse !important;
+}
+/* filas compactas en PDF */
+.pdf-print tr.mat-row,
+.pdf-print tr.mat-footer-row {
+  height: auto !important;
 }
 
-.printing .mat-header-row,
-.printing .mat-row,
-.printing .mat-footer-row {
-  break-inside: avoid !important;
+.pdf-print .mat-cell,
+.pdf-print .mat-header-cell,
+.pdf-print .mat-footer-cell {
+  padding: 6px 8px !important;
+}
+.pdf-print th {
+  /* padding: 8px !important; */
+  word-break: break-word !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+  width: auto !important;
+  font-size: 8px !important;
+}
+.pdf-print td {
+  /* padding: 8px !important; */
+  word-break: break-word !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+  width: auto !important;
+  font-size: 9px !important;
+  line-height: 10px !important;
+}
+/* asegura que los hijos no se “reescaleen” */
+.pdf-print td *,
+.pdf-print th * {
+  padding: 0 !important;
+  margin: 0 !important;
+  font-size: inherit !important;
 }
 
-.printing html,
-.printing body {
-  width: 100%;
-  margin: 0;
-  padding: 0;
+.pdf-print td small,
+.pdf-print td div .address {
+  font-size: 7px !important;
 }
 
-.printing .no-print,
-.printing .top-210,
-.printing .top-246,
-.printing th.mat-column-actions,
-.printing td.mat-column-actions {
+.pdf-print td .dateColumn {
+  font-size: 6px !important;
+  border-radius: 0px;
+  border: none;
+  padding: 0px;
+  margin: 0px;
+  text-transform: uppercase;
+  display: inline;
+  text-align: center;
+}
+
+.pdf-print .mat-column-number {
+  width: 30px !important;
+}
+.pdf-print .mat-column-year {
+  width: 70px !important;
+}
+.pdf-print .mat-column-img {
+  width: 70px !important;
+}
+.pdf-print .mat-column-img .img-cell {
+  height: 36px; /* ⟵ ajusta a tu gusto (36–48px) */
+  width: 36px; /* opcional si quieres cuadrado */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* la imagen no puede estirar la fila */
+.pdf-print .mat-column-img .img-cell img {
+  max-height: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  width: auto !important;
+  object-fit: contain !important;
+  display: block;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.pdf-print .mat-column-img img.cover {
+  height: auto !important;
+  width: auto !important;
+  max-height: 36px !important;
+  max-width: 36px !important;
+  object-fit: contain !important;
+}
+.pdf-print .mat-column-gender,
+.pdf-print .mat-column-category,
+.pdf-print .mat-column-capacity,
+.pdf-print .mat-column-status,
+.pdf-print .mat-column-inscription,
+.pdf-print .mat-column-lastCuotaPaid,
+.pdf-print .mat-column-phone {
+  width: 70px !important;
+}
+.pdf-print .mat-column-inscription,
+.pdf-print .mat-column-years .pdf-print .mat-column-email {
+  width: 80px !important;
+}
+/* Si usaste data-print="0" en celdas/headers para ocultar columnas en PDF: */
+.pdf-print [data-print="0"] {
   display: none !important;
 }
 
-.printing .custom-header-row {
-  position: static !important;
-  top: auto !important;
-  background-color: #fff !important;
-  z-index: auto !important;
-}
-
-.printing .mat-elevation-z8 {
-  box-shadow: none !important;
-}
-
-.printing .print-title {
+.pdf-print .print-title {
   display: block !important;
   text-align: center;
   margin-bottom: 1rem;
@@ -163,4 +251,82 @@ body {
 
 .print-title {
   display: none;
+}
+.pdf-print .mat-elevation-z8 {
+  box-shadow: none !important;
+}
+
+.pdf-print .mat-header-row,
+.pdf-print .mat-row,
+.pdf-print .mat-footer-row {
+  break-inside: avoid !important;
+}
+
+.pdf-print .top-210,
+.pdf-print .top-246 {
+  top: 0px;
+}
+
+.pdf-print .custom-header-row {
+  position: static !important;
+  top: auto !important;
+  background-color: #fff !important;
+  z-index: auto !important;
+}
+.pdf-print .clamp-3 {
+  line-height: 1.2 !important;
+  max-height: calc(1.2em * 3) !important;
+  overflow: hidden !important;
+}
+.pdf-print td .backColor,
+.pdf-print td .statusColumn,
+.pdf-print .mat-column-subsidy_name {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+.pdf-print td .backColor > span,
+.pdf-print td .statusColumn > span,
+.pdf-print .mat-column-subsidy_name {
+  padding: 0 !important;
+  margin: 0 !important;
+  background-color: transparent !important;
+  font-size: 7px !important;
+  color: black !important;
+}
+/* LISTADO DENTRO DE LOS INPUTS DE DESCRIPCIÓN para que salgan los puntitos o lo números de las listas */
+nav ul,
+.menu ul {
+  list-style: none;
+  margin-left: 0;
+  padding: 0;
+}
+.text-editor ul {
+  list-style: revert;
+  margin-left: 40px;
+}
+.text-editor ul li {
+  margin-bottom: 0.5rem;
+}
+
+.text-editor ol {
+  list-style: none;
+  counter-reset: my-counter; /* inicializamos contador */
+  margin-left: 25px;
+}
+
+.text-editor ol li {
+  counter-increment: my-counter;
+  margin-bottom: 0.5rem;
+  position: relative;
+  padding-left: 20px; /* espacio para el número */
+}
+
+.text-editor ol li::before {
+  content: counter(my-counter) ".";
+  position: absolute;
+  left: 0;
+  font-weight: bold;
+  font-size: 10px;
+  width: 2rem; /* define el ancho reservado */
+  display: inline-block;
 }

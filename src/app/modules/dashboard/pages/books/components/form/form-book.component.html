@@ -13,94 +13,99 @@
     class="login-auth-form"
   >
     <div class="flex flex-col gap-y-4">
-      <div class="flex flex-col gap-y-4 bg-lilaMuyClaro p-4">
-        <!-- Título -->
-        <div class="box-input gap-x-4">
-          <label for="email">Título</label>
-          <div class="flex flex-col flex-1">
-            <input
-              formControlName="title"
-              type="text"
-              [ngClass]="{
-                'is-invalid': submitted && formBook.get('title')?.invalid
-              }"
-            />
-            @if (submitted && formBook.get('title')?.invalid) {
-            <div class="is-invalid-text">Campo requerido</div>
-            }
-          </div>
+      <!-- Título -->
+      <div class="box-input gap-x-4">
+        <label for="email">Título</label>
+        <div class="flex flex-col flex-1">
+          <input
+            formControlName="title"
+            placeholder="Título del libro"
+            type="text"
+            [ngClass]="{
+              'is-invalid': submitted && formBook.get('title')?.invalid
+            }"
+          />
+          @if (submitted && formBook.get('title')?.invalid) {
+          <div class="is-invalid-text">Campo requerido</div>
+          }
         </div>
+      </div>
 
-        <!-- Autor -->
-        <div class="box-input gap-x-4">
-          <label for="author">Autor/a</label>
+      <!-- Autor -->
+      <div class="box-input gap-x-4">
+        <label for="author">Autor/a</label>
+        <div class="flex flex-col flex-1">
+          <input
+            formControlName="author"
+            placeholder="Autor/a del libro"
+            type="text"
+            [ngClass]="{
+              'is-invalid': submitted && formBook.get('author')?.invalid
+            }"
+          />
+          @if (submitted && formBook.get('author')?.invalid) {
+          <div class="is-invalid-text">Campo requerido</div>
+          }
+        </div>
+      </div>
+      <!-- Género y Año de compra-->
+      <div class="flex flex-row gap-x-4">
+        <div class="box-input gap-y-2 gap-x-4 flex flex-1">
+          <label for="gender">Género</label>
           <div class="flex flex-col flex-1">
-            <input
-              formControlName="author"
-              type="text"
+            <select
+              formControlName="gender"
               [ngClass]="{
-                'is-invalid': submitted && formBook.get('author')?.invalid
+                'is-invalid': submitted && formBook.get('gender')?.invalid,
+                'text-placeholder': !formBook.get('gender')?.value
               }"
-            />
-            @if (submitted && formBook.get('author')?.invalid) {
-            <div class="is-invalid-text">Campo requerido</div>
+            >
+              <option value="" disabled hidden>Género del libro</option>
+              @for (gender of genderBooks; track gender) {
+              <option [value]="gender.code">
+                {{ gender.name }}
+              </option>
+              }
+            </select>
+            @if (submitted && formBook.get('gender')?.invalid) {
+            <div class="is-invalid-text">Selecciona un género</div>
             }
           </div>
         </div>
-        <!-- Género -->
-        <div class="flex flex-row gap-x-4">
-          <div class="box-input gap-y-2 gap-x-4 flex flex-1">
-            <label for="gender">Género</label>
-            <div class="flex flex-col flex-1">
-              <select
-                formControlName="gender"
-                [ngClass]="{
-                  'is-invalid': submitted && formBook.get('gender')?.invalid
-                }"
-              >
-                @for (gender of genderBooks; track gender) {
-                <option [value]="gender.code">
-                  {{ gender.name }}
-                </option>
-                }
-              </select>
-              @if (submitted && formBook.get('gender')?.invalid) {
-              <div class="is-invalid-text">Selecciona un género</div>
+        <!-- Año de compra -->
+        <div class="box-input gap-x-4 w-96">
+          <label for="year">Año de compra</label>
+          <div class="flex flex-col flex-1">
+            <select
+              formControlName="year"
+              [ngClass]="{
+                'is-invalid': submitted && formBook.get('year')?.invalid,
+                'text-placeholder': !formBook.get('year')?.value
+              }"
+            >
+              <option value="null" disabled hidden>Año de compra</option>
+              @for (year of years; track year) {
+              <option [value]="year">
+                {{ year }}
+              </option>
               }
-            </div>
-          </div>
-          <!-- Año de compra -->
-          <div class="box-input gap-x-4">
-            <label for="year">Año de compra</label>
-            <div class="flex flex-col flex-1">
-              <select
-                formControlName="year"
-                [ngClass]="{
-                  'is-invalid': submitted && formBook.get('year')?.invalid
-                }"
-              >
-                @for (year of years; track year) {
-                <option [value]="year">
-                  {{ year }}
-                </option>
-                }
-              </select>
-              @if (submitted && formBook.get('year')?.invalid) {
-              <div class="is-invalid-text">Selecciona un año</div>
-              }
-            </div>
+            </select>
+            @if (submitted && formBook.get('year')?.invalid) {
+            <div class="is-invalid-text">Selecciona un año</div>
+            }
           </div>
         </div>
       </div>
+      <hr />
+      <!-- Descripción e imagen-->
       <div class="flex gap-x-8">
-        <!-- Descripción -->
-        <div class="box-input gap-x-4 flex-1">
+        <div class="box-input flex gap-x-4 flex-1 !items-start">
           <label for="description">Descripción</label>
           <quill-editor
             formControlName="description"
             [modules]="quillModules"
-            placeholder="Escribe aquí la descripción..."
-            class="flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
+            placeholder="Descripción"
+            class="ql-container-large flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
           />
         </div>
         <!-- Portada (Imagen) -->
@@ -113,6 +118,7 @@
             [type]="typeList"
             (imgSelected)="onImageSelected($event)"
             [imageWidthValue]="'full'"
+            [textImg]="'Añadir portada'"
             class="w-full"
           ></app-image-control>
         </div>

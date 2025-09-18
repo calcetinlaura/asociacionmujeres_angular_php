@@ -13,13 +13,14 @@
     class="login-auth-form"
   >
     <div class="flex flex-col gap-y-4">
-      <div class="flex justify-between gap-x-4 bg-lilaMuyClaro p-4">
+      <div class="flex justify-between gap-x-4">
         <!-- Título -->
         <div class="box-input gap-x-4 flex-1">
           <label for="title">Título</label>
           <div class="flex flex-col flex-1">
             <input
               formControlName="title"
+              placeholder="Título del artículo"
               type="text"
               [ngClass]="{
                 'is-invalid': submitted && formArticle.get('title')?.invalid
@@ -36,9 +37,9 @@
           <div class="w-2/3">
             <input
               formControlName="date"
-              class="w-full p-1 border border-gray-300 rounded"
               type="date"
               [ngClass]="{
+                'text-placeholder': !formArticle.get('date')?.value,
                 'is-invalid': submitted && formArticle.get('date')?.invalid
               }"
             />
@@ -56,7 +57,7 @@
             formControlName="description"
             [modules]="quillModules"
             placeholder="Escribe aquí la descripción..."
-            class="flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
+            class="ql-container-large flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
           />
         </div>
         <!-- Portada (Imagen) -->
@@ -71,6 +72,7 @@
             [type]="typeList"
             (imgSelected)="onImageSelected($event)"
             [imageWidthValue]="'full'"
+            [textImg]="'Añadir imagen'"
             class="w-full"
           ></app-image-control>
         </div>

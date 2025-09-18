@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import {
   Component,
   DestroyRef,
+  ElementRef,
   inject,
   OnInit,
   ViewChild,
@@ -42,6 +43,7 @@ import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.co
 
 @Component({
   selector: 'app-movies-page',
+  standalone: true,
   imports: [
     DashboardHeaderComponent,
     ModalComponent,
@@ -59,31 +61,18 @@ import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.co
     StickyZoneComponent,
   ],
   templateUrl: './movies-page.component.html',
-  styleUrl: './movies-page.component.css',
 })
 export class MoviesPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly modalService = inject(ModalService);
-  private readonly moviesFacade = inject(MoviesFacade);
+  readonly moviesFacade = inject(MoviesFacade);
   private readonly moviesService = inject(MoviesService);
   private readonly generalService = inject(GeneralService);
   private readonly pdfPrintService = inject(PdfPrintService);
-  movies: MovieModel[] = [];
-  filteredMovies: MovieModel[] = [];
-  filters: Filter[] = [];
-  selectedFilter = 'ALL';
 
-  isLoading = true;
-  isModalVisible = false;
-  number = 0;
-
-  item: MovieModel | null = null;
-  currentModalAction: TypeActionModal = TypeActionModal.Create;
-  searchForm!: FormGroup;
-  typeModal = TypeList.Movies;
-  typeSection = TypeList.Movies;
   columnVisibility: Record<string, boolean> = {};
   displayedColumns: string[] = [];
+
   headerListMovies: ColumnModel[] = [
     { title: 'Portada', key: 'img', sortable: false },
     { title: 'Título', key: 'title', sortable: true },
@@ -92,29 +81,48 @@ export class MoviesPageComponent implements OnInit {
       key: 'director',
       sortable: true,
       showIndicatorOnEmpty: true,
+      width: ColumnWidth.XL,
     },
     {
       title: 'Descripción',
       key: 'description',
       sortable: true,
-      booleanIndicator: true,
-      width: ColumnWidth.SM,
+      innerHTML: true,
+      showIndicatorOnEmpty: true,
     },
     {
       title: 'Género',
       key: 'gender',
       sortable: true,
       backColor: true,
-      width: ColumnWidth.XS,
+      width: ColumnWidth.SM,
     },
     { title: 'Año compra', key: 'year', sortable: true, width: ColumnWidth.XS },
   ];
 
+  movies: MovieModel[] = [];
+  filteredMovies: MovieModel[] = [];
+  filters: Filter[] = [];
+  selectedFilter = '';
+
+  isModalVisible = false;
+  number = 0;
+
+  item: MovieModel | null = null;
+  currentModalAction: TypeActionModal = TypeActionModal.Create;
+  searchForm!: FormGroup;
+
+  typeModal = TypeList.Movies;
+  typeSection = TypeList.Movies;
+
   @ViewChild(InputSearchComponent)
   private inputSearchComponent!: InputSearchComponent;
 
+  @ViewChild('printArea', { static: false })
+  printArea!: ElementRef<HTMLElement>;
+
   ngOnInit(): void {
-    // Ocultar 'date_payment' y 'date_accounting' al cargar la página
+    // Columnas visibles iniciales
     this.columnVisibility = this.generalService.setColumnVisibility(
       this.headerListMovies,
       ['year'] // Coloca las columnas que deseas ocultar aquí
@@ -125,11 +133,8 @@ export class MoviesPageComponent implements OnInit {
       this.headerListMovies,
       this.columnVisibility
     );
-    this.filters = [
-      { code: 'NOVEDADES', name: 'Novedades' },
-      { code: 'ALL', name: 'Todos' },
-      ...genderFilterMovies,
-    ];
+
+    this.filters = [{ code: '', name: 'Todos' }, ...genderFilterMovies];
 
     this.modalService.modalVisibility$
       .pipe(
@@ -140,39 +145,31 @@ export class MoviesPageComponent implements OnInit {
       )
       .subscribe();
 
-    this.filterSelected('NOVEDADES');
+    this.filterSelected('');
+
+    // Estado de peliculas desde la fachada
+    this.moviesFacade.filteredMovies$
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap((books) => this.updateMovieState(books))
+      )
+      .subscribe();
   }
 
   filterSelected(filter: string): void {
     this.selectedFilter = filter;
     this.generalService.clearSearchInput(this.inputSearchComponent);
-    this.loadByFilter(filter);
-  }
 
-  private loadByFilter(filter: string): void {
-    const loaders: Record<string, () => void> = {
-      ALL: () => this.moviesFacade.loadAllMovies(),
-      NOVEDADES: () => this.moviesFacade.loadMoviesByLatest(),
-    };
-
-    (loaders[filter] || (() => this.moviesFacade.loadMoviesByGender(filter)))();
-
-    this.moviesFacade.movies$
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((movies) => this.updateMovieState(movies))
-      )
-      .subscribe();
+    // Dispara la carga (y deja que isLoading$ de la fachada controle el spinner)
+    if (!filter) {
+      this.moviesFacade.loadAllMovies();
+    } else {
+      this.moviesFacade.loadMoviesByFilter(filter);
+    }
   }
 
   applyFilterWord(keyword: string): void {
     this.moviesFacade.applyFilterWord(keyword);
-    this.moviesFacade.filteredMovies$
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((movies) => this.updateMovieState(movies))
-      )
-      .subscribe();
   }
 
   addNewMovieModal(): void {
@@ -209,9 +206,16 @@ export class MoviesPageComponent implements OnInit {
     this.onCloseModal();
   }
 
+  onDelete({ type, id }: { type: TypeList; id: number }) {
+    const actions: Partial<Record<TypeList, (id: number) => void>> = {
+      [TypeList.Movies]: (x) => this.moviesFacade.deleteMovie(x),
+    };
+    actions[type]?.(id);
+  }
+
   sendFormMovie(event: { itemId: number; formData: FormData }): void {
     const save$ = event.itemId
-      ? this.moviesFacade.editMovie(event.itemId, event.formData)
+      ? this.moviesFacade.editMovie(event.formData)
       : this.moviesFacade.addMovie(event.formData);
 
     save$
@@ -228,24 +232,32 @@ export class MoviesPageComponent implements OnInit {
     this.movies = this.moviesService.sortMoviesById(movies);
     this.filteredMovies = [...this.movies];
     this.number = this.moviesService.countMovies(movies);
-    this.isLoading = false;
   }
+
+  async printTableAsPdf(): Promise<void> {
+    if (!this.printArea) return;
+
+    await this.pdfPrintService.printElementAsPdf(this.printArea, {
+      filename: 'peliculas.pdf',
+      preset: 'compact', // 'compact' reduce paddings en celdas
+      orientation: 'portrait', // o 'landscape' si la tabla es muy ancha
+      format: 'a4',
+      margins: [5, 5, 5, 5], // mm
+    });
+  }
+
   getVisibleColumns() {
     return this.headerListMovies.filter(
       (col) => this.columnVisibility[col.key]
     );
   }
+
   // Método para actualizar las columnas visibles cuando se hace toggle
   toggleColumn(key: string): void {
-    // Cambia la visibilidad de la columna en columnVisibility
     this.columnVisibility[key] = !this.columnVisibility[key];
-    // Actualiza las columnas visibles en la tabla después de cambiar el estado
     this.displayedColumns = this.generalService.updateDisplayedColumns(
       this.headerListMovies,
       this.columnVisibility
     );
-  }
-  printTableAsPdf(): void {
-    this.pdfPrintService.printTableAsPdf('table-to-print', 'peliculas.pdf');
   }
 }

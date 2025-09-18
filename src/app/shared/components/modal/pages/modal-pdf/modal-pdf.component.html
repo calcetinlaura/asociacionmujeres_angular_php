@@ -1,0 +1,20 @@
+<ui-modal
+  [open]="open"
+  (openChange)="openChange.emit($event)"
+  [showClose]="false"
+  [panelClass]="'pdf-panel'"
+  [size]="'full'"
+  [variant]="null"
+>
+  <div class="relative w-full h-full">
+    <button
+      class="absolute top-2 right-2 bg-gray-200 rounded-full p-2 z-10"
+      (click)="close()"
+      aria-label="Cerrar visor"
+    >
+      ✕
+    </button>
+    @if(safeSrc){
+    <iframe [src]="safeSrc" class="w-full h-full"></iframe>}
+  </div>
+</ui-modal>

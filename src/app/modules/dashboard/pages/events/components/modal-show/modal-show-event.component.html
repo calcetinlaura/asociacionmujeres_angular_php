@@ -1,121 +1,198 @@
-<div class="flex flex-col justify-between">
-  <div>
-    @if (item.macroeventData && item.macroeventData.title) {
-    <p
-      class="macro cursor-pointer"
-      (click)="onOpenMacroevent(item.macroeventData.id)"
+<div>
+  <div class="text-center">
+    <div
+      class="inline-block border-b border-[#1C1C3A] pb-4 mb-4 md:pb-4 md:mb-8"
     >
-      {{ item.macroeventData.title }}
-    </p>
-    }
-    <app-text-title [text]="item.title" />
-    @if (item.placeData?.name) {
-    <app-text-subtitle [text]="item.placeData?.name + ' | ' + item.town" />
-    } @if (item.salaData?.name) {
-    <p class="text-xs text-gray-500 pl-2">
-      {{ item.salaData?.name }} - {{ item.salaData?.location }}
-    </p>
-
-    }
-    <app-social-media-share
-      [url]="
-        'https:  //asociaciondemujerescallosadesegura.com/frontend/events/' +
-        item.id
-      "
-      [title]="item.title"
-    ></app-social-media-share>
-    @if (item.periodicEvents === null){
-    <div class="flex flex-col sm:flex-row gap-4 my-4">
-      <ng-container class="lowercase">
-        @if (item.start && item.end === item.start) {
-        <app-text-background
-          [text]="item.start | date : 'EEEE dd MMMM yyyy'"
-        ></app-text-background>
-        }
-      </ng-container>
-      @if (item.start && item.end !== item.start) {
-      <app-text-background
-        [text]="
-          (item.start | date : 'EEEE dd MMMM') +
-          ' - ' +
-          (item.end | date : 'EEEE dd MMMM yyyy')
+      <app-text-title [text]="item.title" />
+      @if (item.placeData?.name) {
+      <app-text-subtitle [text]="item.placeData?.name + ' | ' + item.town" />
+      } @if (item.macroeventData && item.macroeventData.title) {
+      <p
+        class="macro cursor-pointer my-2"
+        (click)="onOpenMacroevent(item.macroeventData.id)"
+      >
+        {{ item.macroeventData.title }}
+      </p>
+      }
+      <app-social-media-share
+        [url]="
+          'https://asociaciondemujerescallosadesegura.com/share/events/' +
+          item.id
         "
-      ></app-text-background>
-      } @if (item.time_start !== '00:00:00') {
-      <app-text-border [text]="item.time_start?.slice(0, 5) + ' h'">
-      </app-text-border>
-      }
+        [title]="item.title"
+      ></app-social-media-share>
     </div>
-    } @if (item.periodicEvents && item.periodicEvents.length > 0) {
-    <p class="text-[16px] uppercase mt-6 mb-4 text-lilaOscuro font-semibold">
-      Pases
-    </p>
-    <div class="pl-6 flex flex-col gap-y-2">
-      @for (func of item.periodicEvents; track func) {
-      <div class="flex sm:flex-row gap-x-4 items-center">
-        <app-text-background
-          [text]="func.start | date : 'EEEE dd MMMM yyyy'"
-        ></app-text-background>
+  </div>
+  <div class="flex flex-col-reverse gap-y-8 lg:flex-row lg:gap-x-10 lg:gap-y-0">
+    <div class="lg:w-2/5">
+      <img
+        appImgBroken
+        [src]="(item.img ? item.img : '') | itemImage : typeModal"
+        [alt]="item.title"
+        class="w-full bg-verdeClaro"
+      />
+    </div>
+    <div class="lg:w-3/5 flex flex-col justify-between">
+      <div>
+        @if (item.periodicEvents === null){
+        <div class="flex flex-col sm:flex-row gap-4 my-4">
+          <ng-container class="lowercase">
+            @if (item.start && item.end === item.start) {
+            <app-text-background
+              [text]="item.start | date : 'EEEE dd MMMM yyyy'"
+            ></app-text-background>
+            }
+          </ng-container>
+          @if (item.start && item.end !== item.start) {
+          <app-text-background
+            [text]="
+              (item.start | date : 'EEEE dd MMMM') +
+              ' - ' +
+              (item.end | date : 'EEEE dd MMMM yyyy')
+            "
+          ></app-text-background>
+          }@if ( item.time_start && item.time_start !== '00:00:00') {
+          <div class="flex justify-start">
+            <p
+              class="text-[9px] md:text-[12px] px-[6px] pt-1 pb-[3px] rounded-[4px] border-[1px] border-lilaOscuro"
+            >
+              {{ item.time_start.slice(0, 5) + " h" }}
+            </p>
+          </div>
+          }
+        </div>
+        } @if (item.periodicEvents && item.periodicEvents.length > 0) {
+        <p
+          class="text-[16px] uppercase mt-6 mb-4 text-lilaOscuro font-semibold"
+        >
+          Pases
+        </p>
+        <div class="pl-6 flex flex-col gap-y-2">
+          @for (func of item.periodicEvents; track func) {
+          <div class="flex sm:flex-row gap-x-4 items-center">
+            <app-text-background
+              [text]="func.start | date : 'EEEE dd MMMM yyyy'"
+            ></app-text-background>
 
-        @if (func.time_start !== '00:00:00') {
-        <app-text-border [text]="func.time_start.slice(0, 5) + ' h'">
-        </app-text-border>
+            @if (func.time_start !== '00:00:00') {
+            <app-text-border [text]="func.time_start.slice(0, 5) + ' h'">
+            </app-text-border>
+            }
+          </div>
+          }
+        </div>
+        } @if (item.access === 'FREE'){
+        <app-text-background [text]="'Acceso gratuito'"></app-text-background>}
+        @if (item.description){
+        <div class="py-4">
+          <app-text-editor [text]="item.description"></app-text-editor>
+        </div>
+        } @if (item.organizer && item.organizer.length > 0) {
+        <div class="mb-6 flex">
+          <div
+            class="border-r-[1px] border-lilaOscuro w-[60px] text-[10px] flex justify-start items-center"
+          >
+            Organiza
+          </div>
+          <div class="flex flex-col justify-center">
+            @for (organizer of item.organizer; track organizer) {
+            <p class="text-[10px] font-bold pl-3">{{ organizer.name }}</p>
+            }
+          </div>
+        </div>
+        } @if (item.collaborator && item.collaborator.length > 0) {
+        <div class="mb-6 flex">
+          <div
+            class="border-r-[1px] border-lilaOscuro w-[60px] text-[10px] flex justify-start items-center"
+          >
+            Colabora
+          </div>
+
+          <div class="flex flex-col justify-center">
+            @for (colab of item.collaborator; track colab) {
+            <p class="text-[10px] font-bold pl-3">{{ colab.name }}</p>
+            }
+          </div>
+        </div>
+        } @if (item.sponsor && item.sponsor.length > 0) {
+        <div class="mb-6 flex">
+          <div
+            class="border-r-[1px] border-lilaOscuro w-[60px] text-[10px] flex justify-start items-center"
+          >
+            Patrocina
+          </div>
+
+          <div class="flex flex-col justify-center">
+            @for (sponsor of item.sponsor; track sponsor) {
+            <p class="text-[10px] font-bold pl-3">{{ sponsor.name }}</p>
+            }
+          </div>
+        </div>
         }
-      </div>
-      }
-    </div>
-    }
-    <div class="mb-6">
-      @if (item.organizer && item.organizer.length > 0) {
-      <app-text-background [text]="'Organiza'"></app-text-background>
-      } @for (organizer of item.organizer; track organizer) {
-      <p class="text-sm text-gray-700 pl-6 pt-2">- {{ organizer.name }}</p>
-      }
-    </div>
-    <div class="mb-6">
-      @if (item.collaborator && item.collaborator.length > 0) {
-      <app-text-background [text]="'Colabora'"></app-text-background>
-      } @for (colab of item.collaborator; track colab) {
-      <p class="text-sm text-gray-700 pl-6 pt-2">- {{ colab.name }}</p>
-      }
-    </div>
-    <div class="mb-6">
-      @if (item.sponsor && item.sponsor.length > 0) {
-      <app-text-background [text]="'Patrocina'"></app-text-background>
-      } @for (sponsor of item.sponsor; track sponsor) {
-      <p class="text-sm text-gray-700 pl-6 pt-2">- {{ sponsor.name }}</p>
-      }
-    </div>
-    <!-- <p class="body-subtitle">Aforo - {{ item.capacity }}</p> -->
-    <app-text-editor [text]="item.description"></app-text-editor>
-    <div class="my-4">
-      <!-- @if (item.price) {
+        <!-- <p class="body-subtitle">Aforo - {{ item.capacity }}</p> -->
+
+        <div class="my-4">
+          <!-- @if (item.price) {
       <app-text-border [text]="item.price"></app-text-border>
       } -->
+        </div>
+        <div>
+          @if (item.inscription === true) {
+          <p class="body-inscription">
+            * Se requiere inscripción previa en el email
+            asociacionmujerescallosa&#64;gmail.com
+          </p>
+          } @if (item.status === enumStatusEnum.CANCELADO) {
+          <app-text-background
+            [text]="'Evento ' + item.status"
+            [colorBack]="'#de7a71'"
+          ></app-text-background>
+          } @if (item.status === enumStatusEnum.AGOTADO) {
+          <div class="flex justify-center">
+            <app-text-background
+              [text]="'Inscripciones agotadas'"
+              [colorBack]="'#de7a71'"
+              [colorText]="'white'"
+              [number]="12"
+            ></app-text-background>
+          </div>
+          } @if (item.status_reason) {
+          <app-text-editor [text]="item.status_reason"></app-text-editor>
+          }
+        </div>
+        <hr class="my-6 border-b-1 border-[#1C1C3A]" />
+        @if (item.placeData?.name) {
+        <app-text-icon
+          [icon]="'building'"
+          [text]="
+            (item.placeData?.name ? item.placeData?.name : '') +
+            (item.town ? ', ' + item.town : '')
+          "
+        ></app-text-icon>
+        @if (item.salaData?.name) {
+        <p class="text-gray-500 pl-8 pb-2">
+          {{ item.salaData?.name }}
+          {{
+            item.salaData?.room_location
+              ? ", " +
+                (item.salaData?.room_location
+                  | filterTransformCode : "roomLocationPlaces")
+              : ""
+          }}
+        </p>
+        } }
+        <app-text-icon
+          [icon]="''"
+          [text]="item.placeData?.address"
+        ></app-text-icon>
+
+        @if (item.placeData && item.placeData.lat && item.placeData.lon) {
+        <app-map
+          [lat]="item.placeData.lat"
+          [lon]="item.placeData.lon"
+        ></app-map>
+        }
+      </div>
     </div>
-    <div>
-      @if (item.inscription === true) {
-      <p class="body-inscription">
-        * Se requiere inscripción previa en el email
-        asociacionmujerescallosa&#64;gmail.com
-      </p>
-      } @if (item.status === enumStatusEnum.CANCELADO) {
-      <app-text-background
-        [text]="'Evento ' + item.status"
-        [colorBack]="'#de7a71'"
-      ></app-text-background>
-      } @if (item.status === enumStatusEnum.AGOTADO) {
-      <app-text-background
-        [text]="'Inscripciones ' + item.status"
-        [colorBack]="'#de7a71'"
-        [colorText]="'white'"
-      ></app-text-background>
-      } @if (item.status_reason) {
-      <app-text-editor [text]="item.status_reason"></app-text-editor>
-      }
-    </div>
-    @if (item.placeData && item.placeData.lat && item.placeData.lon) {
-    <app-map [lat]="item.placeData.lat" [lon]="item.placeData.lon"></app-map>
-    }
   </div>
 </div>

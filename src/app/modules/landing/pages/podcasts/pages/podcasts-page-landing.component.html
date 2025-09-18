@@ -1,0 +1,15 @@
+<div class="flex flex-col mx-3 md:mx-8 mt-4">
+  <app-input-search (onDebounce)="applyFilterWord($event)" class="my-8" />
+  @if (podcastsFacade.isLoading$ | async) {
+  <app-spinner-loading />
+  } @else { @if (areThereResults) {
+  <app-section-generic
+    [typeSection]="typeList.Podcasts"
+    [typeModal]="typeList.Podcasts"
+    [data]="filteredPodcasts"
+    [total]="number"
+  />
+  } @else {
+  <app-no-results [text]="'podcasts' | lowercase" />
+  } }
+</div>

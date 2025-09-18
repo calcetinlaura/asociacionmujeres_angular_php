@@ -54,16 +54,14 @@ export class RecipesService {
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
-  edit(id: number, recipe: FormData): Observable<any> {
+  edit(recipe: FormData): Observable<any> {
     return this.http
       .post(this.apiUrl, recipe)
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
   delete(id: number): Observable<any> {
-    return this.http
-      .delete(this.apiUrl, { params: { id: id } })
-      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
+    return this.generalService.deleteOverride<any>(this.apiUrl, { id });
   }
 
   sortRecipesByTitle(recipes: RecipeModel[]): RecipeModel[] {

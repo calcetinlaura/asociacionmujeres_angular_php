@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import {
   Component,
   DestroyRef,
+  ElementRef,
   inject,
   OnInit,
   ViewChild,
@@ -18,7 +19,6 @@ import {
 } from 'src/app/core/interfaces/column.interface';
 import {
   categoryFilterCreditors,
-  CreditorModel,
   CreditorWithInvoices,
 } from 'src/app/core/interfaces/creditor.interface';
 import {
@@ -43,6 +43,7 @@ import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.co
 
 @Component({
   selector: 'app-creditors-page',
+  standalone: true,
   imports: [
     DashboardHeaderComponent,
     ModalComponent,
@@ -60,30 +61,15 @@ import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.co
     StickyZoneComponent,
   ],
   templateUrl: './creditors-page.component.html',
-  styleUrl: './creditors-page.component.css',
 })
 export class CreditorsPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly modalService = inject(ModalService);
-  private readonly creditorsFacade = inject(CreditorsFacade);
+  readonly creditorsFacade = inject(CreditorsFacade);
   private readonly creditorsService = inject(CreditorsService);
   private readonly generalService = inject(GeneralService);
   private readonly pdfPrintService = inject(PdfPrintService);
 
-  creditors: CreditorWithInvoices[] = [];
-  filteredCreditors: CreditorWithInvoices[] = [];
-  filters: Filter[] = [];
-  selectedFilter: string | null = null;
-
-  isLoading = true;
-  isModalVisible = false;
-  number = 0;
-
-  item: CreditorWithInvoices | null = null;
-  currentModalAction: TypeActionModal = TypeActionModal.Create;
-  searchForm!: FormGroup;
-  typeModal = TypeList.Creditors;
-  typeSection = TypeList.Creditors;
   columnVisibility: Record<string, boolean> = {};
   displayedColumns: string[] = [];
   headerListCreditors: ColumnModel[] = [
@@ -130,7 +116,7 @@ export class CreditorsPageComponent implements OnInit {
       key: 'category',
       sortable: true,
       backColor: true,
-      width: ColumnWidth.XS,
+      width: ColumnWidth.SM,
     },
     {
       title: 'Palabras clave',
@@ -140,11 +126,29 @@ export class CreditorsPageComponent implements OnInit {
     },
   ];
 
+  creditors: CreditorWithInvoices[] = [];
+  filteredCreditors: CreditorWithInvoices[] = [];
+  filters: Filter[] = [];
+  selectedFilter: string | null = null;
+
+  isModalVisible = false;
+  number = 0;
+
+  item: CreditorWithInvoices | null = null;
+  currentModalAction: TypeActionModal = TypeActionModal.Create;
+  searchForm!: FormGroup;
+
+  typeModal = TypeList.Creditors;
+  typeSection = TypeList.Creditors;
+
   @ViewChild(InputSearchComponent)
   private inputSearchComponent!: InputSearchComponent;
 
+  @ViewChild('printArea', { static: false })
+  printArea!: ElementRef<HTMLElement>;
+
   ngOnInit(): void {
-    // Ocultar 'date_payment' y 'date_accounting' al cargar la página
+    // Columnas visibles iniciales
     this.columnVisibility = this.generalService.setColumnVisibility(
       this.headerListCreditors,
       [''] // Coloca las columnas que deseas ocultar aquí
@@ -155,7 +159,7 @@ export class CreditorsPageComponent implements OnInit {
       this.headerListCreditors,
       this.columnVisibility
     );
-    this.filters = [{ code: 'ALL', name: 'Todos' }, ...categoryFilterCreditors];
+    this.filters = [{ code: '', name: 'Todos' }, ...categoryFilterCreditors];
 
     this.modalService.modalVisibility$
       .pipe(
@@ -164,7 +168,7 @@ export class CreditorsPageComponent implements OnInit {
       )
       .subscribe();
 
-    this.filterSelected('ALL');
+    this.filterSelected('');
 
     this.creditorsFacade.filteredCreditors$
       .pipe(
@@ -177,7 +181,11 @@ export class CreditorsPageComponent implements OnInit {
   filterSelected(filter: string): void {
     this.selectedFilter = filter;
     this.generalService.clearSearchInput(this.inputSearchComponent);
-    this.creditorsFacade.setCurrentFilter(filter);
+    if (!filter) {
+      this.creditorsFacade.loadAllCreditors();
+    } else {
+      this.creditorsFacade.loadCreditorsByFilter(filter);
+    }
   }
 
   applyFilterWord(keyword: string): void {
@@ -212,19 +220,17 @@ export class CreditorsPageComponent implements OnInit {
     this.modalService.closeModal();
   }
 
-  confirmDeleteCreditor(creditor: CreditorModel | null): void {
-    if (!creditor) return;
-    this.creditorsFacade.deleteCreditor(creditor.id);
-    this.onCloseModal();
+  onDelete({ type, id }: { type: TypeList; id: number }) {
+    const actions: Partial<Record<TypeList, (id: number) => void>> = {
+      [TypeList.Creditors]: (x) => this.creditorsFacade.deleteCreditor(x),
+    };
+    actions[type]?.(id);
   }
 
-  sendFormCreditor(event: {
-    itemId: number;
-    newCreditorData: CreditorModel;
-  }): void {
+  sendFormCreditor(event: { itemId: number; formData: FormData }): void {
     const request$ = event.itemId
-      ? this.creditorsFacade.editCreditor(event.itemId, event.newCreditorData)
-      : this.creditorsFacade.addCreditor(event.newCreditorData);
+      ? this.creditorsFacade.editCreditor(event.formData)
+      : this.creditorsFacade.addCreditor(event.formData);
 
     request$
       .pipe(
@@ -240,21 +246,29 @@ export class CreditorsPageComponent implements OnInit {
     this.creditors = this.creditorsService.sortCreditorsById(creditors);
     this.filteredCreditors = [...this.creditors];
     this.number = this.creditorsService.countCreditors(creditors);
-    this.isLoading = false;
   }
-  printTableAsPdf(): void {
-    this.pdfPrintService.printTableAsPdf('table-to-print', 'acreedores.pdf');
+
+  async printTableAsPdf(): Promise<void> {
+    if (!this.printArea) return;
+
+    await this.pdfPrintService.printElementAsPdf(this.printArea, {
+      filename: 'acreedores.pdf',
+      preset: 'compact', // 'compact' reduce paddings en celdas
+      orientation: 'portrait', // o 'landscape' si la tabla es muy ancha
+      format: 'a4',
+      margins: [5, 5, 5, 5], // mm
+    });
   }
+
   getVisibleColumns() {
     return this.headerListCreditors.filter(
       (col) => this.columnVisibility[col.key]
     );
   }
+
   // Método para actualizar las columnas visibles cuando se hace toggle
   toggleColumn(key: string): void {
-    // Cambia la visibilidad de la columna en columnVisibility
     this.columnVisibility[key] = !this.columnVisibility[key];
-    // Actualiza las columnas visibles en la tabla después de cambiar el estado
     this.displayedColumns = this.generalService.updateDisplayedColumns(
       this.headerListCreditors,
       this.columnVisibility

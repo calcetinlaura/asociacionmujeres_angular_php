@@ -1,13 +1,20 @@
 <?php
 header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET, POST, PATCH, DELETE");
-header("Access-Control-Allow-Headers: Content-Type");
+header("Access-Control-Allow-Methods: GET, POST, PATCH, DELETE, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, X-Requested-With, X-HTTP-Method-Override, Authorization, Origin, Accept");
 header("Content-Type: application/json; charset=UTF-8");
 
 include '../config/conexion.php';
 include 'utils/utils.php'; // Funciones reutilizables
 
 $method = $_SERVER['REQUEST_METHOD'];
+if ($method === 'POST') {
+  $override = $_POST['_method'] ?? $_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'] ?? '';
+  $override = strtoupper($override);
+  if ($override === 'DELETE') {
+    $method = 'DELETE';
+  }
+}
 if ($method === 'OPTIONS') {
     http_response_code(204);
     exit();
@@ -22,14 +29,14 @@ $pdfPath = "../uploads/pdf/PITERAS/";
 switch ($method) {
     case 'GET':
         if (is_numeric($resource)) {
-            $stmt = $connection->prepare("SELECT * FROM piteras WHERE id = ?");
+            $stmt = $connection->prepare("SELECT * FROM piteras WHERE id = ? ORDER BY piteras.publication_number DESC");
             $stmt->bind_param("i", $resource);
             $stmt->execute();
             $result = $stmt->get_result();
             $pitera = $result->fetch_assoc();
             echo json_encode($pitera ?: []);
         } else {
-            $stmt = $connection->prepare("SELECT * FROM piteras");
+            $stmt = $connection->prepare("SELECT * FROM piteras ORDER BY piteras.publication_number DESC");
             $stmt->execute();
             $result = $stmt->get_result();
             $piteras = [];
@@ -50,7 +57,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'deleteImage') {
   if (!empty($_POST['id'])) {
     $id = (int)$_POST['id'];
 
-    if (eliminarSoloImagen($connection, strtolower($type), 'img', $id, $basePath)) {
+    if (eliminarSoloArchivo($connection, strtolower($type), 'img', $id, $basePath)) {
       echo json_encode(["message" => "Imagen eliminada correctamente"]);
     } else {
       http_response_code(500);
@@ -82,7 +89,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'deleteImage') {
         $data['url'] = $pdfName;
 
         // Validar campos obligatorios
-        $campoFaltante = validarCamposRequeridos($data, ['title', 'year']);
+        $campoFaltante = validarCamposRequeridos($data, ['title', 'year', 'publication_number']);
         if ($campoFaltante) {
             http_response_code(400);
             echo json_encode(["message" => "El campo '$campoFaltante' es obligatorio."]);
@@ -110,14 +117,14 @@ if (isset($_POST['action']) && $_POST['action'] === 'deleteImage') {
             if (!$imgName) $imgName = $oldImg;
             if (!$pdfName) $pdfName = $oldPdf;
 
-            $stmt = $connection->prepare("UPDATE piteras SET title = ?, theme = ?, url = ?, year = ?, img = ? WHERE id = ?");
-            $stmt->bind_param("sssisi", $data['title'], $data['theme'], $pdfName, $data['year'], $imgName, $id);
+            $stmt = $connection->prepare("UPDATE piteras SET title = ?, publication_number=?, theme = ?,description = ?, url = ?, year = ?, img = ? WHERE id = ?");
+            $stmt->bind_param("sisssisi", $data['title'], $data['publication_number'],$data['theme'], $data['description'], $pdfName, $data['year'], $imgName, $id);
             if ($stmt->execute()) {
                 if ($oldImg && $imgName !== $oldImg) {
-                    eliminarImagenSiNoSeUsa($connection, 'piteras', 'img', $oldImg, $imgPath);
+                    eliminarArchivoSiNoSeUsa($connection, 'piteras', 'img', $oldImg, $imgPath);
                 }
                 if ($oldPdf && $pdfName !== $oldPdf) {
-                    eliminarImagenSiNoSeUsa($connection, 'piteras', 'url', $oldPdf, $pdfPath);
+                    eliminarArchivoSiNoSeUsa($connection, 'piteras', 'url', $oldPdf, $pdfPath);
                 }
                 echo json_encode(["message" => "Pitera actualizada con éxito."]);
             } else {
@@ -125,8 +132,8 @@ if (isset($_POST['action']) && $_POST['action'] === 'deleteImage') {
                 echo json_encode(["message" => "Error al actualizar la pitera: " . $stmt->error]);
             }
         } else {
-            $stmt = $connection->prepare("INSERT INTO piteras (title, theme, url, year, img) VALUES (?, ?, ?, ?, ?)");
-            $stmt->bind_param("sssis", $data['title'], $data['theme'], $pdfName, $data['year'], $imgName);
+            $stmt = $connection->prepare("INSERT INTO piteras (title, publication_number, theme,description, url, year, img) VALUES (?, ?,?, ?, ?, ?, ?)");
+            $stmt->bind_param("sisssis", $data['title'], $data['publication_number'],$data['theme'], $data['description'],$pdfName, $data['year'], $imgName);
             if ($stmt->execute()) {
                 echo json_encode(["message" => "Pitera añadida con éxito."]);
             } else {
@@ -137,7 +144,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'deleteImage') {
         break;
 
     case 'DELETE':
-        $id = isset($_GET['id']) ? (int)$_GET['id'] : null;
+       $id = $_POST['id'] ?? $_GET['id'] ?? null;
         if (!$id) {
             http_response_code(400);
             echo json_encode(["message" => "ID no válido."]);
@@ -156,10 +163,10 @@ if (isset($_POST['action']) && $_POST['action'] === 'deleteImage') {
         $stmt->bind_param("i", $id);
         if ($stmt->execute()) {
             if ($imgToDelete) {
-                eliminarImagenSiNoSeUsa($connection, 'piteras', 'img', $imgToDelete, $imgPath);
+                eliminarArchivoSiNoSeUsa($connection, 'piteras', 'img', $imgToDelete, $imgPath);
             }
             if ($pdfToDelete) {
-                eliminarImagenSiNoSeUsa($connection, 'piteras', 'url', $pdfToDelete, $pdfPath);
+                eliminarArchivoSiNoSeUsa($connection, 'piteras', 'url', $pdfToDelete, $pdfPath);
             }
             echo json_encode(["message" => "Pitera eliminada con éxito."]);
         } else {

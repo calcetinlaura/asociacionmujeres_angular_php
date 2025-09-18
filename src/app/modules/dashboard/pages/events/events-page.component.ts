@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import {
   Component,
   DestroyRef,
+  ElementRef,
   OnInit,
   ViewChild,
   inject,
@@ -16,10 +17,7 @@ import {
   ColumnModel,
   ColumnWidth,
 } from 'src/app/core/interfaces/column.interface';
-import {
-  EventModel,
-  EventModelFullData,
-} from 'src/app/core/interfaces/event.interface';
+import { EventModelFullData } from 'src/app/core/interfaces/event.interface';
 import {
   Filter,
   TypeActionModal,
@@ -60,7 +58,6 @@ import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.co
     StickyZoneComponent,
   ],
   templateUrl: './events-page.component.html',
-  styleUrl: './events-page.component.css',
 })
 export class EventsPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
@@ -95,8 +92,9 @@ export class EventsPageComponent implements OnInit {
       title: 'Descripción',
       key: 'description',
       sortable: true,
+      innerHTML: true,
       showIndicatorOnEmpty: true,
-      width: ColumnWidth.LG,
+      width: ColumnWidth.XL,
     },
     {
       title: 'Espacio',
@@ -139,6 +137,9 @@ export class EventsPageComponent implements OnInit {
 
   @ViewChild(InputSearchComponent)
   private inputSearchComponent!: InputSearchComponent;
+
+  @ViewChild('printArea', { static: false })
+  printArea!: ElementRef<HTMLElement>;
 
   ngOnInit(): void {
     this.columnVisibility = this.generalService.setColumnVisibility(
@@ -217,24 +218,30 @@ export class EventsPageComponent implements OnInit {
     this.item = null;
   }
 
-  confirmDeleteEvent(event: EventModel | null): void {
-    if (!event) return;
+  onDelete({ type, id, item }: { type: TypeList; id: number; item?: any }) {
+    const actions: Partial<Record<TypeList, (id: number, item?: any) => void>> =
+      {
+        [TypeList.Events]: (x, it) => {
+          const periodicId = it?.periodic_id;
+          if (periodicId) {
+            // 🔥 Borrar todo el grupo
+            this.eventsService
+              .deleteEventsByPeriodicId(periodicId)
+              .pipe(
+                takeUntilDestroyed(this.destroyRef),
+                tap(() =>
+                  this.filterSelected(this.selectedFilter?.toString() ?? '')
+                )
+              )
+              .subscribe();
+          } else {
+            // 🔥 Borrar solo el evento individual
+            this.eventsFacade.deleteEvent(x);
+          }
+        },
+      };
 
-    if (event.periodic_id) {
-      // 🔥 Borra todo el grupo de eventos repetidos
-      this.eventsService
-        .deleteEventsByPeriodicId(event.periodic_id)
-        .pipe(
-          takeUntilDestroyed(this.destroyRef),
-          tap(() => this.filterSelected(this.selectedFilter?.toString() ?? ''))
-        )
-        .subscribe();
-    } else {
-      // 🔥 Borra solo el evento individual
-      this.eventsFacade.deleteEvent(event.id);
-    }
-
-    this.onCloseModal();
+    actions[type]?.(id, item);
   }
 
   sendFormEvent(event: { itemId: number; formData: FormData }): void {
@@ -244,7 +251,7 @@ export class EventsPageComponent implements OnInit {
     const isRepeatedToUnique = !!oldPeriodicId && !newPeriodicId;
 
     const request$ = event.itemId
-      ? this.eventsFacade.editEvent(event.itemId, event.formData)
+      ? this.eventsFacade.editEvent(event.formData)
       : this.eventsFacade.addEvent(event.formData);
 
     request$
@@ -277,8 +284,16 @@ export class EventsPageComponent implements OnInit {
     this.number = this.eventsService.countEvents(events);
     this.isLoading = false;
   }
-  printTableAsPdf(): void {
-    this.pdfPrintService.printTableAsPdf('table-to-print', 'eventos.pdf');
+  async printTableAsPdf(): Promise<void> {
+    if (!this.printArea) return;
+
+    await this.pdfPrintService.printElementAsPdf(this.printArea, {
+      filename: 'eventos.pdf',
+      preset: 'compact', // 'compact' reduce paddings en celdas
+      orientation: 'landscape', // o 'landscape' si la tabla es muy ancha
+      format: 'a4',
+      margins: [5, 5, 5, 5], // mm
+    });
   }
   getVisibleColumns() {
     return this.headerListEvents.filter(
@@ -287,9 +302,8 @@ export class EventsPageComponent implements OnInit {
   }
   // Método para actualizar las columnas visibles cuando se hace toggle
   toggleColumn(key: string): void {
-    // Cambia la visibilidad de la columna en columnVisibility
     this.columnVisibility[key] = !this.columnVisibility[key];
-    // Actualiza las columnas visibles en la tabla después de cambiar el estado
+
     this.displayedColumns = this.generalService.updateDisplayedColumns(
       this.headerListEvents,
       this.columnVisibility

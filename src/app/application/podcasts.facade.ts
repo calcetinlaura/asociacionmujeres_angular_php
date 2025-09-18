@@ -1,66 +1,55 @@
-import { DestroyRef, inject, Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, catchError, Observable, tap } from 'rxjs';
-import { PodcastModel } from '../core/interfaces/podcast.interface';
-import { PodcastsService } from '../core/services/podcasts.services';
-import { GeneralService } from '../shared/services/generalService.service';
+import { PodcastModel } from 'src/app/core/interfaces/podcast.interface';
+import { PodcastsService } from 'src/app/core/services/podcasts.services';
+import { includesNormalized, toSearchKey } from '../shared/utils/text.utils';
+import { LoadableFacade } from './loadable.facade';
 
-@Injectable({
-  providedIn: 'root',
-})
-export class PodcastsFacade {
-  private readonly destroyRef = inject(DestroyRef);
+@Injectable({ providedIn: 'root' })
+export class PodcastsFacade extends LoadableFacade {
   private readonly podcastsService = inject(PodcastsService);
-  private readonly generalService = inject(GeneralService);
+
+  // State propio
   private readonly podcastsSubject = new BehaviorSubject<PodcastModel[] | null>(
     null
   );
   private readonly filteredPodcastsSubject = new BehaviorSubject<
     PodcastModel[] | null
   >(null);
-  private readonly selectedPodcastsSubject =
+  private readonly selectedPodcastSubject =
     new BehaviorSubject<PodcastModel | null>(null);
 
-  podcasts$ = this.podcastsSubject.asObservable();
-  selectedPodcast$ = this.selectedPodcastsSubject.asObservable();
-  filteredPodcasts$ = this.filteredPodcastsSubject.asObservable();
+  // Streams públicos
+  readonly podcasts$ = this.podcastsSubject.asObservable();
+  readonly filteredPodcasts$ = this.filteredPodcastsSubject.asObservable();
+  readonly selectedPodcast$ = this.selectedPodcastSubject.asObservable();
 
-  constructor() {}
+  // ---------- API pública
 
   loadAllPodcasts(): void {
-    this.podcastsService
-      .getPodcasts()
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((podcasts: PodcastModel[]) => this.updatePodcastState(podcasts)),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-      .subscribe();
+    this.executeWithLoading(this.podcastsService.getPodcasts(), (podcasts) =>
+      this.updatePodcastState(podcasts)
+    );
   }
 
   loadPodcastById(id: number): void {
-    this.podcastsService
-      .getPodcastById(id)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((podcast: PodcastModel) =>
-          this.selectedPodcastsSubject.next(podcast)
-        ),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-      .subscribe();
+    this.executeWithLoading(
+      this.podcastsService.getPodcastById(id),
+      (podcast) => this.selectedPodcastSubject.next(podcast)
+    );
   }
 
   addPodcast(podcast: FormData): Observable<FormData> {
-    return this.podcastsService.add(podcast).pipe(
+    return this.wrapWithLoading(this.podcastsService.add(podcast)).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.loadAllPodcasts()),
       catchError((err) => this.generalService.handleHttpError(err))
     );
   }
 
-  editPodcast(itemId: number, podcast: FormData): Observable<FormData> {
-    return this.podcastsService.edit(itemId, podcast).pipe(
+  editPodcast(podcast: FormData): Observable<FormData> {
+    return this.wrapWithLoading(this.podcastsService.edit(podcast)).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.loadAllPodcasts()),
       catchError((err) => this.generalService.handleHttpError(err))
@@ -68,36 +57,38 @@ export class PodcastsFacade {
   }
 
   deletePodcast(id: number): void {
-    this.podcastsService
-      .delete(id)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap(() => this.loadAllPodcasts()),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-      .subscribe();
+    this.executeWithLoading(this.podcastsService.delete(id), () =>
+      this.loadAllPodcasts()
+    );
   }
 
   clearSelectedPodcast(): void {
-    this.selectedPodcastsSubject.next(null);
+    this.selectedPodcastSubject.next(null);
   }
 
   applyFilterWord(keyword: string): void {
-    const allPodcasts = this.podcastsSubject.getValue();
+    const all = this.podcastsSubject.getValue();
 
-    if (!keyword.trim() || !allPodcasts) {
-      this.filteredPodcastsSubject.next(allPodcasts);
+    if (!all) {
+      this.filteredPodcastsSubject.next(all);
       return;
     }
-    const search = keyword.trim().toLowerCase();
-    const filteredPodcasts = allPodcasts.filter((podcast) =>
-      podcast.title.toLowerCase().includes(search)
+
+    if (!toSearchKey(keyword)) {
+      this.filteredPodcastsSubject.next(all);
+      return;
+    }
+
+    const filtered = all.filter((p) =>
+      [p.title, p.artists].some((field) => includesNormalized(field, keyword))
     );
 
-    this.filteredPodcastsSubject.next(filteredPodcasts);
+    this.filteredPodcastsSubject.next(filtered);
   }
 
-  updatePodcastState(podcasts: PodcastModel[]): void {
+  // ---------- Privado / utilidades
+
+  private updatePodcastState(podcasts: PodcastModel[]): void {
     this.podcastsSubject.next(podcasts);
     this.filteredPodcastsSubject.next(podcasts);
   }

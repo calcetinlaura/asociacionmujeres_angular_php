@@ -1,23 +1,16 @@
-import { DestroyRef, inject, Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, catchError, Observable, tap } from 'rxjs';
-import {
-  CreditorModel,
-  CreditorWithInvoices,
-} from 'src/app/core/interfaces/creditor.interface';
+import { CreditorWithInvoices } from 'src/app/core/interfaces/creditor.interface';
 import { CreditorsService } from 'src/app/core/services/creditors.services';
-import { InvoicesService } from 'src/app/core/services/invoices.services';
-import { GeneralService } from '../shared/services/generalService.service';
+import { includesNormalized, toSearchKey } from '../shared/utils/text.utils';
+import { LoadableFacade } from './loadable.facade';
 
-@Injectable({
-  providedIn: 'root',
-})
-export class CreditorsFacade {
-  private readonly destroyRef = inject(DestroyRef);
+@Injectable({ providedIn: 'root' })
+export class CreditorsFacade extends LoadableFacade {
   private readonly creditorsService = inject(CreditorsService);
-  private readonly generalService = inject(GeneralService);
-  private readonly invoicesService = inject(InvoicesService);
 
+  // State propio
   private readonly creditorsSubject = new BehaviorSubject<
     CreditorWithInvoices[] | null
   >(null);
@@ -27,87 +20,63 @@ export class CreditorsFacade {
   private readonly selectedCreditorSubject =
     new BehaviorSubject<CreditorWithInvoices | null>(null);
 
-  creditors$ = this.creditorsSubject.asObservable();
-  filteredCreditors$ = this.filteredCreditorsSubject.asObservable();
-  selectedCreditor$ = this.selectedCreditorSubject.asObservable();
-  currentFilter: string = 'ALL';
+  // Streams públicos
+  readonly creditors$ = this.creditorsSubject.asObservable();
+  readonly filteredCreditors$ = this.filteredCreditorsSubject.asObservable();
+  readonly selectedCreditor$ = this.selectedCreditorSubject.asObservable();
 
-  constructor() {}
+  // Filtro actual (por categoría) para recargar tras add/edit/delete
+  private currentFilter: string | null = null;
 
-  // Filtro actual
-  setCurrentFilter(filter: string): void {
-    this.currentFilter = filter;
-    this.loadCreditorsByFilter(filter);
-  }
-
-  private reloadCurrentFilter(): void {
-    this.loadCreditorsByFilter(this.currentFilter);
+  loadAllCreditors(): void {
+    this.setCurrentFilter(null);
+    this.executeWithLoading(this.creditorsService.getCreditors(), (creditors) =>
+      this.updateCreditorState(creditors)
+    );
   }
 
   loadCreditorsByFilter(filter: string): void {
-    const loaders: Record<string, () => void> = {
-      ALL: () => this.loadAllCreditors(),
-    };
-
-    (loaders[filter] || (() => this.loadCreditorsByCategory(filter)))();
-  }
-
-  loadAllCreditors(): void {
-    this.creditorsService
-      .getCreditors()
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((creditors) => this.updateCreditorState(creditors)),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-      .subscribe();
+    this.setCurrentFilter(filter);
+    this.executeWithLoading(
+      this.creditorsService.getCreditorsByCategory(filter),
+      (agents) => this.updateCreditorState(agents)
+    );
   }
 
   loadCreditorsByCategory(category: string): void {
-    this.creditorsService
-      .getCreditorsByCategory(category)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((creditors) => this.updateCreditorState(creditors)),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-      .subscribe();
+    this.executeWithLoading(
+      this.creditorsService.getCreditorsByCategory(category),
+      (creditors) => this.updateCreditorState(creditors)
+    );
   }
 
   loadCreditorById(id: number): void {
-    this.creditorsService
-      .getCreditorById(id)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((creditor) => this.selectedCreditorSubject.next(creditor)),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-      .subscribe();
+    this.executeWithLoading(
+      this.creditorsService.getCreditorById(id),
+      (creditor) => this.selectedCreditorSubject.next(creditor)
+    );
   }
 
-  addCreditor(creditor: CreditorModel): Observable<CreditorModel> {
-    return this.creditorsService.add(creditor).pipe(
+  addCreditor(creditor: FormData): Observable<FormData> {
+    return this.wrapWithLoading(this.creditorsService.add(creditor)).pipe(
+      takeUntilDestroyed(this.destroyRef),
       tap(() => this.reloadCurrentFilter()),
       catchError((err) => this.generalService.handleHttpError(err))
     );
   }
 
-  editCreditor(id: number, creditor: CreditorModel): Observable<CreditorModel> {
-    return this.creditorsService.edit(id, creditor).pipe(
+  editCreditor(creditor: FormData): Observable<FormData> {
+    return this.wrapWithLoading(this.creditorsService.edit(creditor)).pipe(
+      takeUntilDestroyed(this.destroyRef),
       tap(() => this.reloadCurrentFilter()),
       catchError((err) => this.generalService.handleHttpError(err))
     );
   }
 
   deleteCreditor(id: number): void {
-    this.creditorsService
-      .delete(id)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap(() => this.reloadCurrentFilter()),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-      .subscribe();
+    this.executeWithLoading(this.creditorsService.delete(id), () =>
+      this.reloadCurrentFilter()
+    );
   }
 
   clearSelectedCreditor(): void {
@@ -115,25 +84,40 @@ export class CreditorsFacade {
   }
 
   applyFilterWord(keyword: string): void {
-    const allCreditors = this.creditorsSubject.getValue();
+    const all = this.creditorsSubject.getValue();
 
-    if (!keyword.trim() || !allCreditors) {
-      this.filteredCreditorsSubject.next(allCreditors ?? []);
+    if (!all) {
+      this.filteredCreditorsSubject.next(all);
       return;
     }
 
-    const search = keyword.trim().toLowerCase();
+    if (!toSearchKey(keyword)) {
+      this.filteredCreditorsSubject.next(all);
+      return;
+    }
 
-    const filtered = allCreditors.filter(
-      (creditor) =>
-        creditor.company.toLowerCase().includes(search) ||
-        (creditor.contact && creditor.contact.toLowerCase().includes(search))
+    const filtered = all.filter((c) =>
+      [c.company, c.contact]
+        .filter(Boolean)
+        .some((field) => includesNormalized(field!, keyword))
     );
 
     this.filteredCreditorsSubject.next(filtered);
   }
 
-  updateCreditorState(creditors: CreditorWithInvoices[]): void {
+  setCurrentFilter(filter: string | null): void {
+    this.currentFilter = filter;
+  }
+
+  private reloadCurrentFilter(): void {
+    if (this.currentFilter === null) {
+      this.loadAllCreditors();
+      return;
+    }
+    this.loadCreditorsByCategory(this.currentFilter);
+  }
+
+  private updateCreditorState(creditors: CreditorWithInvoices[]): void {
     this.creditorsSubject.next(creditors);
     this.filteredCreditorsSubject.next(creditors);
   }

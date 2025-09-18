@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import {
   Component,
   DestroyRef,
+  ElementRef,
   inject,
   OnInit,
   ViewChild,
@@ -39,6 +40,7 @@ import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.co
 
 @Component({
   selector: 'app-macroevents-page',
+  standalone: true,
   imports: [
     DashboardHeaderComponent,
     ModalComponent,
@@ -56,31 +58,15 @@ import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.co
     StickyZoneComponent,
   ],
   templateUrl: './macroevents-page.component.html',
-  styleUrl: './macroevents-page.component.css',
 })
 export class MacroeventsPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly modalService = inject(ModalService);
-  private readonly macroeventsFacade = inject(MacroeventsFacade);
+  readonly macroeventsFacade = inject(MacroeventsFacade);
   private readonly macroeventsService = inject(MacroeventsService);
   private readonly generalService = inject(GeneralService);
   private readonly pdfPrintService = inject(PdfPrintService);
 
-  macroevents: MacroeventModelFullData[] = [];
-  filteredMacroevents: MacroeventModelFullData[] = [];
-  filters: Filter[] = [];
-
-  selectedFilter: number | null = null;
-  currentYear = this.generalService.currentYear;
-  typeSection = TypeList.Macroevents;
-  typeModal = TypeList.Macroevents;
-  isLoading = true;
-  isModalVisible = false;
-  number = 0;
-
-  item: MacroeventModelFullData | null = null;
-  currentModalAction: TypeActionModal = TypeActionModal.Create;
-  searchForm!: FormGroup;
   columnVisibility: Record<string, boolean> = {};
   displayedColumns: string[] = [];
   headerListMacroevents: ColumnModel[] = [
@@ -93,15 +79,36 @@ export class MacroeventsPageComponent implements OnInit {
       key: 'description',
       sortable: true,
       showIndicatorOnEmpty: true,
-      width: ColumnWidth.LG,
+      innerHTML: true,
+      width: ColumnWidth.XL,
     },
     { title: 'Municipio', key: 'town', sortable: true, width: ColumnWidth.SM },
   ];
 
+  macroevents: MacroeventModelFullData[] = [];
+  filteredMacroevents: MacroeventModelFullData[] = [];
+  filters: Filter[] = [];
+  selectedFilter: number | null = null;
+
+  isModalVisible = false;
+  number = 0;
+
+  item: MacroeventModelFullData | null = null;
+  currentModalAction: TypeActionModal = TypeActionModal.Create;
+  searchForm!: FormGroup;
+
+  currentYear = this.generalService.currentYear;
+  typeModal = TypeList.Macroevents;
+  typeSection = TypeList.Macroevents;
+
   @ViewChild(InputSearchComponent)
   private inputSearchComponent!: InputSearchComponent;
 
+  @ViewChild('printArea', { static: false })
+  printArea!: ElementRef<HTMLElement>;
+
   ngOnInit(): void {
+    // Columnas visibles iniciales
     this.columnVisibility = this.generalService.setColumnVisibility(
       this.headerListMacroevents,
       ['town'] // Coloca las columnas que deseas ocultar aquí
@@ -112,8 +119,9 @@ export class MacroeventsPageComponent implements OnInit {
       this.headerListMacroevents,
       this.columnVisibility
     );
+
     this.filters = [
-      { code: 'ALL', name: 'Histórico' },
+      { code: '', name: 'Histórico' },
       ...this.generalService.getYearFilters(2018, this.currentYear),
     ];
 
@@ -126,6 +134,7 @@ export class MacroeventsPageComponent implements OnInit {
 
     this.filterSelected(this.currentYear.toString());
 
+    // Estado de macreoeventos desde la fachada
     this.macroeventsFacade.filteredMacroevents$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
@@ -135,15 +144,13 @@ export class MacroeventsPageComponent implements OnInit {
   }
 
   filterSelected(filter: string): void {
-    this.selectedFilter = filter === 'ALL' ? null : Number(filter);
+    this.selectedFilter = filter === '' ? null : Number(filter);
 
     this.generalService.clearSearchInput(this.inputSearchComponent);
 
-    if (filter === 'ALL') {
-      this.macroeventsFacade.setCurrentFilter(null); // aún puedes guardar como null
+    if (!filter) {
       this.macroeventsFacade.loadAllMacroevents();
     } else {
-      this.macroeventsFacade.setCurrentFilter(Number(filter));
       this.macroeventsFacade.loadMacroeventsByYear(Number(filter));
     }
   }
@@ -184,18 +191,16 @@ export class MacroeventsPageComponent implements OnInit {
     this.modalService.closeModal();
   }
 
-  confirmDeleteMacroevent(macroevent: MacroeventModelFullData | null): void {
-    if (!macroevent) return;
-    this.macroeventsFacade.deleteMacroevent(macroevent.id);
-    this.onCloseModal();
+  onDelete({ type, id }: { type: TypeList; id: number }) {
+    const actions: Partial<Record<TypeList, (id: number) => void>> = {
+      [TypeList.Macroevents]: (x) => this.macroeventsFacade.deleteMacroevent(x),
+    };
+    actions[type]?.(id);
   }
 
   sendFormMacroevent(macroevent: { itemId: number; formData: FormData }): void {
     const request$ = macroevent.itemId
-      ? this.macroeventsFacade.editMacroevent(
-          macroevent.itemId,
-          macroevent.formData
-        )
+      ? this.macroeventsFacade.editMacroevent(macroevent.formData)
       : this.macroeventsFacade.addMacroevent(macroevent.formData);
 
     request$
@@ -214,21 +219,29 @@ export class MacroeventsPageComponent implements OnInit {
     this.macroevents = this.macroeventsService.sortMacroeventsById(macroevents);
     this.filteredMacroevents = [...this.macroevents];
     this.number = this.macroeventsService.countMacroevents(macroevents);
-    this.isLoading = false;
   }
-  printTableAsPdf(): void {
-    this.pdfPrintService.printTableAsPdf('table-to-print', 'macroeventos.pdf');
+
+  async printTableAsPdf(): Promise<void> {
+    if (!this.printArea) return;
+
+    await this.pdfPrintService.printElementAsPdf(this.printArea, {
+      filename: 'facturas.pdf',
+      preset: 'compact', // 'compact' reduce paddings en celdas
+      orientation: 'portrait', // o 'landscape' si la tabla es muy ancha
+      format: 'a4',
+      margins: [5, 5, 5, 5], // mm
+    });
   }
+
   getVisibleColumns() {
     return this.headerListMacroevents.filter(
       (col) => this.columnVisibility[col.key]
     );
   }
+
   // Método para actualizar las columnas visibles cuando se hace toggle
   toggleColumn(key: string): void {
-    // Cambia la visibilidad de la columna en columnVisibility
     this.columnVisibility[key] = !this.columnVisibility[key];
-    // Actualiza las columnas visibles en la tabla después de cambiar el estado
     this.displayedColumns = this.generalService.updateDisplayedColumns(
       this.headerListMacroevents,
       this.columnVisibility

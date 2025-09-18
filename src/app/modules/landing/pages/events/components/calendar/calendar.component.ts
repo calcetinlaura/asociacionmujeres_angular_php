@@ -9,17 +9,18 @@ import {
 import { EventsFacade } from 'src/app/application/events.facade';
 import { EventModel } from 'src/app/core/interfaces/event.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
-import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
+import { ModalComponent } from 'src/app/shared/components/modal/modal.component'; // modal grande (tu antigua)
 import { ImgBrokenDirective } from 'src/app/shared/directives/img-broken.directive';
 import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
-import { ModalMultiEventComponent } from '../modal-multievent/modal-multievent.component';
+import { ModalMultiEventComponent } from '../../../../../../shared/components/modal/pages/modal-multievent/modal-multievent.component';
+
 @Component({
   selector: 'app-calendar',
   standalone: true,
   imports: [
     CommonModule,
-    ModalComponent,
-    ModalMultiEventComponent,
+    ModalComponent, // grande (una ficha)
+    ModalMultiEventComponent, // pequeña (lista del día)
     ImgBrokenDirective,
     ItemImagePipe,
   ],
@@ -36,11 +37,14 @@ export class CalendarComponent implements OnChanges {
   currentMonth: number = new Date().getMonth();
   currentYear: number = new Date().getFullYear();
 
+  // Modal grande (una tarjeta de evento)
   showModalView = false;
   selectedActionModal: TypeActionModal = TypeActionModal.Show;
   TypeActionModal = TypeActionModal;
   typeModal: TypeList = TypeList.Events;
   item: EventModel | null = null;
+
+  // Modal pequeña (lista de eventos de un día)
   showMultiEventModal = false;
   multiEventItems: EventModel[] = [];
 
@@ -56,14 +60,12 @@ export class CalendarComponent implements OnChanges {
     const currentYear = today.getFullYear();
 
     if (isFilterYearChanged) {
-      // 🔥 Si es año actual → empezar en mes actual
       if (this.filterYear === currentYear) {
         this.currentMonth = today.getMonth();
       } else {
         this.currentMonth = 0; // Enero
       }
     } else if (eventsChanged && this.events.length === 0 && this.filterYear) {
-      // 🔥 Caso edge: filterYear sin eventos
       if (this.filterYear === currentYear) {
         this.currentMonth = today.getMonth();
       } else {
@@ -89,7 +91,7 @@ export class CalendarComponent implements OnChanges {
 
     for (let d = 1; d <= lastDay.getDate(); d++) {
       const date = new Date(year, month, d);
-      const isoDate = date.toLocaleDateString('sv-SE');
+      const isoDate = date.toLocaleDateString('sv-SE'); // YYYY-MM-DD
       const events = this.events.filter((e) => e.start === isoDate);
       calendar.push({ date, events });
     }
@@ -125,6 +127,7 @@ export class CalendarComponent implements OnChanges {
     }).format(new Date(year, this.currentMonth));
   }
 
+  // Abre modal según # de eventos en la celda
   openModalView(cell: { date: Date | null; events: EventModel[] }): void {
     if (!cell.date) return;
 
@@ -137,24 +140,33 @@ export class CalendarComponent implements OnChanges {
       this.showMultiEventModal = true;
     }
   }
+
+  openMultiEventModal(ev: MouseEvent, events: EventModel[]): void {
+    ev?.stopPropagation();
+    this.multiEventItems = events ?? [];
+    this.showMultiEventModal = true;
+  }
+
+  // idem, por si usas otro handler
+  handleCellClick(cell: { date: Date | null; events: EventModel[] }): void {
+    if (!cell.date || cell.events.length === 0) return;
+    if (cell.events.length === 1) {
+      this.item = cell.events[0];
+      this.showModalView = true;
+      this.selectedActionModal = TypeActionModal.Show;
+    } else {
+      this.multiEventItems = cell.events;
+      this.showMultiEventModal = true;
+    }
+  }
+
+  // cierra la grande
   onCloseModal(): void {
     this.showModalView = false;
     this.item = null;
   }
-  isToday(date: Date | null): boolean {
-    if (!date) return false;
-    const today = new Date();
-    return (
-      date.getFullYear() === today.getFullYear() &&
-      date.getMonth() === today.getMonth() &&
-      date.getDate() === today.getDate()
-    );
-  }
-  getFlexBasis(eventCount: number): string {
-    if (eventCount <= 1) return '100%';
-    if (eventCount <= 4) return '50%';
-    return '33.3333%';
-  }
+
+  // seleccionas en la pequeña → abres la grande
   selectEventFromMulti(event: EventModel): void {
     this.item = event;
     this.showModalView = true;
@@ -166,21 +178,20 @@ export class CalendarComponent implements OnChanges {
     this.multiEventItems = [];
   }
 
-  handleCellClick(cell: { date: Date | null; events: EventModel[] }): void {
-    if (!cell.date || cell.events.length === 0) return;
-
-    if (cell.events.length === 1) {
-      this.item = cell.events[0];
-      this.showModalView = true;
-      this.selectedActionModal = TypeActionModal.Show;
-    } else {
-      this.multiEventItems = cell.events;
-      this.showMultiEventModal = true;
-    }
+  // utilidades UI
+  isToday(date: Date | null): boolean {
+    if (!date) return false;
+    const today = new Date();
+    return (
+      date.getFullYear() === today.getFullYear() &&
+      date.getMonth() === today.getMonth() &&
+      date.getDate() === today.getDate()
+    );
   }
-  openMultiEventModal(event: MouseEvent, events: EventModel[]): void {
-    event.stopPropagation(); // Evita que también se dispare handleCellClick de la celda
-    this.multiEventItems = events;
-    this.showMultiEventModal = true;
+
+  getFlexBasis(eventCount: number): string {
+    if (eventCount <= 1) return '100%';
+    if (eventCount <= 4) return '50%';
+    return '33.3333%';
   }
 }

@@ -2,6 +2,11 @@
 
 # Compiled output
 /dist
+data/dist/
+/uploads/
+/uploads/audio/
+/uploads/img/
+/uploads/pdf/
 /tmp
 /out-tsc
 /bazel-out

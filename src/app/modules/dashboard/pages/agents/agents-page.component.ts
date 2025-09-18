@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import {
   Component,
   DestroyRef,
+  ElementRef,
   inject,
   OnInit,
   ViewChild,
@@ -42,6 +43,7 @@ import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.co
 
 @Component({
   selector: 'app-agents-page',
+  standalone: true,
   imports: [
     DashboardHeaderComponent,
     ModalComponent,
@@ -59,30 +61,15 @@ import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.co
     StickyZoneComponent,
   ],
   templateUrl: './agents-page.component.html',
-  styleUrl: './agents-page.component.css',
 })
 export class AgentsPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly modalService = inject(ModalService);
-  private readonly agentsFacade = inject(AgentsFacade);
+  readonly agentsFacade = inject(AgentsFacade);
   private readonly agentsService = inject(AgentsService);
   private readonly generalService = inject(GeneralService);
   private readonly pdfPrintService = inject(PdfPrintService);
 
-  agents: AgentModel[] = [];
-  filteredAgents: AgentModel[] = [];
-  filters: Filter[] = [];
-  selectedFilter: string | null = null;
-
-  isLoading = true;
-  isModalVisible = false;
-  number = 0;
-
-  item: AgentModel | null = null;
-  currentModalAction: TypeActionModal = TypeActionModal.Create;
-  searchForm!: FormGroup;
-  typeSection = TypeList.Agents;
-  typeModal = TypeList.Agents;
   columnVisibility: Record<string, boolean> = {};
   displayedColumns: string[] = [];
   headerListAgents: ColumnModel[] = [
@@ -121,11 +108,29 @@ export class AgentsPageComponent implements OnInit {
     },
   ];
 
+  agents: AgentModel[] = [];
+  filteredAgents: AgentModel[] = [];
+  filters: Filter[] = [];
+  selectedFilter: string | null = null;
+
+  isModalVisible = false;
+  number = 0;
+
+  item: AgentModel | null = null;
+  currentModalAction: TypeActionModal = TypeActionModal.Create;
+  searchForm!: FormGroup;
+
+  typeModal = TypeList.Agents;
+  typeSection = TypeList.Agents;
+
   @ViewChild(InputSearchComponent)
   private inputSearchComponent!: InputSearchComponent;
 
+  @ViewChild('printArea', { static: false })
+  printArea!: ElementRef<HTMLElement>;
+
   ngOnInit(): void {
-    // Ocultar 'date_payment' y 'date_accounting' al cargar la página
+    // Columnas visibles iniciales
     this.columnVisibility = this.generalService.setColumnVisibility(
       this.headerListAgents,
       [''] // Coloca las columnas que deseas ocultar aquí
@@ -136,7 +141,7 @@ export class AgentsPageComponent implements OnInit {
       this.headerListAgents,
       this.columnVisibility
     );
-    this.filters = [{ code: 'ALL', name: 'Todos' }, ...CategoryFilterAgents];
+    this.filters = [{ code: '', name: 'Todos' }, ...CategoryFilterAgents];
 
     this.modalService.modalVisibility$
       .pipe(
@@ -145,7 +150,7 @@ export class AgentsPageComponent implements OnInit {
       )
       .subscribe();
 
-    this.filterSelected('ALL');
+    this.filterSelected('');
 
     this.agentsFacade.filteredAgents$
       .pipe(
@@ -158,7 +163,11 @@ export class AgentsPageComponent implements OnInit {
   filterSelected(filter: string): void {
     this.selectedFilter = filter;
     this.generalService.clearSearchInput(this.inputSearchComponent);
-    this.agentsFacade.setCurrentFilter(filter);
+    if (!filter) {
+      this.agentsFacade.loadAllAgents();
+    } else {
+      this.agentsFacade.loadAgentsByFilter(filter);
+    }
   }
 
   applyFilterWord(keyword: string): void {
@@ -177,7 +186,7 @@ export class AgentsPageComponent implements OnInit {
     this.openModal(event.typeModal, event.action, event.item);
   }
 
-  private openModal(
+  openModal(
     typeModal: TypeList,
     action: TypeActionModal,
     item: AgentModel | null
@@ -193,15 +202,16 @@ export class AgentsPageComponent implements OnInit {
     this.modalService.closeModal();
   }
 
-  confirmDeleteAgent(agent: AgentModel | null): void {
-    if (!agent) return;
-    this.agentsFacade.deleteAgent(agent.id);
-    this.onCloseModal();
+  onDelete({ type, id }: { type: TypeList; id: number }) {
+    const actions: Partial<Record<TypeList, (id: number) => void>> = {
+      [TypeList.Agents]: (x) => this.agentsFacade.deleteAgent(x),
+    };
+    actions[type]?.(id);
   }
 
   sendFormAgent(event: { itemId: number; formData: FormData }): void {
     const request$ = event.itemId
-      ? this.agentsFacade.editAgent(event.itemId, event.formData)
+      ? this.agentsFacade.editAgent(event.formData)
       : this.agentsFacade.addAgent(event.formData);
 
     request$
@@ -218,21 +228,29 @@ export class AgentsPageComponent implements OnInit {
     this.agents = this.agentsService.sortAgentsById(agents);
     this.filteredAgents = [...this.agents];
     this.number = this.agentsService.countAgents(agents);
-    this.isLoading = false;
   }
-  printTableAsPdf(): void {
-    this.pdfPrintService.printTableAsPdf('table-to-print', 'agentes.pdf');
+
+  async printTableAsPdf(): Promise<void> {
+    if (!this.printArea) return;
+
+    await this.pdfPrintService.printElementAsPdf(this.printArea, {
+      filename: 'agentes.pdf',
+      preset: 'compact', // 'compact' reduce paddings en celdas
+      orientation: 'portrait', // o 'landscape' si la tabla es muy ancha
+      format: 'a4',
+      margins: [5, 5, 5, 5], // mm
+    });
   }
+
   getVisibleColumns() {
     return this.headerListAgents.filter(
       (col) => this.columnVisibility[col.key]
     );
   }
+
   // Método para actualizar las columnas visibles cuando se hace toggle
   toggleColumn(key: string): void {
-    // Cambia la visibilidad de la columna en columnVisibility
     this.columnVisibility[key] = !this.columnVisibility[key];
-    // Actualiza las columnas visibles en la tabla después de cambiar el estado
     this.displayedColumns = this.generalService.updateDisplayedColumns(
       this.headerListAgents,
       this.columnVisibility

@@ -1,8 +1,11 @@
-import { HttpErrorResponse } from '@angular/common/http';
+import {
+  HttpClient,
+  HttpErrorResponse,
+  HttpHeaders,
+} from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { FormGroup } from '@angular/forms';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { Observable, throwError } from 'rxjs';
+import { catchError, Observable, throwError } from 'rxjs';
 import { ColumnModel } from 'src/app/core/interfaces/column.interface';
 import { Filter } from 'src/app/core/models/general.model';
 
@@ -11,7 +14,7 @@ import { Filter } from 'src/app/core/models/general.model';
 })
 export class GeneralService {
   currentYear = new Date().getFullYear();
-  constructor(private snackBar: MatSnackBar) {}
+  constructor(private http: HttpClient) {}
 
   /**
    * Transforma una hora eliminando los segundos.
@@ -87,7 +90,7 @@ export class GeneralService {
   /** Construye un FormData dinámico a partir de un objeto   */
   createFormData(
     item: any,
-    fileFields: { [key: string]: File | null } = {},
+    fileFields: { [key: string]: File | string | null } = {},
     itemId?: number
   ): FormData {
     const formData = new FormData();
@@ -108,12 +111,14 @@ export class GeneralService {
     // Manejo flexible de múltiples archivos
     Object.keys(fileFields).forEach((field) => {
       const file = fileFields[field];
+
       if (file instanceof File) {
         formData.append(field, file, file.name);
-      } else if (item.existingUrl) {
-        formData.append('existingUrl', item.existingUrl);
+      } else if (typeof file === 'string' && file !== '') {
+        // URL existente (por ejemplo, al editar sin cambiar el archivo)
+        formData.append(field, file);
       } else {
-        // Marcar para borrar
+        // Nada seleccionado: marcar para eliminar
         formData.append(field, '');
       }
     });
@@ -124,6 +129,46 @@ export class GeneralService {
     }
 
     return formData;
+  }
+  // POST con override DELETE: envía params en el body (FormData)
+  deleteOverride<T>(
+    url: string,
+    params?: Record<string, string | number | boolean>,
+    extra?: { headers?: HttpHeaders }
+  ): Observable<T> {
+    const body = new FormData();
+    body.append('_method', 'DELETE');
+    if (params) {
+      for (const [k, v] of Object.entries(params)) body.append(k, String(v));
+    }
+    return this.http
+      .post<T>(url, body, extra)
+      .pipe(catchError((err) => this.handleHttpError(err)));
+  }
+
+  // (Opcional) intento DELETE real y, si 405/403, fallback al override:
+  tryDeleteWithFallback<T>(
+    url: string,
+    queryParams?: Record<string, string | number | boolean>,
+    extra?: { headers?: HttpHeaders }
+  ): Observable<T> {
+    // Construir HttpParams rápido
+    const searchParams = new URLSearchParams();
+    if (queryParams) {
+      for (const [k, v] of Object.entries(queryParams))
+        searchParams.set(k, String(v));
+    }
+    const fullUrl = searchParams.toString() ? `${url}?${searchParams}` : url;
+
+    return this.http.delete<T>(fullUrl, extra).pipe(
+      catchError((err) => {
+        if (err?.status === 405 || err?.status === 403) {
+          // Fallback a POST + _method=DELETE
+          return this.deleteOverride<T>(url, queryParams, extra);
+        }
+        return this.handleHttpError(err);
+      })
+    );
   }
 
   handleHttpError(error: any): Observable<never> {

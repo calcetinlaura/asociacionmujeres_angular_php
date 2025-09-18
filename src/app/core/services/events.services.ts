@@ -69,16 +69,14 @@ export class EventsService {
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
-  edit(id: number, event: FormData): Observable<any> {
+  edit(event: FormData): Observable<any> {
     return this.http
       .post(this.apiUrl, event)
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
   delete(id: number): Observable<any> {
-    return this.http
-      .delete(this.apiUrl, { params: { id: id } })
-      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
+    return this.generalService.deleteOverride<any>(this.apiUrl, { id });
   }
 
   sortEventsByTitle(events: EventModelFullData[]): EventModel[] {
@@ -105,27 +103,32 @@ export class EventsService {
     return events?.length ?? 0;
   }
   updateEvent(id: number, formData: FormData): Observable<any> {
-    return this.http.patch(`${this.apiUrl}?id=${id}`, formData);
+    return this.http.post(`${this.apiUrl}?id=${id}`, formData);
   }
-  deleteEventsByPeriodicId(periodicId: string) {
-    return this.http.delete(`${this.apiUrl}?periodic_id=${periodicId}`);
+
+  deleteEventsByPeriodicId(periodicId: string): Observable<void> {
+    return this.generalService.deleteOverride<void>(this.apiUrl, {
+      periodic_id: periodicId,
+    });
   }
-  deleteOtherEventsByPeriodicId(periodicId: string, keepId: number) {
-    return this.http.delete(
-      `${this.apiUrl}?periodic_id=${periodicId}&keep_id=${keepId}`
-    );
+
+  deleteOtherEventsByPeriodicId(
+    periodicId: string,
+    keepId: number
+  ): Observable<void> {
+    return this.generalService.deleteOverride<void>(this.apiUrl, {
+      periodic_id: periodicId,
+      keep_id: keepId,
+    });
   }
+
   deleteEventsByPeriodicIdExcept(
     periodicId: string,
     keepId: number
   ): Observable<void> {
-    return this.http
-      .delete<void>(this.apiUrl, {
-        params: {
-          periodic_id: periodicId,
-          keep_id: keepId.toString(),
-        },
-      })
-      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
+    return this.generalService.deleteOverride<void>(this.apiUrl, {
+      periodic_id: periodicId,
+      keep_id: keepId,
+    });
   }
 }

@@ -47,7 +47,7 @@ export class FormAgentComponent {
   private generalService = inject(GeneralService);
 
   @Input() itemId!: number;
-  @Output() sendFormAgent = new EventEmitter<{
+  @Output() submitForm = new EventEmitter<{
     itemId: number;
     formData: FormData;
   }>();
@@ -55,19 +55,27 @@ export class FormAgentComponent {
   agentData: any;
   imageSrc: string = '';
   submitted = false;
-  titleForm: string = 'Registrar acreedor/a';
+  titleForm: string = 'Registrar agente colaborador';
   buttonAction: string = 'Guardar';
   CategoryFilterAgents = CategoryFilterAgents;
   typeList = TypeList.Agents;
   formAgent = new FormGroup({
     name: new FormControl('', [Validators.required]),
     contact: new FormControl(''),
-    phone: new FormControl(''),
-    email: new FormControl(''),
+    phone: new FormControl('', [
+      // Permite vacío; si hay valor, debe cumplir el patrón
+      Validators.pattern(/^\s*(\+?\d[\d\s\-().]{6,14}\d)\s*$/),
+    ]),
+    email: new FormControl('', [
+      // Permite vacío; si hay valor, debe ser email válido
+      Validators.email,
+    ]),
     province: new FormControl(''),
     town: new FormControl(''),
     address: new FormControl(''),
-    post_code: new FormControl(''),
+    post_code: new FormControl('', [
+      Validators.pattern(/^(?:0[1-9]|[1-4][0-9]|5[0-2])[0-9]{3}$/),
+    ]),
     category: new FormControl(''),
     observations: new FormControl(''),
     img: new FormControl(''),
@@ -160,6 +168,6 @@ export class FormAgentComponent {
       this.itemId
     );
 
-    this.sendFormAgent.emit({ itemId: this.itemId, formData: formData });
+    this.submitForm.emit({ itemId: this.itemId, formData: formData });
   }
 }

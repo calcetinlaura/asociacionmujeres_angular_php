@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import {
   Component,
   DestroyRef,
+  ElementRef,
   OnInit,
   ViewChild,
   inject,
@@ -39,6 +40,7 @@ import { TableComponent } from '../../components/table/table.component';
 
 @Component({
   selector: 'app-invoices-page',
+  standalone: true,
   imports: [
     CommonModule,
     DashboardHeaderComponent,
@@ -56,22 +58,28 @@ import { TableComponent } from '../../components/table/table.component';
     StickyZoneComponent,
   ],
   templateUrl: './invoices-page.component.html',
-  styleUrls: ['./invoices-page.component.css'],
 })
 export class InvoicesPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly modalService = inject(ModalService);
-  private readonly invoicesFacade = inject(InvoicesFacade);
+  readonly invoicesFacade = inject(InvoicesFacade);
   private readonly invoicesService = inject(InvoicesService);
   private readonly generalService = inject(GeneralService);
   private readonly pdfPrintService = inject(PdfPrintService);
-  // Para controlar qué columnas se muestran
+
   columnVisibility: Record<string, boolean> = {};
   displayedColumns: string[] = [];
   headerListInvoices: ColumnModel[] = [
     {
-      title: 'PDF',
+      title: 'FACT.',
       key: 'invoice_pdf',
+      sortable: true,
+      showIndicatorOnEmpty: true,
+      textAlign: 'center',
+    },
+    {
+      title: 'JUST.',
+      key: 'proof_pdf',
       sortable: true,
       showIndicatorOnEmpty: true,
       textAlign: 'center',
@@ -121,6 +129,7 @@ export class InvoicesPageComponent implements OnInit {
       title: 'Descripción',
       key: 'description',
       sortable: true,
+      innerHTML: true,
       showIndicatorOnEmpty: true,
       width: ColumnWidth.LG,
     },
@@ -160,6 +169,15 @@ export class InvoicesPageComponent implements OnInit {
       textAlign: 'right',
     },
     {
+      title: 'TOTAL+IRPF',
+      key: 'total_amount_irpf',
+      sortable: true,
+      width: ColumnWidth.XS,
+      pipe: 'eurosFormat',
+      footerTotal: true,
+      textAlign: 'right',
+    },
+    {
       title: 'Subvención',
       key: 'subsidy_name',
       sortable: true,
@@ -178,26 +196,30 @@ export class InvoicesPageComponent implements OnInit {
 
   invoices: InvoiceModelFullData[] = [];
   filteredInvoices: InvoiceModelFullData[] = [];
-  filtersYears: Filter[] = [];
+  filters: Filter[] = [];
   selectedFilter: number | null = null;
-  isLoading = true;
+
   isModalVisible = false;
   hasInvoicesForYear = false;
   number = 0;
   item: InvoiceModelFullData | null = null;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
-  typeSection = TypeList.Invoices;
-  typeModal = TypeList.Invoices;
+
   currentFilterType: string | null = null;
   currentTab: string | null = null;
-  currentYear = this.generalService.currentYear;
   selectedIndex = 0;
+  currentYear = this.generalService.currentYear;
+  typeModal = TypeList.Invoices;
+  typeSection = TypeList.Invoices;
 
   @ViewChild(InputSearchComponent)
   private inputSearchComponent!: InputSearchComponent;
 
+  @ViewChild('printArea', { static: false })
+  printArea!: ElementRef<HTMLElement>;
+
   ngOnInit(): void {
-    // Ocultar 'date_payment' y 'date_accounting' al cargar la página
+    // Columnas visibles iniciales
     this.columnVisibility = this.generalService.setColumnVisibility(
       this.headerListInvoices,
       ['date_payment', 'date_accounting'] // Coloca las columnas que deseas ocultar aquí
@@ -210,10 +232,7 @@ export class InvoicesPageComponent implements OnInit {
     );
 
     this.invoicesFacade.clearInvoices();
-    this.filtersYears = this.generalService.getYearFilters(
-      2018,
-      this.currentYear
-    );
+    this.filters = this.generalService.getYearFilters(2018, this.currentYear);
 
     combineLatest([
       this.invoicesFacade.invoices$,
@@ -225,16 +244,16 @@ export class InvoicesPageComponent implements OnInit {
         takeUntilDestroyed(this.destroyRef),
         tap(([invoices, selectedYear, tabFilter, loading]) => {
           if (loading) {
-            this.isLoading = true;
+            // this.isLoading = true;
             return; // 🔥 si sigue cargando, NO hacer nada más
           }
 
-          this.isLoading = false;
+          // this.isLoading = false;
 
           let invoicesForYear = invoices;
 
           if (selectedYear) {
-            invoicesForYear = invoices.filter((invoice) =>
+            invoicesForYear = invoices!.filter((invoice) =>
               invoice.date_invoice
                 ? new Date(invoice.date_invoice).getFullYear().toString() ===
                   selectedYear
@@ -242,19 +261,19 @@ export class InvoicesPageComponent implements OnInit {
             );
           }
 
-          this.hasInvoicesForYear = invoicesForYear.length > 0; // ✅ si hay facturas del año o no
+          this.hasInvoicesForYear = invoicesForYear!.length > 0; // ✅ si hay facturas del año o no
 
           let filtered = invoicesForYear;
 
           if (tabFilter) {
-            filtered = invoicesForYear.filter(
+            filtered = invoicesForYear!.filter(
               (invoice) => invoice.type_invoice === tabFilter
             );
           }
 
-          this.invoices = invoicesForYear;
-          this.filteredInvoices = filtered;
-          this.number = filtered.length;
+          this.invoices = invoicesForYear!;
+          this.filteredInvoices = filtered!;
+          this.number = filtered!.length;
         })
       )
       .subscribe();
@@ -279,7 +298,7 @@ export class InvoicesPageComponent implements OnInit {
     this.currentFilterType = null;
     this.invoicesFacade.clearTabFilter();
 
-    this.invoicesFacade.setCurrentFilter(year.toString());
+    this.invoicesFacade.setCurrentFilter(year);
     this.invoicesFacade.loadInvoicesByYear(year);
   }
 
@@ -288,13 +307,13 @@ export class InvoicesPageComponent implements OnInit {
 
     switch (this.currentTab) {
       case 'Facturas':
-        this.currentFilterType = 'Factura';
+        this.currentFilterType = 'INVOICE';
         break;
       case 'Tickets':
-        this.currentFilterType = 'Ticket';
+        this.currentFilterType = 'TICKET';
         break;
       case 'Ingresos':
-        this.currentFilterType = 'Ingreso';
+        this.currentFilterType = 'INCOME';
         break;
       case 'Contabilidad completa':
         this.currentFilterType = null;
@@ -341,18 +360,18 @@ export class InvoicesPageComponent implements OnInit {
 
   onCloseModal(): void {
     this.modalService.closeModal();
-    this.isLoading = false;
   }
 
-  confirmDeleteInvoice(invoice: InvoiceModelFullData | null): void {
-    if (!invoice) return;
-    this.invoicesFacade.deleteInvoice(invoice.id);
-    this.modalService.closeModal();
+  onDelete({ type, id }: { type: TypeList; id: number }) {
+    const actions: Partial<Record<TypeList, (id: number) => void>> = {
+      [TypeList.Invoices]: (x) => this.invoicesFacade.deleteInvoice(x),
+    };
+    actions[type]?.(id);
   }
 
   sendFormInvoice(event: { itemId: number; formData: FormData }): void {
     const operation = event.itemId
-      ? this.invoicesFacade.editInvoice(event.itemId, event.formData)
+      ? this.invoicesFacade.editInvoice(event.formData)
       : this.invoicesFacade.addInvoice(event.formData);
 
     operation
@@ -367,47 +386,36 @@ export class InvoicesPageComponent implements OnInit {
       )
       .subscribe();
   }
-  printTableAsPdf(): void {
-    this.pdfPrintService.printTableAsPdf('table-to-print', 'facturas.pdf');
+  async printTableAsPdf(): Promise<void> {
+    if (!this.printArea) return;
+
+    await this.pdfPrintService.printElementAsPdf(this.printArea, {
+      filename: 'facturas.pdf',
+      preset: 'compact', // 'compact' reduce paddings en celdas
+      orientation: 'landscape', // o 'landscape' si la tabla es muy ancha
+      format: 'a4',
+      margins: [5, 5, 5, 5], // mm
+    });
   }
 
-  downloadFilteredPdfs(): void {
-    // Filtra los datos que tienen un PDF
+  downloadFilteredPdfs(includeProof: boolean = true): void {
     const data = this.filteredInvoices || [];
 
-    const pdfFiles = data
-      .filter((invoice: any) => invoice.invoice_pdf) // Filtra las facturas que tienen un PDF
-      .map((invoice: any) => {
-        const fileName = invoice.invoice_pdf;
-        const yearMatch = fileName.match(/^(\d{4})_/); // Extrae el año del nombre del archivo
-        const yearFolder = yearMatch ? yearMatch[1] : '';
-        return `${yearFolder}/${fileName}`; // Retorna la ruta completa del archivo PDF
+    this.invoicesService
+      .downloadInvoicesZipFromData(data, {
+        includeProof, // true: invoice+proof | false: solo invoice
+        filename: includeProof ? 'facturas_justificantes.zip' : 'facturas.zip',
+      })
+      .subscribe({
+        error: (e) => {
+          if (e?.message === 'NO_FILES') {
+            alert('No hay PDFs para descargar.');
+          } else {
+            console.error('💥 Error al descargar ZIP:', e);
+            alert('Error al descargar el ZIP. Revisa la consola.');
+          }
+        },
       });
-
-    // Si no hay PDFs, muestra una alerta
-    if (!pdfFiles.length) {
-      alert('No hay PDFs para descargar.');
-      return;
-    }
-
-    // Llama al servicio para descargar el archivo ZIP
-    this.invoicesService.downloadFilteredPdfs(pdfFiles).subscribe({
-      next: (blob) => {
-        // Crea un objeto URL para el archivo Blob
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'facturas.zip'; // Nombre del archivo ZIP descargado
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url); // Libera el objeto URL
-      },
-      error: (err) => {
-        console.error('💥 Error al descargar ZIP:', err);
-        alert('Error al descargar el ZIP. Revisa la consola.');
-      },
-    });
   }
 
   getVisibleColumns() {
@@ -415,11 +423,11 @@ export class InvoicesPageComponent implements OnInit {
       (col) => this.columnVisibility[col.key]
     );
   }
+
   // Método para actualizar las columnas visibles cuando se hace toggle
   toggleColumn(key: string): void {
-    // Cambia la visibilidad de la columna en columnVisibility
     this.columnVisibility[key] = !this.columnVisibility[key];
-    // Actualiza las columnas visibles en la tabla después de cambiar el estado
+
     this.displayedColumns = this.generalService.updateDisplayedColumns(
       this.headerListInvoices,
       this.columnVisibility

@@ -37,18 +37,19 @@
             (change)="toggleColumn(column.key)"
           >
             {{ column.title }}
-          </mat-checkbox></button
-        >}
+          </mat-checkbox>
+        </button>
+        }
       </mat-menu>
     </div>
   </div>
 </app-sticky-zone>
 <div class="flex flex-col px-8">
-  <!-- Spinner Loading -->
-  @if (isLoading) {
+  @if (moviesFacade.isLoading$ | async) {
   <app-spinner-loading />
   } @else {@if(filteredMovies.length > 0){
-  <div class="pb-4 flex">
+  <div class="pb-4" #printArea>
+    <h2 class="only-on-pdf print-title">Listado películas</h2>
     <app-table
       [data]="filteredMovies"
       [typeSection]="typeSection"
@@ -64,7 +65,6 @@
     No hay películas registradas.
   </div>
   } }
-  <!-- Tabla -->
 </div>
 
 <!-- Modal -->
@@ -74,7 +74,7 @@
   [typeModal]="typeModal"
   [action]="currentModalAction"
   (closeModal)="onCloseModal()"
-  (confirmDelete)="confirmDeleteMovie(item)"
+  (confirmDelete)="onDelete($event)"
   (sendFormMovieData)="sendFormMovie($event)"
 ></app-modal>
 }

@@ -1,0 +1,29 @@
+@if (open) {
+<div class="modal" (click)="closeOnBackdrop && close()">
+  <div
+    cdkTrapFocus
+    role="dialog"
+    [attr.aria-modal]="true"
+    class="modal_body"
+    [ngClass]="[sizeClass, variantClass, panelClass]"
+    [style.width]="panelClass === 'pdf-panel' ? '96vw' : null"
+    [style.maxWidth]="panelClass === 'pdf-panel' ? '96vw' : null"
+    [style.height]="panelClass === 'pdf-panel' ? '92vh' : null"
+    [style.maxHeight]="panelClass === 'pdf-panel' ? '92vh' : null"
+    [style.padding]="panelClass === 'pdf-panel' ? '0' : null"
+    (click)="$event.stopPropagation()"
+  >
+    @if (showClose) {
+    <div
+      class="absolute top-3 right-6 block text-gray-500 cursor-pointer hover:text-black"
+      (click)="close()"
+    >
+      <i class="uil uil-multiply iconClose"></i>
+    </div>
+    }
+    <section class="flex-1 min-h-0 p-0 overflow-auto">
+      <ng-content></ng-content>
+    </section>
+  </div>
+</div>
+}

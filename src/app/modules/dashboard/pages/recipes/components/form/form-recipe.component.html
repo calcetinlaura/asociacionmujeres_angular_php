@@ -20,6 +20,7 @@
           <div class="flex flex-col flex-1">
             <input
               formControlName="title"
+              placeholder="Título de la receta"
               type="text"
               [ngClass]="{
                 'is-invalid': submitted && formRecipe.get('title')?.invalid
@@ -34,7 +35,11 @@
         <!-- Autor -->
         <div class="box-input gap-x-4">
           <label for="owner">Autor/a</label>
-          <input formControlName="owner" type="text" />
+          <input
+            formControlName="owner"
+            placeholder="Autor/a de la receta"
+            type="text"
+          />
         </div>
         <div class="flex gap-x-4">
           <!-- Categoría -->
@@ -44,9 +49,12 @@
               <select
                 formControlName="category"
                 [ngClass]="{
-                  'is-invalid': submitted && formRecipe.get('category')?.invalid
+                  'is-invalid':
+                    submitted && formRecipe.get('category')?.invalid,
+                  'text-placeholder': !formRecipe.get('category')?.value
                 }"
               >
+                <option value="" disabled hidden>Género de la receta</option>
                 @for (category of FilterRecipes; track category) {
                 <option [value]="category.code">
                   {{ category.name }}
@@ -59,15 +67,17 @@
             </div>
           </div>
           <!-- Año -->
-          <div class="box-input gap-x-4">
+          <div class="box-input gap-x-4 w-96">
             <label for="year">Año publicación</label>
             <div class="flex flex-col flex-1">
               <select
                 formControlName="year"
                 [ngClass]="{
-                  'is-invalid': submitted && formRecipe.get('category')?.invalid
+                  'is-invalid': submitted && formRecipe.get('year')?.invalid,
+                  'text-placeholder': !formRecipe.get('year')?.value
                 }"
               >
+                <option value="null" disabled hidden>Año de registro</option>
                 @for (year of years; track year) {
                 <option [value]="year">
                   {{ year }}
@@ -81,17 +91,19 @@
           </div>
         </div>
       </div>
+      <hr />
       <div class="flex gap-x-4">
         <!-- Ingredientes -->
         <div class="box-input gap-x-4 flex-1">
-          <label for="ingredients">Ingredientes</label>
+          <label for="ingredients">Introducción</label>
           <quill-editor
-            formControlName="ingredients"
+            formControlName="introduction"
             [modules]="quillModules"
-            placeholder="Escribe aquí la descripción..."
-            class="flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
+            placeholder="Contexto de la receta"
+            class="ql-container-large flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
           />
         </div>
+
         <!-- Portada (Imagen) -->
         <div class="w-72">
           <app-image-control
@@ -104,9 +116,20 @@
             [type]="typeList"
             (imgSelected)="onImageSelected($event)"
             [imageWidthValue]="'full'"
+            [textImg]="'Añadir imagen'"
             class="w-full"
           ></app-image-control>
         </div>
+      </div>
+      <!-- Ingredientes -->
+      <div class="box-input gap-x-4">
+        <label for="ingredients">Ingredientes</label>
+        <quill-editor
+          formControlName="ingredients"
+          [modules]="quillModules"
+          placeholder="Lista los ingredientes con sus cantidades"
+          class="ql-container-large flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
+        />
       </div>
       <!-- Receta -->
       <div class="box-input gap-x-4">
@@ -115,8 +138,8 @@
         <quill-editor
           formControlName="recipe"
           [modules]="quillModules"
-          placeholder="Escribe aquí la descripción..."
-          class="flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
+          placeholder="Detalla pasa a paso como elaborar la receta"
+          class="ql-container-large flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
         />
       </div>
       @if (formRecipe.invalid && submitted) {

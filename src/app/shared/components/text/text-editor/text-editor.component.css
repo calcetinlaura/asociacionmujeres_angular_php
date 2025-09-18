@@ -1,6 +1,9 @@
-.text-description {
-  font-size: 12px;
-  text-align: justify;
+.text-editor p {
+  margin: 0 0 1rem; /* distancia entre párrafos */
+  line-height: 1.6;
+}
+.text-editor p:last-child {
+  margin-bottom: 0;
 }
 
 /* Media Queries para dispositivos más pequeños */
@@ -12,7 +15,13 @@
 }
 /* Móvil */
 @media (max-width: 768px) {
+  .text-editor {
+    font-size: 15px !important;
+  }
 }
 /* Móvil pequeño */
 @media (max-width: 480px) {
+  .text-editor {
+    font-size: 14px !important;
+  }
 }

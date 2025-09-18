@@ -1,13 +1,22 @@
 <?php
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PATCH, DELETE, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type");
+header("Access-Control-Allow-Headers: Content-Type, X-Requested-With, X-HTTP-Method-Override, Authorization, Origin, Accept");
 header("Content-Type: application/json; charset=UTF-8");
 
 include '../config/conexion.php';
 include 'utils/utils.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
+
+if ($method === 'POST') {
+  $override = $_POST['_method'] ?? $_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'] ?? '';
+  $override = strtoupper($override);
+  if ($override === 'DELETE') {
+    $method = 'DELETE';
+  }
+}
+
 if ($method === 'OPTIONS') {
   http_response_code(204);
   exit();
@@ -49,7 +58,7 @@ switch ($method) {
         $stmt = $connection->prepare("
           SELECT e.*,
                  p.name AS place_name, p.address AS place_address, p.lat AS place_lat, p.lon AS place_lon,
-                 s.name AS sala_name, s.location AS sala_location
+                 s.name AS sala_name, s.room_location AS sala_location
           FROM events e
           LEFT JOIN places p ON e.place_id = p.id
           LEFT JOIN salas s ON e.sala_id = s.sala_id
@@ -86,7 +95,7 @@ switch ($method) {
         $stmt2 = $connection->prepare("
           SELECT e.*,
                  p.name AS place_name, p.address AS place_address, p.lat AS place_lat, p.lon AS place_lon,
-                 s.name AS sala_name, s.location AS sala_location
+                 s.name AS sala_name, s.room_location AS sala_location
           FROM events e
           LEFT JOIN places p ON e.place_id = p.id
           LEFT JOIN salas s ON e.sala_id = s.sala_id
@@ -127,7 +136,7 @@ switch ($method) {
         $stmt2 = $connection->prepare("
           SELECT e.*,
                  p.name AS place_name, p.address AS place_address, p.lat AS place_lat, p.lon AS place_lon,
-                 s.name AS sala_name, s.location AS sala_location
+                 s.name AS sala_name, s.room_location AS sala_location
           FROM events e
           LEFT JOIN places p ON e.place_id = p.id
           LEFT JOIN salas s ON e.sala_id = s.sala_id
@@ -167,7 +176,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'deleteImage') {
   if (!empty($_POST['id'])) {
     $id = (int)$_POST['id'];
 
-    if (eliminarSoloImagen($connection, strtolower($type), 'img', $id, $basePath)) {
+    if (eliminarSoloArchivo($connection, strtolower($type), 'img', $id, $basePath)) {
       echo json_encode(["message" => "Imagen eliminada correctamente"]);
     } else {
       http_response_code(500);
@@ -239,7 +248,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'deleteImage') {
 
       if ($stmt->execute()) {
         if ($oldImg && $oldImg !== $imgName) {
-          eliminarImagenSiNoSeUsa($connection, 'macroevents', 'img', $oldImg, $basePath, true);
+          eliminarArchivoSiNoSeUsa($connection, 'macroevents', 'img', $oldImg, $basePath, true);
         }
         echo json_encode(["message" => "Macroevento actualizado con éxito."]);
       } else {
@@ -267,7 +276,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'deleteImage') {
     break;
 
   case 'DELETE':
-    $id = isset($_GET['id']) ? (int)$_GET['id'] : null;
+  $id = $_POST['id'] ?? $_GET['id'] ?? null;
     if (!$id) {
       http_response_code(400);
       echo json_encode(["message" => "ID no válido."]);
@@ -285,7 +294,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'deleteImage') {
 
     if ($stmt->execute()) {
       if ($imgToDelete) {
-        eliminarImagenSiNoSeUsa($connection, 'macroevents', 'img', $imgToDelete, $basePath, true);
+        eliminarArchivoSiNoSeUsa($connection, 'macroevents', 'img', $imgToDelete, $basePath, true);
       }
       echo json_encode(["message" => "Macroevento eliminado con éxito."]);
     } else {

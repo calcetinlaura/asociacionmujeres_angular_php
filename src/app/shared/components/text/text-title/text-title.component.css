@@ -1,6 +1,7 @@
 .text-title {
-  text-transform: uppercase;
-  font-size: 25px;
+  font-family: var(--font-family-1);
+  font-weight: 600;
+  padding-bottom: 12px;
 }
 
 /* Media Queries para dispositivos más pequeños */
@@ -12,7 +13,16 @@
 }
 /* Móvil */
 @media (max-width: 768px) {
+  .text-title {
+    font-size: 28px !important;
+    line-height: 28px !important;
+    padding-bottom: 12px;
+  }
 }
 /* Móvil pequeño */
 @media (max-width: 480px) {
+  .text-title {
+    font-size: 20px !important;
+    padding-bottom: 6px;
+  }
 }

@@ -12,109 +12,104 @@
     [formGroup]="formInvoice"
     class="login-auth-form"
   >
-    <div class="flex gap-x-4">
-      <div class="w-full flex flex-col gap-y-4 p-4 bg-lilaMuyClaro">
-        <!-- Subvención -->
-        <div class="box-input gap-x-4 flex">
-          <label for="subsidy">Subvención</label>
-          <div class="flex flex-col flex-1">
-            <select formControlName="subsidy_id">
-              <option [ngValue]="null"></option>
-              @for (subsidy of subsidies; track subsidy.id) {
-              <option [ngValue]="subsidy.id">
-                {{ subsidy.name }} - {{ subsidy.year }}
-              </option>
-              }
-            </select>
-            @if (formInvoice.controls.subsidy_id.disabled) {
-            <div>
-              <small class="text-gray-500 italic">
-                Selecciona FACTURA y también una fecha para habilitar las
-                subvecniones de ese año
-              </small>
-            </div>
-            }
-          </div>
-        </div>
-        <div class="box-input gap-x-4 flex">
-          <label for="project">Proyecto</label>
-          <div class="flex flex-col flex-1">
-            <select formControlName="project_id">
-              <option [ngValue]="null"></option>
-              @for (project of projects; track project.id) {
-              <option [value]="project.id">
-                {{ project.title }} - {{ project.year }}
-              </option>
-              }
-            </select>
-            @if (formInvoice.controls.project_id.disabled) {
-            <div>
-              <small class="text-gray-500 italic">
-                Selecciona una fecha para habilitar los proyectos de ese año
-              </small>
-            </div>
-            }
-          </div>
-        </div>
-        <!-- Ingreso o gasto -->
-        <div>
-          <mat-radio-group
-            formControlName="type_invoice"
-            class="-ml-3 custom-radio-button"
-          >
-            <mat-radio-button value="Factura">Gasto Factura</mat-radio-button>
-            <mat-radio-button value="Ticket">Gasto Ticket</mat-radio-button>
-            <mat-radio-button value="Ingreso">Ingreso</mat-radio-button>
-          </mat-radio-group>
-          @if (submitted && formInvoice.get('type_invoice')?.invalid) {
-          <div class="is-invalid-text">
-            Debes seleccionar un tipo de movimiento.
-          </div>
-          }
+    <div class="flex flex-col gap-y-4">
+      <!-- TIPO MOVIMIENTO -->
+      <div
+        class="border-2 pt-2 px-4 pb-6 mb-6"
+        [ngClass]="{
+          'border-[red]': submitted && !isInvoiceTypeMovementSelected
+        }"
+      >
+        <h2 class="font-bold text-lilaText mt-4 uppercase">
+          Tipo de movimiento económico
+        </h2>
+        <div class="flex justify-center gap-x-4 py-2">
+          <app-button-select
+            [buttonText]="'Factura'"
+            subText="El gasto dispone de factura"
+            [active]="invoiceTypeMovement === 'INVOICE'"
+            (addClicked)="setInvoiceTypeMovement('INVOICE')"
+            iconClass="uil-calendar-alt"
+          /><app-button-select
+            [buttonText]="'Ticket'"
+            subText="El gasto no dispone de factura"
+            [active]="invoiceTypeMovement === 'TICKET'"
+            (addClicked)="setInvoiceTypeMovement('TICKET')"
+            iconClass="uil-calendar-alt"
+          /><app-button-select
+            [buttonText]="'Ingreso'"
+            subText="Entrada de dinero a la cuenta"
+            [active]="invoiceTypeMovement === 'INCOME'"
+            (addClicked)="setInvoiceTypeMovement('INCOME')"
+            iconClass="uil-calendar-alt"
+          />
         </div>
       </div>
-      <div class="w-[450px] flex flex-col gap-y-4 bg-lilaMuyClaro p-4">
+
+      <div class="flex gap-x-16">
         <!-- Fecha Factura -->
-        <div class="flex box-input gap-x-4">
-          <label for="date_invoice" class="flex-1">F. Compra</label>
+        <div class="flex-1 box-input">
+          <label for="date_invoice">F. Compra</label>
           <div class="flex flex-col flex-1">
             <input
               formControlName="date_invoice"
               type="date"
-              class="w-54"
+              class="w-full"
               [ngClass]="{
+                'text-placeholder': !formInvoice.get('date_invoice')?.value,
                 'strong-border': !formInvoice.get('date_invoice')?.invalid,
                 'is-invalid':
                   submitted && formInvoice.get('date_invoice')?.invalid
               }"
             />
-            @if (submitted && formInvoice.get('date_invoice')?.invalid) {
+            @if (submitted && formInvoice.get('date_invoice')?.invalid) { @if
+            (submitted && formInvoice.get('date_invoice')?.errors?.['minDate']){
+            <div class="is-invalid-text">Debe ser desde 01/01/2018.</div>
+            } @else if (submitted &&
+            formInvoice.get('date_invoice')?.errors?.['maxDate']){
+            <div class="is-invalid-text">Debe ser fecha máxima hoy.</div>
+            }@else{
             <div class="is-invalid-text">Campo requerido</div>
-            }
+            } }
           </div>
         </div>
         <!-- Fecha libreta contabilidad -->
-        <div class="flex box-input gap-x-4">
-          <label for="date_accounting" class="flex-1">F. Libro cont</label>
-          <input formControlName="date_accounting" type="date" class="w-54" />
+        <div class="flex-1 box-input">
+          <label for="date_accounting">F. Libro cont</label>
+          <input
+            formControlName="date_accounting"
+            type="date"
+            class="w-full"
+            [ngClass]="{
+              'text-placeholder': !formInvoice.get('date_accounting')?.value
+            }"
+          />
         </div>
         <!-- Fecha pago -->
-        <div class="flex box-input gap-x-4">
-          <label for="date_payment" class="flex-1">F. Pago</label>
-          <input formControlName="date_payment" type="date" class="w-54" />
+        <div class="flex-1 box-input">
+          <label for="date_payment">F. Pago</label>
+          <input
+            formControlName="date_payment"
+            type="date"
+            class="w-full"
+            [ngClass]="{
+              'text-placeholder': !formInvoice.get('date_payment')?.value
+            }"
+          />
         </div>
       </div>
-    </div>
-
-    <div class="flex gap-x-4 pt-4">
       <div class="w-full flex flex-col gap-y-4 justify-start">
-        <!-- Número factura -->
-        <div class="flex box-input gap-x-4">
+        <!-- NÚMERO FACTURA -->
+        <div class="box-input">
           <label for="number_invoice">Num. Factura</label>
-          <input formControlName="number_invoice" type="text" />
+          <input
+            formControlName="number_invoice"
+            type="text"
+            placeholder="Número de factura"
+          />
         </div>
-        <!-- Acreedor -->
-        <div class="flex box-input gap-x-4">
+        <!-- ACREEDOR -->
+        <div class="box-input">
           <label for="creditor">Acreedor</label>
           <div class="flex flex-col flex-1">
             <input
@@ -123,6 +118,7 @@
               [formControl]="searchInput"
               (input)="searchCreditor()"
               [matAutocomplete]="auto"
+              placeholder="Busca el acreedor de la fatura"
               style="z-index: 1200"
               [ngClass]="{
                 'is-invalid':
@@ -165,64 +161,209 @@
             }
           </div>
         </div>
-        <div class="flex box-input gap-x-4">
+      </div>
+      <!-- DESCRIPCIÓN -->
+      <div class="flex gap-x-4 pt-4">
+        <div class="flex box-input gap-x-4 flex-1">
           <!-- Descripción -->
-          <label for="description">Descripción</label>
+          <label for="description">Concepto</label>
           <div class="flex flex-col flex-1">
             <quill-editor
               formControlName="description"
               [modules]="quillModules"
-              placeholder="Escribe aquí la descripción..."
-              class="ql-container-small flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
+              placeholder="Escribe aquí el concepto del movimiento económico..."
+              class="ql-container-large flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
             />
             @if (submitted && formInvoice.get('description')?.invalid) {
             <div class="is-invalid-text">Campo requerido</div>
             }
           </div>
         </div>
-        <!-- Cantidad -->
-        <div class="flex gap-x-4 bg-lilaMuyClaro p-4 justify-between">
-          <div class="flex flex-col box-input">
-            <label for="amount">Cantidad</label>
-            <input formControlName="amount" type="number" class="w-[120px]" />
-            @if (submitted && formInvoice.get('amount')?.invalid) {
-            <div class="is-invalid-text">Campo requerido</div>
-            }
-          </div>
-          <!-- IVA -->
-          <div class="flex flex-col box-input">
-            <label for="iva">IVA</label>
-            <input formControlName="iva" type="number" class="w-[120px]" />
-          </div>
-          <!-- IRPF -->
-          <div class="flex flex-col box-input">
-            <label for="irpf">IRPF</label>
-            <input formControlName="irpf" type="number" class="w-[120px]" />
-          </div>
-          <!-- TOTAL -->
-          <div class="flex flex-col box-input">
-            <label for="total_amount" class="font-medium">Total</label>
-
-            <input
-              formControlName="total_amount"
-              type="number"
-              readonly
-              class="bg-gray-100 cursor-not-allowed w-full"
-            />
-          </div>
+        <div class="w-80">
+          <app-pdf-control
+            [type]="typeList"
+            [previewPdf]="selectedPdfValue"
+            (pdfSelected)="onPdfSelected($event)"
+            [pdfViewerHeight]="390"
+            textPdf="Añadir factura"
+          ></app-pdf-control>
+        </div>
+        <div class="w-80">
+          <app-pdf-control
+            [type]="typeList"
+            [previewPdf]="selectedProofPdfValue"
+            (pdfSelected)="onProofPdfSelected($event)"
+            [pdfViewerHeight]="390"
+            textPdf="Añadir justificante pago"
+          ></app-pdf-control>
         </div>
       </div>
-      <div class="w-[450px]">
-        <app-pdf-control
-          [type]="typeList"
-          [previewPdf]="selectedPdfValue"
-          (pdfSelected)="onPdfSelected($event)"
-          [pdfViewerHeight]="318"
-        ></app-pdf-control>
+      <!-- CANTIDAD -->
+      <div class="flex gap-x-16 justify-between">
+        <div class="flex flex-col box-input flex-1">
+          <label for="amount">Cantidad</label>
+          <input
+            formControlName="amount"
+            type="number"
+            class="w-full"
+            [ngClass]="{
+              'text-placeholder': !formInvoice.get('amount')?.value,
+              'is-invalid': submitted && formInvoice.get('amount')?.invalid
+            }"
+          />
+          @if (submitted && formInvoice.get('amount')?.invalid) {
+          <div class="is-invalid-text">Campo requerido</div>
+          }
+        </div>
+        <!-- IVA -->
+        <div class="flex flex-col box-input flex-1">
+          <label for="iva">IVA</label>
+          <input
+            formControlName="iva"
+            type="number"
+            class="w-full"
+            [ngClass]="{
+              'is-invalid': submitted && formInvoice.get('iva')?.invalid
+            }"
+          />
+        </div>
+        <!-- IRPF -->
+        <div class="flex flex-col box-input flex-1">
+          <label for="irpf">IRPF</label>
+          <input
+            formControlName="irpf"
+            type="number"
+            class="w-full"
+            [ngClass]="{
+              'is-invalid': submitted && formInvoice.get('irpf')?.invalid
+            }"
+          />
+        </div>
+        <!-- TOTAL -->
+        <div class="flex flex-col box-input">
+          <label for="total_amount" class="font-medium">Total</label>
+          <input
+            formControlName="total_amount"
+            type="number"
+            readonly
+            class="bg-gray-100 cursor-not-allowed w-full"
+            [ngClass]="{
+              'is-invalid':
+                submitted && formInvoice.get('total_amount')?.invalid
+            }"
+          />
+        </div>
+      </div>
+      <!-- SUBVENCIÓN -->
+      <div class="border-2 pt-2 px-4 pb-6 mb-6">
+        <h2 class="font-bold text-lilaText mt-4 uppercase">Subvención</h2>
+        <div class="flex justify-center gap-x-4 py-2">
+          <app-button-select
+            [buttonText]="'No está dentro de una subvención'"
+            subText="Es un evento gasto propio"
+            [active]="invoiceTypeSubsidy === 'NO_SUBSIDY'"
+            (addClicked)="setInvoiceTypeSubsidy('NO_SUBSIDY')"
+            iconClass="uil-calendar-alt"
+          /><app-button-select
+            [buttonText]="'Está dentro de un subvención'"
+            subText="Evento subvencionado"
+            [active]="invoiceTypeSubsidy === 'SUBSIDY'"
+            (addClicked)="setInvoiceTypeSubsidy('SUBSIDY')"
+            iconClass="uil-calendar-alt"
+          />
+        </div>
+        @if (invoiceTypeSubsidy === 'SUBSIDY') {
+        <div class="pt-4 px-4">
+          <p class="text-[15px] text-center mb-10 text-lilaText px-4">
+            Si la subvención al que pertenece la factura no aparece se debe
+            registrar previamente la subvención desde la sección de
+            SUBVENCIONES.
+          </p>
+
+          <div class="flex gap-x-8">
+            <div class="box-input gap-x-4 flex flex-1">
+              <label for="province">Subvención</label>
+              <div class="flex flex-col flex-1">
+                <select formControlName="subsidy_id">
+                  <option [ngValue]="null"></option>
+                  @for (subsidy of subsidies; track subsidy.id) {
+                  <option [ngValue]="subsidy.id">
+                    {{ subsidy.name }} - {{ subsidy.year }}
+                  </option>
+                  }
+                </select>
+                @if (formInvoice.controls.subsidy_id.disabled) {
+                <div>
+                  <small class="text-gray-500 italic">
+                    Selecciona una fecha de inicio para habilitar las
+                    subvenciones de ese año
+                  </small>
+                </div>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+        }
+      </div>
+      <!-- PROYECTO -->
+      <div class="border-2 pt-2 px-4 pb-6 mb-6">
+        <h2 class="font-bold text-lilaText mt-4 uppercase">Proyecto</h2>
+        <div class="flex justify-center gap-x-4 py-2">
+          <app-button-select
+            [buttonText]="'No está dentro de un proyecto'"
+            subText="Es un evento único"
+            [active]="invoiceTypeProject === 'NO_PROJECT'"
+            (addClicked)="setInvoiceTypeProject('NO_PROJECT')"
+            iconClass="uil-calendar-alt"
+          /><app-button-select
+            [buttonText]="'Está dentro de un proyecto'"
+            subText="Está dentro de una programación más amplia"
+            [active]="invoiceTypeProject === 'PROJECT'"
+            (addClicked)="setInvoiceTypeProject('PROJECT')"
+            iconClass="uil-calendar-alt"
+          />
+        </div>
+        @if (invoiceTypeProject === 'PROJECT') {
+        <div class="pt-4 px-4">
+          <p class="text-[15px] text-center mb-10 text-lilaText px-4">
+            Si el proyecto al que pertenece la factura no aparece se debe
+            registrar previamente el proyecto desde la sección de PROYECTOS.
+          </p>
+
+          <div class="flex gap-x-8">
+            <div class="box-input gap-x-4 flex flex-1">
+              <label for="province">Proyecto</label>
+              <div class="flex flex-col flex-1">
+                <select formControlName="project_id">
+                  <option [ngValue]="null">
+                    Seleccione una subvención si el proyecto pertenece a alguna
+                  </option>
+                  @for (project of projects; track project) {
+                  <option [value]="project.id">
+                    {{ project.title }} - {{ project.year }}
+                  </option>
+                  }
+                </select>
+
+                @if (formInvoice.controls.project_id.disabled) {
+                <div>
+                  <small class="text-gray-500 italic">
+                    Selecciona una fecha de inicio para habilitar los proyectos
+                    de ese año
+                  </small>
+                </div>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+        }
       </div>
     </div>
+
     @if (formInvoice.invalid && submitted) {
-    <div class="flex justify-center">
+    <div class="flex justify-center mt-4">
       <div class="error">Hay algún campo incorrecto</div>
     </div>
     }

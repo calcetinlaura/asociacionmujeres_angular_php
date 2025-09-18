@@ -4,19 +4,19 @@ import { TypeList } from 'src/app/core/models/general.model';
 import { TextBackgroundComponent } from 'src/app/shared/components/text/text-background/text-background.component';
 import { TextEditorComponent } from 'src/app/shared/components/text/text-editor/text-editor.component';
 import { TextIconComponent } from 'src/app/shared/components/text/text-icon/text-icon.component';
-import { TextSubTitleComponent } from 'src/app/shared/components/text/text-subTitle/text-subtitle.component';
 import { TextTitleComponent } from 'src/app/shared/components/text/text-title/text-title.component';
 import { PhoneFormatPipe } from 'src/app/shared/pipe/phoneFormat.pipe';
+import { ItemImagePipe } from '../../../../../../shared/pipe/item-img.pipe';
 
 @Component({
   selector: 'app-modal-show-agent',
   imports: [
     TextBackgroundComponent,
     TextTitleComponent,
-    TextSubTitleComponent,
     TextIconComponent,
     TextEditorComponent,
     PhoneFormatPipe,
+    ItemImagePipe,
   ],
   templateUrl: './modal-show-agent.component.html',
   styleUrl: './modal-show-agent.component.css',

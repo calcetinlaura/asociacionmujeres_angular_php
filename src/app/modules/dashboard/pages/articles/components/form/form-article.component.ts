@@ -44,7 +44,7 @@ export class FormArticleComponent {
   private generalService = inject(GeneralService);
 
   @Input() itemId!: number;
-  @Output() sendFormArticle = new EventEmitter<{
+  @Output() submitForm = new EventEmitter<{
     itemId: number;
     formData: FormData;
   }>();
@@ -134,7 +134,7 @@ export class FormArticleComponent {
       this.itemId
     );
 
-    this.sendFormArticle.emit({
+    this.submitForm.emit({
       itemId: this.itemId,
       formData,
     });

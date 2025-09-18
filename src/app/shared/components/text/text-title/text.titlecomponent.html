@@ -1,1 +1,9 @@
-<p class="text-title">{{ text }}</p>
+<p
+  class="text-title"
+  [style.font-size.px]="number"
+  [style.color]="color"
+  [style.text-align]="align"
+  [style.line-height.px]="number! + 4"
+>
+  {{ text }}
+</p>

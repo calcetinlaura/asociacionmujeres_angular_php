@@ -6,10 +6,10 @@ import { TypeList } from 'src/app/core/models/general.model';
 import { TextBackgroundComponent } from 'src/app/shared/components/text/text-background/text-background.component';
 import { TextBorderComponent } from 'src/app/shared/components/text/text-border/text-border.component';
 import { TextIconComponent } from 'src/app/shared/components/text/text-icon/text-icon.component';
-import { TextSubTitleComponent } from 'src/app/shared/components/text/text-subTitle/text-subtitle.component';
 import { TextTitleComponent } from 'src/app/shared/components/text/text-title/text-title.component';
 import { CalculateAgePipe } from 'src/app/shared/pipe/caculate_age.pipe';
 import { PhoneFormatPipe } from 'src/app/shared/pipe/phoneFormat.pipe';
+import { ItemImagePipe } from '../../../../../../shared/pipe/item-img.pipe';
 @Component({
   selector: 'app-modal-show-partner',
   imports: [
@@ -19,13 +19,18 @@ import { PhoneFormatPipe } from 'src/app/shared/pipe/phoneFormat.pipe';
     TextBackgroundComponent,
     TextTitleComponent,
     TextBorderComponent,
-    TextSubTitleComponent,
     TextIconComponent,
     PhoneFormatPipe,
+    ItemImagePipe,
   ],
   templateUrl: './modal-show-partner.component.html',
 })
 export class ModalShowPartnerComponent {
   @Input() item!: PartnerModel;
   typeModal: TypeList = TypeList.Partners;
+
+  getYearsText(item: any) {
+    const n = item?.cuotas?.length ?? 0;
+    return `${n} ${n === 1 ? 'año' : 'años'} en la asociación`;
+  }
 }

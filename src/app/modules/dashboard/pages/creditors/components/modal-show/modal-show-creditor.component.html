@@ -2,150 +2,112 @@
   <div>
     <app-text-title [text]="item.company" />
     @if (item.cif) {
-      <app-text-subtitle [text]="item.cif" />
+    <app-text-subtitle [text]="item.cif" />
     }
     <app-text-icon
-      [icon]="'uil uil-building icon'"
+      [icon]="'building'"
       [text]="
-        (item.address ? item.address : '') +
-        (item.town ? ', ' + item.town : '') +
+        (item.address ? item.address + ', ' : '') +
+        (item.town ? item.town : '') +
         (item.post_code ? ' (' + item.post_code + ')' : '') +
         (item.province ? ' - ' + item.province : '')
       "
     ></app-text-icon>
+
+    <hr class="mt-6 border-b-1 border-[#1C1C3A]" />
+
     <div class="mt-4">
-      <app-text-background [text]="'Contacto'"></app-text-background>
+      <p class="text-[14px] font-semibold">Contacto:</p>
     </div>
     <div class="flex flex-col gap-y-2 ml-4 pt-3">
+      <app-text-icon [icon]="'person'" [text]="item.contact"></app-text-icon>
       <app-text-icon
-        [icon]="'uil uil-user icon'"
-        [text]="item.contact"
-      ></app-text-icon>
-      <app-text-icon
-        [icon]="'uil uil-phone-alt icon'"
+        [icon]="'phone'"
         [text]="item.phone | phoneFormat"
       ></app-text-icon>
-      <app-text-icon
-        [icon]="'uil uil-postcard icon'"
-        [text]="item.email"
-      ></app-text-icon>
+      <app-text-icon [icon]="'email'" [text]="item.email"></app-text-icon>
     </div>
-    <div class="mt-4">
-      <app-text-background [text]="'Área de trabajo'"></app-text-background>
+
+    @if (item.category) {
+    <div class="mt-4 mb-2">
+      <p class="text-[12px] font-semibold">Área de trabajo</p>
     </div>
+    <app-text-background [text]="item.category"></app-text-background>
+    }
     <div class="flex flex-col gap-y-2 ml-4 pt-3">
-      @if (item.category) {
-        <app-text-subtitle [text]="item.category" />
-      }
-      @if (item.key_words) {
-        <app-text-subtitle [text]="item.key_words" />
-      }
       @if (item.observations) {
-        <app-text-editor [text]="item.observations" />
+      <app-text-editor [text]="item.observations" />
       }
     </div>
+    <hr class="mt-6 mb-6 border-b-1 border-[#1C1C3A]" />
+
+    <p class="text-[18px] font-normal mb-6">Facturas</p>
     <!-- Contenedor de la tabla de facturas -->
-    <div class="mt-4 w-full">
-      @if (item.invoices!.length > 0) {
-        @if (groupInvoicesByYear(item.invoices); as invoicesByYear) {
-          <!-- 🔹 Iterar sobre cada año -->
-          @for (year of invoicesByYear | keyvalue; track year) {
-            <div>
-              <div class="mt-6">
-                <app-text-background
-                  [text]="'Facturas ' + year.key"
-                ></app-text-background>
-              </div>
-              <!-- <h2 class="header_table"></h2> -->
-              <table class="w-full -collapse tableInvoices my-4">
-                <thead>
-                  <tr>
-                    <th class="p-2 text-center">N°</th>
-                    <th class="p-2 text-center">Fecha</th>
-                    <th class="p-2 text-center">Descripción</th>
-                    <th class="p-2 text-center">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (invoice of year.value; track invoice) {
-                    <tr
-                      class="hover:bg-gray-50 fila"
-                      >
-                      <td class="p-2 w-auto">{{ invoice.number_invoice }}</td>
-                      <td class="p-2 w-auto">
-                        {{ invoice.date_invoice | date : "EEE dd/MM/yyyy" }}
-                      </td>
-                      <td class="p-2">
-                        <span [innerHTML]="invoice.description"></span>
-                      </td>
-                      <td class="p-2 w-auto text-right">
-                        {{ invoice.total_amount | eurosFormat }}
-                      </td>
-                    </tr>
-                  }
-                  <!-- 🔹 Fila de Totales por Año -->
-                  <tr class="total_table">
-                    <td class="p-2 text-right" colspan="3">
-                      TOTAL {{ year.key }}:
-                    </td>
-                    <td class="p-2 text-right font-bold">
-                      <span>{{
-                        getTotalAmountByYear(year.value) | eurosFormat
-                      }}</span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          }
-          <!-- 🔹 Tabla Final con Totales de Todos los Años -->
-          <div class="mt-6 mb-4">
-            <app-text-background
-              [text]="'Totales por años'"
-            ></app-text-background>
-          </div>
-          <table class="w-full -collapse tableInvoices">
-            <thead>
-              <tr>
-                <th class="p-2 text-left">Año</th>
-                <th class="p-2 text-center">Nº Facturas</th>
-                <th class="p-2 text-center">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (year of invoicesByYear | keyvalue; track year) {
-                <tr
-                  class="hover:bg-gray-50"
-                  >
-                  <td class="p-2 w-auto text-left">{{ year.key }}</td>
-                  <td class="p-2 text-center">
-                    {{ year.value.length }}
-                  </td>
-                  <td class="p-2 w-auto text-right">
-                    {{ getTotalAmountByYear(year.value) | eurosFormat }}
-                  </td>
-                </tr>
-              }
-              <!-- 🔹 Fila de Total General -->
-              <tr class="total_table">
-                <td class="p-2 text-right" colspan="2">TOTAL GENERAL:</td>
-                <td class="p-2 w-auto text-right font-bold">
-                  {{ getTotalAmount() | eurosFormat }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        }
+    <div class="w-full">
+      @if (invoicesSorted.length > 0) {
+
+      <!-- 🔹 Iterar por año (descendente) -->
+      @for (year of (invoicesByYear | keyvalue : keyDesc); track
+      trackYear($index, year)) {
+      <div class="mb-10">
+        <p class="text-[14px] font-semibold">{{ year.key }}</p>
+        <app-invoices-table
+          [invoices]="item.invoices"
+          [showCreditor]="false"
+          [showTotals]="true"
+          totalLabel="TOTAL"
+        />
+      </div>
       }
 
+      <!-- 🔹 Tabla Final con Totales de Todos los Años -->
+      <div class="mb-4">
+        <p class="text-[14px] font-semibold">Facturas totales por año</p>
+      </div>
+      <table class="w-full -collapse tableInvoicesYears">
+        <colgroup>
+          <col class="w-[80px]" />
+          <col class="w-[140px]" />
+          <col class="w-[auto]" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="p-2 text-center">Año</th>
+            <th class="p-2 text-center">Nº Facturas</th>
+            <th class="p-2 text-right pr-4">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (year of (invoicesByYear | keyvalue : keyDesc); track
+          trackYear($index, year)) {
+          <tr class="hover:bg-gray-50 fila">
+            <td class="p-2 w-auto text-center">{{ year.key }}</td>
+            <td class="p-2 text-center">{{ year.value.length }}</td>
+            <td class="p-2 w-auto text-right">
+              {{ totalAmountByYear.get(year.key)! | eurosFormat }}
+            </td>
+          </tr>
+          }
+          <tr class="total_table">
+            <td class="text-center text-[12px] font-semibold">TOTAL</td>
+            <td class="p-2 text-center text-[12px] font-bold">
+              {{ totalInvoices }}
+            </td>
+            <td class="p-2 text-right text-[12px] font-bold">
+              {{ totalAmount | eurosFormat }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      } @else {
       <!-- 🔹 Mensaje si no hay facturas -->
-      @if (!item.invoices || item.invoices.length === 0) {
-        <div class="mt-6">
-          <app-text-background [text]="'Facturas'"></app-text-background>
-          <p class="text-left text-gray-600 mt-4">
-            No hay facturas registradas de este acreedor.
-          </p>
-        </div>
+      <div class="mt-6">
+        <app-text-background [text]="'Facturas'"></app-text-background>
+        <p class="text-left text-gray-600 mt-4">
+          No hay facturas registradas de este acreedor.
+        </p>
+      </div>
       }
     </div>
   </div>

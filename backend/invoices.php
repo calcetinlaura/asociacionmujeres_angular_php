@@ -1,13 +1,21 @@
 <?php
 header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET, POST, PATCH, DELETE");
-header("Access-Control-Allow-Headers: Content-Type");
+header("Access-Control-Allow-Methods: GET, POST, PATCH, DELETE, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, X-Requested-With, X-HTTP-Method-Override, Authorization, Origin, Accept");
 header("Content-Type: application/json; charset=UTF-8");
 
 include '../config/conexion.php';
 include 'utils/utils.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
+if ($method === 'POST') {
+  $override = $_POST['_method'] ?? $_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'] ?? '';
+  $override = strtoupper($override);
+  if ($override === 'DELETE') {
+    $method = 'DELETE';
+  }
+}
+
 if ($method === 'OPTIONS') {
   http_response_code(204);
   exit();
@@ -16,6 +24,31 @@ if ($method === 'OPTIONS') {
 $uriParts = explode('/', trim($_SERVER['REQUEST_URI'], '/'));
 $resource = array_pop($uriParts);
 $pdfPath = "../uploads/pdf/INVOICES/";
+function updateSubsidyAggregates(mysqli $connection, int $subsidyId): void {
+  // sumatorios
+  $spent      = calcAmountSpent($connection, $subsidyId);
+  $spentIrpf  = calcAmountSpentIrpf($connection, $subsidyId);
+
+  // leer granted
+  $s = $connection->prepare("SELECT COALESCE(amount_granted,0) AS granted FROM subsidies WHERE id = ?");
+  $s->bind_param("i", $subsidyId);
+  $s->execute();
+  $gRow = $s->get_result()->fetch_assoc();
+  $granted = (float)($gRow['granted'] ?? 0);
+
+  // asociaciones
+  $assoc     = $spent     - $granted;
+  $assocIrpf = $spentIrpf - $granted;
+
+
+  $u = $connection->prepare(
+    "UPDATE subsidies
+     SET amount_spent = ?, amount_spent_irpf = ?, amount_association = ?, amount_association_irpf = ?
+     WHERE id = ?"
+  );
+  $u->bind_param("ddddi", $spent, $spentIrpf, $assoc, $assocIrpf, $subsidyId);
+  $u->execute();
+}
 
 switch ($method) {
   case 'GET':
@@ -23,6 +56,7 @@ switch ($method) {
         // Obtener una factura por ID
         $stmt = $connection->prepare("
             SELECT invoices.*,
+            creditors.cif AS creditor_cif,
                    creditors.company AS creditor_company,
                    creditors.contact AS creditor_contact,
                    subsidies.name AS subsidy_name,
@@ -42,7 +76,7 @@ switch ($method) {
         // Filtrar facturas por año
         $year = $_GET['year'];
         $stmt = $connection->prepare("
-            SELECT invoices.*,
+            SELECT invoices.*,creditors.cif AS creditor_cif,
                    creditors.company AS creditor_company,
                    creditors.contact AS creditor_contact,
                    subsidies.name AS subsidy_name,
@@ -66,7 +100,7 @@ switch ($method) {
       $year = $_GET['subsidy_year'];
 
       $stmt = $connection->prepare("
-          SELECT invoices.*,
+          SELECT invoices.*,creditors.cif AS creditor_cif,
                  creditors.company AS creditor_company,
                  creditors.contact AS creditor_contact,
                  subsidies.name AS subsidy_name,
@@ -89,7 +123,7 @@ switch ($method) {
   else {
         // Obtener todas las facturas
         $stmt = $connection->prepare("
-            SELECT invoices.*,
+            SELECT invoices.*,creditors.cif AS creditor_cif,
                    creditors.company AS creditor_company,
                    creditors.contact AS creditor_contact,
                    subsidies.name AS subsidy_name,
@@ -114,29 +148,53 @@ switch ($method) {
       ini_set('display_errors', 1);
 
       // 🔥 Manejo de eliminación de PDF
-      if (isset($_POST['action']) && $_POST['action'] === 'deletePdf') {
-          $type = $_POST['type'];
-          $id = $_POST['id'] ?? null;
+     // 🔥 Manejo de eliminación de PDF
+if (isset($_POST['action']) && $_POST['action'] === 'deletePdf') {
+    // type puede ser: 'invoice_pdf' o 'proof_pdf'
+    $field = $_POST['type'] ?? 'invoice_pdf';
+    $id = isset($_POST['id']) ? (int)$_POST['id'] : null;
 
-          if ($id) {
-              if (eliminarSoloImagen($connection, strtolower($type), 'invoice_pdf', $id, $pdfPath)) {
-                  echo json_encode(["message" => "PDF eliminado correctamente"]);
-              } else {
-                  http_response_code(500);
-                  echo json_encode(["message" => "Error al eliminar PDF"]);
-              }
-              exit();
-          }
+    if ($id) {
+        // Obtén el nombre del archivo actual
+        $stmt = $connection->prepare("SELECT $field FROM invoices WHERE id = ?");
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $current = $stmt->get_result()->fetch_assoc();
+        $currentFile = $current[$field] ?? '';
 
-          http_response_code(400);
-          echo json_encode(["message" => "ID requerido para eliminar PDF"]);
-          exit();
-      }
+        if ($currentFile) {
+            // Limpia el valor en BD
+            $stmtU = $connection->prepare("UPDATE invoices SET $field = NULL WHERE id = ?");
+            $stmtU->bind_param("i", $id);
+            $okUpdate = $stmtU->execute();
 
-      // 🔄 Procesar archivo PDF
-      $pdfName = procesarArchivoPorAnio($pdfPath, 'invoice_pdf', 'date_invoice');
-      $data = $_POST;
-      $data['invoice_pdf'] = $pdfName;
+            // Borra el archivo si no está en uso
+            $okFile = eliminarArchivoSiNoSeUsa($connection, 'invoices', $field, $currentFile, $pdfPath);
+
+            if ($okUpdate && $okFile) {
+                echo json_encode(["message" => "PDF eliminado correctamente"]);
+            } else {
+                http_response_code(500);
+                echo json_encode(["message" => "Error al eliminar PDF"]);
+            }
+        } else {
+            echo json_encode(["message" => "No hay PDF para eliminar"]);
+        }
+        exit();
+    }
+
+    http_response_code(400);
+    echo json_encode(["message" => "ID requerido para eliminar PDF"]);
+    exit();
+}
+
+
+      // Lee primero POST (para tener invoice_pdf_existing / proof_pdf_existing)
+$data = $_POST ?? [];
+
+// Sube archivos ('' si no hay upload)
+$invoiceUpload = procesarArchivoPorAnio($pdfPath, 'invoice_pdf', 'date_invoice', 'invoice_pdf');
+$proofUpload   = procesarArchivoPorAnio($pdfPath, 'proof_pdf',   'date_invoice', 'proof_pdf');
 
       // Fallback para JSON
       if (empty($data)) {
@@ -152,11 +210,11 @@ switch ($method) {
       $date_payment = !empty($data['date_payment']) ? $data['date_payment'] : null;
       $creditor_id = isset($data['creditor_id']) && is_numeric($data['creditor_id']) ? (int)$data['creditor_id'] : null;
       $description = $data['description'] ?? '';
-      $amount = isset($data['amount']) ? (float)$data['amount'] : 0;
-      $irpf = isset($data['irpf']) ? (float)$data['irpf'] : 0;
-      $iva = isset($data['iva']) ? (float)$data['iva'] : 0;
-      $total_amount = isset($data['total_amount']) ? (float)$data['total_amount'] : 0;
-      $total_amount_irpf = isset($data['total_amount_irpf']) ? (float)$data['total_amount_irpf'] : 0;
+      $amount = normNumber($data['amount'] ?? null);
+      $irpf = normNumber($data['irpf'] ?? null);
+      $iva = normNumber($data['iva'] ?? null);
+      $total_amount = normNumber($data['total_amount'] ?? null);
+      $total_amount_irpf = normNumber($data['total_amount_irpf'] ?? null);
       $subsidy_id = isset($data['subsidy_id']) && is_numeric($data['subsidy_id']) ? (int)$data['subsidy_id'] : null;
       $project_id = isset($data['project_id']) && is_numeric($data['project_id']) ? (int)$data['project_id'] : null;
 
@@ -168,27 +226,60 @@ switch ($method) {
               echo json_encode(["message" => "ID no válido."]);
               exit();
           }
+ //  AÑADE AQUÍ: capturamos el subsidy_id ANTERIOR antes de actualizar
+    $stmtPrev = $connection->prepare("SELECT subsidy_id FROM invoices WHERE id = ?");
+    $stmtPrev->bind_param("i", $id);
+    $stmtPrev->execute();
+    $prevRow = $stmtPrev->get_result()->fetch_assoc();
+    $oldSubsidyId = $prevRow['subsidy_id'] ?? null;
+    //
+          // Traer los PDFs actuales
+$stmtCurrent = $connection->prepare("SELECT invoice_pdf, proof_pdf FROM invoices WHERE id = ?");
+$stmtCurrent->bind_param("i", $id);
+$stmtCurrent->execute();
+$currentData = $stmtCurrent->get_result()->fetch_assoc();
+$oldInvoicePdf = $currentData['invoice_pdf'] ?? '';
+$oldProofPdf   = $currentData['proof_pdf'] ?? '';
 
-          $stmtCurrent = $connection->prepare("SELECT invoice_pdf FROM invoices WHERE id = ?");
-          $stmtCurrent->bind_param("i", $id);
-          $stmtCurrent->execute();
-          $currentData = $stmtCurrent->get_result()->fetch_assoc();
-          $oldPdf = $currentData['invoice_pdf'] ?? '';
+// Valores finales por defecto = mantener
+$finalInvoice = $oldInvoicePdf;
+$finalProof   = $oldProofPdf;
 
-          // Si no hay nuevo PDF, mantener el anterior
-          if ($pdfName === '' && isset($_POST['invoice_pdf']) && $_POST['invoice_pdf'] === '') {
-              // Eliminar si el frontend lo manda explícitamente como vacío
-              if ($oldPdf) {
-                  eliminarImagenSiNoSeUsa($connection, 'invoices', 'invoice_pdf', $oldPdf, $pdfPath);
-              }
-          } elseif ($pdfName === '') {
-              $pdfName = $oldPdf;
-          }
+// --- INVOICE_PDF ---
+if ($invoiceUpload !== '') {
+    // nuevo archivo
+    $finalInvoice = $invoiceUpload;
+    if ($oldInvoicePdf && $oldInvoicePdf !== $finalInvoice) {
+        eliminarArchivoSiNoSeUsa($connection, 'invoices', 'invoice_pdf', $oldInvoicePdf, $pdfPath);
+    }
+} else if (array_key_exists('invoice_pdf_existing', $data)) {
+    if ($data['invoice_pdf_existing'] === '') {
+        // borrado explícito
+        if ($oldInvoicePdf) {
+            eliminarArchivoSiNoSeUsa($connection, 'invoices', 'invoice_pdf', $oldInvoicePdf, $pdfPath);
+        }
+        $finalInvoice = ''; // o NULL si prefieres
+    } // si viene con nombre → mantener (ya lo es)
+}
 
+// --- PROOF_PDF ---
+if ($proofUpload !== '') {
+    $finalProof = $proofUpload;
+    if ($oldProofPdf && $oldProofPdf !== $finalProof) {
+        eliminarArchivoSiNoSeUsa($connection, 'invoices', 'proof_pdf', $oldProofPdf, $pdfPath);
+    }
+} else if (array_key_exists('proof_pdf_existing', $data)) {
+    if ($data['proof_pdf_existing'] === '') {
+        if ($oldProofPdf) {
+            eliminarArchivoSiNoSeUsa($connection, 'invoices', 'proof_pdf', $oldProofPdf, $pdfPath);
+        }
+        $finalProof = '';
+    } // si viene con nombre → mantener
+}
           $stmt = $connection->prepare("UPDATE invoices SET
               number_invoice = ?, type_invoice = ?, date_invoice = ?, date_accounting = ?, date_payment = ?,
               creditor_id = ?, description = ?, amount = ?, irpf = ?, iva = ?,
-              total_amount = ?, total_amount_irpf = ?, subsidy_id = ?, project_id = ?, invoice_pdf = ?
+              total_amount = ?, total_amount_irpf = ?, subsidy_id = ?, project_id = ?, invoice_pdf = ?, proof_pdf = ?
               WHERE id = ?");
 
           if (!$stmt) {
@@ -198,7 +289,7 @@ switch ($method) {
           }
 
           $stmt->bind_param(
-              "sssssisddddsiisi",
+              "sssssisdddddiissi",
               $number_invoice,
               $type_invoice,
               $date_invoice,
@@ -213,11 +304,17 @@ switch ($method) {
               $total_amount_irpf,
               $subsidy_id,
               $project_id,
-              $pdfName,
+             $finalInvoice,
+  $finalProof,
               $id
           );
 
-          if ($stmt->execute()) {
+          if ($stmt->execute()) {if (!empty($subsidy_id)) {
+    updateSubsidyAggregates($connection, (int)$subsidy_id);
+  }
+  if (!empty($oldSubsidyId) && $oldSubsidyId != $subsidy_id) {
+    updateSubsidyAggregates($connection, (int)$oldSubsidyId);
+  }
               echo json_encode(["message" => "Factura actualizada con éxito."]);
           } else {
               http_response_code(500);
@@ -225,12 +322,13 @@ switch ($method) {
           }
 
       } else {
-          // ➕ POST (nuevo)
+         $finalInvoice = $invoiceUpload;
+$finalProof   = $proofUpload;
           $stmt = $connection->prepare("INSERT INTO invoices
               (number_invoice, type_invoice, date_invoice, date_accounting, date_payment,
               creditor_id, description, amount, irpf, iva,
-              total_amount, total_amount_irpf, subsidy_id, project_id, invoice_pdf)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+              total_amount, total_amount_irpf, subsidy_id, project_id, invoice_pdf, proof_pdf)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
           if (!$stmt) {
               http_response_code(500);
@@ -239,7 +337,7 @@ switch ($method) {
           }
 
           $stmt->bind_param(
-              "sssssisddddsiis",
+              "sssssisdddddiiss",
               $number_invoice,
               $type_invoice,
               $date_invoice,
@@ -254,12 +352,16 @@ switch ($method) {
               $total_amount_irpf,
               $subsidy_id,
               $project_id,
-              $pdfName
+              $finalInvoice,
+              $finalProof
           );
 
           if ($stmt->execute()) {
-              echo json_encode(["message" => "Factura añadida con éxito."]);
-          } else {
+  if (!empty($subsidy_id)) {
+    updateSubsidyAggregates($connection, (int)$subsidy_id);
+  }
+  echo json_encode(["message" => "Factura añadida con éxito."]);
+} else {
               http_response_code(500);
               echo json_encode(["message" => "Error al añadir la factura: " . $stmt->error]);
           }
@@ -268,7 +370,7 @@ switch ($method) {
       break;
 
     case 'DELETE':
-      $id = $_GET['id'] ?? null;
+      $id = $_POST['id'] ?? $_GET['id'] ?? null;
       if (!is_numeric($id)) {
         http_response_code(400);
         echo json_encode(["message" => "ID no válido."]);
@@ -276,25 +378,36 @@ switch ($method) {
       }
 
       // 🔍 1. Obtener el nombre del archivo PDF antes de eliminar la factura
-      $stmt = $connection->prepare("SELECT invoice_pdf FROM invoices WHERE id = ?");
-      $stmt->bind_param("i", $id);
-      $stmt->execute();
-      $result = $stmt->get_result();
-      $row = $result->fetch_assoc();
-      $pdfToDelete = $row['invoice_pdf'] ?? '';
+     $stmt = $connection->prepare("SELECT invoice_pdf, proof_pdf FROM invoices WHERE id = ?");
+$stmt->bind_param("i", $id);
+$stmt->execute();
+$result = $stmt->get_result();
+$row = $result->fetch_assoc();
+$pdfToDeleteInvoice = $row['invoice_pdf'] ?? '';
+$pdfToDeleteProof   = $row['proof_pdf'] ?? '';
+$subsidyId          = $row['subsidy_id'] ?? null;
 
-      // 🗑️ 2. Eliminar la factura
-      $stmt = $connection->prepare("DELETE FROM invoices WHERE id = ?");
-      $stmt->bind_param("i", $id);
+// 2. Eliminar la factura (registro)
+$stmt = $connection->prepare("DELETE FROM invoices WHERE id = ?");
+$stmt->bind_param("i", $id);
 
-      if ($stmt->execute()) {
-        // 🧹 3. Eliminar el archivo del servidor si existe
-        if ($pdfToDelete) {
-          eliminarImagenSiNoSeUsa($connection, 'invoices', 'invoice_pdf', $pdfToDelete, $pdfPath);
-        }
-
-        echo json_encode(["message" => "Factura eliminada con éxito."]);
-      } else {
+if ($stmt->execute()) {
+    // 3. Eliminar archivos del servidor si existen (y no se usan en otros registros)
+    if ($pdfToDeleteInvoice) {
+        eliminarArchivoSiNoSeUsa($connection, 'invoices', 'invoice_pdf', $pdfToDeleteInvoice, $pdfPath);
+    }
+    if ($pdfToDeleteProof) {
+        eliminarArchivoSiNoSeUsa($connection, 'invoices', 'proof_pdf', $pdfToDeleteProof, $pdfPath);
+    }
+    // Recalcular amount_spent del subsidio afectado
+     if (!empty($subsidy_id)) {
+    updateSubsidyAggregates($connection, (int)$subsidy_id);
+  }
+  if (!empty($oldSubsidyId) && $oldSubsidyId != $subsidy_id) {
+    updateSubsidyAggregates($connection, (int)$oldSubsidyId);
+  }
+    echo json_encode(["message" => "Factura eliminada con éxito."]);
+} else {
         http_response_code(500);
         echo json_encode(["message" => "Error al eliminar la factura: " . $stmt->error]);
       }

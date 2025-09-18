@@ -19,8 +19,8 @@ import {
   TypeFilterPlaces,
 } from 'src/app/core/interfaces/place.interface';
 import { TypeList } from 'src/app/core/models/general.model';
-import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
 import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
+import { ButtonSelectComponent } from 'src/app/shared/components/buttons/button-select/button-select.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
@@ -30,10 +30,11 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
     CommonModule,
     ReactiveFormsModule,
     MatCardModule,
-    ImageControlComponent,
+    // ImageControlComponent,
     ButtonIconComponent,
     QuillModule,
     SpinnerLoadingComponent,
+    ButtonSelectComponent,
   ],
   templateUrl: './form-place.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],
@@ -43,7 +44,7 @@ export class FormPlaceComponent {
   private generalService = inject(GeneralService);
 
   @Input() itemId!: number;
-  @Output() sendFormPlace = new EventEmitter<{
+  @Output() submitForm = new EventEmitter<{
     itemId: number;
     formData: FormData;
   }>();
@@ -56,22 +57,26 @@ export class FormPlaceComponent {
   managementPlaces = ManagementFilterPlaces;
   typePlaces = TypeFilterPlaces;
   typeList = TypeList.Places;
-
+  placeTypeManagement: 'PUBLIC' | 'PRIVATE' | '' = '';
+  placeTypeRoom: 'SINGLE' | 'MULTIPLE' | '' = '';
+  placeTypeUbication: 'ABROAD' | 'INSIDE' | '' = '';
   formPlace = new FormGroup({
     name: new FormControl('', [Validators.required]),
     province: new FormControl('', [Validators.required]),
     town: new FormControl('', [Validators.required]),
     address: new FormControl(''),
-    post_code: new FormControl(''),
+    post_code: new FormControl('', [
+      Validators.pattern(/^(?:0[1-9]|[1-4][0-9]|5[0-2])[0-9]{3}$/),
+    ]),
     lat: new FormControl(0),
     lon: new FormControl(0),
     description: new FormControl('', [Validators.maxLength(2000)]),
     img: new FormControl(''),
     observations: new FormControl('', [Validators.maxLength(2000)]),
     management: new FormControl(''),
-    hassalas: new FormControl(false),
     salas: new FormArray([]),
-    type: new FormControl(''),
+    type_room: new FormControl(''),
+    type_ubication: new FormControl(''),
     capacity: new FormControl(0),
   });
 
@@ -123,11 +128,36 @@ export class FormPlaceComponent {
               capacity: place.capacity || 0,
               description: place.description || '',
               observations: place.observations || '',
-              management: place.management || '',
-              type: place.type || '',
               img: place.img || '',
             });
+            switch (place.management as 'PUBLIC' | 'PRIVATE' | '') {
+              case 'PUBLIC':
+                this.setPlaceTypeManagement('PUBLIC');
+                break;
 
+              case 'PRIVATE':
+                this.setPlaceTypeManagement('PRIVATE');
+                break;
+
+              default:
+                // Cubre null, undefined o cualquier valor inesperado
+                this.setPlaceTypeManagement('');
+                break;
+            }
+            switch (place.type_room as 'SINGLE' | 'MULTIPLE' | '') {
+              case 'SINGLE':
+                this.setPlaceTypeRoom('SINGLE');
+                break;
+
+              case 'MULTIPLE':
+                this.setPlaceTypeRoom('MULTIPLE');
+                break;
+
+              default:
+                // Cubre null, undefined o cualquier valor inesperado
+                this.setPlaceTypeRoom('');
+                break;
+            }
             this.setSalas(place.salas || []);
             this.titleForm = 'Editar espacio';
             this.buttonAction = 'Guardar cambios';
@@ -152,28 +182,15 @@ export class FormPlaceComponent {
     this.formPlace.patchValue({ town: '' });
   }
 
-  onHassalasChange(event: Event): void {
-    const inputElement = event.target as HTMLInputElement;
-    const isChecked = inputElement.checked;
-
-    if (isChecked && this.salas.length === 0) {
-      this.addSala();
-      this.formPlace.patchValue({ type: '', capacity: 0 });
-    } else if (!isChecked) {
-      this.salas.clear();
-    }
-  }
-
   setSalas(salas: any): void {
     this.salas.clear();
 
     if (!salas || !Array.isArray(salas) || salas.length === 0) {
-      this.formPlace.patchValue({ hassalas: false });
       return;
     }
 
     salas.forEach((sala) => this.addSala(sala));
-    this.formPlace.patchValue({ hassalas: true });
+    // this.formPlace.patchValue({ type_room: 'MULTIPLE' });
   }
 
   get salas(): FormArray {
@@ -184,8 +201,11 @@ export class FormPlaceComponent {
     const newSala = new FormGroup({
       id: new FormControl(salaData.id ?? null),
       name: new FormControl(salaData.name || '', Validators.required),
-      location: new FormControl(salaData.location || ''),
-      type: new FormControl(salaData.type || '', Validators.required),
+      room_location: new FormControl(salaData.room_location || ''),
+      type_ubication: new FormControl(
+        salaData.type_ubication || '',
+        Validators.required
+      ),
       capacity: new FormControl(salaData.capacity ?? null),
     });
 
@@ -196,6 +216,28 @@ export class FormPlaceComponent {
     this.salas.removeAt(index);
   }
 
+  setPlaceTypeManagement(type: 'PUBLIC' | 'PRIVATE' | ''): void {
+    this.placeTypeManagement = type;
+    this.formPlace.patchValue({ management: type });
+  }
+
+  get isPlaceTypeManagemenSelected(): boolean {
+    return (
+      this.placeTypeManagement === 'PUBLIC' ||
+      this.placeTypeManagement === 'PRIVATE'
+    );
+  }
+  setPlaceTypeRoom(type: 'SINGLE' | 'MULTIPLE' | ''): void {
+    this.placeTypeRoom = type;
+    this.formPlace.patchValue({ type_room: type });
+    if (type === 'MULTIPLE') {
+      this.addSala();
+    }
+  }
+
+  get isPlaceTypeRoomSelected(): boolean {
+    return this.placeTypeRoom === 'SINGLE' || this.placeTypeRoom === 'MULTIPLE';
+  }
   async onImageSelected(file: File) {
     const result = await this.generalService.handleFileSelection(file);
     this.selectedImageFile = result.file;
@@ -205,7 +247,14 @@ export class FormPlaceComponent {
   onSendFormPlace(): void {
     if (this.formPlace.invalid) {
       this.submitted = true;
-      console.warn('Formulario inválido:', this.formPlace.errors);
+      this.formPlace.markAllAsTouched();
+
+      // 🔎 Log legible de qué controles fallan (incluye FormArray 'salas')
+      console.warn('FORM STATUS:', this.formPlace.status);
+      console.warn(
+        'INVALID TREE:',
+        this.collectInvalidControls(this.formPlace)
+      );
       return;
     }
 
@@ -226,7 +275,8 @@ export class FormPlaceComponent {
     formData.append('description', formValue.description ?? '');
     formData.append('observations', formValue.observations ?? '');
     formData.append('management', formValue.management ?? '');
-    formData.append('type', formValue.type ?? '');
+    formData.append('type_room', formValue.type_room ?? '');
+    formData.append('type_ubication', formValue.type_ubication ?? '');
 
     // Salas: enviamos como JSON
     formData.append('salas', JSON.stringify(formValue.salas || []));
@@ -242,9 +292,36 @@ export class FormPlaceComponent {
       formData.append('id', this.itemId.toString());
     }
 
-    this.sendFormPlace.emit({
+    this.submitForm.emit({
       itemId: this.itemId,
       formData: formData,
     });
+  }
+
+  private collectInvalidControls(
+    group: FormGroup | FormArray,
+    path: string[] = []
+  ): any {
+    const result: any = {};
+    const controls =
+      group instanceof FormGroup
+        ? group.controls
+        : (group as FormArray).controls;
+
+    Object.entries(controls).forEach(([key, ctrl], idx) => {
+      const seg = group instanceof FormArray ? `[${idx}]` : key;
+      const newPath = [...path, seg];
+
+      if (ctrl instanceof FormGroup || ctrl instanceof FormArray) {
+        const child = this.collectInvalidControls(ctrl, newPath);
+        if (Object.keys(child).length) result[newPath.join('.')] = child;
+      } else {
+        if (ctrl.invalid) {
+          result[newPath.join('.')] = ctrl.errors;
+        }
+      }
+    });
+
+    return result;
   }
 }

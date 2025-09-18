@@ -62,10 +62,14 @@ export class FormSubsidyComponent implements OnInit {
   private readonly generalService = inject(GeneralService);
 
   @Input() itemId!: number;
-  @Output() sendFormSubsidy = new EventEmitter<SubsidyModel>();
+  @Output() submitForm = new EventEmitter<{
+    itemId: number;
+    formData: FormData;
+  }>();
+
   formSubsidy = new FormGroup({
-    name: new FormControl(''),
-    year: new FormControl(0, [
+    name: new FormControl('', Validators.required),
+    year: new FormControl<number | null>(null, [
       Validators.required,
       Validators.min(1995),
       Validators.max(new Date().getFullYear()),
@@ -76,10 +80,10 @@ export class FormSubsidyComponent implements OnInit {
     end: new FormControl<Date | null>(null),
     url_presentation: new FormControl(''),
     url_justification: new FormControl(''),
-    amount_requested: new FormControl(),
-    amount_granted: new FormControl(),
-    amount_justified: new FormControl(),
-    amount_association: new FormControl(),
+    amount_requested: new FormControl<number | null>(null),
+    amount_granted: new FormControl<number | null>(null),
+    amount_justified: new FormControl<number | null>(null),
+    amount_association: new FormControl<number | null>(null),
     observations: new FormControl(''),
   });
 
@@ -123,6 +127,7 @@ export class FormSubsidyComponent implements OnInit {
           tap((subsidy: SubsidyModel | null) => {
             if (subsidy) {
               this.formSubsidy.patchValue(subsidy);
+              this.setEditModeDisabledFields(true);
               this.titleForm = 'Editar Subvención';
               this.buttonAction = 'Guardar cambios';
             }
@@ -131,10 +136,22 @@ export class FormSubsidyComponent implements OnInit {
         )
         .subscribe();
     } else {
+      this.setEditModeDisabledFields(false);
       this.isLoading = false;
     }
   }
+  private setEditModeDisabledFields(isEdit: boolean) {
+    const nameCtrl = this.formSubsidy.get('name');
+    const yearCtrl = this.formSubsidy.get('year');
 
+    if (isEdit) {
+      nameCtrl?.disable({ emitEvent: false });
+      yearCtrl?.disable({ emitEvent: false });
+    } else {
+      nameCtrl?.enable({ emitEvent: false });
+      yearCtrl?.enable({ emitEvent: false });
+    }
+  }
   onSelectedOption(event: MatAutocompleteSelectedEvent): void {
     if (!event.option.value) {
       this.selectedCreditor = undefined;
@@ -165,27 +182,12 @@ export class FormSubsidyComponent implements OnInit {
       rawValues.observations = rawValues.observations.replace(/&nbsp;/g, ' ');
     }
 
-    const formValue: SubsidyModel & { _method?: string; id?: number } = {
-      name: rawValues.name || '',
-      year: rawValues.year || 0,
-      date_justification: rawValues.date_justification || null,
-      date_presentation: rawValues.date_presentation || null,
-      start: rawValues.start || null,
-      end: rawValues.end || null,
-      url_presentation: rawValues.url_presentation || '',
-      url_justification: rawValues.url_justification || '',
-      amount_requested: rawValues.amount_requested || null,
-      amount_granted: rawValues.amount_granted || null,
-      amount_justified: rawValues.amount_justified || null,
-      amount_association: rawValues.amount_association || null,
-      observations: rawValues.observations || '',
-    };
+    const formData = this.generalService.createFormData(
+      rawValues,
+      {},
+      this.itemId
+    );
 
-    if (this.itemId) {
-      formValue._method = 'PATCH';
-      formValue.id = this.itemId;
-    }
-
-    this.sendFormSubsidy.emit(formValue);
+    this.submitForm.emit({ itemId: this.itemId, formData: formData });
   }
 }

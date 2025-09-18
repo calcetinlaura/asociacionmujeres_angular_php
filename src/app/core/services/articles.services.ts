@@ -50,16 +50,14 @@ export class ArticlesService {
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
-  edit(id: number, article: FormData): Observable<any> {
+  edit(article: FormData): Observable<any> {
     return this.http
       .post(this.apiUrl, article)
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
   delete(id: number): Observable<any> {
-    return this.http
-      .delete(this.apiUrl, { params: { id: id } })
-      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
+    return this.generalService.deleteOverride<any>(this.apiUrl, { id });
   }
 
   sortArticlesByTitle(articles: ArticleModel[]): ArticleModel[] {

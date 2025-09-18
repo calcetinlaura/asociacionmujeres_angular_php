@@ -50,7 +50,7 @@ export class SideBarComponent implements OnInit {
         router: ['/dashboard/piteras'],
       },
       {
-        name: 'Podcats',
+        name: 'Podcasts',
         icon: 'uil uil-microphone',
         router: ['/dashboard/podcasts'],
       },

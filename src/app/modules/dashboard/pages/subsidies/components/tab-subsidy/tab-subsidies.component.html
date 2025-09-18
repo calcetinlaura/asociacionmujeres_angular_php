@@ -1,248 +1,367 @@
 @if (item) {
-<div class="flex flex-1 flex-col justify-between my-8 mx-20 card-subsidy">
-  <h1 class="text-center mb-4">
-    Subvención @if (item.name) {
-    <span>{{ item.name | i18nSelect : nameSubsidy }}</span>
-    } @if (item.year) {
-    <span> {{ item.year }}</span>
-    }
-    <app-icon-action
-      [icon]="'uil-edit'"
-      [tooltip]="'Editar'"
-      (click)="
-        openModal.emit({
-          typeModal: typeList.Subsidies,
-          action: typeActionModal.Edit,
-          item: item
-        })
-      "
-    ></app-icon-action>
-  </h1>
-  <div class="flex flex-row">
-    <div class="flex flex-col justify-center flex-1 gap-y-4">
-      <h2>Nombre: {{ item.name | i18nSelect : nameSubsidy }}</h2>
-      <h2>URL Subvención: {{ item.url_presentation }}</h2>
-      <h2>URL Resolución: {{ item.url_justification }}</h2>
+<app-pdf-print
+  #printer
+  [filename]="'subvencion' + '_' + item.name + '_' + item.year + '.pdf'"
+  preset="normal"
+  orientation="portrait"
+  [margins]="[5, 5, 5, 5]"
+>
+  <div
+    class="flex flex-1 flex-col justify-between my-8 mx-20 card-subsidy"
+    id="pdfArea"
+  >
+    <div>
+      <h1 class="text-center mb-1">
+        Subvención @if (item.name) {
+        <span>{{ item.name | i18nSelect : nameSubsidy }}</span>
+        } @if (item.year) {
+        <span> {{ item.year }}</span>
+        }
+      </h1>
+      <div class="flex gap-x-4 justify-center">
+        <app-icon-action
+          [icon]="'uil-eye'"
+          [tooltip]="'Ver'"
+          (click)="
+            openModal.emit({
+              typeModal: typeList.Subsidies,
+              action: typeActionModal.Show,
+              item: item
+            })
+          "
+        ></app-icon-action>
+        <app-icon-action
+          [icon]="'uil-edit'"
+          [tooltip]="'Editar'"
+          (click)="
+            openModal.emit({
+              typeModal: typeList.Subsidies,
+              action: typeActionModal.Edit,
+              item: item
+            })
+          "
+        ></app-icon-action>
+        <app-icon-action
+          [icon]="'uil-trash-alt'"
+          [tooltip]="'Eliminar'"
+          (click)="
+            openModal.emit({
+              typeModal: typeList.Subsidies,
+              action: typeActionModal.Delete,
+              item: item
+            })
+          "
+        ></app-icon-action>
+        <app-icon-action
+          [icon]="'uil-print'"
+          [tooltip]="'Imprimir tabla'"
+          (click)="printer.print()"
+        ></app-icon-action>
+        <app-icon-action
+          [icon]="'uil-folder-download'"
+          [tooltip]="'Descargar facturas y justificantes'"
+          (click)="this.downloadFilteredPdfs(true)"
+        />
+      </div>
     </div>
-    <div
-      class="flex flex-col p-4 pr-10 gap-y-4 w-auto rounded"
-      style="background-color: #d0a9d952"
-    >
-      <div
-        class="flex flex-row gap-x-4 justify-start items-center align-middle"
-      >
-        <mat-icon class="calendar-icon">calendar_today</mat-icon>
-        <h2>Fecha Max. Presentación:</h2>
-        <p class="capitalize">
-          {{ item.date_presentation | date : "EEEE dd MMM yyyy" }}
-        </p>
+    <div class="flex flex-row">
+      <div class="flex flex-col justify-center flex-1 gap-y-4">
+        <h2>Nombre: {{ item.name | i18nSelect : nameSubsidy }}</h2>
+        <h2>URL Subvención: {{ item.url_presentation }}</h2>
+        <h2>URL Resolución: {{ item.url_justification }}</h2>
       </div>
       <div
-        class="flex flex-row gap-x-4 justify-start items-center align-middle"
+        class="flex flex-col p-4 pr-10 gap-y-4 w-auto rounded"
+        style="background-color: #d0a9d952"
       >
-        <mat-icon class="calendar-icon">calendar_today</mat-icon>
-        <h2>Fecha Max. Justificación:</h2>
-        <p class="capitalize">
-          {{ item.date_justification | date : "EEEE dd MMM yyyy" }}
-        </p>
+        <div
+          class="flex flex-row gap-x-4 justify-start items-center align-middle"
+        >
+          <mat-icon class="calendar-icon">calendar_today</mat-icon>
+          <h2>Fecha Max. Presentación:</h2>
+          <p class="capitalize">
+            {{ item.date_presentation | date : "EEEE dd MMM yyyy" }}
+          </p>
+        </div>
+        <div
+          class="flex flex-row gap-x-4 justify-start items-center align-middle"
+        >
+          <mat-icon class="calendar-icon">calendar_today</mat-icon>
+          <h2>Fecha Max. Justificación:</h2>
+          <p class="capitalize">
+            {{ item.date_justification | date : "EEEE dd MMM yyyy" }}
+          </p>
+        </div>
+        <div
+          class="flex flex-row gap-x-4 justify-start items-center align-middle"
+        >
+          <mat-icon class="calendar-icon">calendar_today</mat-icon>
+          <h2>Periodo subvencionable:</h2>
+          <p>
+            {{ item.start | date : "dd MMM yyyy" }}
+            @if (item.end) { - {{ item.end | date : "dd MMM yyyy" }}
+            }
+          </p>
+        </div>
       </div>
-      <div
-        class="flex flex-row gap-x-4 justify-start items-center align-middle"
-      >
-        <mat-icon class="calendar-icon">calendar_today</mat-icon>
-        <h2>Periodo subvencionable:</h2>
-        <p>
-          {{ item.start | date : "dd MMM yyyy" }}
-          @if (item.end) { - {{ item.end | date : "dd MMM yyyy" }}
+    </div>
+    <div class="rounded-[4px] border border-[#d0a9d952] px-4 py-4 my-4">
+      <div class="flex items-center justify-between align-middle mb-4">
+        <h2>Proyectos solicitadas</h2>
+        <app-button-icon
+          [buttonText]="'Añadir proyecto'"
+          [iconClass]="'uil-plus'"
+          (addClicked)="
+            openModal.emit({
+              typePage: typeList.Subsidies,
+              typeModal: typeList.Projects,
+              action: typeActionModal.Create,
+              item: item
+            })
+          "
+        />
+      </div>
+      <div class="flex justify-center mx-10">
+        <table [cellPadding]="8" cellspacing="0" width="100%">
+          @for (project of item.projects; track project; let pIndex = $index) {
+          @let acts = project.activities ?? []; @let rows = acts.length > 0 ?
+          acts.length : 1;
+
+          <tbody [ngClass]="{ 'bg-lilaMuyClaro': pIndex % 2 === 0 }">
+            <!-- Con actividades -->
+            @if (acts.length > 0) { @for (activity of acts; track activity; let
+            i = $index) {
+            <tr>
+              @if (i === 0) {
+              <td
+                [attr.rowspan]="rows"
+                class="align-middle text-left text-[14px] uppercase w-2/6"
+              >
+                {{ project.title }}
+                <div class="flex mt-1 gap-1">
+                  <app-icon-action
+                    [icon]="'uil-edit'"
+                    [tooltip]="'Editar'"
+                    (click)="
+                      openModal.emit({
+                        typeModal: typeList.Projects,
+                        action: typeActionModal.Edit,
+                        item: project
+                      })
+                    "
+                  />
+                  <app-icon-action
+                    [icon]="'uil-eye'"
+                    [tooltip]="'Ver'"
+                    (click)="
+                      openModal.emit({
+                        typeModal: typeList.Projects,
+                        action: typeActionModal.Show,
+                        item: project
+                      })
+                    "
+                  />
+                  <app-icon-action
+                    [icon]="'uil-trash-alt'"
+                    [tooltip]="'Eliminar'"
+                    (click)="
+                      openModal.emit({
+                        typeModal: typeList.Projects,
+                        action: typeActionModal.Delete,
+                        item: project
+                      })
+                    "
+                  />
+                </div>
+              </td>
+              }
+
+              <td class="pl-6 w-2/6">
+                <div>
+                  <p class="text-[13px] text-gray-800">{{ activity.name }}</p>
+                  @if (activity.attendant) {
+                  <p
+                    class="text-[12px] text-gray-500 flex items-center gap-1 mt-1"
+                  >
+                    <i class="uil uil-user text-[10px]"></i>
+                    {{ activity.attendant }}
+                  </p>
+                  }
+                </div>
+              </td>
+
+              <td class="text-right text-[12px] w-1/6">
+                {{ activity.budget | currency : "EUR" : "symbol" }}
+              </td>
+
+              @if (i === 0) {
+              <td
+                [attr.rowspan]="rows"
+                class="align-middle text-right text-[12px] font-bold w-1/6"
+              >
+                {{
+                  getProjectTotalBudget(project) | currency : "EUR" : "symbol"
+                }}
+              </td>
+              }
+            </tr>
+            } }
+            <!-- Sin actividades -->
+            @else {
+            <tr>
+              <td
+                [attr.rowspan]="rows"
+                class="align-middle text-left text-[14px] uppercase w-2/6"
+              >
+                {{ project.title }}
+                <div class="flex mt-1 gap-1">
+                  <app-icon-action
+                    [icon]="'uil-edit'"
+                    [tooltip]="'Editar'"
+                    (click)="
+                      openModal.emit({
+                        typeModal: typeList.Projects,
+                        action: typeActionModal.Edit,
+                        item: project
+                      })
+                    "
+                  />
+                  <app-icon-action
+                    [icon]="'uil-eye'"
+                    [tooltip]="'Ver'"
+                    (click)="
+                      openModal.emit({
+                        typeModal: typeList.Projects,
+                        action: typeActionModal.Show,
+                        item: project
+                      })
+                    "
+                  />
+                  <app-icon-action
+                    [icon]="'uil-trash-alt'"
+                    [tooltip]="'Eliminar'"
+                    (click)="
+                      openModal.emit({
+                        typeModal: typeList.Projects,
+                        action: typeActionModal.Delete,
+                        item: project
+                      })
+                    "
+                  />
+                </div>
+              </td>
+
+              <td class="pl-6 w-2/6 text-gray-500 italic">---</td>
+
+              <td class="text-right text-[12px] w-1/6">—</td>
+
+              <td class="align-middle text-right text-[12px] font-bold w-1/6">
+                {{ 0 | currency : "EUR" : "symbol" }}
+                <!-- o {{ getProjectTotalBudget(project) | currency:'EUR':'symbol' }} si prefieres -->
+              </td>
+            </tr>
+            }
+          </tbody>
           }
+        </table>
+      </div>
+    </div>
+    @if (item.observations) {
+    <div class="pb-5">
+      <h2>Observaciones</h2>
+      @if (item.observations) {
+      <app-text-editor [text]="item.observations" />
+      }
+    </div>
+    }
+    <div class="flex flex-row gap-x-4 justify-between">
+      <div class="box-amount w-auto box-invoices">
+        <p>Nº FACTURAS</p>
+        <p class="text-center">{{ number_invoices }}</p>
+      </div>
+      <div class="box-amount w-auto">
+        <p>TOTAL SOLICITADO</p>
+        <p class="text-center">
+          {{ item.amount_requested | eurosFormat }}
+        </p>
+      </div>
+      <div class="box-amount w-auto">
+        <p>TOTAL CONCEDIDO</p>
+        <p class="text-center">{{ item.amount_granted | eurosFormat }}</p>
+      </div>
+      <div class="box-amount flex-1">
+        <p>IMPORTE NECESARIO JUSTIFICAR</p>
+        <p class="text-center">{{ item.amount_justified | eurosFormat }}</p>
+      </div>
+      <div class="box-amount flex-1">
+        <p>GASTO ACUMULADO</p>
+        <p>
+          <span
+            >Total {{ item.amount_spent | eurosFormat }} + IRPF
+            {{ item.amount_spent_irpf! - item.amount_spent! | eurosFormat }}
+            =<br />
+          </span>
+          {{ item.amount_spent_irpf | eurosFormat }}
+        </p>
+      </div>
+
+      <div
+        class="box-amount flex-1"
+        [ngClass]="{
+       positive: (item.amount_justified! - item.amount_spent_irpf!) < 0,
+       negative: (item.amount_justified! - item.amount_spent_irpf!) > 0,
+     }"
+      >
+        @if ((item.amount_justified! - item.amount_spent_irpf!) < 0){
+        <p>SOBREPASA EL GASTO</p>
+        }@else {
+        <p>FALTA POR GASTAR</p>
+        }
+        <p>
+          <span
+            >Justificar {{ item.amount_justified | eurosFormat }} - Gastado
+            {{ item.amount_spent_irpf | eurosFormat }} = </span
+          ><br />{{
+            item.amount_justified! - item.amount_spent_irpf! | eurosFormat
+          }}
+        </p>
+      </div>
+
+      <div class="box-amount flex-1">
+        <p>APORTE ASOCIACIÓN</p>
+        <p>
+          <span
+            >Gasto + IRPF {{ item.amount_spent_irpf | eurosFormat }} - Concedido
+            {{ item.amount_granted | eurosFormat }} =</span
+          >
+          {{ item.amount_association_irpf | eurosFormat }}
         </p>
       </div>
     </div>
-  </div>
-  <div class="rounded-[4px] border border-[#d0a9d952] px-4 py-4 my-4">
-    <div class="flex items-center justify-between align-middle mb-4">
-      <h2>Proyectos solicitadas</h2>
-      <app-button-icon
-        [buttonText]="'Añadir proyecto'"
-        [iconClass]="'uil-plus'"
-        (addClicked)="
+    <div class="py-4 flex">
+      @if (!loading) {
+      <app-table
+        [typeSection]="typeList.Invoices"
+        [typeModal]="typeList.Invoices"
+        [data]="filteredInvoices"
+        [headerColumns]="getVisibleColumns()"
+        [columnVisibility]="columnVisibility"
+        (openModal)="
           openModal.emit({
-            typeModal: typeList.Projects,
-            action: typeActionModal.Create,
-            item: ''
+            typeModal: typeList.Invoices,
+            action: $event.action,
+            item: $event.item
           })
         "
+        [printExcludeColumns]="[
+          'invoice_pdf',
+          'proof_pdf',
+          'type_invoice',
+          'subsidy_name'
+        ]"
       />
-    </div>
-    <div class="flex justify-center mx-10">
-      <table [cellPadding]="8" cellspacing="0" width="100%">
-        @for (project of item.projects; track project; let pIndex = $index) {
-        <tbody [ngClass]="{ 'bg-lilaMuyClaro': pIndex % 2 === 0 }">
-          @for (activity of project.activities; track activity; let i = $index)
-          {
-          <tr>
-            <!-- Columna del título del proyecto e iconos -->
-            @if (i === 0) {
-            <td
-              [attr.rowspan]="project.activities?.length"
-              class="align-middle text-left text-[14px] uppercase w-2/6"
-            >
-              {{ project.title }}
-              <div class="flex mt-1 gap-1">
-                <app-icon-action
-                  [icon]="'uil-edit'"
-                  [tooltip]="'Editar'"
-                  (click)="
-                    openModal.emit({
-                      typeModal: typeList.Projects,
-                      action: typeActionModal.Edit,
-                      item: project
-                    })
-                  "
-                ></app-icon-action>
-                <app-icon-action
-                  [icon]="'uil-eye'"
-                  [tooltip]="'Ver'"
-                  (click)="
-                    openModal.emit({
-                      typeModal: typeList.Projects,
-                      action: typeActionModal.Show,
-                      item: project
-                    })
-                  "
-                ></app-icon-action>
-                <app-icon-action
-                  [icon]="'uil-trash-alt'"
-                  [tooltip]="'Eliminar'"
-                  (click)="
-                    openModal.emit({
-                      typeModal: typeList.Projects,
-                      action: typeActionModal.Delete,
-                      item: project
-                    })
-                  "
-                ></app-icon-action>
-              </div>
-            </td>
-            }
-            <!-- Columna de actividad -->
-            <td class="pl-6 w-2/6">
-              <div>
-                <p class="text-[13px] text-gray-800">
-                  {{ activity.name }}
-                </p>
-                @if (activity.attendant) {
-                <p
-                  class="text-[12px] text-gray-500 flex items-center gap-1 mt-1"
-                >
-                  <i class="uil uil-user text-[10px]"></i>
-                  {{ activity.attendant }}
-                </p>
-                }
-              </div>
-            </td>
-            <!-- Columna de presupuesto individual -->
-            <td class="text-right text-[12px] w-1/6">
-              {{ activity.budget | currency : "EUR" : "symbol" }}
-            </td>
-            <!-- Columna de total solo en la primera fila -->
-            @if (i === 0) {
-            <td
-              [attr.rowspan]="project.activities?.length"
-              class="align-middle text-right text-[12px] font-bold w-1/6"
-            >
-              {{ getProjectTotalBudget(project) | currency : "EUR" : "symbol" }}
-            </td>
-            }
-          </tr>
-          }
-        </tbody>
-        }
-      </table>
+      }
     </div>
   </div>
-  @if (item.observations) {
-  <div class="pb-5">
-    <h2>Observaciones</h2>
-    @if (item.observations) {
-    <app-text-editor [text]="item.observations" />
-    }
-  </div>
-  }
-  <div class="flex flex-row gap-x-4 justify-between">
-    <div class="box-amount w-auto box-invoices">
-      <p>Nº FACTURAS</p>
-      <p class="text-center">{{ number_invoices }}</p>
-    </div>
-    <div class="box-amount w-auto">
-      <p>TOTAL SOLICITADO</p>
-      <p class="text-center">
-        {{ getSubsidyTotalBudget(item) | eurosFormat }}
-      </p>
-    </div>
-    <div class="box-amount w-auto">
-      <p>TOTAL CONCEDIDO</p>
-      <p class="text-center">{{ item.amount_granted | eurosFormat }}</p>
-    </div>
-    <div class="box-amount flex-1">
-      <p>IMPORTE NECESARIO JUSTIFICAR</p>
-      <p class="text-center">{{ item.amount_justified | eurosFormat }}</p>
-    </div>
-    <div class="box-amount flex-1">
-      <p>GASTO ACUMULADO</p>
-      <p>
-        <span>Total </span>@if (amount_spend) {
-        <span>{{ amount_spend | eurosFormat }}</span>
-        }
-      </p>
-      <p>
-        <span
-          >Total {{ amount_spend | eurosFormat }} + IRPF
-          {{ amount_spend | eurosFormat }} =
-        </span>
-        {{ amount_spend + amount_spend_irpf | eurosFormat }}
-      </p>
-    </div>
-    <div class="box-amount flex-1 negative">
-      <p>FALTA POR FACTURAR</p>
-      <p>
-        <span
-          >Total {{ item.amount_justified | eurosFormat }} -
-          {{ amount_spend + amount_spend_irpf | eurosFormat }} = </span
-        >{{
-          item.amount_justified! - (amount_spend + amount_spend_irpf)
-            | eurosFormat
-        }}
-      </p>
-    </div>
-    <div class="box-amount flex-1 positive">
-      <p>APORTE ASOCIACIÓN</p>
-      <p>
-        <span
-          >Total {{ amount_spend + amount_spend_irpf | eurosFormat }} -
-          {{ item.amount_granted | eurosFormat }} =</span
-        >
-        {{ amount_association | eurosFormat }}
-      </p>
-    </div>
-  </div>
-  <div class="py-4 flex">
-    @if (!loading) {
-    <app-table
-      [typeSection]="typeList.Invoices"
-      [typeModal]="typeList.Invoices"
-      [data]="filteredInvoices"
-      [headerColumns]="getVisibleColumns()"
-      [columnVisibility]="columnVisibility"
-      (openModal)="
-        openModal.emit({
-          typeModal: typeList.Invoices,
-          action: $event.action,
-          item: $event.item
-        })
-      "
-    />
-    }
-  </div>
-</div>
+</app-pdf-print>
 }

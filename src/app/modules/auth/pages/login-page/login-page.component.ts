@@ -41,8 +41,6 @@ export class LoginPageComponent implements OnInit {
   ngOnInit(): void {}
 
   sendLogin(): void {
-    // this.router.navigate(['dashboard', '']);
-
     const { name, password } = this.formLogin.value;
 
     if (this.formLogin.invalid) {

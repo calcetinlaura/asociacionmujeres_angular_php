@@ -4,7 +4,9 @@
   border-radius: 0.4rem;
   color: rgb(96, 24, 24);
 }
-
+.imagen {
+  width: 100%;
+}
 /* Media Queries para dispositivos más pequeños */
 /* Ordenador pequeño */
 @media (max-width: 1200px) {

@@ -5,6 +5,7 @@ export interface RecipeModel {
   title: string;
   category: string;
   owner: string;
+  introduction: string;
   ingredients: string;
   recipe: string;
   img?: string;

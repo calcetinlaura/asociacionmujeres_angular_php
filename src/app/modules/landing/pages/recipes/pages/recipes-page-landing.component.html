@@ -1,8 +1,7 @@
-<div class="flex flex-col mx-3 md:mx-8 mt-2 md:mt-4">
+<div class="flex flex-col mx-3 md:mx-8 mt-4">
   <app-filters [filters]="filters" (filterClicked)="filterSelected($event)" />
   <app-input-search (onDebounce)="applyFilterWord($event)" class="my-8" />
-  <!-- Spinner Loading -->
-  @if (isLoading) {
+  @if (recipesFacade.isLoading$ | async) {
   <app-spinner-loading />
   } @else { @if (areThereResults) {
   <app-section-generic
@@ -13,8 +12,5 @@
   />
   } @else {
   <app-no-results [text]="'recetas' | lowercase" />
-  }
-  <!-- Sección no hay resultados -->
-  }
-  <!-- Sección cards -->
+  } }
 </div>

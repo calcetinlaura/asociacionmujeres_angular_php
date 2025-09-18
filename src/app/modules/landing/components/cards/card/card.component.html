@@ -1,0 +1,65 @@
+<div class="card">
+  @if(type === typeList.Podcasts || type === typeList.Recipes){
+  <div
+    class="aspect-square w-full flex items-center justify-center rounded-lg"
+    [ngStyle]="{
+      'background-color': colorFor(item),
+      color: textColorFor(colorFor(item))
+    }"
+  >
+    <p class="p-6 text-center font-bold text-[20px]">{{ item.title }}</p>
+  </div>
+  }@else{
+  <div class="cover">
+    <img
+      appImgBroken
+      [src]="item.img | itemImage : type"
+      alt=""
+      class="cover_image"
+    />
+  </div>
+  }
+
+  <div class="flex flex-col gap-y-1 text-center py-4">
+    @if (type !== typeList.Podcasts && type !== typeList.Recipes && type !==
+    typeList.Piteras){
+    <div class="item-title">{{ item.title }}</div>
+    }@if (type === typeList.Piteras){
+    <div class="item-title">
+      {{ item.title + " nº " + item.publication_number }}
+    </div>
+    } @if (type !== typeList.Piteras) {
+    <div class="item-subTitle">
+      {{ item.author || item.director || item.place }}
+    </div>
+    @if (type === typeList.Podcasts) {
+    <div class="flex justify-center">
+      <app-text-editor
+        [text]="item.artists"
+        [number]="12"
+        [align]="'center'"
+        [color]="'gray'"
+      />
+    </div>
+    } } @if (type === typeList.Piteras) {
+    <div class="item-subTitle">
+      {{ item.year }}
+    </div>
+    }
+    <div class="flex justify-center">
+      @if ( type === typeList.Books || type === typeList.Movies || type ===
+      typeList.Recipes ) {
+      <app-text-background [text]="item.gender || item.category">
+      </app-text-background>
+      }
+      <!-- @if (type === typeList.Piteras && item.url) {
+      <app-text-link
+        [text]="'Ver pdf'"
+        [url]="'/uploads/pdf/PITERAS/' + item.url"
+      >
+        Ver Documento ></app-text-link
+      >
+      } -->
+    </div>
+  </div>
+</div>

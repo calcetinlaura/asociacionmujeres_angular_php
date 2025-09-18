@@ -38,10 +38,11 @@ export class FormRecipeComponent {
   private generalService = inject(GeneralService);
 
   @Input() itemId!: number;
-  @Output() sendFormRecipe = new EventEmitter<{
+  @Output() submitForm = new EventEmitter<{
     itemId: number;
     formData: FormData;
   }>();
+
   selectedImageFile: File | null = null;
   recipeData: any;
   imageSrc: string = '';
@@ -55,10 +56,11 @@ export class FormRecipeComponent {
     title: new FormControl('', [Validators.required]),
     category: new FormControl('', [Validators.required]),
     owner: new FormControl(''),
+    introduction: new FormControl(''),
     recipe: new FormControl(''),
     ingredients: new FormControl(''),
     img: new FormControl(''),
-    year: new FormControl(0, [
+    year: new FormControl<number | null>(null, [
       Validators.required,
       Validators.min(1995),
       Validators.max(new Date().getFullYear()),
@@ -120,6 +122,9 @@ export class FormRecipeComponent {
     }
 
     const rawValues = { ...this.formRecipe.getRawValue() } as any;
+    if (rawValues.introduction) {
+      rawValues.introduction = rawValues.introduction.replace(/&nbsp;/g, ' ');
+    }
     if (rawValues.ingredients) {
       rawValues.ingredients = rawValues.ingredients.replace(/&nbsp;/g, ' ');
     }
@@ -134,6 +139,6 @@ export class FormRecipeComponent {
       this.itemId
     );
 
-    this.sendFormRecipe.emit({ itemId: this.itemId, formData: formData });
+    this.submitForm.emit({ itemId: this.itemId, formData: formData });
   }
 }

@@ -50,16 +50,14 @@ export class BooksService {
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
-  edit(id: number, book: FormData): Observable<any> {
+  edit(book: FormData): Observable<any> {
     return this.http
       .post(this.apiUrl, book)
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
   delete(id: number): Observable<any> {
-    return this.http
-      .delete(this.apiUrl, { params: { id: id } })
-      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
+    return this.generalService.deleteOverride<any>(this.apiUrl, { id });
   }
 
   sortBooksByTitle(books: BookModel[]): BookModel[] {

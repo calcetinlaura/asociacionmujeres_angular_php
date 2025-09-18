@@ -1,12 +1,22 @@
 <?php
 header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET, POST, PATCH, DELETE");
-header("Access-Control-Allow-Headers: Content-Type");
+header("Access-Control-Allow-Methods: GET, POST, PATCH, DELETE, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, X-Requested-With, X-HTTP-Method-Override, Authorization, Origin, Accept");
 header("Content-Type: application/json; charset=UTF-8");
 
 include '../config/conexion.php';
+include 'utils/utils.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
+
+if ($method === 'POST') {
+  $override = $_POST['_method'] ?? $_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'] ?? '';
+  $override = strtoupper($override);
+  if ($override === 'DELETE') {
+    $method = 'DELETE';
+  }
+}
+
 if ($method === 'OPTIONS') {
   http_response_code(204);
   exit();
@@ -14,6 +24,7 @@ if ($method === 'OPTIONS') {
 
 $uriParts = explode('/', trim($_SERVER['REQUEST_URI'], '/'));
 $resource = array_pop($uriParts);
+
 
 switch ($method) {
   case 'GET':
@@ -30,7 +41,7 @@ switch ($method) {
 
         // Invoices
         $stmtInvoices = $connection->prepare("
-          SELECT invoices.*, creditors.company AS creditor_company, creditors.contact AS creditor_contact, projects.title AS project_title
+          SELECT invoices.*, creditors.cif AS creditor_cif, creditors.company AS creditor_company, creditors.contact AS creditor_contact, projects.title AS project_title
           FROM invoices
           LEFT JOIN creditors ON invoices.creditor_id = creditors.id
           LEFT JOIN projects ON invoices.project_id = projects.id
@@ -95,7 +106,7 @@ switch ($method) {
 
         // Invoices
         $stmtInvoices = $connection->prepare("
-          SELECT invoices.*, creditors.company AS creditor_company, creditors.contact AS creditor_contact, projects.title AS project_title
+          SELECT invoices.*, creditors.cif AS creditor_cif, creditors.company AS creditor_company, creditors.contact AS creditor_contact, projects.title AS project_title
           FROM invoices
           LEFT JOIN creditors ON invoices.creditor_id = creditors.id
           LEFT JOIN projects ON invoices.project_id = projects.id
@@ -143,7 +154,6 @@ switch ($method) {
       exit;
 
     } else {
-      // ALL
       $stmt = $connection->prepare("SELECT * FROM subsidies");
       $stmt->execute();
       $subsidies = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
@@ -161,7 +171,7 @@ switch ($method) {
         $types = str_repeat('i', count($subsidyIds));
 
         $stmtInvoices = $connection->prepare("
-          SELECT invoices.*, creditors.company AS creditor_company, creditors.contact AS creditor_contact, projects.title AS project_title
+          SELECT invoices.*, creditors.cif AS creditor_cif, creditors.company AS creditor_company, creditors.contact AS creditor_contact, projects.title AS project_title
           FROM invoices
           LEFT JOIN creditors ON invoices.creditor_id = creditors.id
           LEFT JOIN projects ON invoices.project_id = projects.id
@@ -207,106 +217,130 @@ switch ($method) {
       exit;
     }
  case 'POST':
-    error_reporting(E_ALL);
-    ini_set('display_errors', 1);
+  error_reporting(E_ALL);
+  ini_set('display_errors', 1);
 
-    $data = $_POST;
+  // 1) Leer datos: primero FormData ($_POST); si viene vacío, intenta JSON (php://input)
+  $data = $_POST;
+  if (empty($data)) {
+    $json = file_get_contents('php://input');
+    $data = json_decode($json, true) ?? [];
+  }
 
-    if (empty($data)) {
-      $json = file_get_contents('php://input');
-      $data = json_decode($json, true);
+  // 2) Mapear campos (opcionales permiten null)
+  $name               = $data['name'] ?? null;
+  $year               = isset($data['year']) ? (int)$data['year'] : null;
+ $date_presentation  = normDate($data['date_presentation'] ?? null);
+$date_justification = normDate($data['date_justification'] ?? null);
+$start              = normDate($data['start'] ?? null);
+$end                = normDate($data['end'] ?? null);
+  $url_presentation   = $data['url_presentation'] ?? null;
+  $url_justification  = $data['url_justification'] ?? null;
+$amount_requested   = normNumber($data['amount_requested'] ?? null);
+$amount_granted     = normNumber($data['amount_granted']   ?? null);
+$amount_justified   = normNumber($data['amount_justified'] ?? null);
+  $observations       = $data['observations'] ?? null;
+
+  // 3) Detección de UPDATE por override de método
+  $isUpdate = isset($data['_method']) && strtoupper($data['_method']) === 'PATCH';
+
+  if ($isUpdate) {
+    // ---- UPDATE ----
+    $id = isset($data['id']) ? (int)$data['id'] : 0;
+    if ($id <= 0) {
+      http_response_code(400);
+      echo json_encode(["message" => "ID no válido."]);
+      exit();
     }
 
-    $name = $data['name'] ?? null;
-    $year = isset($data['year']) ? (int)$data['year'] : null;
-    $date_presentation = $data['date_presentation'] ?? null;
-    $date_justification = $data['date_justification'] ?? null;
-    $start = $data['start'] ?? null;
-    $end = $data['end'] ?? null;
-    $invoices = $data['invoices'] ?? null;
-    $url_presentation = $data['url_presentation'] ?? null;
-    $url_justification = $data['url_justification'] ?? null;
-    $amount_requested = isset($data['amount_requested']) ? (float)$data['amount_requested'] : 0;
-    $amount_granted = isset($data['amount_granted']) ? (float)$data['amount_granted'] : null;
-    $amount_justified = isset($data['amount_justified']) ? (float)$data['amount_justified'] : null;
-    $amount_association = isset($data['amount_association']) ? (float)$data['amount_association'] : null;
-    $observations = $data['observations'] ?? null;
+    // Recalcular importes dependientes de facturas
+    $amount_spent       = calcAmountSpent($connection, $id);
+    $amount_spent_irpf  = calcAmountSpentIrpf($connection, $id);
+    $amount_association = ($amount_spent !== null && $amount_granted !== null)
+  ? ($amount_spent - $amount_granted)
+  : null;
 
-    // PATCH (update)
-    if (isset($data['_method']) && strtoupper($data['_method']) === 'PATCH') {
-      $id = $data['id'] ?? null;
-      if (!is_numeric($id)) {
-        http_response_code(400);
-        echo json_encode(["message" => "ID no válido."]);
-        exit();
-      }
+$amount_association_irpf = ($amount_spent_irpf !== null && $amount_granted !== null)
+  ? ($amount_spent_irpf - $amount_granted)
+  : null;
 
-      $stmt = $connection->prepare("UPDATE subsidies SET
-        name = ?, year = ?, date_presentation = ?, date_justification = ?, start = ?,
-        end = ?, url_presentation = ?, url_justification = ?,
-        amount_requested = ?, amount_granted = ?, amount_justified = ?, amount_association = ?, observations = ?
-        WHERE id = ?");
+    $stmt = $connection->prepare("UPDATE subsidies SET
+      name = ?, year = ?, date_presentation = ?, date_justification = ?, start = ?,
+      end = ?, url_presentation = ?, url_justification = ?,
+      amount_requested = ?, amount_granted = ?, amount_justified = ?, amount_spent = ?, amount_spent_irpf = ?, amount_association = ?, amount_association_irpf = ?, observations = ?
+      WHERE id = ?");
 
-      $stmt->bind_param(
-        "sissssssddddsi",
-        $name,
-        $year,
-        $date_presentation,
-        $date_justification,
-        $start,
-        $end,
-        $url_presentation,
-        $url_justification,
-        $amount_requested,
-        $amount_granted,
-        $amount_justified,
-        $amount_association,
-        $observations,
-        $id
-      );
+    $stmt->bind_param(
+      "sissssssdddddddsi",
+      $name,
+      $year,
+      $date_presentation,
+      $date_justification,
+      $start,
+      $end,
+      $url_presentation,
+      $url_justification,
+      $amount_requested,
+      $amount_granted,
+      $amount_justified,
+      $amount_spent,
+      $amount_spent_irpf,
+      $amount_association,
+      $amount_association_irpf,
+      $observations,
+      $id
+    );
 
-      if ($stmt->execute()) {
-        echo json_encode(["message" => "Subvención actualizada con éxito."]);
-      } else {
-        http_response_code(500);
-        echo json_encode(["message" => "Error al actualizar la subvención: " . $stmt->error]);
-      }
-
+    if ($stmt->execute()) {
+      echo json_encode(["message" => "Subvención actualizada con éxito."]);
     } else {
-      // POST (create)
-      $stmt = $connection->prepare("INSERT INTO subsidies
-        (name, year, date_presentation, date_justification, start, end,  url_presentation, url_justification,
-         amount_requested, amount_granted, amount_justified, amount_association, observations)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-
-      $stmt->bind_param(
-        "sissssssdddds",
-        $name,
-        $year,
-        $date_presentation,
-        $date_justification,
-        $start,
-        $end,
-        $url_presentation,
-        $url_justification,
-        $amount_requested,
-        $amount_granted,
-        $amount_justified,
-        $amount_association,
-        $observations
-      );
-
-      if ($stmt->execute()) {
-        echo json_encode(["message" => "Subvención añadida con éxito."]);
-      } else {
-        http_response_code(500);
-        echo json_encode(["message" => "Error al añadir la subvención: " . $stmt->error]);
-      }
+      http_response_code(500);
+      echo json_encode(["message" => "Error al actualizar la subvención: " . $stmt->error]);
     }
-    break;
+
+  } else {
+    // ---- INSERT ----
+    $amount_spent       = 0.0;
+    $amount_spent_irpf  = 0.0;
+    $amount_association = $amount_spent - (float)($amount_granted ?? 0.0);
+    $amount_association_irpf = $amount_spent_irpf - (float)($amount_granted ?? 0.0);
+
+    $stmt = $connection->prepare("INSERT INTO subsidies
+      (name, year, date_presentation, date_justification, start, end, url_presentation, url_justification,
+       amount_requested, amount_granted, amount_justified, amount_spent, amount_spent_irpf, amount_association, amount_association_irpf, observations)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+
+    $stmt->bind_param(
+      "sissssssddddddds",
+      $name,
+      $year,
+      $date_presentation,
+      $date_justification,
+      $start,
+      $end,
+      $url_presentation,
+      $url_justification,
+      $amount_requested,
+      $amount_granted,
+      $amount_justified,
+      $amount_spent,
+      $amount_spent_irpf,
+      $amount_association,
+      $amount_association_irpf,
+      $observations
+    );
+
+    if ($stmt->execute()) {
+      echo json_encode(["message" => "Subvención añadida con éxito."]);
+    } else {
+      http_response_code(500);
+      echo json_encode(["message" => "Error al añadir la subvención: " . $stmt->error]);
+    }
+  }
+  break;
 
   case 'DELETE':
-    $id = $_GET['id'] ?? null;
+    $id = $_POST['id'] ?? $_GET['id'] ?? null;
     if (!is_numeric($id)) {
       http_response_code(400);
       echo json_encode(["message" => "ID no válido."]);

@@ -3,20 +3,19 @@
     <h1>Asociación de Mujeres de Callosa de Segura</h1>
   </div>
   <div>
-    <ul class="nav-bar_list">
+    <div class="nav-bar_list">
       @for (item of mainMenu.defaultOptions; track item) {
-        <li>
-          <a
-            [routerLink]="item.router"
-            [queryParams]="item.query"
-            [routerLinkActive]="['active-link']"
-            (click)="setSelectedMenuItem(item.title)"
-            [routerLinkActiveOptions]="{ exact: true }"
-            >
-            {{ item.title }}
-          </a>
-        </li>
+
+      <a
+        [routerLink]="item.router"
+        [queryParams]="item.query"
+        [routerLinkActive]="['active-link']"
+        (click)="setSelectedMenuItem(item.title)"
+        [routerLinkActiveOptions]="{ exact: true }"
+      >
+        <div [innerHTML]="item.title"></div>
+      </a>
       }
-    </ul>
+    </div>
   </div>
 </div>

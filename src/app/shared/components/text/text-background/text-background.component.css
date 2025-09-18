@@ -1,7 +1,7 @@
 .text-background {
-  border-radius: 4px;
+  border-radius: 16px;
   font-weight: 500;
-  padding: 4px 6px 3px 6px;
+  padding: 4px 16px 4px 16px;
   width: max-content;
   text-transform: uppercase;
 }

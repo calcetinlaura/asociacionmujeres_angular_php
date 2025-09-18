@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import {
   Component,
   DestroyRef,
+  ElementRef,
   inject,
   OnInit,
   ViewChild,
@@ -23,43 +24,42 @@ import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loadi
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
-    selector: 'app-movies-page-landing',
-    imports: [
-        CommonModule,
-        FiltersComponent,
-        SectionGenericComponent,
-        InputSearchComponent,
-        NoResultsComponent,
-        SpinnerLoadingComponent,
-    ],
-    templateUrl: './movies-page-landing.component.html'
+  selector: 'app-movies-page-landing',
+  standalone: true,
+  imports: [
+    CommonModule,
+    FiltersComponent,
+    SectionGenericComponent,
+    InputSearchComponent,
+    NoResultsComponent,
+    SpinnerLoadingComponent,
+  ],
+  templateUrl: './movies-page-landing.component.html',
 })
 export class MoviesPageLandingComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
-  private readonly moviesFacade = inject(MoviesFacade);
+  readonly moviesFacade = inject(MoviesFacade);
   private readonly moviesService = inject(MoviesService);
   private readonly generalService = inject(GeneralService);
 
   movies: MovieModel[] = [];
   filteredMovies: MovieModel[] = [];
   filters: Filter[] = [];
-  isLoading = true;
   areThereResults = false;
   typeList = TypeList;
   number = 0;
-  selectedFilter = 'ALL';
+  selectedFilter = '';
 
   @ViewChild(InputSearchComponent)
   private inputSearchComponent!: InputSearchComponent;
 
-  ngOnInit(): void {
-    this.filters = [
-      { code: 'NOVEDADES', name: 'Novedades' },
-      { code: 'ALL', name: 'Todos' },
-      ...genderFilterMovies,
-    ];
+  @ViewChild('printArea', { static: false })
+  printArea!: ElementRef<HTMLElement>;
 
-    this.filterSelected('NOVEDADES');
+  ngOnInit(): void {
+    this.filters = [{ code: '', name: 'Todos' }, ...genderFilterMovies];
+
+    this.filterSelected('');
 
     this.moviesFacade.filteredMovies$
       .pipe(
@@ -72,18 +72,22 @@ export class MoviesPageLandingComponent implements OnInit {
   filterSelected(filter: string): void {
     this.selectedFilter = filter;
     this.generalService.clearSearchInput(this.inputSearchComponent);
-    this.moviesFacade.setCurrentFilter(filter);
+    if (filter === '') {
+      this.moviesFacade.loadAllMovies();
+    } else {
+      this.moviesFacade.loadMoviesByFilter(filter);
+    }
   }
 
   applyFilterWord(keyword: string): void {
     this.moviesFacade.applyFilterWord(keyword);
   }
+
   private updateMovieState(movies: MovieModel[] | null): void {
     if (!movies) return;
     this.movies = this.moviesService.sortMoviesByTitle(movies);
     this.filteredMovies = [...this.movies];
     this.number = this.moviesService.countMovies(movies);
     this.areThereResults = this.moviesService.hasResults(movies);
-    this.isLoading = false;
   }
 }

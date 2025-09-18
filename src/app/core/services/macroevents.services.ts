@@ -37,16 +37,14 @@ export class MacroeventsService {
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
-  edit(id: number, event: FormData): Observable<any> {
+  edit(event: FormData): Observable<any> {
     return this.http
       .post(this.apiUrl, event)
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
   delete(id: number): Observable<any> {
-    return this.http
-      .delete(this.apiUrl, { params: { id: id } })
-      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
+    return this.generalService.deleteOverride<any>(this.apiUrl, { id });
   }
 
   sortMacroeventsByTitle(

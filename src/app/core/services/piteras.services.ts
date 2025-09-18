@@ -32,20 +32,18 @@ export class PiterasService {
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
-  edit(id: number, pitera: FormData): Observable<any> {
+  edit(pitera: FormData): Observable<any> {
     return this.http
       .post(this.apiUrl, pitera)
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
   delete(id: number): Observable<any> {
-    return this.http
-      .delete(this.apiUrl, { params: { id: id } })
-      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
+    return this.generalService.deleteOverride<any>(this.apiUrl, { id });
   }
 
   sortPiterasByYear(piteras: PiteraModel[]): PiteraModel[] {
-    return piteras.sort((a, b) => b.year - a.year);
+    return piteras.sort((a, b) => Number(b.year) - Number(a.year));
   }
 
   sortPiterasById(piteras: PiteraModel[]): PiteraModel[] {

@@ -1,9 +1,10 @@
-<div class="share-icons mt-4 mb-8">
+<div class="share-icons flex gap-x-4 justify-center">
   <!-- WhatsApp -->
   <a
     [href]="'https://wa.me/?text=' + encodedTitle + '%20' + encodedUrl"
     target="_blank"
-    rel="noopener"
+    rel="noopener noreferrer"
+    aria-label="Compartir en WhatsApp"
     title="Compartir en WhatsApp"
   >
     <i class="uil uil-whatsapp"></i>
@@ -13,7 +14,8 @@
   <a
     [href]="'https://www.facebook.com/sharer/sharer.php?u=' + encodedUrl"
     target="_blank"
-    rel="noopener"
+    rel="noopener noreferrer"
+    aria-label="Compartir en Facebook"
     title="Compartir en Facebook"
   >
     <i class="uil uil-facebook-f"></i>
@@ -28,7 +30,8 @@
       encodedTitle
     "
     target="_blank"
-    rel="noopener"
+    rel="noopener noreferrer"
+    aria-label="Compartir en X (Twitter)"
     title="Compartir en X (Twitter)"
   >
     <i class="uil uil-twitter"></i>
@@ -38,12 +41,16 @@
   <a
     [href]="'https://www.linkedin.com/sharing/share-offsite/?url=' + encodedUrl"
     target="_blank"
-    rel="noopener"
+    rel="noopener noreferrer"
+    aria-label="Compartir en LinkedIn"
     title="Compartir en LinkedIn"
   >
     <i class="uil uil-linkedin"></i>
   </a>
-
+  <!-- Web Share API / Copiar -->
+  <button (click)="nativeShare()" aria-label="Compartir" title="Compartir">
+    <i class="uil uil-share-alt"></i>
+  </button>
   <button (click)="copyLink()" title="Copiar enlace">
     <i class="uil uil-link"></i>
   </button>

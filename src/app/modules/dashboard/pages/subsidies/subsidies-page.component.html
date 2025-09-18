@@ -7,11 +7,11 @@
   />
   <div class="flex flex-1 flex-col justify-start p-8 gap-y-8">
     <app-filters
-      [filters]="filtersYears"
+      [filters]="filters"
       (filterClicked)="filterSelected($event)"
     ></app-filters>
     @if (showAllSubsidies) {
-    <div class="flex gap-x-4">
+    <div class="flex gap-x-4 items-center">
       <app-button-icon
         [buttonText]="'Añadir subveción'"
         [iconClass]="'uil-plus'"
@@ -38,21 +38,20 @@
             (change)="toggleColumn(column.key)"
           >
             {{ column.title }}
-          </mat-checkbox></button
-        >}
+          </mat-checkbox>
+        </button>
+        }
       </mat-menu>
     </div>
     }
   </div>
 </app-sticky-zone>
 <div class="flex flex-col px-8">
-  <!-- Spinner Loading -->
-  @if (isLoading) {
+  @if (subsidiesFacade.isLoading$ | async) {
   <app-spinner-loading />
-  }@else {
-  <!-- Tabla -->
-  @if (showAllSubsidies) {
-  <div class="pb-4 flex">
+  }@else { @if (showAllSubsidies) {
+  <!--   <div class="pb-4" #printArea>
+    <h2 class="only-on-pdf print-title">Listado subvenciones</h2>
     <app-table
       [data]="filteredSubsidies"
       [headerColumns]="getVisibleColumns()"
@@ -61,8 +60,29 @@
       [typeModal]="typeModal"
       (openModal)="onOpenModal($event)"
     ></app-table>
+  </div> -->
+  <div #printArea>
+    <h2 class="only-on-pdf print-title">Listado subvenciones</h2>
+    @for (group of (groupedByYear | keyvalue : sortYearsDesc); track group.key)
+    {
+    <div class="pb-4">
+      <h3 class="year-title text-[14px] font-bold mb-4">Año {{ group.key }}</h3>
+      <div class="pb-4 flex">
+        <app-table
+          [data]="group.value"
+          [headerColumns]="getVisibleColumns()"
+          [columnVisibility]="columnVisibility"
+          [typeSection]="typeModal"
+          [typeModal]="typeModal"
+          (openModal)="onOpenModal($event)"
+        ></app-table>
+      </div>
+    </div>
+    }
   </div>
-  } @if (!showAllSubsidies && !isLoading && visibleTabs.length > 0) {
+  <hr />
+
+  } @else { @if( visibleTabs.length > 0){
   <mat-tab-group
     (selectedTabChange)="tabActive($event)"
     [selectedIndex]="selectedIndex"
@@ -77,25 +97,24 @@
     </mat-tab>
     }
   </mat-tab-group>
-  }<!-- Mensaje cuando no hay subvenciones -->
-  @if (!showAllSubsidies && !isLoading && visibleTabs.length === 0) {
+  } @else {
   <div class="text-center text-gray-600 my-12 text-lg">
     No hay subvenciones registradas en este año.
   </div>
-  }}
+  }}}
 </div>
+
 <!-- Modal -->
 @if (isModalVisible) {
 <app-modal
   [item]="item"
   [typeModal]="typeModal"
+  [typePage]="typePage"
   [action]="currentModalAction"
   (closeModal)="onCloseModal()"
-  (confirmDeleteSubsidy)="confirmDeleteSubsidy(item)"
+  (confirmDelete)="onDelete($event)"
   (sendFormSubsidyData)="sendFormSubsidy($event)"
-  (confirmDeleteProject)="confirmDeleteProject(item)"
   (sendFormProjectData)="sendFormProject($event)"
-  (confirmDeleteInvoice)="confirmDeleteInvoice(item)"
   (sendFormInvoiceData)="sendFormInvoice($event)"
 ></app-modal>
 }

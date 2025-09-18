@@ -15,7 +15,10 @@ export interface SubsidyModel {
   amount_requested: number;
   amount_granted?: number;
   amount_justified?: number;
+  amount_spent?: number;
+  amount_spent_irpf?: number;
   amount_association?: number;
+  amount_association_irpf?: number;
   observations?: string;
 }
 export interface SubsidyModelFullData extends SubsidyModel {

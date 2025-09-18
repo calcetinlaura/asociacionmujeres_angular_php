@@ -1,4 +1,8 @@
 <div
-  class="text-[12px] text-justify text-description prose max-w-none"
+  class="text-editor prose max-w-none"
   [innerHTML]="sanitizedDescription"
+  [style.--p-gap.px]="16"
+  [style.font-size.px]="number"
+  [style.color]="color"
+  [style.text-align]="align"
 ></div>

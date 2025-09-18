@@ -14,9 +14,9 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
+
 import { MatCardModule } from '@angular/material/card';
 import { QuillModule } from 'ngx-quill';
-
 import { filter, tap } from 'rxjs';
 import { BooksFacade } from 'src/app/application/books.facade';
 import {
@@ -47,7 +47,7 @@ export class FormBookComponent {
   private generalService = inject(GeneralService);
 
   @Input() itemId!: number;
-  @Output() sendFormBook = new EventEmitter<{
+  @Output() submitForm = new EventEmitter<{
     itemId: number;
     formData: FormData;
   }>();
@@ -140,9 +140,11 @@ export class FormBookComponent {
     }
 
     const rawValues = { ...this.formBook.getRawValue() } as any;
+
     if (rawValues.description) {
       rawValues.description = rawValues.description.replace(/&nbsp;/g, ' ');
     }
+
     const formData = this.generalService.createFormData(
       rawValues,
       {
@@ -151,6 +153,6 @@ export class FormBookComponent {
       this.itemId
     );
 
-    this.sendFormBook.emit({ itemId: this.itemId, formData: formData });
+    this.submitForm.emit({ itemId: this.itemId, formData: formData });
   }
 }

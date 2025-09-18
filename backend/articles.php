@@ -1,13 +1,22 @@
 <?php
 header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET, POST, PATCH, DELETE");
-header("Access-Control-Allow-Headers: Content-Type");
+header("Access-Control-Allow-Methods: GET, POST, PATCH, DELETE, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, X-Requested-With, X-HTTP-Method-Override, Authorization, Origin, Accept");
 header("Content-Type: application/json; charset=UTF-8");
 
 include '../config/conexion.php';
 include 'utils/utils.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
+
+if ($method === 'POST') {
+  $override = $_POST['_method'] ?? $_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'] ?? '';
+  $override = strtoupper($override);
+  if ($override === 'DELETE') {
+    $method = 'DELETE';
+  }
+}
+
 if ($method === 'OPTIONS') {
   http_response_code(204);
   exit();
@@ -48,7 +57,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'deleteImage') {
   if (!empty($_POST['id'])) {
     $id = (int)$_POST['id'];
 
-    if (eliminarSoloImagen($connection, strtolower($type), 'img', $id, $basePath)) {
+    if (eliminarSoloArchivo($connection, strtolower($type), 'img', $id, $basePath)) {
       echo json_encode(["message" => "Imagen eliminada correctamente"]);
     } else {
       http_response_code(500);
@@ -99,7 +108,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'deleteImage') {
 
       if ($stmt->execute()) {
         if ($oldImg && $imgName !== $oldImg) {
-          eliminarImagenSiNoSeUsa($connection, 'articles', 'img', $oldImg, $basePath);
+          eliminarArchivoSiNoSeUsa($connection, 'articles', 'img', $oldImg, $basePath);
         }
         echo json_encode(["message" => "Artículo actualizado con éxito."]);
       } else {
@@ -121,7 +130,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'deleteImage') {
     break;
 
   case 'DELETE':
-    $id = isset($_GET['id']) ? (int)$_GET['id'] : null;
+   $id = $_POST['id'] ?? $_GET['id'] ?? null;
     if (!$id) {
       http_response_code(400);
       echo json_encode(["message" => "ID no válido."]);
@@ -139,7 +148,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'deleteImage') {
     $stmt->bind_param("i", $id);
     if ($stmt->execute()) {
       if ($imgToDelete) {
-        eliminarImagenSiNoSeUsa($connection, 'articles', 'img', $imgToDelete, $basePath);
+        eliminarArchivoSiNoSeUsa($connection, 'articles', 'img', $imgToDelete, $basePath);
       }
       echo json_encode(["message" => "Artículo eliminado con éxito."]);
     } else {

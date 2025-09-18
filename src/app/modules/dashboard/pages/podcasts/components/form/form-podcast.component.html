@@ -13,13 +13,14 @@
     class="login-auth-form"
   >
     <div class="flex flex-col gap-y-4">
-      <div class="flex justify-between gap-x-4 bg-lilaMuyClaro p-4">
+      <div class="flex justify-between gap-x-4">
         <!-- Título -->
         <div class="box-input gap-x-4 flex-1">
           <label for="title">Título</label>
           <div class="flex flex-col flex-1">
             <input
               formControlName="title"
+              placeholder="Título del podcast"
               type="text"
               [ngClass]="{
                 'is-invalid': submitted && formPodcast.get('title')?.invalid
@@ -37,9 +38,9 @@
           <div class="w-2/3">
             <input
               formControlName="date"
-              class="w-full p-1 border border-gray-300 rounded"
               type="date"
               [ngClass]="{
+                'text-placeholder': !formPodcast.get('date')?.value,
                 'is-invalid': submitted && formPodcast.get('date')?.invalid
               }"
             />
@@ -49,6 +50,57 @@
           </div>
         </div>
       </div>
+      <div class="flex justify-between gap-x-4">
+        <!-- Temporada -->
+        <div class="box-input gap-x-4 flex-1">
+          <label for="title">Temporada</label>
+          <div class="flex flex-col flex-1">
+            <input
+              formControlName="season"
+              placeholder="Número temporada"
+              type="number"
+              [ngClass]="{
+                'is-invalid': submitted && formPodcast.get('season')?.invalid
+              }"
+            />
+            @if (submitted && formPodcast.get('season')?.invalid) {
+            <div class="is-invalid-text">Campo requerido</div>
+            }
+          </div>
+        </div>
+        <!-- Capitulo -->
+        <div class="box-input gap-x-4 flex-1">
+          <label for="title">Capitulo</label>
+          <div class="flex flex-col flex-1">
+            <input
+              formControlName="episode"
+              placeholder="Número episodio"
+              type="number"
+              [ngClass]="{
+                'is-invalid': submitted && formPodcast.get('episode')?.invalid
+              }"
+            />
+            @if (submitted && formPodcast.get('episode')?.invalid) {
+            <div class="is-invalid-text">Campo requerido</div>
+            }
+          </div>
+        </div>
+        <!-- Duración -->
+        <div class="box-input gap-x-4 flex-1">
+          <label for="date">Duración</label>
+          <div class="flex flex-col flex-1">
+            <input
+              type="text"
+              [value]="formatDuration(formPodcast.get('duration')?.value ?? 0)"
+              placeholder="Duración (HH:MM:SS)"
+              readonly
+            />
+            <!-- Oculto: el control real que viaja en el FormData (en segundos) -->
+            <input type="hidden" formControlName="duration" />
+          </div>
+        </div>
+      </div>
+      <hr />
       <div class="flex gap-4">
         <!-- Descripción -->
         <div class="box-input gap-x-4 flex-1">
@@ -57,7 +109,7 @@
             formControlName="description"
             [modules]="quillModules"
             placeholder="Escribe aquí la descripción..."
-            class="flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
+            class="ql-container-large flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
           />
         </div>
         <!-- Portada (Imagen) -->
@@ -72,9 +124,45 @@
             [type]="typeList"
             (imgSelected)="onImageSelected($event)"
             [imageWidthValue]="'full'"
+            [imageHeightValue]="380"
+            textImg="Añadir imagen"
             class="w-full"
           ></app-image-control>
         </div>
+        <div class="w-72">
+          <app-audio-control
+            [previewAudio]="
+              formPodcast.get('podcast')?.value
+                ? formPodcast.get('podcast')?.value!
+                : null
+            "
+            [type]="typeList"
+            (audioSelected)="onAudioSelected($event)"
+            [audioViewerHeight]="380"
+            [textAudio]="'Añadir audio'"
+            class="w-full"
+          ></app-audio-control>
+        </div>
+      </div>
+      <!-- Artistas -->
+      <div class="box-input gap-x-4 flex-1 !items-start">
+        <label for="title">Artistas</label>
+        <quill-editor
+          formControlName="artists"
+          [modules]="quillModules"
+          placeholder="Escribe aquí las personas artistas involucradas"
+          class="ql-container-small flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
+        />
+      </div>
+      <!-- Equipo técnico -->
+      <div class="box-input gap-x-4 flex-1 !items-start">
+        <label for="title">Equipo técnico</label>
+        <quill-editor
+          formControlName="technics"
+          [modules]="quillModules"
+          placeholder="Escribe aquí el equipo técnico"
+          class="ql-container-small flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
+        />
       </div>
 
       @if (formPodcast.invalid && submitted) {

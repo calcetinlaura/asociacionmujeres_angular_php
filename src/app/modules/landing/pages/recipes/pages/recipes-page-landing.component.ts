@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import {
   Component,
   DestroyRef,
+  ElementRef,
   inject,
   OnInit,
   ViewChild,
@@ -23,43 +24,46 @@ import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loadi
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
-    selector: 'app-recipes-page-landing',
-    imports: [
-        CommonModule,
-        FiltersComponent,
-        SectionGenericComponent,
-        InputSearchComponent,
-        NoResultsComponent,
-        SpinnerLoadingComponent,
-    ],
-    templateUrl: './recipes-page-landing.component.html'
+  selector: 'app-recipes-page-landing',
+  standalone: true,
+  imports: [
+    CommonModule,
+    FiltersComponent,
+    SectionGenericComponent,
+    InputSearchComponent,
+    NoResultsComponent,
+    SpinnerLoadingComponent,
+  ],
+  templateUrl: './recipes-page-landing.component.html',
 })
 export class RecipesPageLandingComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
-  private readonly recipesFacade = inject(RecipesFacade);
+  readonly recipesFacade = inject(RecipesFacade);
   private readonly recipesService = inject(RecipesService);
   private readonly generalService = inject(GeneralService);
 
   recipes: RecipeModel[] = [];
   filteredRecipes: RecipeModel[] = [];
   filters: Filter[] = [];
-  isLoading = true;
   areThereResults = false;
   typeList = TypeList;
   number = 0;
-  selectedFilter = 'ALL';
+  selectedFilter = '';
 
   @ViewChild(InputSearchComponent)
   private inputSearchComponent!: InputSearchComponent;
 
+  @ViewChild('printArea', { static: false })
+  printArea!: ElementRef<HTMLElement>;
+
   ngOnInit(): void {
     this.filters = [
-      { code: 'NOVEDADES', name: 'Novedades' },
-      { code: 'ALL', name: 'Todos' },
+      // { code: 'NOVEDADES', name: 'Novedades' },
+      { code: '', name: 'Todas' },
       ...categoryFilterRecipes,
     ];
 
-    this.filterSelected('NOVEDADES');
+    this.filterSelected('');
 
     this.recipesFacade.filteredRecipes$
       .pipe(
@@ -72,7 +76,12 @@ export class RecipesPageLandingComponent implements OnInit {
   filterSelected(filter: string): void {
     this.selectedFilter = filter;
     this.generalService.clearSearchInput(this.inputSearchComponent);
-    this.recipesFacade.setCurrentFilter(filter);
+    // dispara la carga correspondiente en la fachada
+    if (filter === '') {
+      this.recipesFacade.loadAllRecipes();
+    } else {
+      this.recipesFacade.loadRecipesByFilter(filter);
+    }
   }
 
   applyFilterWord(keyword: string): void {
@@ -81,11 +90,9 @@ export class RecipesPageLandingComponent implements OnInit {
 
   updateRecipeState(recipes: RecipeModel[] | null): void {
     if (!recipes) return;
-
     this.recipes = this.recipesService.sortRecipesByTitle(recipes);
     this.filteredRecipes = [...this.recipes];
     this.number = this.recipesService.countRecipes(recipes);
     this.areThereResults = this.recipesService.hasResults(recipes);
-    this.isLoading = false;
   }
 }

@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import {
   Component,
   DestroyRef,
+  ElementRef,
   inject,
   OnInit,
   ViewChild,
@@ -23,39 +24,42 @@ import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loadi
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
-    selector: 'app-books-page-landing',
-    imports: [
-        CommonModule,
-        FiltersComponent,
-        SectionGenericComponent,
-        InputSearchComponent,
-        NoResultsComponent,
-        SpinnerLoadingComponent,
-    ],
-    templateUrl: './books-page-landing.component.html'
+  selector: 'app-books-page-landing',
+  standalone: true,
+  imports: [
+    CommonModule,
+    FiltersComponent,
+    SectionGenericComponent,
+    InputSearchComponent,
+    NoResultsComponent,
+    SpinnerLoadingComponent,
+  ],
+  templateUrl: './books-page-landing.component.html',
 })
 export class BooksPageLandingComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
-  private readonly booksFacade = inject(BooksFacade);
+  readonly booksFacade = inject(BooksFacade);
   private readonly booksService = inject(BooksService);
   private readonly generalService = inject(GeneralService);
 
   books: BookModel[] = [];
   filteredBooks: BookModel[] = [];
   filters: Filter[] = [];
-  isLoading = true;
   areThereResults = false;
   typeList = TypeList;
   number = 0;
-  selectedFilter = 'ALL';
+  selectedFilter = '';
 
   @ViewChild(InputSearchComponent)
   private inputSearchComponent!: InputSearchComponent;
 
+  @ViewChild('printArea', { static: false })
+  printArea!: ElementRef<HTMLElement>;
+
   ngOnInit(): void {
     this.filters = [
       { code: 'NOVEDADES', name: 'Novedades' },
-      { code: 'ALL', name: 'Todos' },
+      { code: '', name: 'Todos' },
       ...genderFilterBooks,
     ];
 
@@ -72,7 +76,12 @@ export class BooksPageLandingComponent implements OnInit {
   filterSelected(filter: string): void {
     this.selectedFilter = filter;
     this.generalService.clearSearchInput(this.inputSearchComponent);
-    this.booksFacade.setCurrentFilter(filter);
+    // dispara la carga correspondiente en la fachada
+    if (filter === '') {
+      this.booksFacade.loadAllBooks();
+    } else {
+      this.booksFacade.loadBooksByFilter(filter);
+    }
   }
 
   applyFilterWord(keyword: string): void {
@@ -86,6 +95,5 @@ export class BooksPageLandingComponent implements OnInit {
     this.filteredBooks = [...this.books];
     this.number = this.booksService.countBooks(books);
     this.areThereResults = this.booksService.hasResults(books);
-    this.isLoading = false;
   }
 }

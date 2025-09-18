@@ -1,17 +1,16 @@
-import { DestroyRef, inject, Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, catchError, map, Observable, tap } from 'rxjs';
 import { PlaceModel } from 'src/app/core/interfaces/place.interface';
 import { PlacesService } from 'src/app/core/services/places.services';
-import { GeneralService } from '../shared/services/generalService.service';
+import { includesNormalized, toSearchKey } from '../shared/utils/text.utils';
+import { LoadableFacade } from './loadable.facade';
 
-@Injectable({
-  providedIn: 'root',
-})
-export class PlacesFacade {
-  private readonly destroyRef = inject(DestroyRef);
+@Injectable({ providedIn: 'root' })
+export class PlacesFacade extends LoadableFacade {
   private readonly placesService = inject(PlacesService);
-  private readonly generalService = inject(GeneralService);
+
+  // State
   private readonly placesSubject = new BehaviorSubject<PlaceModel[] | null>(
     null
   );
@@ -20,50 +19,39 @@ export class PlacesFacade {
   >(null);
   private readonly selectedPlaceSubject =
     new BehaviorSubject<PlaceModel | null>(null);
-  places$ = this.placesSubject.asObservable();
-  selectedPlace$ = this.selectedPlaceSubject.asObservable();
-  filteredPlaces$ = this.filteredPlacesSubject.asObservable();
 
-  constructor() {}
+  // Streams públicos
+  readonly places$ = this.placesSubject.asObservable();
+  readonly filteredPlaces$ = this.filteredPlacesSubject.asObservable();
+  readonly selectedPlace$ = this.selectedPlaceSubject.asObservable();
 
   loadAllPlaces(): void {
-    this.placesService
-      .getPlaces()
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((places: PlaceModel[]) => this.updatePlaceState(places)),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-      .subscribe();
+    this.executeWithLoading(this.placesService.getPlaces(), (places) =>
+      this.updatePlaceState(places)
+    );
   }
 
   loadPlacesByManagement(management: string): void {
-    this.placesService
-      .getPlacesByManagement(management)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((places: PlaceModel[]) => this.updatePlaceState(places)),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-      .subscribe();
-  }
-
-  loadPlacesByTown(type: string): Observable<PlaceModel[]> {
-    return this.placesService.getPlacesByTown(type).pipe(
-      tap((places: PlaceModel[]) => this.updatePlaceState(places)),
-      catchError((err) => this.generalService.handleHttpError(err))
+    this.executeWithLoading(
+      this.placesService.getPlacesByManagement(management),
+      (places) => this.updatePlaceState(places)
     );
   }
 
   loadPlacesByType(type: string): void {
-    this.placesService
-      .getPlacesByType(type)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((places: PlaceModel[]) => this.updatePlaceState(places)),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-      .subscribe();
+    this.executeWithLoading(
+      this.placesService.getPlacesByType(type),
+      (places) => this.updatePlaceState(places)
+    );
+  }
+
+  /** Devuelve el stream (útil para modales/listas dependientes); controla loading y errores. */
+  loadPlacesByTown(town: string): Observable<PlaceModel[]> {
+    return this.wrapWithLoading(this.placesService.getPlacesByTown(town)).pipe(
+      takeUntilDestroyed(this.destroyRef),
+      tap((places) => this.updatePlaceState(places)),
+      catchError((err) => this.generalService.handleHttpError(err))
+    );
   }
 
   loadSalasForPlace(
@@ -85,26 +73,21 @@ export class PlacesFacade {
   }
 
   loadPlaceById(id: number): void {
-    this.placesService
-      .getPlaceById(id)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((place: PlaceModel) => this.selectedPlaceSubject.next(place)),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-      .subscribe();
+    this.executeWithLoading(this.placesService.getPlaceById(id), (place) =>
+      this.selectedPlaceSubject.next(place)
+    );
   }
 
   addPlace(place: FormData): Observable<FormData> {
-    return this.placesService.add(place).pipe(
+    return this.wrapWithLoading(this.placesService.add(place)).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.loadAllPlaces()),
       catchError((err) => this.generalService.handleHttpError(err))
     );
   }
 
-  editPlace(itemId: number, place: FormData): Observable<FormData> {
-    return this.placesService.edit(itemId, place).pipe(
+  editPlace(place: FormData): Observable<FormData> {
+    return this.wrapWithLoading(this.placesService.edit(place)).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.loadAllPlaces()),
       catchError((err) => this.generalService.handleHttpError(err))
@@ -112,14 +95,9 @@ export class PlacesFacade {
   }
 
   deletePlace(id: number): void {
-    this.placesService
-      .delete(id)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap(() => this.loadAllPlaces()),
-        catchError((err) => this.generalService.handleHttpError(err))
-      )
-      .subscribe();
+    this.executeWithLoading(this.placesService.delete(id), () =>
+      this.loadAllPlaces()
+    );
   }
 
   clearSelectedPlace(): void {
@@ -127,25 +105,28 @@ export class PlacesFacade {
   }
 
   applyFilterWord(keyword: string): void {
-    const allPlaces = this.placesSubject.getValue();
+    const all = this.placesSubject.getValue();
 
-    if (!keyword.trim() || !allPlaces) {
-      this.filteredPlacesSubject.next(allPlaces);
+    if (!all) {
+      this.filteredPlacesSubject.next(all);
       return;
     }
-    const search = keyword.trim().toLowerCase();
-    const filteredPlaces = allPlaces.filter((place) =>
-      place.name.toLowerCase().includes(search)
+
+    if (!toSearchKey(keyword)) {
+      this.filteredPlacesSubject.next(all);
+      return;
+    }
+
+    const filtered = all.filter((place) =>
+      [place.name].some((field) => includesNormalized(field, keyword))
     );
 
-    this.filteredPlacesSubject.next(filteredPlaces);
+    this.filteredPlacesSubject.next(filtered);
   }
 
-  updatePlaceState(places: PlaceModel[]): void {
-    const sortedPlaces = [...places].sort((a, b) =>
-      a.name.localeCompare(b.name)
-    );
-    this.placesSubject.next(sortedPlaces);
-    this.filteredPlacesSubject.next(sortedPlaces);
+  private updatePlaceState(places: PlaceModel[]): void {
+    const sorted = [...places].sort((a, b) => a.name.localeCompare(b.name));
+    this.placesSubject.next(sorted);
+    this.filteredPlacesSubject.next(sorted);
   }
 }

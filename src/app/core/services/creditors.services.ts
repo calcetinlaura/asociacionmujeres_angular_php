@@ -38,22 +38,20 @@ export class CreditorsService {
     );
   }
 
-  add(creditor: CreditorModel): Observable<any> {
+  add(creditor: FormData): Observable<any> {
     return this.http
       .post(this.apiUrl, creditor)
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
-  edit(id: number, creditor: CreditorModel): Observable<any> {
+  edit(creditor: FormData): Observable<any> {
     return this.http
-      .patch(`${this.apiUrl}/${id}`, creditor)
+      .post(this.apiUrl, creditor)
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
   delete(id: number): Observable<any> {
-    return this.http
-      .delete(`${this.apiUrl}?id=${id}`) // 🔹 Ahora el id se pasa como parámetro en la URL
-      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
+    return this.generalService.deleteOverride<any>(this.apiUrl, { id });
   }
 
   //Autocomplete de factura

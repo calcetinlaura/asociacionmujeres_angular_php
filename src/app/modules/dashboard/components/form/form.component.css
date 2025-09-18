@@ -8,9 +8,19 @@
 .box-input input,
 .box-input select,
 .box-input textarea {
-  padding: 2px 4px;
+  padding: 8px 16px;
   flex: 1;
   border: 1px solid rgb(202, 200, 200);
+  border-radius: 16px;
+}
+.box-input[type="date"] {
+  width: 100%;
+  padding: 0.25rem; /* equivale a p-1 en Tailwind */
+  border: 1px solid #d1d5db; /* border-gray-300 */
+  border-radius: 0.25rem; /* rounded */
+}
+.text-placeholder {
+  color: #a9b0ba;
 }
 .is-invalid {
   border: 1px solid red !important;
@@ -18,6 +28,8 @@
 .is-invalid-text {
   color: Red;
   font-size: 11px;
+  padding-top: 4px;
+  padding-left: 10px;
 }
 .str.is-invalid-text {
   color: Red;
@@ -30,12 +42,29 @@
   padding: 8px 8px;
   text-align: center;
 }
+select:required:invalid {
+  color: #9ca3af;
+}
+
+select option {
+  color: #111;
+}
+select option[value=""] {
+  color: #9ca3af;
+}
+
+select.ng-invalid.ng-touched,
+select.ng-invalid.ng-dirty {
+  color: #9ca3af;
+}
+select option:disabled {
+  color: #9ca3af;
+}
+
 .linea {
   border: 1px solid #cb8dd952;
 }
-.boxCuotas {
-  border: 1px solid #cb8dd952;
-}
+
 .titleCuotas {
   color: #5d4364;
 }
@@ -93,4 +122,9 @@ select[disabled] {
 .sala_box {
   border-right: 2px solid #ecd6f152;
   color: #46324b;
+}
+hr {
+  margin-top: 12px;
+  margin-bottom: 12px;
+  border-top: 1px solid #c7c7c9;
 }
