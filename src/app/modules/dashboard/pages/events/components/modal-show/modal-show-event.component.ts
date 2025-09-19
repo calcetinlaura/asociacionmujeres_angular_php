@@ -41,7 +41,6 @@ export class ModalShowEventComponent {
   enumStatusEnum = EnumStatusEvent;
 
   onOpenMacroevent(macroeventId: number) {
-    console.log('ID MACRO en EVENTO', macroeventId);
     if (macroeventId) {
       this.openMacroevent.emit(macroeventId);
     }

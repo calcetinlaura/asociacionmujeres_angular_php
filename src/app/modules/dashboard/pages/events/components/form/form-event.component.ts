@@ -931,7 +931,6 @@ export class FormEventComponent implements OnInit, OnChanges {
   }
 
   onSendFormEvent(): void {
-    console.log('📤 Enviando formulario…');
     this.submitted = true;
 
     const normTime = (t?: string | null): string => {
@@ -1119,9 +1118,6 @@ export class FormEventComponent implements OnInit, OnChanges {
       this.itemId ? 'PATCH' : 'POST',
       duplicateFromId
     );
-    for (const [k, v] of (formData as any).entries()) {
-      console.log('FD', k, v);
-    }
 
     this.submitForm.emit({ itemId: this.itemId || 0, formData });
   }

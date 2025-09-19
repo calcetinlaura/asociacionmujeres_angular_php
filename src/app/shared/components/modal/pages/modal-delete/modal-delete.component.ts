@@ -36,7 +36,6 @@ export class ModalDeleteComponent implements OnInit {
   }
 
   confirmDeleteItem(): void {
-    console.log('DENTRO MODAL DELETE');
     if (this.item !== undefined) {
       this.confirmDelete.emit(this.item.id);
     }

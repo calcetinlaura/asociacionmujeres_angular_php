@@ -95,13 +95,11 @@ export class ModalComponent {
     this.closeModal.emit(true);
   }
   onConfirmDelete(payload: { type: TypeList; id: number; item?: any }) {
-    console.log('eliminarrrrr');
     // Reemite hacia el padre y cierra
     this.confirmDelete.emit(payload);
     this.onCloseModal();
   }
   onConfirmDeleteFromChild(type: TypeList, event?: any) {
-    console.log('eliminar desde modal component');
     const id = this.item?.id ?? event?.id ?? this.item?.ID; // por si algún modelo usa otra clave
 
     if (!id) {

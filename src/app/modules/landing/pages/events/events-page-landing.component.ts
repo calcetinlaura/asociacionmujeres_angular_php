@@ -11,7 +11,7 @@ import { NoResultsComponent } from 'src/app/modules/landing/components/no-result
 import { SectionGenericComponent } from 'src/app/modules/landing/components/section-generic/section-generic.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
-import { CalendarComponent } from '../components/calendar/calendar.component';
+import { CalendarComponent } from './components/calendar/calendar.component';
 
 @Component({
   selector: 'app-events-page-landing',
