@@ -25,7 +25,11 @@
   (openMacroevent)="onOpenMacroeventFromChild($event)"
 />
 } @else {
-<app-form-event [item]="item" (submitForm)="sendFormEventData.emit($event)" />
+<app-form-event
+  [item]="item"
+  [itemId]="action === TypeActionModal.Duplicate ? 0 : item?.id ?? 0"
+  (submitForm)="sendFormEventData.emit($event)"
+/>
 } }
 
 <!-- MACROEVENTS -->

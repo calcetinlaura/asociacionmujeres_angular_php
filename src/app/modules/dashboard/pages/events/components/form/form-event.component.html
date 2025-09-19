@@ -626,32 +626,32 @@
           <app-button-select
             [buttonText]="'En curso'"
             subText="Todo sigue según lo provisto"
-            [active]="eventTypeStatus === 'event'"
-            (addClicked)="setEventTypeStatus('event')"
+            [active]="eventTypeStatus === enumStatusEvent.EJECUCION"
+            (addClicked)="setEventTypeStatus(enumStatusEvent.EJECUCION)"
             iconClass="uil-check-square"
           />
           <app-button-select
             [buttonText]="'Cancelado'"
             subText="No se puede llevar a cabo"
-            [active]="eventTypeStatus === 'cancel'"
-            (addClicked)="setEventTypeStatus('cancel')"
+            [active]="eventTypeStatus === enumStatusEvent.CANCELADO"
+            (addClicked)="setEventTypeStatus(enumStatusEvent.CANCELADO)"
             iconClass="uil-time_starts-circle"
           /><app-button-select
             [buttonText]="'Aplazado'"
             subText="Se postpone para otra fecha"
-            [active]="eventTypeStatus === 'postpone'"
-            (addClicked)="setEventTypeStatus('postpone')"
+            [active]="eventTypeStatus === enumStatusEvent.APLAZADO"
+            (addClicked)="setEventTypeStatus(enumStatusEvent.APLAZADO)"
             iconClass="uil-calendar-slash"
           /><app-button-select
             [buttonText]="'Agotado'"
             subText="No hay más aforo disponible"
-            [active]="eventTypeStatus === 'sold_out'"
-            (addClicked)="setEventTypeStatus('sold_out')"
+            [active]="eventTypeStatus === enumStatusEvent.AGOTADO"
+            (addClicked)="setEventTypeStatus(enumStatusEvent.AGOTADO)"
             iconClass="uil-exclamation-circle"
           />
         </div>
 
-        @if (eventTypeStatus !== 'event') {
+        @if (eventTypeStatus !== enumStatusEvent.EJECUCION) {
         <div class="box-input gap-x-4 pt-4">
           <label for="status_reason">Motivos <br />cambio</label>
           <quill-editor

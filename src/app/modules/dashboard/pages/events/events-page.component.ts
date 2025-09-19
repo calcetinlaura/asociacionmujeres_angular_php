@@ -203,11 +203,7 @@ export class EventsPageComponent implements OnInit {
     item: EventModelFullData | null
   ): void {
     this.currentModalAction = action;
-    if (action === TypeActionModal.Duplicate && item) {
-      this.item = { ...item, id: 0 }; // Clonar sin ID
-    } else {
-      this.item = item;
-    }
+    this.item = item;
     this.typeModal = typeModal;
     this.eventsFacade.clearSelectedEvent();
     this.modalService.openModal();

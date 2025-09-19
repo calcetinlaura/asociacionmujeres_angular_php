@@ -111,7 +111,7 @@ export class FormEventComponent implements OnInit, OnChanges {
   buttonAction: string = 'Guardar';
   typeList = TypeList.Events;
   statusEvent = statusEvent;
-  enumStatusEnum = EnumStatusEvent;
+  enumStatusEvent = EnumStatusEvent;
   showOrganizers = false;
   showCollaborators = false;
   showSponsors = false;
@@ -121,7 +121,7 @@ export class FormEventComponent implements OnInit, OnChanges {
   eventTypePeriod: 'event' | 'single' | 'periodic' = 'event';
   eventTypeUbication: 'place' | 'online' | 'pending' = 'pending';
   eventTypeAccess: 'FREE' | 'TICKETS' | 'UNSPECIFIED' = 'UNSPECIFIED';
-  eventTypeStatus: 'event' | 'cancel' | 'postpone' | 'sold_out' = 'event';
+  eventTypeStatus: EnumStatusEvent = EnumStatusEvent.EJECUCION;
   eventTypeInscription: 'unlimited' | 'inscription' = 'unlimited';
 
   formEvent = new FormGroup(
@@ -202,6 +202,8 @@ export class FormEventComponent implements OnInit, OnChanges {
       [{ indent: '-1' }, { indent: '+1' }],
     ],
   };
+  private originalIdForDuplicate: number | null = null;
+
   ngOnInit(): void {
     this.isLoading = true;
     if (this.itemId === 0 || !this.itemId) {
@@ -279,6 +281,7 @@ export class FormEventComponent implements OnInit, OnChanges {
     }
     // 👇 Manejo cuando es duplicar o crear (ya tienes la data directamente)
     if (changes['item'] && changes['item'].currentValue && this.itemId === 0) {
+      this.originalIdForDuplicate = this.item?.id ?? null;
       this.isLoading = true; // Activar spinner mientras se carga el evento para duplicar
       this.formEvent.reset(); // ← Limpiar el formulario
       this.populateFormWithEvent(this.item!).subscribe(() => {
@@ -312,6 +315,10 @@ export class FormEventComponent implements OnInit, OnChanges {
     this.collaborators.clear();
     this.sponsors.clear();
 
+    // si es duplicar, refuerza el id original
+    if (this.itemId === 0 && event?.id) {
+      this.originalIdForDuplicate = event.id;
+    }
     const year = this.generalService.getYearFromDate(event.start);
 
     const yearData$ = this.loadYearlyData(year);
@@ -411,19 +418,19 @@ export class FormEventComponent implements OnInit, OnChanges {
 
         switch (event.status) {
           case EnumStatusEvent.EJECUCION:
-            this.eventTypeStatus = 'event';
+            this.eventTypeStatus = EnumStatusEvent.EJECUCION;
             break;
           case EnumStatusEvent.CANCELADO:
-            this.eventTypeStatus = 'cancel';
+            this.eventTypeStatus = EnumStatusEvent.CANCELADO;
             break;
           case EnumStatusEvent.APLAZADO:
-            this.eventTypeStatus = 'postpone';
+            this.eventTypeStatus = EnumStatusEvent.APLAZADO;
             break;
           case EnumStatusEvent.AGOTADO:
-            this.eventTypeStatus = 'sold_out';
+            this.eventTypeStatus = EnumStatusEvent.AGOTADO;
             break;
           default:
-            this.eventTypeStatus = 'event';
+            this.eventTypeStatus = EnumStatusEvent.EJECUCION;
             break;
         }
 
@@ -775,21 +782,13 @@ export class FormEventComponent implements OnInit, OnChanges {
     }
   }
 
-  setEventTypeStatus(type: 'event' | 'cancel' | 'postpone' | 'sold_out'): void {
+  setEventTypeStatus(type: EnumStatusEvent): void {
     this.eventTypeStatus = type;
 
-    const statusMap = {
-      event: EnumStatusEvent.EJECUCION,
-      cancel: EnumStatusEvent.CANCELADO,
-      postpone: EnumStatusEvent.APLAZADO,
-      sold_out: EnumStatusEvent.AGOTADO,
-    };
-
-    const statusReasonRequired = type !== 'event';
-    const newStatus = statusMap[type];
+    const statusReasonRequired = type !== EnumStatusEvent.EJECUCION;
 
     this.formEvent.patchValue({
-      status: newStatus,
+      status: type,
       status_reason: '',
     });
 
@@ -970,6 +969,17 @@ export class FormEventComponent implements OnInit, OnChanges {
         new Set(ids.filter((x): x is number => typeof x === 'number'))
       );
 
+    const toNum = (v: any) =>
+      v === null || v === undefined || v === '' ? null : Number(v);
+
+    const getIds = (fa: FormArray) =>
+      Array.from(
+        new Set(
+          (fa.getRawValue() as Array<{ agent_id: any }>)
+            .map((a) => toNum(a.agent_id))
+            .filter((n): n is number => Number.isFinite(n))
+        )
+      );
     // Construcción base
     const baseData: any = {
       ...rawValues,
@@ -977,11 +987,9 @@ export class FormEventComponent implements OnInit, OnChanges {
         ? Number(rawValues.macroevent_id)
         : null,
       project_id: rawValues.project_id ? Number(rawValues.project_id) : null,
-      organizer: uniqIds(this.organizers.getRawValue().map((a) => a.agent_id)),
-      collaborator: uniqIds(
-        this.collaborators.getRawValue().map((a) => a.agent_id)
-      ),
-      sponsor: uniqIds(this.sponsors.getRawValue().map((a) => a.agent_id)),
+      organizer: getIds(this.organizers),
+      collaborator: getIds(this.collaborators),
+      sponsor: getIds(this.sponsors),
       ticket_prices: this.ticketPrices.getRawValue(),
     };
 
@@ -1094,18 +1102,32 @@ export class FormEventComponent implements OnInit, OnChanges {
     if (baseData.description) {
       baseData.description = baseData.description.replace(/&nbsp;/g, ' ');
     }
-
+    const duplicateFromId =
+      (!this.itemId || this.itemId === 0) && this.originalIdForDuplicate
+        ? this.originalIdForDuplicate
+        : null;
     // Crea el único FormData para enviar
-    const formData = this.generalService.createFormData(
-      baseData,
-      { img: this.selectedImageFile },
-      this.itemId
+    console.log(
+      '🧪 duplicateFromId =',
+      duplicateFromId,
+      'itemId =',
+      this.itemId,
+      'item?.id =',
+      this.item?.id
     );
 
-    this.submitForm.emit({
-      itemId: this.itemId || 0,
-      formData,
-    });
+    const formData = this.createEventFormDataForPhp(
+      baseData,
+      { img: this.selectedImageFile },
+      this.itemId || null,
+      this.itemId ? 'PATCH' : 'POST',
+      duplicateFromId
+    ); // 🔎 LOG: ver qué pares clave/valor viajan en el FormData
+    for (const [k, v] of (formData as any).entries()) {
+      console.log('FD', k, v);
+    }
+
+    this.submitForm.emit({ itemId: this.itemId || 0, formData });
   }
 
   private logFormErrors(): void {
@@ -1137,5 +1159,147 @@ export class FormEventComponent implements OnInit, OnChanges {
 
     const pad = (n: number) => (n < 10 ? '0' + n : n);
     return `${pad(newHours)}:${pad(minutes)}:00`;
+  }
+  /** Crea FormData alineado con events.php */
+  private createEventFormDataForPhp(
+    data: {
+      title: string;
+      start: string;
+      end: string;
+      time_start?: string;
+      time_end?: string;
+      description?: string;
+      province?: string;
+      town?: string;
+      place_id?: number | null;
+      sala_id?: number | null;
+      capacity?: number | null;
+      access: 'FREE' | 'TICKETS' | 'UNSPECIFIED';
+      ticket_prices: Array<{ type: string; price: number | null }>;
+      status: EnumStatusEvent;
+      status_reason?: string;
+      inscription: boolean;
+      inscription_method?: string;
+      tickets_method?: string;
+      online_link?: string;
+      periodic: boolean;
+      periodic_id?: string | null;
+      repeated_dates: Array<{
+        start: string;
+        end?: string;
+        time_start?: string;
+        time_end?: string;
+      }>;
+      macroevent_id?: number | null;
+      project_id?: number | null;
+      organizer: number[];
+      collaborator: number[];
+      sponsor: number[];
+    },
+    files?: { img?: File | null },
+    itemId?: number | null,
+    methodOverride?: 'PATCH' | 'POST',
+    duplicateFromId?: number | null
+  ): FormData {
+    const fd = new FormData();
+
+    // Helper que SIEMPRE añade (aunque sea vacío)
+    const put = (k: string, v: any) => {
+      if (v === null || v === undefined) {
+        fd.append(k, ''); // manda vacío explícito
+        return;
+      }
+      if (typeof v === 'boolean') {
+        fd.append(k, v ? 'true' : 'false');
+      } else {
+        fd.append(k, String(v));
+      }
+    };
+
+    // — Campos simples (siempre presentes)
+    put('title', data.title ?? '');
+    put('start', data.start ?? '');
+    put('end', data.end ?? '');
+    put('time_start', data.time_start ?? '');
+    put('time_end', data.time_end ?? '');
+    put('description', data.description ?? '');
+    put('province', data.province ?? '');
+    put('town', data.town ?? '');
+    put('access', data.access ?? 'UNSPECIFIED');
+    put('status', data.status ?? EnumStatusEvent.EJECUCION);
+    put('status_reason', data.status_reason ?? '');
+    put('inscription', !!data.inscription);
+    put('inscription_method', data.inscription_method ?? '');
+    put('tickets_method', data.tickets_method ?? '');
+    put('online_link', data.online_link ?? '');
+    put('periodic', !!data.periodic);
+    put('periodic_id', data.periodic_id ?? '');
+
+    // — Numéricos opcionales: manda '' si no hay
+    put('place_id', typeof data.place_id === 'number' ? data.place_id : '');
+    put('sala_id', typeof data.sala_id === 'number' ? data.sala_id : '');
+    put('capacity', typeof data.capacity === 'number' ? data.capacity : '');
+
+    // — macro/proyecto: manda '' si no hay
+    put(
+      'macroevent_id',
+      typeof data.macroevent_id === 'number' ? data.macroevent_id : ''
+    );
+    put(
+      'project_id',
+      typeof data.project_id === 'number' ? data.project_id : ''
+    );
+
+    // — Agents: si arrays vacíos, que el backend reciba []-style (sin warnings)
+    if (data.organizer.length === 0) fd.append('organizer[]', '');
+    data.organizer.forEach((id) => fd.append('organizer[]', String(id)));
+
+    if (data.collaborator.length === 0) fd.append('collaborator[]', '');
+    data.collaborator.forEach((id) => fd.append('collaborator[]', String(id)));
+
+    if (data.sponsor.length === 0) fd.append('sponsor[]', '');
+    data.sponsor.forEach((id) => fd.append('sponsor[]', String(id)));
+
+    // — ticket_prices como matriz anidada SIEMPRE presente
+    if (data.ticket_prices.length === 0) {
+      // envía un slot vacío para que PHP vea la clave
+      fd.append('ticket_prices[0][type]', '');
+      fd.append('ticket_prices[0][price]', '');
+    } else {
+      data.ticket_prices.forEach((tp, i) => {
+        fd.append(`ticket_prices[${i}][type]`, tp?.type ?? '');
+        fd.append(
+          `ticket_prices[${i}][price]`,
+          tp?.price != null ? String(tp.price) : ''
+        );
+      });
+    }
+
+    // — repeated_dates siempre presente como JSON
+    fd.append('repeated_dates', JSON.stringify(data.repeated_dates ?? []));
+
+    // — Imagen
+    const rawImg = (this.formEvent.get('img')?.value ?? '').toString().trim();
+    const currentImg = rawImg.split('/').pop() ?? rawImg; // 👈 basename
+
+    if (files?.img) {
+      fd.append('img', files.img);
+    } else if (currentImg) {
+      fd.append('img', currentImg); // 👈 solo "foto.jpg"
+    }
+
+    // — DUPLICADO: id del evento origen  ⬅️ AQUI va la línea que preguntas
+    if (duplicateFromId != null) {
+      fd.append('duplicate_from_id', String(duplicateFromId)); // ⬅️ ESTA
+    }
+
+    // — Edición
+    const idNum = Number(itemId);
+    if (methodOverride === 'PATCH' && Number.isFinite(idNum) && idNum > 0) {
+      fd.append('_method', 'PATCH');
+      fd.append('id', String(idNum));
+    }
+
+    return fd;
   }
 }

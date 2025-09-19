@@ -4,29 +4,26 @@
       <label
         class="py-2 px-4 rounded-xl text-sm text-lilaText bg-lilaMuyClaro"
         >{{ label }}</label
-        >
+      >
+    </div>
+    <div class="flex flex-col gap-y-2 flex-1 pl-4 border-l-2 border-lilaClaro">
+      @for (group of formArray.controls; track group; let i = $index) {
+      <div [formGroup]="getFormGroupAt(i)" class="flex gap-x-4 items-center">
+        <div class="box-input flex-1 gap-x-4">
+          <select formControlName="agent_id">
+            <option value="">Seleccione un {{ label }}</option>
+            @for (agent of agents; track agent) {
+            <option [ngValue]="agent.id">
+              {{ agent.name }}
+            </option>
+            }
+          </select>
+        </div>
+        <button type="button" (click)="remove.emit(i)" class="btn-danger">
+          Eliminar
+        </button>
       </div>
-      <div class="flex flex-col gap-y-2 flex-1 pl-4 border-l-2 border-lilaClaro">
-        @for (group of formArray.controls; track group; let i = $index) {
-          <div
-            [formGroup]="getFormGroupAt(i)"
-            class="flex gap-x-4 items-center"
-            >
-            <div class="box-input flex-1 gap-x-4">
-              <select formControlName="agent_id">
-                <option value="">Seleccione un {{ label }}</option>
-                @for (agent of agents; track agent) {
-                  <option [value]="agent.id">
-                    {{ agent.name }}
-                  </option>
-                }
-              </select>
-            </div>
-            <button type="button" (click)="remove.emit(i)" class="btn-danger">
-              Eliminar
-            </button>
-          </div>
-        }
-      </div>
+      }
     </div>
   </div>
+</div>

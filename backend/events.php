@@ -12,9 +12,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 if ($method === 'POST') {
   $override = $_POST['_method'] ?? $_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'] ?? '';
   $override = strtoupper($override);
-  if ($override === 'DELETE') {
-    $method = 'DELETE';
-  }
+  if ($override === 'DELETE')  $method = 'DELETE';
 }
 
 if ($method === 'OPTIONS') {
@@ -43,19 +41,100 @@ function insertAgents($connection, $eventId, $agents, $type) {
 }
 
 function normalizeAgentField($value) {
-  // Si viene como array PHP (p.ej. organizer[]=1&organizer[]=2)
+  // 👉 cortar rápido si no viene nada
+  if ($value === null || $value === '') {
+    return [];
+  }
+
   if (is_array($value)) {
     $arr = $value;
-  } else {
-    // Si viene como JSON string
+  } elseif (is_string($value)) {
     $decoded = json_decode($value, true);
     $arr = is_array($decoded) ? $decoded : [];
+  } else {
+    $arr = [];
   }
-  // Filtra solo numéricos, normaliza a int y deduplica
+
+  // Filtra solo numéricos, normaliza y deduplica
   $arr = array_map('intval', array_filter($arr, 'is_numeric'));
-  $arr = array_values(array_unique($arr));
-  return $arr;
+  return array_values(array_unique($arr));
 }
+function duplicarImagenEventoSiempre(
+  mysqli $connection,
+  string $basePath,
+  string $imgNameEnviado,   // lo que viene en $_POST['img'] (p.ej. "2024_portada.jpg" o "foto.jpg")
+  string $targetStart,      // $_POST['start'] del nuevo evento
+  ?int $duplicateFromId
+): ?string {
+  if (!$duplicateFromId || $imgNameEnviado === '' || $targetStart === '') {
+    error_log("⛔ duplicarImagenEventoSiempre: params inválidos duplicateFromId={$duplicateFromId}, img='{$imgNameEnviado}', start='{$targetStart}'");
+    return null;
+  }
+
+  $basename = basename($imgNameEnviado);
+
+  // Año origen desde el evento original
+  $srcYear = null;
+  $stmt = $connection->prepare("SELECT start FROM events WHERE id = ?");
+  $stmt->bind_param("i", $duplicateFromId);
+  $stmt->execute();
+  if ($row = $stmt->get_result()->fetch_assoc()) {
+    $srcYear = date('Y', strtotime($row['start']));
+  }
+  if (!$srcYear) {
+    error_log("⛔ duplicarImagenEventoSiempre: no pude resolver srcYear del evento {$duplicateFromId}");
+    return null;
+  }
+
+  $destYear = date('Y', strtotime($targetStart));
+  $srcDir = rtrim($basePath, '/')."/{$srcYear}/";
+  $dstDir = rtrim($basePath, '/')."/{$destYear}/";
+
+  // 1) rutas candidatas (mismo año)
+  $candidatos = [
+    $srcDir.$basename,                       // .../EVENTS/2024/foto.jpg
+    rtrim($basePath, '/').'/'.$basename,     // .../EVENTS/foto.jpg
+  ];
+  // 2) si no está, busca en cualquier subcarpeta de año por si el nombre ya llevaba el año en el nombre
+  $glob = glob(rtrim($basePath, '/')."*/".$basename) ?: [];
+  $candidatos = array_merge($candidatos, $glob);
+
+  $srcPath = null;
+  foreach ($candidatos as $cand) {
+    if (is_file($cand)) { $srcPath = $cand; break; }
+  }
+
+  if (!$srcPath) {
+    error_log("⛔ duplicarImagenEventoSiempre: no encuentro origen para '{$basename}' en ".rtrim($basePath, '/')."/{*}/ o raíz");
+    return null;
+  }
+
+  if (!is_dir($dstDir)) {
+    @mkdir($dstDir, 0777, true);
+    if (!is_dir($dstDir)) {
+      error_log("⛔ duplicarImagenEventoSiempre: no pude crear destino {$dstDir}");
+      return null;
+    }
+  }
+
+  $ext  = pathinfo($basename, PATHINFO_EXTENSION);
+  $name = pathinfo($basename, PATHINFO_FILENAME);
+  $newName = $name.'-copy-'.uniqid('', true).($ext ? '.'.$ext : '');
+  $dstPath = $dstDir.$newName;
+
+  $ok = @copy($srcPath, $dstPath);
+  if (!$ok || !is_file($dstPath)) {
+    error_log("⛔ duplicarImagenEventoSiempre: fallo copy '{$srcPath}' -> '{$dstPath}'");
+    return null;
+  }
+
+  error_log("✅ duplicarImagenEventoSiempre: copiado como '{$newName}'");
+  return $newName;
+}
+
+
+
+
 switch ($method) {
   case 'GET':
     function enrichEventRow($row, $connection) {
@@ -355,16 +434,105 @@ LEFT JOIN macroevents m ON e.macroevent_id = m.id
   ini_set('display_errors', 1);
 
   $data = $_POST;
-  $imgName = procesarArchivoPorAnio($basePath, 'img', 'start', 'img');
-  $data['img'] = $imgName;
 
-  $periodic = isset($data['periodic']) ? (int)filter_var($data['periodic'], FILTER_VALIDATE_BOOLEAN) : 0;
-  $periodicId = $periodic ? ($data['periodic_id'] ?? '') : null;
+  // ✅ Detectar si es UPDATE (PATCH)
+  $isUpdate = false;
+  if (isset($data['_method']) && strtoupper($data['_method']) === 'PATCH') {
+    $isUpdate = true;
+  }
+  // Si vienes de duplicar y por accidente trae _method, límpialo
+  if (!$isUpdate && isset($data['_method'])) {
+    unset($data['_method']);
+  }
+
+  // =========================
+  //  Imagen: upload vs duplicado
+  // =========================
+  // ¿Hay subida real de archivo?
+  $hasNewUpload = isset($_FILES['img']) && is_array($_FILES['img']) && $_FILES['img']['error'] === UPLOAD_ERR_OK;
+
+  if ($hasNewUpload) {
+    // Subir al año del 'start' (usa tu helper)
+    $uploadedImg = procesarArchivoPorAnio($basePath, 'img', 'start', 'img');
+    $imgName     = $uploadedImg; // puede ser '' si algo falla
+  } else {
+    // Sin subida: tomar lo que venga en POST (p.ej. "2025_portada.jpg")
+    $imgName = $data['img'] ?? '';
+  }
+
+  // ID de origen para duplicado
+  $duplicateFromId = isset($data['duplicate_from_id']) && is_numeric($data['duplicate_from_id'])
+    ? (int)$data['duplicate_from_id']
+    : null;
+
+  // Duplicar físicamente la imagen SOLO cuando:
+  // - es inserción (no PATCH),
+  // - hay duplicate_from_id,
+  // - NO hay subida nueva,
+  // - y viene img + start
+  if (
+    !$isUpdate &&
+    $duplicateFromId &&
+    !$hasNewUpload &&
+    !empty($imgName) &&
+    !empty($data['start'])
+  ) {
+    error_log("🔁 Intentando duplicar imagen: dupFromId={$duplicateFromId}, img='{$imgName}', start='{$data['start']}'");
+    $dup = duplicarImagenEventoSiempre($connection, $basePath, $imgName, $data['start'], $duplicateFromId);
+    if ($dup) {
+      $imgName = $dup; // ← guardar SIEMPRE el nuevo nombre único (-copy-...)
+      error_log("✅ Imagen duplicada como '{$imgName}'");
+    } else {
+      error_log("⚠️ No se pudo duplicar; se mantendrá '{$imgName}'");
+    }
+  }
+
+  // 👮 Evitar copiar entre años si ya es una copia recién generada
+  $yaEsCopia = strpos($imgName, '-copy-') !== false;
+
+  // (Opcional) Copiar entre años si hace falta y NO es copia ya
+  if (!$yaEsCopia && !empty($imgName) && !empty($data['start'])) {
+    $newYear = date('Y', strtotime($data['start']));
+    $srcYear = null;
+
+    // Podemos intentar inferir el año de origen mirando el evento original si viene duplicate_from_id
+    if (!$srcYear && $duplicateFromId) {
+      $srcStmt = $connection->prepare("SELECT start FROM events WHERE id = ?");
+      $srcStmt->bind_param("i", $duplicateFromId);
+      $srcStmt->execute();
+      $srcRes = $srcStmt->get_result()->fetch_assoc();
+      if ($srcRes && !empty($srcRes['start'])) {
+        $srcYear = date('Y', strtotime($srcRes['start']));
+      }
+    }
+
+    if ($srcYear && $srcYear !== $newYear) {
+      $basename = basename($imgName);
+      $srcPath  = rtrim($basePath, '/')."/{$srcYear}/".$basename;
+      $dstDir   = rtrim($basePath, '/')."/{$newYear}/";
+      $dstPath  = $dstDir.$basename;
+
+      if (!is_dir($dstDir)) @mkdir($dstDir, 0777, true);
+      if (is_file($srcPath) && !is_file($dstPath)) {
+        @copy($srcPath, $dstPath);
+      }
+    }
+  }
+
+  // =========================
+  //  Parseo de campos
+  // =========================
+  $periodic    = isset($data['periodic']) ? (int)filter_var($data['periodic'], FILTER_VALIDATE_BOOLEAN) : 0;
+  $periodicId  = $periodic ? ($data['periodic_id'] ?? '') : null;
   $inscription = isset($data['inscription']) ? (int)filter_var($data['inscription'], FILTER_VALIDATE_BOOLEAN) : 0;
-  $capacity = isset($data['capacity']) && is_numeric($data['capacity']) ? (int)$data['capacity'] : null;
-  $ticketPrices = $data['ticket_prices'] ?? null;
-  $ticketPricesJson = json_encode($ticketPrices ?: []);
+  $capacity    = isset($data['capacity']) && is_numeric($data['capacity']) ? (int)$data['capacity'] : null;
+  $ticketPrices      = $data['ticket_prices'] ?? null;
+  $ticketPricesJson  = json_encode($ticketPrices ?: []);
+  $status = isset($data['status']) && $data['status'] !== '' ? (string)$data['status'] : 'EJECUCION';
 
+  // =========================
+  //  Validación básica
+  // =========================
   $campoFaltante = validarCamposRequeridos($data, ['title', 'start']);
   if ($campoFaltante !== null) {
     http_response_code(400);
@@ -372,12 +540,15 @@ LEFT JOIN macroevents m ON e.macroevent_id = m.id
     exit();
   }
 
-  $organizers    = normalizeAgentField($data['organizer']   ?? null);
-$collaborators = normalizeAgentField($data['collaborator']?? null);
-$sponsors      = normalizeAgentField($data['sponsor']     ?? null);
+  // Agents normalizados
+  $organizers    = normalizeAgentField($data['organizer']    ?? null);
+  $collaborators = normalizeAgentField($data['collaborator'] ?? null);
+  $sponsors      = normalizeAgentField($data['sponsor']      ?? null);
 
-  $isUpdate = isset($data['_method']) && strtoupper($data['_method']) === 'PATCH';
-  $id = isset($data['id']) ? (int)$data['id'] : null;
+  // ID (para PATCH) o null
+  $id = isset($data['id']) ? (int)$data['id']
+      : (isset($_GET['id']) ? (int)$_GET['id']
+      : (is_numeric($resource) ? (int)$resource : null));
 
   if ($isUpdate && !$id) {
     http_response_code(400);
@@ -385,14 +556,16 @@ $sponsors      = normalizeAgentField($data['sponsor']     ?? null);
     exit();
   }
 
-  // Determinar si es edición o inserción del evento principal
+  // =========================
+  //  Insert / Update
+  // =========================
   if ($isUpdate) {
-    // Cargar imagen previa si no hay nueva
+    // Cargar imagen previa si no hay nueva ni nombre decidido
     $stmt = $connection->prepare("SELECT img FROM events WHERE id = ?");
     $stmt->bind_param("i", $id);
     $stmt->execute();
-    $res = $stmt->get_result();
-    $prev = $res->fetch_assoc();
+    $res   = $stmt->get_result();
+    $prev  = $res->fetch_assoc();
     $oldImg = $prev['img'] ?? '';
     if (empty($imgName)) $imgName = $oldImg;
 
@@ -410,9 +583,11 @@ $sponsors      = normalizeAgentField($data['sponsor']     ?? null);
     );
     $stmt->execute();
 
+    // Reemplazar agentes
     $stmtDel = $connection->prepare("DELETE FROM event_agents WHERE event_id = ?");
     $stmtDel->bind_param("i", $id);
     $stmtDel->execute();
+
   } else {
     // Inserción
     $stmt = $connection->prepare("INSERT INTO events (
@@ -432,17 +607,21 @@ $sponsors      = normalizeAgentField($data['sponsor']     ?? null);
     $id = $connection->insert_id;
   }
 
-  // Agentes
-  insertAgents($connection, $id, $organizers, 'ORGANIZADOR');
+  // =========================
+  //  Agentes
+  // =========================
+  insertAgents($connection, $id, $organizers,    'ORGANIZADOR');
   insertAgents($connection, $id, $collaborators, 'COLABORADOR');
-  insertAgents($connection, $id, $sponsors, 'PATROCINADOR');
+  insertAgents($connection, $id, $sponsors,      'PATROCINADOR');
 
-  // Si es periódico, gestionar repeated_dates
+  // =========================
+  //  Periódicos (pases)
+  // =========================
   if ($periodic && $periodicId && isset($data['repeated_dates'])) {
     $repeatedDates = json_decode($data['repeated_dates'], true);
     $mainDate = substr($data['start'], 0, 10);
 
-    // Obtener existentes
+    // Obtener existentes del grupo
     $stmt = $connection->prepare("SELECT id, start FROM events WHERE periodic_id = ?");
     $stmt->bind_param("s", $periodicId);
     $stmt->execute();
@@ -467,11 +646,11 @@ $sponsors      = normalizeAgentField($data['sponsor']     ?? null);
     // Insertar o actualizar
     foreach ($repeatedDates as $rd) {
       $start = $rd['start'];
-      if ($start === $mainDate) continue; // el principal ya está actualizado
+      if ($start === $mainDate) continue; // el principal ya está
 
-      $end = $rd['end'] ?: $start;
+      $end        = $rd['end'] ?: $start;
       $time_start = $rd['time_start'] ?: null;
-      $time_end = $rd['time_end'] ?: null;
+      $time_end   = $rd['time_end']   ?: null;
 
       if ($time_start && (!$time_end || $time_end === '00:00:00')) {
         $parts = explode(':', $time_start);
@@ -481,6 +660,7 @@ $sponsors      = normalizeAgentField($data['sponsor']     ?? null);
       }
 
       if (isset($existingEvents[$start])) {
+        // Update pase existente
         $eventId = $existingEvents[$start];
         $stmtUpdate = $connection->prepare("UPDATE events SET
           macroevent_id=?, project_id=?, title=?, start=?, end=?, time_start=?, time_end=?, description=?, province=?, town=?,
@@ -496,6 +676,7 @@ $sponsors      = normalizeAgentField($data['sponsor']     ?? null);
         );
         $stmtUpdate->execute();
       } else {
+        // Insert pase nuevo
         $stmtInsert = $connection->prepare("INSERT INTO events (
           macroevent_id, project_id, title, start, end, time_start, time_end, description,
           province, town, place_id, sala_id, capacity, access, ticket_prices, img,
@@ -512,47 +693,66 @@ $sponsors      = normalizeAgentField($data['sponsor']     ?? null);
         $stmtInsert->execute();
       }
     }
-  }// 👇 Si el evento ya no es periódico, elimina todos los eventos con ese periodic_id EXCEPTO el actual
-if (!$periodic && $periodicId && $id) {
-  $stmt = $connection->prepare("DELETE FROM events WHERE periodic_id = ? AND id != ?");
-  $stmt->bind_param("si", $periodicId, $id);
-  $stmt->execute();
-
-  // 🧹 Comprobar si quedan más eventos con ese periodic_id
-  $stmt = $connection->prepare("SELECT COUNT(*) as count FROM events WHERE periodic_id = ?");
-  $stmt->bind_param("s", $periodicId);
-  $stmt->execute();
-  $res = $stmt->get_result();
-  $row = $res->fetch_assoc();
-
-  if ((int)$row['count'] === 0) {
-    // Eliminar también de periodic_groups si existe
-    $stmt = $connection->prepare("DELETE FROM periodic_groups WHERE id = ?");
-    $stmt->bind_param("s", $periodicId);
-    $stmt->execute();
   }
 
-  // 🔁 Limpiar periodic_id del evento actual
-  $stmt = $connection->prepare("UPDATE events SET periodic_id = NULL WHERE id = ?");
-  $stmt->bind_param("i", $id);
-  $stmt->execute();
-}
+  // 👇 Si ya no es periódico, elimina todos los eventos con ese periodic_id EXCEPTO el actual
+  if (!$periodic && $periodicId && $id) {
+    $stmt = $connection->prepare("DELETE FROM events WHERE periodic_id = ? AND id != ?");
+    $stmt->bind_param("si", $periodicId, $id);
+    $stmt->execute();
 
+    // ¿Queda alguien con ese periodic_id?
+    $stmt = $connection->prepare("SELECT COUNT(*) as count FROM events WHERE periodic_id = ?");
+    $stmt->bind_param("s", $periodicId);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $row = $res->fetch_assoc();
+
+    if ((int)$row['count'] === 0) {
+      $stmt = $connection->prepare("DELETE FROM periodic_groups WHERE id = ?");
+      $stmt->bind_param("s", $periodicId);
+      $stmt->execute();
+    }
+
+    // Limpiar periodic_id del actual
+    $stmt = $connection->prepare("UPDATE events SET periodic_id = NULL WHERE id = ?");
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+  }
 
   echo json_encode(["message" => $isUpdate ? "Evento actualizado" : "Evento creado"]);
   break;
 
-case 'DELETE':
-  if (isset($_GET['periodic_id']) && isset($_GET['keep_id'])) {
-  $periodicId = $_GET['periodic_id'];
-  $keepId = (int)$_GET['keep_id'];
 
-  // ✅ Elimina todos los eventos con ese periodic_id EXCEPTO el keepId
+case 'DELETE':
+  // -- Rutas de borrado por periodic_id (acepta POST y GET)
+  $periodicId = $_POST['periodic_id'] ?? $_GET['periodic_id'] ?? null;
+  $keepIdRaw  = $_POST['keep_id']     ?? $_GET['keep_id']     ?? null;
+
+ if ($periodicId && $keepIdRaw !== null) {
+  $keepId = (int)$keepIdRaw;
+
+  // 1) Recoger imágenes y años de los que se van a borrar
+  $stmt = $connection->prepare("SELECT id, img, start FROM events WHERE periodic_id = ? AND id != ?");
+  $stmt->bind_param("si", $periodicId, $keepId);
+  $stmt->execute();
+  $imgs = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+
+  // 2) Borrar los eventos (menos keepId)
   $stmt = $connection->prepare("DELETE FROM events WHERE periodic_id = ? AND id != ?");
   $stmt->bind_param("si", $periodicId, $keepId);
   $stmt->execute();
 
-  // ✅ Si ya no hay ningún evento con ese periodic_id, eliminamos el grupo también
+  // 3) Intentar borrar archivos si quedan huérfanos
+  foreach ($imgs as $row) {
+    $img = $row['img'] ?? '';
+    $yr  = isset($row['start']) ? date('Y', strtotime($row['start'])) : null;
+    if ($img && $yr) {
+      eliminarArchivoSiNoSeUsa($connection, 'events', 'img', $img, $basePath . $yr . '/');
+    }
+  }
+
+  // 4) Limpieza de periodic_groups si ya no quedan
   $stmt = $connection->prepare("SELECT COUNT(*) as count FROM events WHERE periodic_id = ?");
   $stmt->bind_param("s", $periodicId);
   $stmt->execute();
@@ -567,33 +767,51 @@ case 'DELETE':
 
   http_response_code(200);
   echo json_encode(["message" => "Eventos repetidos eliminados (excepto keepId)."]);
-  exit();
+  break;
 }
 
-  // 🧹 Eliminación completa del grupo periódico (sin keepId)
-  if (isset($_GET['periodic_id'])) {
-    $periodicId = $_GET['periodic_id'];
 
-    $stmt = $connection->prepare("DELETE FROM events WHERE periodic_id = ?");
-    $stmt->bind_param("s", $periodicId);
-    $stmt->execute();
+  if ($periodicId && $keepIdRaw === null) {
+  // 1) Recoger imágenes y años de TODO el grupo
+  $stmt = $connection->prepare("SELECT img, start FROM events WHERE periodic_id = ?");
+  $stmt->bind_param("s", $periodicId);
+  $stmt->execute();
+  $imgs = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
-    $stmt = $connection->prepare("DELETE FROM periodic_groups WHERE id = ?");
-    $stmt->bind_param("s", $periodicId);
-    $stmt->execute();
+  // 2) Borrar eventos del grupo
+  $stmt = $connection->prepare("DELETE FROM events WHERE periodic_id = ?");
+  $stmt->bind_param("s", $periodicId);
+  $stmt->execute();
 
-    echo json_encode(["message" => "Grupo periódico y eventos eliminados."]);
-    exit();
+  // 3) Borrar grupo
+  $stmt = $connection->prepare("DELETE FROM periodic_groups WHERE id = ?");
+  $stmt->bind_param("s", $periodicId);
+  $stmt->execute();
+
+  // 4) Intentar borrar archivos si quedan huérfanos
+  foreach ($imgs as $row) {
+    $img = $row['img'] ?? '';
+    $yr  = isset($row['start']) ? date('Y', strtotime($row['start'])) : null;
+    if ($img && $yr) {
+      eliminarArchivoSiNoSeUsa($connection, 'events', 'img', $img, $basePath . $yr . '/');
+    }
   }
 
-  // 🗑️ Eliminación individual por ID
-  $id = isset($_GET['id']) ? (int)$_GET['id'] : null;
-  if (!$id) {
+  echo json_encode(["message" => "Grupo periódico y eventos eliminados."]);
+  break;
+}
+
+
+  // -- Borrado individual por ID (acepta POST override y GET, y /events.php/{id})
+  $idRaw = $_POST['id'] ?? $_GET['id'] ?? (is_numeric($resource) ? $resource : null);
+  if (!is_numeric($idRaw)) {
     http_response_code(400);
     echo json_encode(["message" => "ID no válido."]);
-    exit();
+    break;
   }
+  $id = (int)$idRaw;
 
+  // Recupera info de imagen/año antes de borrar
   $stmt = $connection->prepare("SELECT img, start FROM events WHERE id = ?");
   $stmt->bind_param("i", $id);
   $stmt->execute();
@@ -602,6 +820,7 @@ case 'DELETE':
   $imgToDelete = $event['img'] ?? '';
   $eventYear = isset($event['start']) ? date('Y', strtotime($event['start'])) : null;
 
+  // Borra el evento
   $stmt = $connection->prepare("DELETE FROM events WHERE id = ?");
   $stmt->bind_param("i", $id);
 
@@ -615,7 +834,6 @@ case 'DELETE':
     echo json_encode(["message" => "Error al eliminar el evento: " . $stmt->error]);
   }
   break;
-
 
   default:
     http_response_code(405);
