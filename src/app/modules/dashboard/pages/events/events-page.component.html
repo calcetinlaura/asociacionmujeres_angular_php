@@ -2,7 +2,7 @@
   <app-dashboard-header
     [icon]="'uil uil-ticket'"
     [title]="'Programación'"
-    [number]="number"
+    [number]="(events$ | async)?.length || 0"
     [type]="'eventos'"
   />
   <div class="flex flex-col gap-y-10">
@@ -46,9 +46,9 @@
   </div>
 </app-sticky-zone>
 <div class="flex flex-col px-8">
-  @if (isLoading) {
+  @if (eventsFacade.isLoading$ | async) {
   <app-spinner-loading />
-  } @else { @if(events.length > 0){
+  } @else { @if (events$ | async; as events) { @if ((events?.length ?? 0) > 0) {
   <div class="pb-4" #printArea>
     <h2 class="only-on-pdf print-title">Listado eventos</h2>
     <app-table
@@ -60,12 +60,13 @@
       (openModal)="onOpenModal($event)"
     />
   </div>
-  }@else{
+  } @else {
   <div class="text-center text-gray-600 my-12 text-lg">
     No hay eventos registrados.
   </div>
-  } }
+  } } }
 </div>
+
 @if (isModalVisible) {
 <app-modal
   [item]="item"
@@ -74,5 +75,5 @@
   (closeModal)="onCloseModal()"
   (confirmDelete)="onDelete($event)"
   (sendFormEventData)="sendFormEvent($event)"
-></app-modal>
+/>
 }

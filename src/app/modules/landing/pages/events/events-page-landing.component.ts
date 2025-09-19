@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, OnInit, inject } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { tap } from 'rxjs';
+import { Component, OnInit, inject } from '@angular/core';
+import { map } from 'rxjs';
 import { EventsFacade } from 'src/app/application/events.facade';
 import { EventModel } from 'src/app/core/interfaces/event.interface';
 import { Filter, TypeList } from 'src/app/core/models/general.model';
@@ -28,22 +27,26 @@ import { CalendarComponent } from './components/calendar/calendar.component';
   styleUrl: './events-page-landing.component.css',
 })
 export class EventsPageLandingComponent implements OnInit {
-  private readonly destroyRef = inject(DestroyRef);
   readonly eventsFacade = inject(EventsFacade);
   private readonly eventsService = inject(EventsService);
   private readonly generalService = inject(GeneralService);
 
-  nonRepeatedEvents: EventModel[] = []; // Lista principal sin repetidos
-  eventsAll: EventModel[] = []; // Todos los eventos para el calendario
   filters: Filter[] = [];
-
-  isLoading = true;
-  areThereResults = false;
-  showCalendar = false;
   typeList = TypeList;
-  number = 0;
   selectedFilter: number | null = null;
   currentYear = this.generalService.currentYear;
+
+  // 🔹 Derivados como observables para usar con | async
+  readonly eventsNonRepeated$ = this.eventsFacade.visibleEvents$.pipe(
+    map((events) => this.processNonRepeated(events ?? []))
+  );
+
+  readonly eventsAll$ = this.eventsFacade.eventsAll$.pipe(
+    map((events) => this.eventsService.sortEventsByDate(events ?? []))
+  );
+
+  // (Opcional) si tu LoadableFacade expone loading$: úsala en plantilla
+  // readonly isLoading$ = this.eventsFacade.loading$;
 
   ngOnInit(): void {
     this.filters = this.generalService.getYearFilters(
@@ -52,72 +55,41 @@ export class EventsPageLandingComponent implements OnInit {
       'Agenda'
     );
     this.loadEvents(this.currentYear);
-
-    this.eventsFacade.nonRepeatedEvents$
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((events) => this.handleNonRepeatedEvents(events))
-      )
-      .subscribe();
-
-    this.eventsFacade.eventsAll$
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((events) => {
-          this.eventsAll = this.eventsService.sortEventsByDate(events || []);
-        })
-      )
-      .subscribe();
   }
 
   loadEvents(year: number): void {
     this.selectedFilter = year;
-    this.eventsFacade.loadNonRepeatedEventsByYear(year);
-    this.eventsFacade.loadEventsAllByYear(year);
+    // ✅ una sola llamada, la fachada ya carga all + latest
+    this.eventsFacade.loadYearBundle(year);
   }
 
   filterSelected(filter: string): void {
     const year = Number(filter);
-    if (!isNaN(year)) {
-      this.loadEvents(year);
-    }
+    if (!isNaN(year)) this.loadEvents(year);
   }
 
-  private handleNonRepeatedEvents(events: EventModel[] | null): void {
-    if (!events) return;
-
+  // ---- Helpers puros ----
+  private processNonRepeated(events: EventModel[]): EventModel[] {
     const today = this.truncateTime(new Date());
+    const sorted = this.eventsService.sortEventsByDate(events);
 
-    const futureEvents: EventModel[] = [];
-    const pastEvents: EventModel[] = [];
+    // Marca isPast solo para eventos del año actual y anteriores a hoy
+    const enriched = sorted.map((e) => {
+      const start = new Date(e.start);
+      const isCurrentYear = start.getFullYear() === this.currentYear;
+      const isPast = isCurrentYear && this.truncateTime(start) < today;
+      return { ...e, isPast };
+    });
 
-    for (const event of events) {
-      const startDate = new Date(event.start);
-      const eventYear = startDate.getFullYear();
+    // Opcional: reordenar “futuros/HOY” primero, luego pasados
+    const futureOrToday: EventModel[] = [];
+    const past: EventModel[] = [];
+    for (const ev of enriched) (ev.isPast ? past : futureOrToday).push(ev);
 
-      const isCurrentYear = eventYear === this.currentYear;
-      const isFutureOrToday = this.truncateTime(startDate) >= today;
-
-      const isPast = isCurrentYear && !isFutureOrToday;
-      const processedEvent = { ...event, isPast };
-
-      if (isPast) pastEvents.push(processedEvent);
-      else futureEvents.push(processedEvent);
-    }
-
-    const sortedEvents = this.eventsService.sortEventsByDate([
-      ...futureEvents,
-      ...pastEvents,
-    ]);
-
-    this.nonRepeatedEvents = sortedEvents;
-    this.number = this.eventsService.countEvents(sortedEvents);
-    this.areThereResults = this.eventsService.hasResults(sortedEvents);
-    this.isLoading = false;
-    this.showCalendar = true;
+    return [...futureOrToday, ...past];
   }
 
-  private truncateTime(date: Date): Date {
-    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  private truncateTime(d: Date): Date {
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
   }
 }

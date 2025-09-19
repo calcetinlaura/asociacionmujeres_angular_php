@@ -47,7 +47,7 @@
           <app-text-background
             [text]="
               (item.start | date : 'EEEE dd MMMM') +
-              ' - ' +
+              '  al  ' +
               (item.end | date : 'EEEE dd MMMM yyyy')
             "
           ></app-text-background>
@@ -83,7 +83,26 @@
         </div>
         } @if (item.access === 'FREE'){
         <app-text-background [text]="'Acceso gratuito'"></app-text-background>}
-        @if (item.description){
+        @if (item.access === 'TICKETS'){
+        <p
+          class="text-[16px] uppercase mt-6 mb-4 text-lilaOscuro font-semibold"
+        >
+          Precio
+        </p>
+        <div class="pl-6 flex flex-col gap-y-2">
+          @for (ticket of item.ticket_prices; track ticket) {
+          <div class="flex sm:flex-row gap-x-4 items-center">
+            <app-text-background [text]="ticket.type"></app-text-background>
+
+            @if (ticket.price.toString() !== "0") {
+            <app-text-border [text]="ticket.price + ' €'"> </app-text-border>
+            }@if (ticket.price.toString() === "0") {
+            <p>Gratis</p>
+            }
+          </div>
+          }
+        </div>
+        } @if (item.description){
         <div class="py-4">
           <app-text-editor [text]="item.description"></app-text-editor>
         </div>

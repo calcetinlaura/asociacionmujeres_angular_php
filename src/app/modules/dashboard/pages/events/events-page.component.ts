@@ -11,7 +11,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
-import { of, switchMap, tap } from 'rxjs';
+import { finalize, of, switchMap, tap } from 'rxjs';
 import { EventsFacade } from 'src/app/application/events.facade';
 import {
   ColumnModel,
@@ -62,21 +62,20 @@ import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.co
 export class EventsPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly modalService = inject(ModalService);
-  private readonly eventsFacade = inject(EventsFacade);
+  readonly eventsFacade = inject(EventsFacade);
   private readonly eventsService = inject(EventsService);
   private readonly generalService = inject(GeneralService);
   private readonly pdfPrintService = inject(PdfPrintService);
+  readonly events$ = this.eventsFacade.visibleEvents$;
 
-  events: EventModelFullData[] = [];
   filters: Filter[] = [];
 
   selectedFilter: number | null = null;
   currentYear = this.generalService.currentYear;
   typeSection = TypeList.Events;
   typeModal = TypeList.Events;
-  isLoading = true;
+
   isModalVisible = false;
-  number = 0;
 
   item: EventModelFullData | null = null;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
@@ -165,19 +164,14 @@ export class EventsPageComponent implements OnInit {
 
     this.filterSelected(this.currentYear.toString());
 
-    this.eventsFacade.nonRepeatedEvents$
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((events) => this.updateEventState(events))
-      )
+    this.eventsFacade.visibleEvents$
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe();
   }
 
   filterSelected(filter: string): void {
     this.selectedFilter = Number(filter);
-    this.isLoading = true;
     this.generalService.clearSearchInput(this.inputSearchComponent);
-
     this.eventsFacade.loadNonRepeatedEventsByYear(Number(filter));
   }
 
@@ -253,33 +247,21 @@ export class EventsPageComponent implements OnInit {
     request$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        switchMap(() => {
-          if (isRepeatedToUnique && oldPeriodicId) {
-            return this.eventsService.deleteOtherEventsByPeriodicId(
-              oldPeriodicId,
-              event.itemId
-            );
-          }
-          return of(null); // ← para mantener la cadena activa
-        }),
-        tap(() => {
-          // 👇 Reforzamos la recarga aunque no haya periodicidad
-          this.eventsFacade.loadNonRepeatedEventsByYear(
-            this.selectedFilter ?? this.currentYear
-          );
-          this.onCloseModal();
-        })
+        switchMap(() =>
+          isRepeatedToUnique && oldPeriodicId
+            ? this.eventsService.deleteOtherEventsByPeriodicId(
+                oldPeriodicId,
+                event.itemId
+              )
+            : of(null)
+        ),
+        // ❗ OJO: ya NO recargamos aquí desde el componente.
+        // Deja que el Facade recargue con reloadCurrentFilter().
+        finalize(() => this.onCloseModal())
       )
       .subscribe();
   }
 
-  private updateEventState(events: EventModelFullData[] | null): void {
-    if (!events) return;
-
-    this.events = this.eventsService.sortEventsById(events);
-    this.number = this.eventsService.countEvents(events);
-    this.isLoading = false;
-  }
   async printTableAsPdf(): Promise<void> {
     if (!this.printArea) return;
 

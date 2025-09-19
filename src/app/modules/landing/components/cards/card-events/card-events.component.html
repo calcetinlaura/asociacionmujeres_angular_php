@@ -113,10 +113,10 @@
           <p>HOY</p>
           } @else {
           <p>
-            {{ item.start | date : "EEE" }}
+            {{ func.start | date : "EEE" }}
           </p>
-          <p>{{ item.start | date : "dd" }}</p>
-          <p>{{ item.start | date : "MMM" }}</p>
+          <p>{{ func.start | date : "dd" }}</p>
+          <p>{{ func.start | date : "MMM" }}</p>
           }
         </div>
         }

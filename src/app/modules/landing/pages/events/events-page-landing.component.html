@@ -1,25 +1,21 @@
 <div class="flex flex-col mx-3 md:mx-8 mt-4">
-  <app-filters
-    [filters]="filters"
-    (filterClicked)="filterSelected($event)"
-  ></app-filters>
+  <app-filters [filters]="filters" (filterClicked)="filterSelected($event)">
+  </app-filters>
+
   @if (eventsFacade.isLoading$ | async) {
-  <div class="mt-24">
-    <app-spinner-loading />
-  </div>
-  } @else { @if (showCalendar && selectedFilter) {
-  <app-calendar
-    [events]="eventsAll"
-    [filterYear]="selectedFilter"
-  ></app-calendar>
-  } @if (areThereResults) {
+  <div class="mt-24"><app-spinner-loading /></div>
+  } @else { @if (eventsAll$ | async; as all) { @if ((all?.length ?? 0) > 0 &&
+  selectedFilter) {
+  <app-calendar [events]="all" [filterYear]="selectedFilter!"></app-calendar>
+  } } @if (eventsNonRepeated$ | async; as list) { @if ((list?.length ?? 0) > 0)
+  {
   <app-section-generic
     [typeSection]="typeList.Events"
     [typeModal]="typeList.Events"
-    [data]="nonRepeatedEvents"
-    [total]="number"
+    [data]="list"
+    [total]="list.length"
   />
   } @else {
   <app-no-results [text]="'eventos' | lowercase" />
-  } }
+  } } }
 </div>
