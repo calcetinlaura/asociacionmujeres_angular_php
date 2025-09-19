@@ -5,12 +5,14 @@ import {
   EventEmitter,
   Input,
   OnChanges,
+  OnDestroy,
   Output,
   SimpleChanges,
 } from '@angular/core';
 import { FormArray, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatInputModule } from '@angular/material/input';
-import { startWith } from 'rxjs/operators';
+import { merge, of, Subscription } from 'rxjs';
+
 @Component({
   standalone: true,
   selector: 'app-date-array-control',
@@ -18,9 +20,11 @@ import { startWith } from 'rxjs/operators';
   templateUrl: './array-dates.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],
 })
-export class DateArrayControlComponent implements OnChanges, AfterViewInit {
+export class DateArrayControlComponent
+  implements OnChanges, AfterViewInit, OnDestroy
+{
   @Input() formArray!: FormArray;
-  @Input() submitted: boolean = false;
+  @Input() submitted = false;
   @Output() remove = new EventEmitter<number>();
 
   monthGroups: {
@@ -28,22 +32,32 @@ export class DateArrayControlComponent implements OnChanges, AfterViewInit {
     items: { index: number; formGroup: FormGroup; isNew: boolean }[];
   }[] = [];
 
+  private sub?: Subscription;
+
   ngOnChanges(changes: SimpleChanges) {
     if (changes['formArray'] && this.formArray) {
-      this.subscribeToArrayChanges();
+      this.resubscribe();
     }
   }
 
   ngAfterViewInit() {
-    if (this.formArray) {
-      this.subscribeToArrayChanges();
-    }
+    if (this.formArray) this.resubscribe();
   }
 
-  private subscribeToArrayChanges() {
-    this.formArray.statusChanges
-      .pipe(startWith(null))
-      .subscribe(() => this.updateGroupedData());
+  ngOnDestroy() {
+    this.sub?.unsubscribe();
+  }
+
+  private resubscribe() {
+    this.sub?.unsubscribe();
+    // Pasada inicial + actualización por status y por valores
+    this.sub = merge(
+      of(null), // inicial
+      this.formArray.statusChanges, // por si cambia a INVALID/VALID
+      this.formArray.valueChanges // cambios en valores/longitud
+    ).subscribe(() => this.updateGroupedData());
+    // Asegura primera agrupación aunque nada haya emitido aún
+    this.updateGroupedData();
   }
 
   private updateGroupedData() {
@@ -54,63 +68,78 @@ export class DateArrayControlComponent implements OnChanges, AfterViewInit {
 
     this.formArray.controls.forEach((ctrl, index) => {
       const fg = ctrl as FormGroup;
-      const startDate = fg.get('start')?.value;
+      const startDate = fg.get('start')?.value as string | null;
 
       const id = fg.get('id')?.value;
-      console.log(`Item index ${index}, id=${id}`);
-      const isNew = !id || id === 0 || id === undefined;
+      const isNew = !id && id !== 0; // true si no hay id
 
-      let monthLabel = 'Fecha';
+      let monthLabel = 'Fecha'; // grupo para filas nuevas sin fecha
       if (startDate) {
-        const [year, month, day] = startDate.split('-').map(Number);
-        const date = new Date(year, month - 1, day);
+        const [y, m, d] = startDate.split('-').map(Number);
+        const date = new Date(
+          Number.isFinite(y) ? y : 1970,
+          (Number.isFinite(m) ? m : 1) - 1,
+          Number.isFinite(d) ? d : 1
+        );
         const monthName = date.toLocaleString('es-ES', { month: 'long' });
-        monthLabel = `${monthName} ${year}`; // 👈 Incluir el año en la etiqueta
+        monthLabel = `${monthName} ${date.getFullYear()}`;
       }
 
-      if (!map.has(monthLabel)) {
-        map.set(monthLabel, []);
-      }
+      if (!map.has(monthLabel)) map.set(monthLabel, []);
       map.get(monthLabel)!.push({ index, formGroup: fg, isNew });
     });
 
-    const sortedMonthGroups = Array.from(map.entries())
-      .map(([month, items]) => ({
-        month, // Esto será algo como "Abril 2024"
-        items: items.sort((a, b) => {
-          const dateA = new Date(a.formGroup.get('start')?.value || 0);
-          const dateB = new Date(b.formGroup.get('start')?.value || 0);
-          return dateA.getTime() - dateB.getTime();
-        }),
-      }))
+    const monthOrder = [
+      'enero',
+      'febrero',
+      'marzo',
+      'abril',
+      'mayo',
+      'junio',
+      'julio',
+      'agosto',
+      'septiembre',
+      'octubre',
+      'noviembre',
+      'diciembre',
+    ];
+
+    this.monthGroups = Array.from(map.entries())
+      .map(([month, items]) => {
+        // Orden dentro de cada grupo
+        if (month === 'Fecha') {
+          // Mantén el orden de inserción (index): el nuevo se verá al final
+          items.sort((a, b) => a.index - b.index);
+        } else {
+          // Orden cronológico; si empata, por index para estabilidad
+          items.sort((a, b) => {
+            const da = new Date(
+              a.formGroup.get('start')?.value || '9999-12-31'
+            ).getTime();
+            const db = new Date(
+              b.formGroup.get('start')?.value || '9999-12-31'
+            ).getTime();
+            if (da !== db) return da - db;
+            return a.index - b.index;
+          });
+        }
+        return { month, items };
+      })
       .sort((a, b) => {
-        // Extraemos año y mes para comparar
-        const [monthAName, yearA] = a.month.split(' ');
-        const [monthBName, yearB] = b.month.split(' ');
+        // “Fecha” SIEMPRE al final
+        if (a.month === 'Fecha' && b.month !== 'Fecha') return 1;
+        if (b.month === 'Fecha' && a.month !== 'Fecha') return -1;
 
-        const yearDiff = parseInt(yearA) - parseInt(yearB);
-        if (yearDiff !== 0) return yearDiff;
+        // Orden natural por año y mes
+        const [ma, ya] = a.month.split(' ');
+        const [mb, yb] = b.month.split(' ');
+        const yd = (parseInt(ya) || 0) - (parseInt(yb) || 0);
+        if (yd !== 0) return yd;
 
-        const monthOrder = [
-          'enero',
-          'febrero',
-          'marzo',
-          'abril',
-          'mayo',
-          'junio',
-          'julio',
-          'agosto',
-          'septiembre',
-          'octubre',
-          'noviembre',
-          'diciembre',
-        ];
         return (
-          monthOrder.indexOf(monthAName.toLowerCase()) -
-          monthOrder.indexOf(monthBName.toLowerCase())
+          monthOrder.indexOf((ma || '').toLowerCase()) -
+          monthOrder.indexOf((mb || '').toLowerCase())
         );
       });
-
-    this.monthGroups = sortedMonthGroups;
   }
 }

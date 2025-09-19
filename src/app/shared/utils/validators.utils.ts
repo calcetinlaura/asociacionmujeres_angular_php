@@ -28,18 +28,38 @@ export function futureDateValidator(
   return value < today ? { pastDateNotAllowed: true } : null;
 }
 
-// ✅ Validador de rango horario (time_start < time_end)
-export function timeRangeValidator(
-  control: AbstractControl
-): ValidationErrors | null {
-  const timeStart = control.get('time_start')?.value;
-  const timeEnd = control.get('time_end')?.value;
-
-  if (!timeStart || !timeEnd) return null;
-
-  // Compara como strings 'HH:mm', funciona porque formato 24h respeta orden lexicográfico
-  return timeEnd < timeStart ? { invalidTimeRange: true } : null;
+function isEmptyTime(v: unknown): boolean {
+  if (typeof v !== 'string') return true;
+  return v === '' || v === '00:00' || v === '00:00:00';
 }
+
+function toMinutes(v: string): number | null {
+  if (!v) return null;
+  const [hStr, mStr = '0'] = v.split(':');
+  const h = Number(hStr);
+  const m = Number(mStr);
+  if (Number.isNaN(h) || Number.isNaN(m)) return null;
+  return h * 60 + m;
+}
+
+export function timeRangeValidator(
+  group: AbstractControl
+): ValidationErrors | null {
+  const periodic = !!group.get('periodic')?.value;
+  if (periodic) return null; // no validar cabecera en periódicos
+
+  const ts = group.get('time_start')?.value as string | null | undefined;
+  const te = group.get('time_end')?.value as string | null | undefined;
+
+  if (isEmptyTime(ts) || isEmptyTime(te)) return null;
+
+  const sm = toMinutes(ts as string);
+  const em = toMinutes(te as string);
+  if (sm == null || em == null) return null;
+
+  return em < sm ? { invalidTimeRange: true } : null;
+}
+
 //✅ Validador evento periódico más de una fecha
 export const periodicHasMultipleDatesValidator: ValidatorFn = (
   control: AbstractControl
@@ -54,40 +74,36 @@ export const periodicHasMultipleDatesValidator: ValidatorFn = (
 
   return null;
 };
-// ✅ Validador que no se repita el mismo pase
-export const uniqueStartDatesValidator: ValidatorFn = (
+/**
+ * Permite varias fechas iguales siempre que la hora de inicio sea distinta.
+ * Marca error { duplicateStartDatesAndTimes: true } si hay dos items con misma (start|time_start)
+ */
+export function uniqueDateTimeValidator(
   control: AbstractControl
-): ValidationErrors | null => {
-  if (!(control instanceof FormArray)) {
-    return null;
-  }
-
-  const dateTimePairs = control.controls
-    .map((fg) => {
-      const date = fg.get('start')?.value;
-      let time = fg.get('time_start')?.value;
-
-      // Normalizar valores vacíos: si está vacío, lo tratamos como string vacío
-      time = time ?? '';
-
-      return { date, time };
-    })
-    .filter((pair) => !!pair.date); // solo si hay fecha
+): ValidationErrors | null {
+  if (!(control instanceof FormArray)) return null;
 
   const seen = new Set<string>();
-  let hasDuplicate = false;
+  for (const fg of control.controls) {
+    const startRaw = fg.get('start')?.value as string | null;
+    const tsRaw = (fg.get('time_start')?.value as string | null) || '';
 
-  for (const { date, time } of dateTimePairs) {
-    const key = `${date}::${time}`;
+    // normaliza fecha (YYYY-MM-DD) y tiempo (HH:mm -> HH:mm:00)
+    const date = (startRaw || '').slice(0, 10);
+    const [h = '00', m = '00'] = (tsRaw || '').split(':');
+    const time = tsRaw ? `${h.padStart(2, '0')}:${m.padStart(2, '0')}:00` : '';
+
+    if (!date) continue; // si no hay fecha, no entra en el set
+
+    const key = `${date}|${time}`; // ← fecha + hora (hora vacía cuenta como una sola “ranura”)
     if (seen.has(key)) {
-      hasDuplicate = true;
-      break;
+      return { duplicateStartDatesAndTimes: true };
     }
     seen.add(key);
   }
+  return null;
+}
 
-  return hasDuplicate ? { duplicateStartDatesAndTimes: true } : null;
-};
 function coerceDate(v: unknown): Date | null {
   if (!v && v !== 0) return null;
   if (v instanceof Date) return isNaN(v.getTime()) ? null : v;

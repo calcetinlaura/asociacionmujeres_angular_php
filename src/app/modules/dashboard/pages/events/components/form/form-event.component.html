@@ -357,7 +357,11 @@
               <option [ngValue]="null" disabled>Selecciona una sala</option>
               @for (sala of salasDelLugar; track trackBySalaId ($index, sala)) {
               <option [ngValue]="sala.sala_id">
-                {{ sala.name }} - {{ sala.room_location }}
+                {{ sala.name }} -
+                {{
+                  sala.room_location
+                    | filterTransformCode : "roomLocationPlaces"
+                }}
               </option>
               }
             </select>
@@ -669,7 +673,7 @@
         <!-- ORGANIZADORES -->
         <div class="pt-6">
           <!-- BOTONES -->
-          <div class="mb-4 flex gap-x-4 justify-center">
+          <div class="mb-10 flex gap-x-4 justify-center">
             <app-button-icon
               [buttonText]="'Añadir organizador'"
               [iconClass]="'uil-plus'"

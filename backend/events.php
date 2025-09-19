@@ -614,87 +614,169 @@ LEFT JOIN macroevents m ON e.macroevent_id = m.id
   insertAgents($connection, $id, $collaborators, 'COLABORADOR');
   insertAgents($connection, $id, $sponsors,      'PATROCINADOR');
 
-  // =========================
-  //  Periódicos (pases)
-  // =========================
-  if ($periodic && $periodicId && isset($data['repeated_dates'])) {
-    $repeatedDates = json_decode($data['repeated_dates'], true);
-    $mainDate = substr($data['start'], 0, 10);
+  //  Periódicos (pases) — MODELO SIMÉTRICO
+// =========================
+if ($periodic && $periodicId && isset($data['repeated_dates'])) {
+  $repeatedDates = json_decode($data['repeated_dates'], true) ?: [];
 
-    // Obtener existentes del grupo
-    $stmt = $connection->prepare("SELECT id, start FROM events WHERE periodic_id = ?");
-    $stmt->bind_param("s", $periodicId);
-    $stmt->execute();
-    $result = $stmt->get_result();
+  // 1) Normalizador de hora HH:MM:SS (vacío -> 00:00:00)
+  $normTime = function($t) {
+    if (!$t) return '00:00:00';
+    $p = explode(':', $t);
+    $h = str_pad((string)($p[0] ?? '0'), 2, '0', STR_PAD_LEFT);
+    $m = str_pad((string)($p[1] ?? '0'), 2, '0', STR_PAD_LEFT);
+    return "{$h}:{$m}:00";
+  };
 
-    $existingEvents = [];
-    while ($row = $result->fetch_assoc()) {
-      $existingEvents[substr($row['start'], 0, 10)] = $row['id'];
-    }
+  // 2) Cargar estado actual del grupo
+  $stmt = $connection->prepare("SELECT id, start, end, time_start, time_end FROM events WHERE periodic_id = ?");
+  $stmt->bind_param("s", $periodicId);
+  $stmt->execute();
+  $res = $stmt->get_result();
 
-    $newStarts = array_column($repeatedDates, 'start');
+  $existingById  = [];                // id => row
+  $existingByKey = [];                // "YYYY-MM-DD|HH:MM:SS" => row
+  while ($row = $res->fetch_assoc()) {
+    $id  = (int)$row['id'];
+    $d   = substr($row['start'], 0, 10);
+    $ts  = $normTime($row['time_start'] ?? '');
+    $key = "{$d}|{$ts}";
+    $existingById[$id]  = $row;
+    $existingByKey[$key] = $row;
+  }
 
-    // Borrar los que ya no están
-    foreach ($existingEvents as $start => $eventId) {
-      if (!in_array($start, $newStarts)) {
-        $stmtDel = $connection->prepare("DELETE FROM events WHERE id = ?");
-        $stmtDel->bind_param("i", $eventId);
-        $stmtDel->execute();
-      }
-    }
-
-    // Insertar o actualizar
-    foreach ($repeatedDates as $rd) {
-      $start = $rd['start'];
-      if ($start === $mainDate) continue; // el principal ya está
-
-      $end        = $rd['end'] ?: $start;
-      $time_start = $rd['time_start'] ?: null;
-      $time_end   = $rd['time_end']   ?: null;
-
-      if ($time_start && (!$time_end || $time_end === '00:00:00')) {
-        $parts = explode(':', $time_start);
-        $h = (int)$parts[0] + 3;
-        if ($h >= 24) $h -= 24;
-        $time_end = sprintf('%02d:%02d:00', $h, (int)$parts[1]);
-      }
-
-      if (isset($existingEvents[$start])) {
-        // Update pase existente
-        $eventId = $existingEvents[$start];
-        $stmtUpdate = $connection->prepare("UPDATE events SET
-          macroevent_id=?, project_id=?, title=?, start=?, end=?, time_start=?, time_end=?, description=?, province=?, town=?,
-          place_id=?, sala_id=?, capacity=?, access=?, ticket_prices=?, img=?, status=?, status_reason=?, inscription=?,
-          inscription_method=?, tickets_method=?, online_link=?, periodic=?, periodic_id=?
-          WHERE id=?");
-        $stmtUpdate->bind_param("iissssssssiiisssssisssisi",
-          $data['macroevent_id'], $data['project_id'], $data['title'], $start, $end,
-          $time_start, $time_end, $data['description'], $data['province'], $data['town'],
-          $data['place_id'], $data['sala_id'], $capacity, $data['access'], $ticketPricesJson, $imgName,
-          $data['status'], $data['status_reason'], $inscription, $data['inscription_method'],
-          $data['tickets_method'], $data['online_link'], $periodic, $periodicId, $eventId
-        );
-        $stmtUpdate->execute();
+  // 3) Preparar payload normalizado
+  $payloadById   = [];                // id => pase
+  $payloadKeys   = [];                // set de claves nuevas (para los que no traen id)
+  $payloadRows   = [];                // lista final normalizada
+  foreach ($repeatedDates as $rd) {
+    $d = isset($rd['start']) ? substr($rd['start'], 0, 10) : null;
+    if (!$d) continue;
+    $e  = isset($rd['end']) ? substr($rd['end'], 0, 10) : $d;
+    $ts = $normTime($rd['time_start'] ?? '');
+    $te = $rd['time_end'] ?? '';
+    if ($te === '' || $te === '00:00' || $te === '00:00:00') {
+      // autocompleta +3h si hay time_start
+      if ($ts !== '00:00:00') {
+        [$hh,$mm] = explode(':', $ts);
+        $hh = (int)$hh + 3; if ($hh >= 24) $hh -= 24;
+        $te = sprintf('%02d:%02d:00', $hh, (int)$mm);
       } else {
-        // Insert pase nuevo
-        $stmtInsert = $connection->prepare("INSERT INTO events (
-          macroevent_id, project_id, title, start, end, time_start, time_end, description,
-          province, town, place_id, sala_id, capacity, access, ticket_prices, img,
-          status, status_reason, inscription, inscription_method, tickets_method,
-          online_link, periodic, periodic_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmtInsert->bind_param("iissssssssiiisssssisssis",
-          $data['macroevent_id'], $data['project_id'], $data['title'], $start, $end,
-          $time_start, $time_end, $data['description'], $data['province'], $data['town'],
-          $data['place_id'], $data['sala_id'], $capacity, $data['access'], $ticketPricesJson, $imgName,
-          $data['status'], $data['status_reason'], $inscription, $data['inscription_method'],
-          $data['tickets_method'], $data['online_link'], $periodic, $periodicId
-        );
-        $stmtInsert->execute();
+        $te = '00:00:00';
       }
+    }
+    $row = [
+      'id'         => (isset($rd['id']) && is_numeric($rd['id'])) ? (int)$rd['id'] : null,
+      'start'      => $d,
+      'end'        => $e,
+      'time_start' => $ts,
+      'time_end'   => $te,
+    ];
+    $payloadRows[] = $row;
+    if ($row['id']) {
+      $payloadById[$row['id']] = true;
+    } else {
+      $payloadKeys["{$d}|{$ts}"] = true;
     }
   }
 
+  // 4) UPSERT
+  $keptIds = []; // ids que quedan tras upsert
+  foreach ($payloadRows as $rd) {
+    $start      = $rd['start'];
+    $end        = $rd['end'];
+    $time_start = $rd['time_start'];
+    $time_end   = $rd['time_end'];
+
+    if ($rd['id'] && isset($existingById[$rd['id']])) {
+      // UPDATE por id
+      $eid = (int)$rd['id'];
+      $stmtUpdate = $connection->prepare("UPDATE events SET
+        macroevent_id=?, project_id=?, title=?, start=?, end=?, time_start=?, time_end=?, description=?, province=?, town=?,
+        place_id=?, sala_id=?, capacity=?, access=?, ticket_prices=?, img=?, status=?, status_reason=?, inscription=?,
+        inscription_method=?, tickets_method=?, online_link=?, periodic=?, periodic_id=?
+        WHERE id=?");
+      $stmtUpdate->bind_param("iissssssssiiisssssisssisi",
+        $data['macroevent_id'], $data['project_id'], $data['title'], $start, $end,
+        $time_start, $time_end, $data['description'], $data['province'], $data['town'],
+        $data['place_id'], $data['sala_id'], $capacity, $data['access'], $ticketPricesJson, $imgName,
+        $data['status'], $data['status_reason'], $inscription, $data['inscription_method'],
+        $data['tickets_method'], $data['online_link'], $periodic, $periodicId, $eid
+      );
+      $stmtUpdate->execute();
+      $keptIds[$eid] = true;
+      continue;
+    }
+
+    $key = "{$start}|{$time_start}";
+    if (isset($existingByKey[$key])) {
+      // UPDATE por clave
+      $eid = (int)$existingByKey[$key]['id'];
+      $stmtUpdate = $connection->prepare("UPDATE events SET
+        macroevent_id=?, project_id=?, title=?, start=?, end=?, time_start=?, time_end=?, description=?, province=?, town=?,
+        place_id=?, sala_id=?, capacity=?, access=?, ticket_prices=?, img=?, status=?, status_reason=?, inscription=?,
+        inscription_method=?, tickets_method=?, online_link=?, periodic=?, periodic_id=?
+        WHERE id=?");
+      $stmtUpdate->bind_param("iissssssssiiisssssisssisi",
+        $data['macroevent_id'], $data['project_id'], $data['title'], $start, $end,
+        $time_start, $time_end, $data['description'], $data['province'], $data['town'],
+        $data['place_id'], $data['sala_id'], $capacity, $data['access'], $ticketPricesJson, $imgName,
+        $data['status'], $data['status_reason'], $inscription, $data['inscription_method'],
+        $data['tickets_method'], $data['online_link'], $periodic, $periodicId, $eid
+      );
+      $stmtUpdate->execute();
+      $keptIds[$eid] = true;
+      continue;
+    }
+
+    // INSERT nuevo
+    $stmtInsert = $connection->prepare("INSERT INTO events (
+      macroevent_id, project_id, title, start, end, time_start, time_end, description,
+      province, town, place_id, sala_id, capacity, access, ticket_prices, img,
+      status, status_reason, inscription, inscription_method, tickets_method,
+      online_link, periodic, periodic_id
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmtInsert->bind_param("iissssssssiiisssssisssis",
+      $data['macroevent_id'], $data['project_id'], $data['title'], $start, $end,
+      $time_start, $time_end, $data['description'], $data['province'], $data['town'],
+      $data['place_id'], $data['sala_id'], $capacity, $data['access'], $ticketPricesJson, $imgName,
+      $data['status'], $data['status_reason'], $inscription, $data['inscription_method'],
+      $data['tickets_method'], $data['online_link'], $periodic, $periodicId
+    );
+    $stmtInsert->execute();
+    $keptIds[$connection->insert_id] = true;
+  }
+  // --- construir set de IDs del payload (solo los que venían con id) ---
+$payloadIdSet = [];
+foreach ($payloadRows as $pr) {
+  if (!empty($pr['id'])) {
+    $payloadIdSet[(int)$pr['id']] = true;
+  }
+}
+
+  // 5) BORRADO diferido: elimina lo que NO está en el payload
+//    Regla: si el pase EXISTE en BD y su id NO viene en payload -> borrar.
+//    (Las 'claves' solo valen para los NUEVOS que no traen id)
+$stmt = $connection->prepare("SELECT id FROM events WHERE periodic_id = ?");
+$stmt->bind_param("s", $periodicId);
+$stmt->execute();
+$res = $stmt->get_result();
+
+while ($row = $res->fetch_assoc()) {
+  $eid = (int)$row['id'];
+
+  // Si el id vino en el payload, NUNCA borrar
+  if (isset($payloadIdSet[$eid])) continue;
+
+  // Si se insertó en esta pasada (nuevo) también lo preservamos
+  if (isset($keptIds[$eid])) continue;
+
+  // → No aparece en el payload: usuario lo quitó -> borrar
+  $stmtDel = $connection->prepare("DELETE FROM events WHERE id = ?");
+  $stmtDel->bind_param("i", $eid);
+  $stmtDel->execute();
+}
+}
   // 👇 Si ya no es periódico, elimina todos los eventos con ese periodic_id EXCEPTO el actual
   if (!$periodic && $periodicId && $id) {
     $stmt = $connection->prepare("DELETE FROM events WHERE periodic_id = ? AND id != ?");

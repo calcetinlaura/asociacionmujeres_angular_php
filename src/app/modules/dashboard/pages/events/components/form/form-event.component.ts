@@ -62,9 +62,11 @@ import {
   dateRangeValidator,
   periodicHasMultipleDatesValidator,
   timeRangeValidator,
-  uniqueStartDatesValidator,
+  uniqueDateTimeValidator,
 } from 'src/app/shared/utils/validators.utils';
+import { FilterTransformCodePipe } from '../../../../../../shared/pipe/filterTransformCode.pipe';
 import { DateArrayControlComponent } from '../array-dates/array-dates.component';
+
 @Component({
   selector: 'app-form-event',
   imports: [
@@ -78,6 +80,7 @@ import { DateArrayControlComponent } from '../array-dates/array-dates.component'
     ButtonSelectComponent,
     DateArrayControlComponent,
     SpinnerLoadingComponent,
+    FilterTransformCodePipe,
   ],
   templateUrl: './form-event.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],
@@ -147,7 +150,7 @@ export class FormEventComponent implements OnInit, OnChanges {
       periodic: new FormControl(false),
       periodic_id: new FormControl(''),
       repeated_dates: new FormArray<FormGroup>([], {
-        validators: [uniqueStartDatesValidator],
+        validators: [uniqueDateTimeValidator],
       }),
       img: new FormControl(''),
       status: new FormControl(EnumStatusEvent.EJECUCION),
@@ -207,21 +210,16 @@ export class FormEventComponent implements OnInit, OnChanges {
   ngOnInit(): void {
     this.isLoading = true;
     if (this.itemId === 0 || !this.itemId) {
-      // Si es duplicar, aquí es donde gestionas la lógica para obtener los datos y detener el spinner
       if (this.item) {
         this.populateFormWithEvent(this.item!).subscribe(() => {
-          this.isLoading = false; // Detenemos el spinner cuando los datos se carguen
+          this.isLoading = false;
         });
       } else {
-        // Si itemId es 0 o no está presente, es un evento nuevo o duplicado
-        // Desactivamos el spinner para un evento nuevo
         this.isLoading = false;
-        this.formEvent.reset(); // Limpiamos el formulario
+        this.formEvent.reset();
         this.titleForm = 'Registrar evento';
         this.buttonAction = 'Guardar';
       }
-
-      // this.isLoading = false;
     }
 
     this.provincias = townsData
@@ -235,6 +233,7 @@ export class FormEventComponent implements OnInit, OnChanges {
         tap((data) => (this.agents = data))
       )
       .subscribe();
+
     this.formEvent
       .get('status')
       ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
@@ -245,7 +244,7 @@ export class FormEventComponent implements OnInit, OnChanges {
           this.formEvent.get('status_reason')?.enable();
         }
       });
-    // 👇 Aquí vuelves a escuchar cambios de fecha
+
     this.formEvent
       .get('start')
       ?.valueChanges.pipe(
@@ -268,24 +267,23 @@ export class FormEventComponent implements OnInit, OnChanges {
       )
       .subscribe();
   }
+
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['itemId'] && changes['itemId'].currentValue) {
       const newId = changes['itemId'].currentValue;
 
       if (newId !== 0) {
-        // Si el itemId cambia y no es un evento nuevo (no es 0),
-        // cargamos los datos del evento
-        this.isLoading = true; // Activamos el spinner mientras cargamos
+        this.isLoading = true;
         this.loadEventData(newId);
       }
     }
-    // 👇 Manejo cuando es duplicar o crear (ya tienes la data directamente)
+
     if (changes['item'] && changes['item'].currentValue && this.itemId === 0) {
       this.originalIdForDuplicate = this.item?.id ?? null;
-      this.isLoading = true; // Activar spinner mientras se carga el evento para duplicar
-      this.formEvent.reset(); // ← Limpiar el formulario
+      this.isLoading = true;
+      this.formEvent.reset();
       this.populateFormWithEvent(this.item!).subscribe(() => {
-        this.isLoading = false; // Desactivar el spinner una vez que los datos se carguen
+        this.isLoading = false;
       });
     }
   }
@@ -300,11 +298,11 @@ export class FormEventComponent implements OnInit, OnChanges {
           (event): event is EventModelFullData =>
             !!event && event.id === eventId
         ),
-        tap(() => this.formEvent.reset()), // Limpiamos el formulario para evitar datos viejos
+        tap(() => this.formEvent.reset()),
         switchMap((event) => this.populateFormWithEvent(event))
       )
       .subscribe(() => {
-        this.isLoading = false; // Desactivamos el spinner cuando los datos se cargan
+        this.isLoading = false;
       });
   }
 
@@ -315,7 +313,6 @@ export class FormEventComponent implements OnInit, OnChanges {
     this.collaborators.clear();
     this.sponsors.clear();
 
-    // si es duplicar, refuerza el id original
     if (this.itemId === 0 && event?.id) {
       this.originalIdForDuplicate = event.id;
     }
@@ -398,17 +395,12 @@ export class FormEventComponent implements OnInit, OnChanges {
         });
         switch (event.access as 'FREE' | 'TICKETS' | 'UNSPECIFIED') {
           case 'TICKETS':
-            // No añadirá fila vacía porque ya hay prices cargados
             this.setEventTypeAccess('TICKETS');
             break;
-
           case 'FREE':
-            // Limpia ticketPrices y deja el botón FREE activo
             this.setEventTypeAccess('FREE');
             break;
-
           default:
-            // Cubre 'UNSPECIFIED' o valores inesperados
             this.setEventTypeAccess('UNSPECIFIED');
             break;
         }
@@ -438,28 +430,34 @@ export class FormEventComponent implements OnInit, OnChanges {
           'project_id',
           'macroevent_id',
         ]);
+
         if (event.periodic) {
           this.eventTypePeriod = 'periodic';
           this.wasPeriodic = true;
 
           this.repeatedDates.clear();
-          const sorted = [...(passes as any[])].sort((a, b) =>
-            a.start.localeCompare(b.start)
+
+          const sorted = [...(passes as any[])].sort(
+            (a, b) =>
+              a.start.localeCompare(b.start) ||
+              (a.time_start || '').localeCompare(b.time_start || '')
           );
+
+          // ✅ Empuja TODOS los pases, incluido el actual (con su id)
           sorted.forEach((e) => {
-            // 👇 Excluye el evento principal del array de pases
-            if (e.id !== event.id) {
-              this.repeatedDates.push(
-                this.fb.group({
-                  id: [e.id],
-                  start: [e.start, Validators.required],
-                  end: [e.end],
-                  time_start: [e.time_start],
-                  time_end: [e.time_end],
-                })
-              );
-            }
+            this.repeatedDates.push(
+              this.fb.group({
+                id: [e.id],
+                start: [e.start, Validators.required],
+                end: [e.end],
+                time_start: [e.time_start],
+                time_end: [e.time_end],
+              })
+            );
           });
+
+          // Recalcular validaciones tras hidratar
+          this.repeatedDates.updateValueAndValidity({ emitEvent: true });
         } else {
           this.eventTypePeriod = 'single';
           this.repeatedDates.clear();
@@ -508,6 +506,7 @@ export class FormEventComponent implements OnInit, OnChanges {
       map(() => void 0)
     );
   }
+
   private uniqById<T extends { id?: number }>(arr: T[] = []): T[] {
     const seen = new Set<number>();
     return arr.filter((a) => {
@@ -517,8 +516,8 @@ export class FormEventComponent implements OnInit, OnChanges {
       return true;
     });
   }
+
   private loadYearlyData(year: number): Observable<void> {
-    // 🔁 Siempre cargar, aunque sea el mismo año
     return forkJoin([
       this.loadProjectsByYear(year),
       this.loadMacroeventosByYear(year),
@@ -604,11 +603,13 @@ export class FormEventComponent implements OnInit, OnChanges {
       });
     }
   }
+
   get isTypePeriodSelected(): boolean {
     return (
       this.eventTypePeriod === 'single' || this.eventTypePeriod === 'periodic'
     );
   }
+
   get organizers(): FormArray {
     return this.formEvent.get('organizer') as FormArray;
   }
@@ -661,7 +662,7 @@ export class FormEventComponent implements OnInit, OnChanges {
     if (!file) {
       this.selectedImageFile = null;
       this.imageSrc = '';
-      this.formEvent.get('img')?.setValue(null); // 🔁 importante para resetear el valor
+      this.formEvent.get('img')?.setValue(null);
       return;
     }
 
@@ -695,8 +696,16 @@ export class FormEventComponent implements OnInit, OnChanges {
       startControl?.updateValueAndValidity({ emitEvent: false });
       endControl?.updateValueAndValidity({ emitEvent: false });
     } else if (type === 'periodic') {
+      // Guarda valores actuales antes de limpiar
+      const curStart = this.formEvent.get('start')?.value || null;
+      const curEnd = this.formEvent.get('end')?.value || curStart;
+      const curTs = this.formEvent.get('time_start')?.value || '';
+      const curTe = this.formEvent.get('time_end')?.value || '';
+
       this.formEvent.patchValue({ periodic: true });
       this.wasPeriodic = true;
+
+      // Limpia cabeceras para que el usuario gestione solo el array
       this.formEvent.patchValue({
         start: null,
         end: null,
@@ -707,9 +716,26 @@ export class FormEventComponent implements OnInit, OnChanges {
       startControl?.clearValidators();
       startControl?.updateValueAndValidity();
 
-      if (this.repeatedDates.length === 0) {
+      this.repeatedDates.clear();
+
+      // ✅ Si venimos de single con valores, siembra ese pase
+      if (curStart) {
+        this.repeatedDates.push(
+          this.fb.group({
+            start: [
+              curStart,
+              [Validators.required, dateBetween(this.minDate, this.maxDate)],
+            ],
+            end: [curEnd, [dateBetween(this.minDate, this.maxDate)]],
+            time_start: [curTs],
+            time_end: [curTe],
+          })
+        );
+      } else {
         this.addRepeatedDate();
       }
+
+      this.repeatedDates.updateValueAndValidity({ emitEvent: true });
     }
   }
 
@@ -718,7 +744,6 @@ export class FormEventComponent implements OnInit, OnChanges {
     const onlineLinkControl = this.formEvent.get('online_link');
 
     if (type === 'online') {
-      // Limpiar campos de ubicación si selecciona online
       this.formEvent.patchValue({
         province: '',
         town: '',
@@ -727,33 +752,31 @@ export class FormEventComponent implements OnInit, OnChanges {
         capacity: null,
       });
 
-      // Aplicar validadores dinámicos a online_link
       onlineLinkControl?.setValidators([
         Validators.required,
         Validators.pattern(/^https?:\/\/.+$/),
       ]);
     } else {
-      // Quitar validadores a online_link y limpiar valor
       onlineLinkControl?.clearValidators();
       onlineLinkControl?.setValue('');
     }
-    if (type === 'place') {
-    }
     onlineLinkControl?.updateValueAndValidity();
   }
+
   setEventTypeMacro(type: 'SINGLE' | 'MACRO'): void {
     this.eventTypeMacro = type;
     this.formEvent.patchValue({ macroevent_id: null });
   }
+
   setEventTypeProject(type: 'NO_PROJECT' | 'PROJECT'): void {
     this.eventTypeProject = type;
     this.formEvent.patchValue({ project_id: null });
   }
+
   setEventTypeAccess(type: 'FREE' | 'TICKETS' | 'UNSPECIFIED'): void {
     this.eventTypeAccess = type;
 
     if (type === 'TICKETS') {
-      // Asegúrate de que haya al menos una fila:
       if (this.ticketPrices.length === 0) {
         this.addTicketPrice();
       }
@@ -761,7 +784,6 @@ export class FormEventComponent implements OnInit, OnChanges {
       this.formEvent.patchValue({ access: 'TICKETS' });
     }
     if (type === 'FREE') {
-      // Opcional: si quieres limpiar cuando cambie a otro tipo
       this.ticketPrices.clear();
       this.formEvent.patchValue({ tickets_method: '' });
       this.formEvent.patchValue({ access: 'FREE' });
@@ -772,6 +794,7 @@ export class FormEventComponent implements OnInit, OnChanges {
       this.formEvent.patchValue({ access: 'UNSPECIFIED' });
     }
   }
+
   setEventTypeInscription(type: 'unlimited' | 'inscription'): void {
     this.eventTypeInscription = type;
 
@@ -816,15 +839,20 @@ export class FormEventComponent implements OnInit, OnChanges {
         time_end: [''],
       })
     );
+    // 🔁 recalcula validaciones
+    this.repeatedDates.updateValueAndValidity({ emitEvent: true });
   }
 
   removeRepeatedDate(index: number): void {
     this.repeatedDates.removeAt(index);
+    // 🔁 recalcula validaciones
+    this.repeatedDates.updateValueAndValidity({ emitEvent: true });
   }
 
   get ticketPrices(): FormArray {
     return this.formEvent.get('ticket_prices') as FormArray;
   }
+
   createTicketPriceForm(
     type: string = '',
     price: number | null = null
@@ -842,6 +870,7 @@ export class FormEventComponent implements OnInit, OnChanges {
   removeTicketPrice(index: number): void {
     this.ticketPrices.removeAt(index);
   }
+
   generateUUID(): string {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(
       /[xy]/g,
@@ -852,6 +881,7 @@ export class FormEventComponent implements OnInit, OnChanges {
       }
     );
   }
+
   trackByLabel(index: number, item: any) {
     return item.label;
   }
@@ -863,6 +893,7 @@ export class FormEventComponent implements OnInit, OnChanges {
   trackBySalaId(index: number, item: any) {
     return item.sala_id;
   }
+
   private normTime(t?: string | null): string {
     if (!t) return '';
     const [h, m] = t.split(':');
@@ -884,9 +915,9 @@ export class FormEventComponent implements OnInit, OnChanges {
     for (const r of arr) {
       const d = (r.start || '').slice(0, 10);
       if (!d) continue;
-      const ts = this.normTime(r.time_start || '');
+      const ts = this.normTime(r.time_start || '00:00');
       const key = `${d}|${ts}`;
-      if (seen.has(key)) continue; // ⛔️ solo elimina duplicado exacto (misma fecha y misma hora)
+      if (seen.has(key)) continue; // elimina duplicados exactos fecha+hora
       out.push({
         ...r,
         start: d as any,
@@ -898,11 +929,11 @@ export class FormEventComponent implements OnInit, OnChanges {
     }
     return out;
   }
+
   onSendFormEvent(): void {
     console.log('📤 Enviando formulario…');
     this.submitted = true;
 
-    // Helpers locales (solo para esta función)
     const normTime = (t?: string | null): string => {
       if (!t) return '';
       const [h = '0', m = '0'] = t.split(':');
@@ -914,7 +945,7 @@ export class FormEventComponent implements OnInit, OnChanges {
     const isPeriodic = this.eventTypePeriod === 'periodic';
     this.formEvent.patchValue({ periodic: isPeriodic });
 
-    // ✅ AUTOCOMPLETAR ANTES DE VALIDAR (para el formulario base)
+    // Autocompletar end y time_end en cabecera
     const start = this.formEvent.get('start')?.value as string | null;
     const end = this.formEvent.get('end')?.value as string | null;
     if (!end && start) {
@@ -930,7 +961,6 @@ export class FormEventComponent implements OnInit, OnChanges {
         ?.setValue(this.calcTimeEnd(ts), { emitEvent: false });
     }
 
-    // Recalcula validaciones con los valores ya normalizados
     this.formEvent.updateValueAndValidity({ emitEvent: false });
 
     if (this.formEvent.invalid) {
@@ -964,11 +994,6 @@ export class FormEventComponent implements OnInit, OnChanges {
         : '';
     }
 
-    const uniqIds = (ids: Array<number | null | undefined>) =>
-      Array.from(
-        new Set(ids.filter((x): x is number => typeof x === 'number'))
-      );
-
     const toNum = (v: any) =>
       v === null || v === undefined || v === '' ? null : Number(v);
 
@@ -980,7 +1005,7 @@ export class FormEventComponent implements OnInit, OnChanges {
             .filter((n): n is number => Number.isFinite(n))
         )
       );
-    // Construcción base
+
     const baseData: any = {
       ...rawValues,
       macroevent_id: rawValues.macroevent_id
@@ -993,9 +1018,9 @@ export class FormEventComponent implements OnInit, OnChanges {
       ticket_prices: this.ticketPrices.getRawValue(),
     };
 
-    // —— Periódicos: preparar pases sin duplicar la principal y permitiendo misma fecha con horas distintas
     if (isPeriodic) {
       const rdRaw = this.repeatedDates.getRawValue() as Array<{
+        id?: number;
         start?: string;
         end?: string;
         time_start?: string | null;
@@ -1007,20 +1032,20 @@ export class FormEventComponent implements OnInit, OnChanges {
         return;
       }
 
-      // Normaliza y deduplica por (fecha + time_start)
+      // Normaliza, autocompleta time_end y CONSERVA id
       const seen = new Set<string>();
       const rdNorm = rdRaw
         .map((r) => {
           const d = (r.start || '').slice(0, 10);
           if (!d) return null;
           const e = (r.end && r.end.slice(0, 10)) || d;
-          const tStart = normTime(r.time_start || '');
+          const tStart = normTime(r.time_start || '00:00');
           let tEnd = r.time_end || '';
           if (tStart && isEmptyOrMidnight(tEnd)) {
-            // autocompleta si falta
             tEnd = this.calcTimeEnd(tStart);
           }
           return {
+            id: typeof r.id === 'number' ? r.id : undefined,
             start: d,
             end: e,
             time_start: tStart || '',
@@ -1028,77 +1053,57 @@ export class FormEventComponent implements OnInit, OnChanges {
           };
         })
         .filter(Boolean) as Array<{
+        id?: number;
         start: string;
         end: string;
         time_start: string;
         time_end: string;
       }>;
 
-      const rdUniq: typeof rdNorm = [];
+      // Dedup exacto por (fecha|hora) manteniendo el primero
+      const repeated: typeof rdNorm = [];
       for (const r of rdNorm) {
         const key = `${r.start}|${r.time_start}`;
-        if (seen.has(key)) continue; // solo elimina duplicado exacto (misma fecha + misma hora)
+        if (seen.has(key)) continue;
         seen.add(key);
-        rdUniq.push(r);
+        repeated.push(r);
       }
 
-      // Determinar la "principal"
+      // Asegura campos principales obligatorios
       let mainDate = (rawValues.start as string | null)?.slice(0, 10) || null;
-      let mainTime = normTime(rawValues.time_start || '');
-
-      if (!mainDate) {
-        // Si no hay start en el form (caso típico de periódicos), toma el 1º pase ordenado
-        const sorted = [...rdUniq].sort(
-          (a, b) =>
-            a.start.localeCompare(b.start) ||
-            a.time_start.localeCompare(b.time_start)
-        );
-        const first = sorted[0];
-        mainDate = first.start;
-        mainTime = first.time_start;
-
-        // fija principal en baseData y también sincroniza el form (sin disparar validaciones)
-        this.formEvent.patchValue(
-          {
-            start: mainDate,
-            end: first.end || mainDate,
-            time_start: first.time_start || '',
-            time_end:
-              first.time_end ||
-              (first.time_start ? this.calcTimeEnd(first.time_start) : ''),
-          },
-          { emitEvent: false }
-        );
+      if (!mainDate && repeated.length) {
+        mainDate = repeated
+          .slice()
+          .sort(
+            (a, b) =>
+              a.start.localeCompare(b.start) ||
+              a.time_start.localeCompare(b.time_start)
+          )[0].start;
       }
-
-      // Asegura campos principales en baseData
-      baseData.start = mainDate!;
-      baseData.end = baseData.end || mainDate!;
-      baseData.time_start = baseData.time_start || '';
-      if (isEmptyOrMidnight(baseData.time_end) && baseData.time_start) {
+      baseData.start = mainDate || repeated[0]?.start || '';
+      baseData.end = baseData.end || baseData.start;
+      if (
+        (!baseData.time_end ||
+          baseData.time_end === '00:00' ||
+          baseData.time_end === '00:00:00') &&
+        baseData.time_start
+      ) {
         baseData.time_end = this.calcTimeEnd(baseData.time_start);
       }
 
-      // Excluye de repeated_dates el pase idéntico al principal (misma fecha + misma hora)
-      const repeated = rdUniq.filter(
-        (r) => !(r.start === mainDate && r.time_start === mainTime)
-      );
-
-      // Mantén periodic_id existente si ya lo hay; si no, genera uno
       const periodic_id =
         (rawValues.periodic_id?.trim() as string | undefined) ||
         (this.item?.periodic_id as string | undefined) ||
         this.generateUUID();
 
       baseData.periodic_id = periodic_id;
+      // ❗️Mandamos TODOS los pases, incluido el principal
       baseData.repeated_dates = repeated;
     } else {
-      // No periódico
       baseData.periodic_id = '';
       baseData.repeated_dates = [];
     }
 
-    // Limpieza de descripción
     if (baseData.description) {
       baseData.description = baseData.description.replace(/&nbsp;/g, ' ');
     }
@@ -1106,15 +1111,6 @@ export class FormEventComponent implements OnInit, OnChanges {
       (!this.itemId || this.itemId === 0) && this.originalIdForDuplicate
         ? this.originalIdForDuplicate
         : null;
-    // Crea el único FormData para enviar
-    console.log(
-      '🧪 duplicateFromId =',
-      duplicateFromId,
-      'itemId =',
-      this.itemId,
-      'item?.id =',
-      this.item?.id
-    );
 
     const formData = this.createEventFormDataForPhp(
       baseData,
@@ -1122,7 +1118,7 @@ export class FormEventComponent implements OnInit, OnChanges {
       this.itemId || null,
       this.itemId ? 'PATCH' : 'POST',
       duplicateFromId
-    ); // 🔎 LOG: ver qué pares clave/valor viajan en el FormData
+    );
     for (const [k, v] of (formData as any).entries()) {
       console.log('FD', k, v);
     }
@@ -1142,6 +1138,7 @@ export class FormEventComponent implements OnInit, OnChanges {
       }
     });
   }
+
   // Función auxiliar para sumar 3 horas y normalizar formato HH:mm:ss
   private calcTimeEnd(timeStart: string): string {
     if (!timeStart || !timeStart.includes(':')) return '';
@@ -1160,6 +1157,7 @@ export class FormEventComponent implements OnInit, OnChanges {
     const pad = (n: number) => (n < 10 ? '0' + n : n);
     return `${pad(newHours)}:${pad(minutes)}:00`;
   }
+
   /** Crea FormData alineado con events.php */
   private createEventFormDataForPhp(
     data: {
@@ -1185,6 +1183,7 @@ export class FormEventComponent implements OnInit, OnChanges {
       periodic: boolean;
       periodic_id?: string | null;
       repeated_dates: Array<{
+        id?: number;
         start: string;
         end?: string;
         time_start?: string;
@@ -1203,10 +1202,9 @@ export class FormEventComponent implements OnInit, OnChanges {
   ): FormData {
     const fd = new FormData();
 
-    // Helper que SIEMPRE añade (aunque sea vacío)
     const put = (k: string, v: any) => {
       if (v === null || v === undefined) {
-        fd.append(k, ''); // manda vacío explícito
+        fd.append(k, '');
         return;
       }
       if (typeof v === 'boolean') {
@@ -1216,7 +1214,7 @@ export class FormEventComponent implements OnInit, OnChanges {
       }
     };
 
-    // — Campos simples (siempre presentes)
+    // Campos simples
     put('title', data.title ?? '');
     put('start', data.start ?? '');
     put('end', data.end ?? '');
@@ -1235,12 +1233,12 @@ export class FormEventComponent implements OnInit, OnChanges {
     put('periodic', !!data.periodic);
     put('periodic_id', data.periodic_id ?? '');
 
-    // — Numéricos opcionales: manda '' si no hay
+    // Numéricos opcionales
     put('place_id', typeof data.place_id === 'number' ? data.place_id : '');
     put('sala_id', typeof data.sala_id === 'number' ? data.sala_id : '');
     put('capacity', typeof data.capacity === 'number' ? data.capacity : '');
 
-    // — macro/proyecto: manda '' si no hay
+    // macro/proyecto
     put(
       'macroevent_id',
       typeof data.macroevent_id === 'number' ? data.macroevent_id : ''
@@ -1250,7 +1248,7 @@ export class FormEventComponent implements OnInit, OnChanges {
       typeof data.project_id === 'number' ? data.project_id : ''
     );
 
-    // — Agents: si arrays vacíos, que el backend reciba []-style (sin warnings)
+    // Agents
     if (data.organizer.length === 0) fd.append('organizer[]', '');
     data.organizer.forEach((id) => fd.append('organizer[]', String(id)));
 
@@ -1260,9 +1258,8 @@ export class FormEventComponent implements OnInit, OnChanges {
     if (data.sponsor.length === 0) fd.append('sponsor[]', '');
     data.sponsor.forEach((id) => fd.append('sponsor[]', String(id)));
 
-    // — ticket_prices como matriz anidada SIEMPRE presente
+    // ticket_prices
     if (data.ticket_prices.length === 0) {
-      // envía un slot vacío para que PHP vea la clave
       fd.append('ticket_prices[0][type]', '');
       fd.append('ticket_prices[0][price]', '');
     } else {
@@ -1275,25 +1272,23 @@ export class FormEventComponent implements OnInit, OnChanges {
       });
     }
 
-    // — repeated_dates siempre presente como JSON
+    // repeated_dates (como JSON) — incluye id cuando exista
     fd.append('repeated_dates', JSON.stringify(data.repeated_dates ?? []));
 
-    // — Imagen
+    // Imagen
     const rawImg = (this.formEvent.get('img')?.value ?? '').toString().trim();
-    const currentImg = rawImg.split('/').pop() ?? rawImg; // 👈 basename
+    const currentImg = rawImg.split('/').pop() ?? rawImg;
 
     if (files?.img) {
       fd.append('img', files.img);
     } else if (currentImg) {
-      fd.append('img', currentImg); // 👈 solo "foto.jpg"
+      fd.append('img', currentImg);
     }
 
-    // — DUPLICADO: id del evento origen  ⬅️ AQUI va la línea que preguntas
     if (duplicateFromId != null) {
-      fd.append('duplicate_from_id', String(duplicateFromId)); // ⬅️ ESTA
+      fd.append('duplicate_from_id', String(duplicateFromId));
     }
 
-    // — Edición
     const idNum = Number(itemId);
     if (methodOverride === 'PATCH' && Number.isFinite(idNum) && idNum > 0) {
       fd.append('_method', 'PATCH');
