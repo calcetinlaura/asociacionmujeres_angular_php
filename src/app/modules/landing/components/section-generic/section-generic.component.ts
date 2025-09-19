@@ -49,6 +49,26 @@ export class SectionGenericComponent implements OnInit {
   selectedActionModal: TypeActionModal = TypeActionModal.Show;
   selectedItem: any;
 
+  private getQueryKey(): string {
+    switch (this.typeSection) {
+      case TypeList.Events:
+        return 'event';
+      case TypeList.Books:
+        return 'book';
+      case TypeList.Movies:
+        return 'movie';
+      case TypeList.Piteras:
+        return 'pitera';
+      case TypeList.Recipes:
+        return 'recipe';
+      case TypeList.Podcasts:
+        return 'podcast';
+      case TypeList.Macroevents:
+        return 'macroevent';
+      default:
+        return 'item';
+    }
+  }
   constructor() {}
 
   ngOnInit(): void {
@@ -59,11 +79,13 @@ export class SectionGenericComponent implements OnInit {
       this.typeModal = TypeList.Books;
     }
     this.selectedTypeModal = this.typeSection;
-    // 🔎 1) Escuchar la URL: si hay :id, abrir la modal con ese id
-    this.route.paramMap
+
+    const key = this.getQueryKey();
+
+    this.route.queryParamMap
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((params) => {
-        const idParam = params.get('id');
+      .subscribe((qp) => {
+        const idParam = qp.get(key);
         if (idParam) {
           const id = +idParam;
           this.openById(id);
@@ -73,20 +95,28 @@ export class SectionGenericComponent implements OnInit {
       });
   }
   openModalView(item: any) {
-    // 1) Cambia la URL (/events/:id o /books/:id)
-    const segment = this.getRouteSegment();
-    this.router.navigate(['/', segment, item.id]);
+    const key = this.getQueryKey();
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { [key]: item.id },
+      queryParamsHandling: 'merge', // conserva ?year, etc.
+    });
 
-    // 2) Abre la modal con el item (UI rápida); luego, si quieres, refrescas del backend
     this.selectedItem = item;
     this.selectedActionModal = TypeActionModal.Show;
     this.showModalView = true;
   }
+
   onCloseModal() {
+    const key = this.getQueryKey();
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { [key]: null }, // elimina el query param
+      queryParamsHandling: 'merge',
+    });
+
     this.showModalView = false;
-    this.selectedItem = ''; // 🧹 Volver a la URL base (/events o /books) al cerrar
-    const segment = this.getRouteSegment();
-    this.router.navigate(['/', segment]);
+    this.selectedItem = '';
   }
   // 🚪 Abrir por id (cuando viene en la URL o cambias entre ids)
   private openById(id: number) {
@@ -125,25 +155,6 @@ export class SectionGenericComponent implements OnInit {
     this.selectedItem = '';
   }
 
-  // 🧭 De TypeList → 'events' | 'books' | ...
-  private getRouteSegment(): string {
-    switch (this.typeSection) {
-      case TypeList.Events:
-        return 'events';
-      case TypeList.Books:
-        return 'books';
-      case TypeList.Movies:
-        return 'movies';
-      case TypeList.Piteras:
-        return 'piteras';
-      case TypeList.Recipes:
-        return 'recipes';
-      case TypeList.Podcasts:
-        return 'podcasts';
-      default:
-        return 'events';
-    }
-  }
   onOpenMacroevent(macroeventId: number) {
     this.macroeventsService.getMacroeventById(macroeventId).subscribe({
       next: (macroevent: MacroeventModelFullData) => {

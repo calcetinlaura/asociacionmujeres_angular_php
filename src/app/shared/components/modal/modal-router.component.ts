@@ -169,6 +169,9 @@ export class ModalRouterComponent {
   onOpenMacroeventFromChild(id: number) {
     if (id) this.openMacroevent.emit(id);
   }
+  onOpenEventFromMacro(id: number) {
+    if (id) this.openEvent.emit(id);
+  }
 
   // ✅ Único punto para confirmar borrado y cerrar la modal
   onConfirmDelete(idItem: number) {

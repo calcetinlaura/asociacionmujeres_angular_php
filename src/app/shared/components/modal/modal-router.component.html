@@ -34,7 +34,10 @@
 
 <!-- MACROEVENTS -->
 @case (TypeList.Macroevents) { @if (action === TypeActionModal.Show) {
-<app-modal-show-macroevent [item]="item" />
+<app-modal-show-macroevent
+  [item]="item"
+  (openEvent)="onOpenEventFromMacro($event)"
+/>
 } @else {
 <app-form-macroevent
   [itemId]="item?.id"

@@ -50,22 +50,33 @@
         </div>
         @if (item!.events && item!.events.length > 0) {
         <div class="mt-6 flex flex-1">
-          <div class="flex flex-col gap-3 mt-3 w-full">
+          <div class="flex flex-col gap-1 mt-2 w-full">
             @for (event of item!.events; track event) {
-            <div class="flex w-full gap-x-4" (click)="onOpenEvent(event.id)">
-              <div class="w-24 h-32 overflow-hidden flex-shrink-0">
+            <div
+              class="group flex w-full gap-4 cursor-pointer rounded-xl p-2 border border-transparent transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-md hover:border-lilaOscuro/15 hover:bg-lilaClaro/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lilaOscuro/40"
+              (click)="onOpenEvent(event.id)"
+              tabindex="0"
+              (keyup.enter)="onOpenEvent(event.id)"
+            >
+              <div class="w-24 h-32 overflow-hidden flex-shrink-0 rounded-lg">
                 @if (event.img) {
                 <img
                   [src]="event.img | itemImage : typeEvent"
-                  alt="{{ event.title }}"
-                  class="object-cover w-full h-full rounded"
+                  [alt]="event.title"
+                  class="object-cover w-full h-full transition-transform duration-300 ease-out group-hover:scale-[1.03]"
                 />
                 }
               </div>
-              <div class="flex-1 bg-gray-100 p-3 rounded-lg shadow-sm">
-                <p class="text-[12px] font-semibold">{{ event.title }}</p>
+
+              <div
+                class="flex-1 p-3 rounded-lg shadow-sm bg-white/70 transition-all duration-300 ease-out group-hover:bg-white group-hover:shadow-md"
+              >
+                <p class="text-[12px] font-semibold tracking-wide">
+                  {{ event.title }}
+                </p>
+
                 @if (event.start) {
-                <p class="text-[12px] text-gray-600">
+                <p class="text-[12px] text-gray-600 mt-1">
                   {{
                     event.start
                       | date : "EEEE dd MMMM" : "" : "es-ES"
@@ -73,15 +84,14 @@
                   }}
                   | {{ event.time_start?.slice(0, 5) }}h
                 </p>
-                } @if (event.placeData && event.placeData.name) {
+                } @if (event.placeData?.name) {
                 <p class="text-[12px] text-gray-600 pt-4">
-                  {{ event.placeData.name }}
+                  {{ event.placeData?.name }}
                 </p>
                 } @if (event.town) {
                 <p class="text-[12px] text-gray-600">
-                  @if (event.placeData && event.placeData.address) {
-                  <span> {{ event.placeData.address }}, </span>
-                  }
+                  @if (event.placeData?.address) {
+                  <span>{{ event.placeData?.address }}, </span> }
                   {{ event.town }}
                 </p>
                 }

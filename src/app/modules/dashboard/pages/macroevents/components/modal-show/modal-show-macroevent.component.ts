@@ -37,6 +37,7 @@ export class ModalShowMacroeventComponent implements OnInit {
     }
   }
   onOpenEvent(macroeventId: number) {
+    console.log('DENTRO MACROEVENTO A EVENTO');
     if (macroeventId) {
       this.openEvent.emit(macroeventId);
     }
