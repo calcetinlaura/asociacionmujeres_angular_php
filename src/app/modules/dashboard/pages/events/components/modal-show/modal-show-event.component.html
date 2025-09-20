@@ -148,26 +148,19 @@
           </div>
         </div>
         }
-        <!-- <p class="body-subtitle">Aforo - {{ item.capacity }}</p> -->
 
         <div class="my-4">
-          <!-- @if (item.price) {
-      <app-text-border [text]="item.price"></app-text-border>
-      } -->
-        </div>
-        <div>
-          @if (item.inscription === true) {
-          <p class="body-inscription">
-            * Se requiere inscripción previa en el email
-            asociacionmujerescallosa&#64;gmail.com
-          </p>
+          @if (item.inscription_method ) {
+          <p class="text-[12px]" [innerHTML]="item.inscription_method"></p>
+          }@if (item.tickets_method) {
+          <p class="text-[12px]" [innerHTML]="item.tickets_method"></p>
           } @if (item.status === enumStatusEnum.CANCELADO) {
           <app-text-background
             [text]="'Evento ' + item.status"
             [colorBack]="'#de7a71'"
           ></app-text-background>
           } @if (item.status === enumStatusEnum.AGOTADO) {
-          <div class="flex justify-center">
+          <div class="flex justify-center my-4">
             <app-text-background
               [text]="'Inscripciones agotadas'"
               [colorBack]="'#de7a71'"

@@ -14,7 +14,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { tap } from 'rxjs';
 import { AgentsFacade } from 'src/app/application/agents.facade';
 import {
-  AgentModel,
+  AgentsModelFullData,
   CategoryFilterAgents,
 } from 'src/app/core/interfaces/agent.interface';
 import {
@@ -108,15 +108,15 @@ export class AgentsPageComponent implements OnInit {
     },
   ];
 
-  agents: AgentModel[] = [];
-  filteredAgents: AgentModel[] = [];
+  agents: AgentsModelFullData[] = [];
+  filteredAgents: AgentsModelFullData[] = [];
   filters: Filter[] = [];
   selectedFilter: string | null = null;
 
   isModalVisible = false;
   number = 0;
 
-  item: AgentModel | null = null;
+  item: AgentsModelFullData | null = null;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
   searchForm!: FormGroup;
 
@@ -181,7 +181,7 @@ export class AgentsPageComponent implements OnInit {
   onOpenModal(event: {
     typeModal: TypeList;
     action: TypeActionModal;
-    item: AgentModel;
+    item: AgentsModelFullData;
   }): void {
     this.openModal(event.typeModal, event.action, event.item);
   }
@@ -189,7 +189,7 @@ export class AgentsPageComponent implements OnInit {
   openModal(
     typeModal: TypeList,
     action: TypeActionModal,
-    item: AgentModel | null
+    item: AgentsModelFullData | null
   ): void {
     this.currentModalAction = action;
     this.item = item;
@@ -222,7 +222,7 @@ export class AgentsPageComponent implements OnInit {
       .subscribe();
   }
 
-  private updateAgentState(agents: AgentModel[] | null): void {
+  private updateAgentState(agents: AgentsModelFullData[] | null): void {
     if (!agents) return;
 
     this.agents = this.agentsService.sortAgentsById(agents);

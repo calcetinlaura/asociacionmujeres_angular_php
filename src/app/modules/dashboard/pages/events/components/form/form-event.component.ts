@@ -1106,6 +1106,18 @@ export class FormEventComponent implements OnInit, OnChanges {
     if (baseData.description) {
       baseData.description = baseData.description.replace(/&nbsp;/g, ' ');
     }
+    if (baseData.tickets_method) {
+      baseData.tickets_method = baseData.tickets_method.replace(/&nbsp;/g, ' ');
+    }
+    if (baseData.inscription_method) {
+      baseData.inscription_method = baseData.inscription_method.replace(
+        /&nbsp;/g,
+        ' '
+      );
+    }
+    if (baseData.status_reason) {
+      baseData.status_reason = baseData.status_reason.replace(/&nbsp;/g, ' ');
+    }
     const duplicateFromId =
       (!this.itemId || this.itemId === 0) && this.originalIdForDuplicate
         ? this.originalIdForDuplicate

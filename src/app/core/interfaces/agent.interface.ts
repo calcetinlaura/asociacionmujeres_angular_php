@@ -1,4 +1,5 @@
 import { Filter } from 'src/app/core/models/general.model';
+import { EventModelFullData } from './event.interface';
 
 export interface AgentModel {
   id: number;
@@ -18,6 +19,16 @@ export interface AgentModel {
 export interface AgentAutocompleteModel {
   id: number;
   name: string;
+}
+export interface AgentsModelFullData extends AgentModel {
+  events?: EventModelFullData[];
+}
+export type AgentRole = 'ORGANIZADOR' | 'COLABORADOR' | 'PATROCINADOR';
+export type SortOrder = 'asc' | 'desc';
+export interface AgentEventsQuery {
+  role?: AgentRole;
+  year?: number;
+  order?: SortOrder; // por fecha (e.start)
 }
 export const CategoryFilterAgents: Filter[] = [
   { code: 'ORGANISMO', name: 'Organismo público' },

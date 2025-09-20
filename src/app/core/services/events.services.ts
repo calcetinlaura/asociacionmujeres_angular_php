@@ -8,6 +8,7 @@ import {
 } from 'src/app/core/interfaces/event.interface';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { environments } from 'src/environments/environments';
+import { AgentEventsQuery } from '../interfaces/agent.interface';
 
 @Injectable({
   providedIn: 'root',
@@ -40,6 +41,20 @@ export class EventsService {
       .get(this.apiUrl, {
         params: { macroevent_id: macroeventId },
       })
+      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
+  }
+  getEventsByAgent(
+    agentId: number,
+    opts: AgentEventsQuery = {}
+  ): Observable<EventModel[]> {
+    const params: Record<string, string> = { agent_id: String(agentId) };
+
+    if (opts.role) params['role'] = opts.role;
+    if (opts.year) params['year'] = String(opts.year);
+    if (opts.order) params['order'] = opts.order;
+
+    return this.http
+      .get<EventModel[]>(this.apiUrl, { params })
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
   getEventsByProject(projectId: number): Observable<any> {

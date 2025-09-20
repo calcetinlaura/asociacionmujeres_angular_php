@@ -20,10 +20,7 @@ if ($method === 'OPTIONS') {
     http_response_code(204);
     exit();
 }
-
-switch ($method) {
-  case 'GET':
-    function attachInvoicesToCreditor($connection, &$creditor) {
+function attachInvoicesToCreditor($connection, &$creditor) {
         $invoiceStmt = $connection->prepare("SELECT * FROM invoices WHERE creditor_id = ? ORDER BY date_invoice ASC");
         $invoiceStmt->bind_param("i", $creditor['id']);
         $invoiceStmt->execute();
@@ -37,6 +34,8 @@ switch ($method) {
         $creditor['invoices'] = $invoices;
     }
 
+switch ($method) {
+  case 'GET':
     if (isset($_GET['id']) && is_numeric($_GET['id'])) {
         $stmt = $connection->prepare("SELECT * FROM creditors WHERE id = ?");
         $stmt->bind_param("i", $_GET['id']);

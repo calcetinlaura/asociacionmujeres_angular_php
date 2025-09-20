@@ -343,6 +343,45 @@ switch ($method) {
 
       echo json_encode($events);
     }
+    // Obtener eventos por agente
+    elseif (isset($_GET['agent_id']) && is_numeric($_GET['agent_id'])) {
+  $agentId = (int)$_GET['agent_id'];
+  $role    = isset($_GET['role']) ? strtoupper($_GET['role']) : null; // ORGANIZADOR|COLABORADOR|PATROCINADOR|null
+
+  $base = "
+    SELECT e.*,
+           pg.title as periodic_title,
+           m.title  AS macroevent_title,
+           pr.title AS project_title,
+           p.name   AS place_name, p.address AS place_address, p.lat AS place_lat, p.lon AS place_lon,
+           s.name   AS sala_name,  s.room_location AS sala_location
+    FROM event_agents ea
+    INNER JOIN events e ON e.id = ea.event_id
+    LEFT JOIN periodic_groups pg ON e.periodic_id = pg.id
+    LEFT JOIN macroevents m ON e.macroevent_id = m.id
+    LEFT JOIN projects   pr ON e.project_id   = pr.id
+    LEFT JOIN places     p  ON e.place_id     = p.id
+    LEFT JOIN salas      s  ON e.sala_id      = s.sala_id
+    WHERE ea.agent_id = ?
+  ";
+
+  if ($role && in_array($role, ['ORGANIZADOR','COLABORADOR','PATROCINADOR'], true)) {
+    $base .= " AND ea.type = ? ";
+    $stmt = $connection->prepare($base . " ORDER BY e.start ASC");
+    $stmt->bind_param("is", $agentId, $role);
+  } else {
+    $stmt = $connection->prepare($base . " ORDER BY e.start ASC");
+    $stmt->bind_param("i", $agentId);
+  }
+
+  $stmt->execute();
+  $res = $stmt->get_result();
+  $events = [];
+  while ($row = $res->fetch_assoc()) {
+    $events[] = enrichEventRow($row, $connection);
+  }
+  echo json_encode($events);
+}
       // Obtener eventos por proyecto
     elseif (isset($_GET['project_id']) && is_numeric($_GET['project_id'])) {
       $projectId = (int)$_GET['project_id'];
