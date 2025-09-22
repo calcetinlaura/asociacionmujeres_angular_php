@@ -10,12 +10,12 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { CreditorWithInvoices } from 'src/app/core/interfaces/creditor.interface';
 import { TypeList } from 'src/app/core/models/general.model';
 import { TableInvoicesComponent } from 'src/app/modules/dashboard/components/table/table-invoice/table-invoice.component';
+import { TotalsByYearTableComponent } from 'src/app/modules/dashboard/components/table/table-total-years/table-total-years.component';
 import { TextBackgroundComponent } from 'src/app/shared/components/text/text-background/text-background.component';
 import { TextEditorComponent } from 'src/app/shared/components/text/text-editor/text-editor.component';
 import { TextIconComponent } from 'src/app/shared/components/text/text-icon/text-icon.component';
 import { TextSubTitleComponent } from 'src/app/shared/components/text/text-subTitle/text-subtitle.component';
 import { TextTitleComponent } from 'src/app/shared/components/text/text-title/text-title.component';
-import { EurosFormatPipe } from 'src/app/shared/pipe/eurosFormat.pipe';
 import { PhoneFormatPipe } from 'src/app/shared/pipe/phoneFormat.pipe';
 
 type Invoice = CreditorWithInvoices['invoices'][number];
@@ -29,9 +29,9 @@ type Invoice = CreditorWithInvoices['invoices'][number];
     TextSubTitleComponent,
     TextIconComponent,
     TextEditorComponent,
-    EurosFormatPipe,
     PhoneFormatPipe,
     TableInvoicesComponent,
+    TotalsByYearTableComponent,
   ],
   templateUrl: './modal-show-creditor.component.html',
   styleUrl: './modal-show-creditor.component.css',
@@ -120,5 +120,13 @@ export class ModalShowCreditorComponent {
   /** Sanitización controlada: usar solo si la fuente es de confianza */
   safeDescription(html: string | null | undefined): SafeHtml {
     return this.sanitizer.bypassSecurityTrustHtml(html ?? '');
+  }
+  get invoicesRows() {
+    const rows = [...this.invoicesByYear.entries()].map(([year, list]) => ({
+      year,
+      count: list.length,
+      amount: this.totalAmountByYear.get(year) ?? 0,
+    }));
+    return rows.sort((a, b) => Number(b.year) - Number(a.year));
   }
 }

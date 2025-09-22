@@ -14,6 +14,7 @@ import { TypeList } from 'src/app/core/models/general.model';
 import { EventsService } from 'src/app/core/services/events.services';
 
 // UI/Utils
+import { TotalsByYearTableComponent } from 'src/app/modules/dashboard/components/table/table-total-years/table-total-years.component';
 import { TextBackgroundComponent } from 'src/app/shared/components/text/text-background/text-background.component';
 import { TextEditorComponent } from 'src/app/shared/components/text/text-editor/text-editor.component';
 import { TextIconComponent } from 'src/app/shared/components/text/text-icon/text-icon.component';
@@ -35,6 +36,7 @@ type SortOrder = 'asc' | 'desc';
     TextEditorComponent,
     PhoneFormatPipe,
     ItemImagePipe,
+    TotalsByYearTableComponent,
   ],
   templateUrl: './modal-show-agent.component.html',
   styleUrl: './modal-show-agent.component.css',
@@ -120,5 +122,45 @@ export class ModalShowAgentComponent implements OnChanges {
 
   onOpenEvent(id: number) {
     if (id) this.openEvent.emit(id);
+  }
+
+  get eventsRows(): { year: number; count: number }[] {
+    const rows = [...this.eventsByYear.entries()]
+      .filter(([year]) => year > 0) // opcional: excluye registros sin fecha
+      .map(([year, list]) => ({ year, count: list.length }));
+
+    // orden descendente por año
+    rows.sort((a, b) => Number(b.year) - Number(a.year));
+    return rows;
+  } /** Compara el agente actual con una persona de un evento (por id y, si no hay, por nombre) */
+  private isSameAgent(
+    a: { id?: number | string; name?: string },
+    b: { id?: number | string; name?: string }
+  ) {
+    if (a?.id != null && b?.id != null) return String(a.id) === String(b.id);
+    const an = (a?.name ?? '').trim().toLowerCase();
+    const bn = (b?.name ?? '').trim().toLowerCase();
+    return !!an && !!bn && an === bn;
+  }
+
+  /** Devuelve los roles (en mayúsculas) que tiene el agente actual en ese evento */
+  rolesForAgent(ev: any): string[] {
+    const me = { id: this.item?.id, name: this.item?.name };
+
+    const hasOrganizer =
+      Array.isArray(ev?.organizer) &&
+      ev.organizer.some((p: any) => this.isSameAgent(p, me));
+    const hasCollaborator =
+      Array.isArray(ev?.collaborator) &&
+      ev.collaborator.some((p: any) => this.isSameAgent(p, me));
+    const hasSponsor =
+      Array.isArray(ev?.sponsor) &&
+      ev.sponsor.some((p: any) => this.isSameAgent(p, me));
+
+    const roles: string[] = [];
+    if (hasOrganizer) roles.push('ORGANIZADOR');
+    if (hasCollaborator) roles.push('COLABORADOR');
+    if (hasSponsor) roles.push('PATROCINADOR');
+    return roles;
   }
 }

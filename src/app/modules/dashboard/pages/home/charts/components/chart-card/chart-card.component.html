@@ -1,0 +1,24 @@
+<article class="chart-card" [attr.aria-label]="ariaDescription || title">
+  <header class="chart-card__header">
+    <div class="chart-card__titles">
+      <h2 class="chart-card__title">{{ title }}</h2>
+      @if (subtitle) {
+      <div class="chart-card__subtitle">{{ subtitle }}</div>
+      }
+    </div>
+
+    <!-- Zona opcional a la derecha del header (botones, filtros, etc.) -->
+    <div class="chart-card__actions">
+      <ng-content select="[card-actions]"></ng-content>
+    </div>
+  </header>
+
+  <section class="chart-card__body">
+    <ng-content></ng-content>
+  </section>
+
+  <!-- Pie opcional (leyendas, notas, etc.) -->
+  <footer class="chart-card__footer">
+    <ng-content select="[card-footer]"></ng-content>
+  </footer>
+</article>

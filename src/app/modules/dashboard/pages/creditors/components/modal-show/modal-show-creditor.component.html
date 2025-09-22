@@ -52,7 +52,7 @@
       <div class="mb-10">
         <p class="text-[14px] font-semibold">{{ year.key }}</p>
         <app-invoices-table
-          [invoices]="item.invoices"
+          [invoices]="year.value"
           [showCreditor]="false"
           [showTotals]="true"
           totalLabel="TOTAL"
@@ -64,41 +64,14 @@
       <div class="mb-4">
         <p class="text-[14px] font-semibold">Facturas totales por año</p>
       </div>
-      <table class="w-full -collapse tableInvoicesYears">
-        <colgroup>
-          <col class="w-[80px]" />
-          <col class="w-[140px]" />
-          <col class="w-[auto]" />
-        </colgroup>
-        <thead>
-          <tr>
-            <th class="p-2 text-center">Año</th>
-            <th class="p-2 text-center">Nº Facturas</th>
-            <th class="p-2 text-right pr-4">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (year of (invoicesByYear | keyvalue : keyDesc); track
-          trackYear($index, year)) {
-          <tr class="hover:bg-gray-50 fila">
-            <td class="p-2 w-auto text-center">{{ year.key }}</td>
-            <td class="p-2 text-center">{{ year.value.length }}</td>
-            <td class="p-2 w-auto text-right">
-              {{ totalAmountByYear.get(year.key)! | eurosFormat }}
-            </td>
-          </tr>
-          }
-          <tr class="total_table">
-            <td class="text-center text-[12px] font-semibold">TOTAL</td>
-            <td class="p-2 text-center text-[12px] font-bold">
-              {{ totalInvoices }}
-            </td>
-            <td class="p-2 text-right text-[12px] font-bold">
-              {{ totalAmount | eurosFormat }}
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <app-table-total-years
+        class="mt-6"
+        [rows]="invoicesRows"
+        [hasAmount]="true"
+        [totalCount]="totalInvoices"
+        [totalAmount]="totalAmount"
+      >
+      </app-table-total-years>
 
       } @else {
       <!-- 🔹 Mensaje si no hay facturas -->

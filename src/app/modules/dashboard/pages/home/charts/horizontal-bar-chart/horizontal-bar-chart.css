@@ -1,0 +1,19 @@
+:host {
+  display: block;
+}
+.hbar-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+rect {
+  fill: #dba4f1;
+}
+.indice {
+  fill: #6b7280;
+} /* gris medio, legible */
+.bar-value {
+  fill: #111827;
+  font-weight: 700;
+}

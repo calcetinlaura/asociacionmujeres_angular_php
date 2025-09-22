@@ -26,7 +26,6 @@ import { EurosFormatPipe } from 'src/app/shared/pipe/eurosFormat.pipe';
 import { FilterTransformCodePipe } from 'src/app/shared/pipe/filterTransformCode.pipe';
 import { HasValuePipe } from 'src/app/shared/pipe/hasValue.pipe';
 import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
-import { ParseJsonPipe } from 'src/app/shared/pipe/parseJson.pipe';
 import { PhoneFormatPipe } from 'src/app/shared/pipe/phoneFormat.pipe';
 import { HmsPipe } from '../../../../shared/pipe/dateTime_form.pipe';
 import { CircleIndicatorComponent } from '../circle-indicator/circle-indicator.component';
@@ -51,7 +50,6 @@ import { CircleIndicatorComponent } from '../circle-indicator/circle-indicator.c
     MatSelectModule,
     HasValuePipe,
     CalculateAgePipe,
-    ParseJsonPipe,
     HmsPipe,
     ItemImagePipe,
   ],

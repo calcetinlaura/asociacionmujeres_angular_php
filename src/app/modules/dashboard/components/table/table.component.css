@@ -129,17 +129,20 @@ th.mat-sort-header-sorted {
 .actions {
   text-align: right;
   flex: 0 0 130px !important;
-  width: 135px;
 }
 .mat-column-actions {
   width: 105px;
   max-width: 105px;
 }
-table.is-macro .mat-column-actions {
+table.is-3-events-action .mat-column-actions {
+  width: 165px;
+  max-width: 165px;
+}
+table.is-4-buttons-action .mat-column-actions {
   width: 135px;
   max-width: 135px;
 }
-table.is-events .mat-column-actions {
+table.is-5-buttons-action .mat-column-actions {
   width: 165px;
   max-width: 165px;
 }

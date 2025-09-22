@@ -1,0 +1,47 @@
+:host {
+  display: block; /* nada de flex aquí */
+  min-width: 0; /* evita overflow */
+}
+.chart-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 4px 14px rgba(0, 0, 0, 0.06);
+  width: 100%;
+  height: 100%;
+}
+.chart-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.chart-card__titles {
+  min-width: 0;
+}
+.chart-card__title {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.2;
+  font-weight: 700;
+}
+.chart-card__subtitle {
+  margin-top: 4px;
+  color: #6b7280; /* gris */
+  font-size: 11px;
+}
+.chart-card__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.chart-card__body {
+  overflow: auto;
+}
+.chart-card__footer {
+  margin-top: 4px;
+  color: #6b7280;
+  font-size: 12px;
+}

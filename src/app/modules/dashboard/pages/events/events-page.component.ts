@@ -85,7 +85,7 @@ export class EventsPageComponent implements OnInit {
 
   headerListEvents: ColumnModel[] = [
     { title: 'Cartel', key: 'img', sortable: false },
-    { title: 'Título', key: 'title', sortable: true },
+    { title: 'Título', key: 'title', sortable: true, width: ColumnWidth.XL },
     { title: 'Fecha', key: 'start', sortable: true, width: ColumnWidth.SM },
     {
       title: 'Descripción',
@@ -93,17 +93,35 @@ export class EventsPageComponent implements OnInit {
       sortable: true,
       innerHTML: true,
       showIndicatorOnEmpty: true,
-      width: ColumnWidth.XL,
     },
     {
       title: 'Espacio',
       key: 'espacioTable',
       sortable: true,
       width: ColumnWidth.LG,
+      textAlign: 'center',
     },
-    { title: 'Aforo', key: 'capacity', sortable: false, width: ColumnWidth.XS },
-    { title: 'Precio', key: 'access', sortable: true, width: ColumnWidth.MD },
-    { title: 'Estado', key: 'status', sortable: true, width: ColumnWidth.XS },
+    {
+      title: 'Aforo',
+      key: 'capacity',
+      sortable: false,
+      width: ColumnWidth.XS,
+      textAlign: 'center',
+    },
+    {
+      title: 'Precio',
+      key: 'access',
+      sortable: true,
+      width: ColumnWidth.XS,
+      textAlign: 'center',
+    },
+    {
+      title: 'Estado',
+      key: 'status',
+      sortable: true,
+      width: ColumnWidth.XS,
+      textAlign: 'center',
+    },
     {
       title: 'Inscripción',
       key: 'inscription',
@@ -143,7 +161,7 @@ export class EventsPageComponent implements OnInit {
   ngOnInit(): void {
     this.columnVisibility = this.generalService.setColumnVisibility(
       this.headerListEvents,
-      ['organizer', 'collaborator', 'sponsor'] // Coloca las columnas que deseas ocultar aquí
+      ['capacity', 'organizer', 'collaborator', 'sponsor'] // Coloca las columnas que deseas ocultar aquí
     );
 
     // Actualiza las columnas visibles según el estado de visibilidad

@@ -1,0 +1,25 @@
+.chart {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.bar {
+  fill: #dba4f1;
+  opacity: 0.9;
+}
+.tick {
+  fill: #634070;
+}
+
+.sep {
+  stroke: #e5e7eb;
+  stroke-width: 1;
+}
+.indice {
+  fill: #9aa1b5;
+}
+.bar-value {
+  fill: #111827;
+  font-weight: 700;
+}

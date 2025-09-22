@@ -1,0 +1,45 @@
+<table class="w-full -collapse tableTotalYears">
+  <colgroup>
+    <col class="w-[80px]" />
+    <col class="w-[140px]" />
+    @if (hasAmount()) {
+    <col class="w-[auto]" />
+    }
+  </colgroup>
+
+  <thead>
+    <tr>
+      <th class="p-2 text-center">Año</th>
+      <th class="p-2 text-center">
+        Nº {{ hasAmount() ? "Facturas" : "Eventos" }}
+      </th>
+      @if (hasAmount()) {
+      <th class="p-2 text-right pr-4">Total</th>
+      }
+    </tr>
+  </thead>
+
+  <tbody>
+    @for (row of rows(); track trackRow($index, row)) {
+    <tr class="hover:bg-gray-50 fila">
+      <td class="p-2 w-auto text-center">{{ row.year }}</td>
+      <td class="p-2 text-center">{{ row.count }}</td>
+      @if (hasAmount()) {
+      <td class="p-2 w-auto text-right">
+        {{ row.amount ?? 0 }}
+      </td>
+      }
+    </tr>
+    }
+
+    <tr class="border-t total_table">
+      <td class="text-center text-[12px] font-semibold">TOTAL</td>
+      <td class="p-2 text-center text-[12px] font-bold">{{ totalCount() }}</td>
+      @if (hasAmount()) {
+      <td class="p-2 text-right text-[12px] font-bold">
+        {{ totalAmount() ?? 0 }}
+      </td>
+      }
+    </tr>
+  </tbody>
+</table>

@@ -5,10 +5,23 @@
     matSort
     (matSortChange)="announceSortChange($event)"
     class="mat-elevation-z8 table"
-    [class.is-events]="typeSection === TypeList.Events"
-    [class.is-macro]="typeSection === TypeList.Macroevents"
-    [class.is-other]="
-      typeSection !== TypeList.Events && typeSection !== TypeList.Macroevents
+    [class.is-5-buttons-action]="typeSection === TypeList.Events"
+    [class.is-4-buttons-action]="
+      typeSection === TypeList.Macroevents ||
+      typeSection === TypeList.Books ||
+      typeSection === TypeList.Movies ||
+      typeSection === TypeList.Recipes ||
+      typeSection === TypeList.Piteras ||
+      typeSection === TypeList.Podcasts ||
+      typeSection === TypeList.Articles ||
+      typeSection === TypeList.Partners ||
+      typeSection === TypeList.Agents
+    "
+    [class.is-3-buttons-action]="
+      typeSection === TypeList.Places ||
+      typeSection === TypeList.Projects ||
+      typeSection === TypeList.Invoices ||
+      typeSection === TypeList.Subsidies
     "
   >
     <!-- Columna de número -->
@@ -303,13 +316,9 @@
         <p class="text-center">Gratis</p>
         } @if(element[column.key] === 'UNSPECIFIED'){
         <app-circle-indicator [item]="false"></app-circle-indicator>
-        }@if ((element.access ?? element[column.key]) === 'TICKETS') { @for
-        (ticket of (element.ticket_prices | parseJson); track ticket.type) {
-        <div class="invoices-list">
-          <p class="flex flex-row">{{ ticket.type }}</p>
-          <p>{{ ticket.price | eurosFormat }}</p>
-        </div>
-        } }}
+        }@if ((element.access ?? element[column.key]) === 'TICKETS') {
+        <p class="text-center">Entrada</p>
+        }}
         <!-- STATUS -->
         @case (column.key === 'status') { @if
         (element[column.key]!=='EJECUCION') {
@@ -503,7 +512,11 @@
           (click)="onOpenModal(typeModal, typeActionModal.Duplicate, element)"
         ></app-icon-action>
         } @if (typeSection === TypeList.Events || typeSection ===
-        TypeList.Macroevents) {
+        TypeList.Macroevents || typeSection === TypeList.Books || typeSection
+        === TypeList.Movies || typeSection === TypeList.Recipes || typeSection
+        === TypeList.Piteras || typeSection === TypeList.Podcasts|| typeSection
+        === TypeList.Articles || typeSection === TypeList.Partners ||
+        typeSection === TypeList.Agents ){
         <app-icon-action
           [icon]="'uil-image-redo'"
           [tooltip]="'Descargar imagen'"

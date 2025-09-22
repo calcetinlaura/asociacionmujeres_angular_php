@@ -1,0 +1,109 @@
+@if (vm$ | async; as vm) {
+<section class="grid gap-6 p-8">
+  <!-- Encabezado -->
+  <header class="flex flex-wrap items-center justify-between gap-3">
+    <h1 class="title">Panel de eventos</h1>
+    <div class="controls">
+      <div class="control">
+        <label>Año</label>
+        <select [ngModel]="year()" (ngModelChange)="onChangeYear($event)">
+          @for (year of years; track year) {
+          <option [value]="year">{{ year }}</option>
+          }
+        </select>
+      </div>
+      <div class="control seg">
+        <button
+          class="seg-btn"
+          [class.active]="variant() === 'latest'"
+          (click)="onChangeVariant('latest')"
+        >
+          Únicos
+        </button>
+        <button
+          class="seg-btn"
+          [class.active]="variant() === 'all'"
+          (click)="onChangeVariant('all')"
+        >
+          Todos
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- KPIs -->
+  <div class="kpi-grid">
+    <article class="card kpi">
+      <div class="kpi-title">
+        Eventos ({{ vm.variant === "latest" ? "únicos" : "todos" }})
+      </div>
+      <div class="kpi-value">{{ vm.kpis.total }}</div>
+      <div class="kpi-sub">
+        Promedio/mes: <strong>{{ vm.kpis.promedioMes }}</strong>
+      </div>
+    </article>
+
+    <article class="card kpi">
+      <div class="kpi-title">Únicos</div>
+      <div class="kpi-value">{{ vm.kpis.unicos }}</div>
+      <div class="kpi-sub">
+        Repetidos: <strong>{{ vm.kpis.repetidos }}</strong>
+      </div>
+    </article>
+
+    @if (vm.kpis.proximoEvento; as next) {
+    <article class="card kpi">
+      <div class="kpi-title">Próximo evento</div>
+      <div class="kpi-value ellipsis" [title]="next.title">
+        {{ next.title }}
+      </div>
+      <div class="kpi-sub">{{ next.date | date : "EEE, d MMM" }}</div>
+    </article>
+    }
+
+    <article class="card kpi">
+      <div class="kpi-title">Visibles ahora</div>
+      <div class="kpi-value">{{ vm.visible.length }}</div>
+      <div class="kpi-sub">
+        Filtro: <strong>{{ keyword() || "—" }}</strong>
+      </div>
+    </article>
+  </div>
+
+  <!-- Gráficas -->
+  <div class="flex flex-wrap gap-6 items-stretch">
+    <app-chart-card
+      class="flex-[1] min-w-[320px]"
+      [title]="'Eventos por mes (' + vm.year + ')'"
+      [subtitle]="
+        variant() === 'latest' ? 'Solo eventos únicos' : 'Todos los eventos'
+      "
+    >
+      <app-monthly-chart
+        [data]="vm.charts.byMonth"
+        [title]="'Eventos por mes (' + vm.year + ')'"
+        [width]="0"
+      />
+      <!-- ver nota (3) sobre width -->
+    </app-chart-card>
+
+    <app-chart-card
+      class="flex-[2] min-w-[320px]"
+      [title]="'Eventos anuales por espacio (' + vm.year + ')'"
+      [subtitle]="
+        variant() === 'latest' ? 'Solo eventos únicos' : 'Todos los eventos'
+      "
+      ariaDescription="Gráfico de barras horizontales con el total de eventos por espacio durante el año seleccionado"
+    >
+      <div card-actions></div>
+
+      <app-horizontal-bar-chart [data]="vm.charts.byPlace" />
+      <!-- sin width fijo: ocupará 100% -->
+
+      <div card-footer>
+        * Solo se cuentan eventos del año seleccionado ({{ vm.year }}).
+      </div>
+    </app-chart-card>
+  </div>
+</section>
+}

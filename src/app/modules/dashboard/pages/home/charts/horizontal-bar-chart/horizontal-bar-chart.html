@@ -1,0 +1,45 @@
+<svg
+  class="hbar-svg"
+  [attr.width]="fluid ? '100%' : width"
+  [attr.height]="svgHeight()"
+  [attr.viewBox]="'0 0 ' + canvasWidth + ' ' + svgHeight()"
+  preserveAspectRatio="xMinYMin meet"
+  role="img"
+  [attr.aria-label]="title"
+>
+  @for (d of data; track d.label; let i = $index) {
+  <!-- Etiqueta (máx 2 líneas, centrada verticalmente) -->
+  <text
+    [attr.x]="labelX()"
+    [attr.y]="labelBlockY(i, d.label)"
+    [attr.font-size]="labelFontSize"
+    class="indice"
+  >
+    @for (line of wrapLabel(d.label); track $index; let li = $index) {
+    <tspan [attr.x]="labelX()" [attr.dy]="li === 0 ? 0 : labelLineHeight">
+      {{ line }}
+    </tspan>
+    }
+  </text>
+
+  <!-- Barra -->
+  <rect
+    [attr.x]="barX()"
+    [attr.y]="barY(i)"
+    [attr.width]="barWidth(d.value)"
+    [attr.height]="barHeight"
+    rx="6"
+    ry="6"
+  />
+
+  <!-- Valor -->
+  <text
+    [attr.x]="valueX(d.value)"
+    [attr.y]="barY(i) + barHeight * .72"
+    font-size="10"
+    class="bar-value"
+  >
+    {{ d.value }}
+  </text>
+  }
+</svg>

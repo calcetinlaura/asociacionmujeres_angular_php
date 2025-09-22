@@ -62,7 +62,7 @@
         <div class="flex flex-col divide-y">
           @for (event of year.value; track trackEvent($index, event)) {
           <div
-            class="group flex w-full gap-4 py-2 cursor-pointer rounded-xl transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-sm hover:bg-lilaClaro/10"
+            class="group flex w-full gap-4 py-1 cursor-pointer rounded-xl transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-sm hover:bg-lilaClaro/10"
             (click)="onOpenEvent(event.id)"
             tabindex="0"
             (keyup.enter)="onOpenEvent(event.id)"
@@ -77,10 +77,8 @@
               }
             </div>
 
-            <div
-              class="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-2 items-center"
-            >
-              <div>
+            <div class="flex-1 flex items-center gap-x-4">
+              <div class="flex-1">
                 <p class="text-[12px] font-semibold tracking-wide">
                   {{ event.title }}
                 </p>
@@ -90,14 +88,12 @@
                 </p>
                 } @if (event.town) {
                 <p class="text-[12px] text-gray-600">
-                  @if (event.placeData?.address) {
-                  <span>{{ event.placeData?.address }}, </span> }
                   {{ event.town }}
                 </p>
                 }
               </div>
 
-              <div class="sm:text-center">
+              <div class="sm:text-center w-48">
                 @if (event.start) {
                 <p class="text-[12px] text-gray-600">
                   {{
@@ -105,60 +101,27 @@
                       | date : "EEEE dd MMMM" : "" : "es-ES"
                       | titlecase
                   }}
-                  <span *ngIf="event.time_start"
-                    >&nbsp;| {{ event.time_start.slice(0, 5) }}h</span
-                  >
                 </p>
                 }
               </div>
-
-              <div class="sm:text-right">
+              <div class="sm:text-center w-48">
+                @if (event.time_start){
+                <p>{{ event.time_start.slice(0, 5) }}h</p>
+                }
+              </div>
+              <div class="sm:text-right w-auto pr-3">
                 <!-- Si devuelves roles desde backend en event.agent_roles -->
-                @if (event.organizer?.length) { @if (event.organizer &&
-                event.organizer.length > 0) {
-                <div class="mb-6 flex">
-                  <div
-                    class="border-r-[1px] border-lilaOscuro w-[60px] text-[10px] flex justify-start items-center"
+                @let roles = rolesForAgent(event); @if (roles.length > 0) {
+                <div class="inline-flex flex-wrap gap-1 sm:justify-end">
+                  @for (role of roles; track role) {
+                  <span
+                    class="px-2 py-1 text-[10px] font-bold rounded bg-lilaClaro/20 text-lilaOscuro border border-lilaOscuro/30"
                   >
-                    Organiza
-                  </div>
-                  <div class="flex flex-col justify-center">
-                    @for (organizer of event.organizer; track organizer) {
-                    <p class="text-[10px] font-bold pl-3">
-                      {{ organizer.name }}
-                    </p>
-                    }
-                  </div>
+                    {{ role }}
+                  </span>
+                  }
                 </div>
-                } @if (event.collaborator && event.collaborator.length > 0) {
-                <div class="mb-6 flex">
-                  <div
-                    class="border-r-[1px] border-lilaOscuro w-[60px] text-[10px] flex justify-start items-center"
-                  >
-                    Colabora
-                  </div>
-
-                  <div class="flex flex-col justify-center">
-                    @for (colab of event.collaborator; track colab) {
-                    <p class="text-[10px] font-bold pl-3">{{ colab.name }}</p>
-                    }
-                  </div>
-                </div>
-                } @if (event.sponsor && event.sponsor.length > 0) {
-                <div class="mb-6 flex">
-                  <div
-                    class="border-r-[1px] border-lilaOscuro w-[60px] text-[10px] flex justify-start items-center"
-                  >
-                    Patrocina
-                  </div>
-
-                  <div class="flex flex-col justify-center">
-                    @for (sponsor of event.sponsor; track sponsor) {
-                    <p class="text-[10px] font-bold pl-3">{{ sponsor.name }}</p>
-                    }
-                  </div>
-                </div>
-                } }
+                }
               </div>
             </div>
           </div>
@@ -172,33 +135,8 @@
     <div class="mb-4">
       <p class="text-[14px] font-semibold">Eventos totales por año</p>
     </div>
-    <table class="w-full -collapse">
-      <colgroup>
-        <col class="w-[80px]" />
-        <col class="w-[140px]" />
-      </colgroup>
-      <thead>
-        <tr>
-          <th class="p-2 text-center">Año</th>
-          <th class="p-2 text-center">Nº Eventos</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (year of (eventsByYear | keyvalue : keyDesc); track
-        trackYear($index, year)) {
-        <tr class="hover:bg-gray-50">
-          <td class="p-2 w-auto text-center">{{ year.key }}</td>
-          <td class="p-2 text-center">{{ year.value.length }}</td>
-        </tr>
-        }
-        <tr class="border-t">
-          <td class="text-center text-[12px] font-semibold">TOTAL</td>
-          <td class="p-2 text-center text-[12px] font-bold">
-            {{ totalEvents }}
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <app-table-total-years [rows]="eventsRows" [totalCount]="totalEvents">
+    </app-table-total-years>
 
     } @else {
     <!-- 🔹 Mensaje si no hay eventos -->

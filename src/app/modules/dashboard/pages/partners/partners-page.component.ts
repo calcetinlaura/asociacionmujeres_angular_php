@@ -71,12 +71,19 @@ export class PartnersPageComponent implements OnInit {
   displayedColumns: string[] = [];
   headerListPartners: ColumnModel[] = [
     { title: 'Imagen', key: 'img', sortable: false },
-    { title: 'Nombre', key: 'name', sortable: true },
+    {
+      title: 'Nombre',
+      key: 'name',
+      sortable: true,
+      textAlign: 'center',
+      width: ColumnWidth.LG,
+    },
     {
       title: 'Apellidos',
       key: 'surname',
       sortable: true,
-      width: ColumnWidth.XL,
+      textAlign: 'center',
+      width: ColumnWidth.LG,
     },
     {
       title: 'Fecha nacimiento',
@@ -85,7 +92,13 @@ export class PartnersPageComponent implements OnInit {
       width: ColumnWidth.LG,
       textAlign: 'center',
     },
-    { title: 'Dirección', key: 'town', sortable: true, width: ColumnWidth.XL },
+    {
+      title: 'Dirección',
+      key: 'town',
+      sortable: true,
+      width: ColumnWidth.FULL,
+      textAlign: 'center',
+    },
     {
       title: 'Teléfono',
       key: 'phone',
@@ -101,6 +114,7 @@ export class PartnersPageComponent implements OnInit {
       sortable: true,
       showIndicatorOnEmpty: true,
       width: ColumnWidth.LG,
+      textAlign: 'center',
     },
     {
       title: 'Última cuota',

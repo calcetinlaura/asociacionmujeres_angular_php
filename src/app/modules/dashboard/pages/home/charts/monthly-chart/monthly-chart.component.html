@@ -1,0 +1,60 @@
+<svg
+  #svgEl
+  class="chart"
+  xmlns="http://www.w3.org/2000/svg"
+  [attr.viewBox]="'0 0 ' + canvasWidth + ' ' + canvasHeight"
+>
+  @if (maxCount(data); as max) { @if (max === 0) {
+  <text
+    [attr.x]="canvasWidth / 2"
+    [attr.y]="canvasHeight / 2"
+    text-anchor="middle"
+    class="muted"
+  >
+    Sin datos
+  </text>
+  } @else {
+  <g>
+    <!-- Línea separadora -->
+    <line
+      [attr.x1]="left"
+      [attr.y1]="baseY + separatorOffset"
+      [attr.x2]="left + usableWidth"
+      [attr.y2]="baseY + separatorOffset"
+      class="sep"
+      [attr.stroke-width]="effStroke1"
+    />
+    @for (m of (data || []); track $index; let i = $index) {
+    <rect
+      [attr.x]="i * (usableWidth / 12) + left"
+      [attr.y]="baseY - (m.count / max) * usableHeight"
+      [attr.width]="usableWidth / 12 - 12"
+      [attr.height]="(m.count / max) * usableHeight"
+      rx="12"
+      ry="12"
+      class="bar"
+    />
+    @if (m.count > 0) {
+    <text
+      [attr.x]="i * (usableWidth / 12) + left + (usableWidth / 12 - 12) / 2"
+      [attr.y]="baseY - (m.count / max) * usableHeight - valueTopGap"
+      text-anchor="middle"
+      class="bar-value"
+      [attr.font-size]="effValueFont"
+    >
+      {{ m.count }}
+    </text>
+    }
+    <text
+      [attr.x]="i * (usableWidth / 12) + left + (usableWidth / 12 - 12) / 2"
+      [attr.y]="baseY + labelOffset"
+      class="tick"
+      [attr.font-size]="effTickFont"
+      text-anchor="middle"
+    >
+      {{ months[i] }}
+    </text>
+    }
+  </g>
+  } }
+</svg>
