@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { AgentsPageComponent } from './pages/agents/agents-page.component';
 import { ArticlesPageComponent } from './pages/articles/articles-page.component';
 import { BooksPageComponent } from './pages/books/books-page.component';
+import { CalendarPageComponent } from './pages/calendar/calendar-page.component';
 import { CreditorsPageComponent } from './pages/creditors/creditors-page.component';
 import { EventsPageComponent } from './pages/events/events-page.component';
 import { HomePageComponent } from './pages/home/home-page.component';
@@ -24,6 +25,7 @@ export const dashboardRoutes: Routes = [
     component: LayoutPageComponent,
     children: [
       { path: 'home', component: HomePageComponent },
+      { path: 'calendar', component: CalendarPageComponent },
       { path: 'events', component: EventsPageComponent },
       { path: 'macroevents', component: MacroeventsPageComponent },
       { path: 'books', component: BooksPageComponent },
@@ -40,7 +42,7 @@ export const dashboardRoutes: Routes = [
       { path: 'creditors', component: CreditorsPageComponent },
       { path: 'agents', component: AgentsPageComponent },
       { path: 'settings', component: SettingsPageComponent },
-      { path: '**', redirectTo: 'events' },
+      { path: '**', redirectTo: 'home' },
     ],
   },
 ];

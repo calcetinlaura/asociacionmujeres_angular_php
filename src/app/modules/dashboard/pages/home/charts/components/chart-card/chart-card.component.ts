@@ -18,4 +18,5 @@ export class ChartCardComponent {
 
   /** Alt de accesibilidad para el contenido (úsalo si el gráfico no es autoexplicativo) */
   @Input() ariaDescription?: string;
+  @Input() footer? = false;
 }

@@ -34,6 +34,11 @@ export class SideBarComponent implements OnInit {
     ];
     this.eventsMenu = [
       {
+        name: 'Calendario',
+        icon: 'uil-calendar-alt',
+        router: ['/dashboard/calendar'],
+      },
+      {
         name: 'Macroeventos',
         icon: 'uil-calculator-alt',
         router: ['/dashboard/macroevents'],

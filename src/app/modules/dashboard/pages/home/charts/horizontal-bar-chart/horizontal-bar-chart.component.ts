@@ -7,8 +7,8 @@ export type HBarDatum = { label: string; value: number };
   selector: 'app-horizontal-bar-chart',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './horizontal-bar-chart.html',
-  styleUrls: ['./horizontal-bar-chart.css'],
+  templateUrl: './horizontal-bar-chart.component.html',
+  styleUrls: ['./horizontal-bar-chart.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HorizontalBarChartComponent {

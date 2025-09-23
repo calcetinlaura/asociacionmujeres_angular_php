@@ -9,6 +9,7 @@ import { FormsModule } from '@angular/forms';
 import {
   catchError,
   combineLatest,
+  distinctUntilChanged,
   forkJoin,
   map,
   Observable,
@@ -21,8 +22,13 @@ import {
 } from 'src/app/application/events.facade';
 import { EventModelFullData } from 'src/app/core/interfaces/event.interface';
 import { EventsService } from 'src/app/core/services/events.services';
-import { ChartCardComponent } from './charts/components/chart-card/chart-card';
-import { HorizontalBarChartComponent } from './charts/horizontal-bar-chart/horizontal-bar-chart';
+
+import { BooksService } from 'src/app/core/services/books.services';
+import { MoviesService } from 'src/app/core/services/movies.services';
+import { RecipesService } from 'src/app/core/services/recipes.services';
+import { CheeseChartComponent } from './charts/cheese-chart/cheese-chart.component';
+import { ChartCardComponent } from './charts/components/chart-card/chart-card.component';
+import { HorizontalBarChartComponent } from './charts/horizontal-bar-chart/horizontal-bar-chart.component';
 import { MonthlyChartComponent } from './charts/monthly-chart/monthly-chart.component';
 
 // ========= Helpers de fecha =========
@@ -74,10 +80,48 @@ export type DashboardVM = {
     byMonth: { month: number; count: number }[]; // 0..11
     byWeek: { week: number; count: number }[]; // 1..53 aprox
     uniqueVsRepeated: { label: string; value: number }[];
-    byPlace: { label: string; value: number }[]; // <-- NUEVO
+    byPlace: { label: string; value: number }[];
   };
 };
 
+// ===== Donuts libros por género =====
+export type PieDatum = { label: string; value: number };
+function groupBooksByGender(books: any[]): PieDatum[] {
+  const mapG = new Map<string, number>();
+  for (const b of books ?? []) {
+    const g = (b?.gender || 'Sin género') as string;
+    mapG.set(g, (mapG.get(g) || 0) + 1);
+  }
+  return Array.from(mapG.entries())
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => b.value - a.value);
+}
+
+// ===== Quesito películas por género ===== (NUEVO)
+function groupMoviesByGender(movies: any[]): PieDatum[] {
+  const mapG = new Map<string, number>();
+  for (const m of movies ?? []) {
+    const g = (m?.gender || 'Sin género') as string; // ajusta a tu clave real si es 'genre'
+    mapG.set(g, (mapG.get(g) || 0) + 1);
+  }
+  return Array.from(mapG.entries())
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => b.value - a.value);
+}
+function groupRecipesByCategory(recipes: any[]): PieDatum[] {
+  const mapC = new Map<string, number>();
+  for (const r of recipes ?? []) {
+    // intenta varias claves comunes
+    const c = (r?.category ??
+      r?.categoria ??
+      r?.type ??
+      'Sin categoría') as string;
+    mapC.set(c, (mapC.get(c) || 0) + 1);
+  }
+  return Array.from(mapC.entries())
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => b.value - a.value);
+}
 @Component({
   selector: 'app-home-page',
   standalone: true,
@@ -87,6 +131,7 @@ export type DashboardVM = {
     MonthlyChartComponent,
     HorizontalBarChartComponent,
     ChartCardComponent,
+    CheeseChartComponent,
   ],
   templateUrl: './home-page.component.html',
   styleUrls: ['./home-page.component.css'],
@@ -97,7 +142,9 @@ export class HomePageComponent {
   readonly Math = Math;
   private readonly facade = inject(EventsFacade);
   private readonly eventsService = inject(EventsService);
-
+  private readonly booksService = inject(BooksService);
+  private readonly moviesService = inject(MoviesService); // 👈 NUEVO
+  private readonly recipesService = inject(RecipesService);
   // Constantes para gráficas SVG
   private static readonly CHART_W = 600;
   private static readonly CHART_XPAD = 20;
@@ -107,7 +154,11 @@ export class HomePageComponent {
   // Estado UI
   readonly now = new Date();
   readonly currentYear = this.now.getFullYear();
-  readonly years = Array.from({ length: 6 }, (_, i) => this.currentYear - i); // año actual y 5 anteriores
+  readonly START_YEAR = 2018;
+  readonly years = Array.from(
+    { length: this.currentYear - this.START_YEAR + 1 },
+    (_, i) => this.currentYear - i
+  );
   readonly year = signal<number>(this.currentYear);
   readonly variant = signal<PeriodicVariant>('latest');
   readonly keyword = signal<string>('');
@@ -227,10 +278,38 @@ export class HomePageComponent {
             { label: 'Únicos', value: unicos },
             { label: 'Repetidos', value: repetidos },
           ],
-          byPlace, // <-- NUEVO
+          byPlace,
         },
       } as DashboardVM;
     })
+  );
+
+  // ===== Donuts libros por género =====
+
+  /** Donut 1: libros por género del año seleccionado */
+  readonly booksByGenreYear$: Observable<PieDatum[]> = this.vm$.pipe(
+    map((vm) => vm.year),
+    distinctUntilChanged(),
+    switchMap((y) => this.booksService.getBooksByYear(y)),
+    map((books) => groupBooksByGender(books)),
+    catchError(() => of([]))
+  );
+
+  /** Quesito 1: películas por género del año seleccionado */
+  readonly moviesByGenreYear$: Observable<PieDatum[]> = this.vm$.pipe(
+    map((vm) => vm.year),
+    distinctUntilChanged(),
+    switchMap((y) => this.moviesService.getMoviesByYear(y)),
+    map((movies) => groupMoviesByGender(movies)),
+    catchError(() => of([]))
+  );
+  /** Quesito: recetas por categoría del año seleccionado */
+  readonly recipesByCategoryYear$: Observable<PieDatum[]> = this.vm$.pipe(
+    map((vm) => vm.year),
+    distinctUntilChanged(),
+    switchMap((y) => this.recipesService.getRecipesByYear(y)),
+    map((recipes) => groupRecipesByCategory(recipes)),
+    catchError(() => of([]))
   );
 
   // ========= Utilidades para las gráficas SVG =========

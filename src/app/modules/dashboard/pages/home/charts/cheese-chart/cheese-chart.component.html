@@ -1,0 +1,80 @@
+<svg
+  class="pie-svg"
+  [attr.width]="'100%'"
+  [attr.viewBox]="vbString()"
+  preserveAspectRatio="xMidYMid meet"
+  role="img"
+  [attr.aria-label]="title"
+>
+  <!-- Fondo cuando no hay datos -->
+  @if (isEmpty) {
+  <circle
+    [attr.cx]="cx"
+    [attr.cy]="cy"
+    [attr.r]="rOuter"
+    [attr.fill]="emptyFill"
+    [attr.stroke]="emptyStroke"
+  />
+  } @for (a of arcs(); track a.i) {
+  <!-- Quesito -->
+  <path
+    [attr.d]="piePath(cx, cy, rOuter, a.start, a.end)"
+    [attr.fill]="a.color"
+    [attr.stroke]="a.color"
+    [attr.opacity]="0.9"
+  />
+  <!-- Conectores y etiquetas (se omitirán si isEmpty) -->
+  <line
+    [attr.x1]="a.connector.x1"
+    [attr.y1]="a.connector.y1"
+    [attr.x2]="a.connector.x2"
+    [attr.y2]="a.connector.y2"
+    class="connector"
+  />
+  <line
+    [attr.x1]="a.connector.x2"
+    [attr.y1]="a.connector.y2"
+    [attr.x2]="a.connector.x3"
+    [attr.y2]="a.connector.y3"
+    class="connector"
+  />
+  <circle
+    [attr.cx]="a.connector.x2"
+    [attr.cy]="a.connector.y2"
+    r="1.5"
+    class="connector-dot"
+  />
+  <rect
+    class="label-box"
+    [attr.x]="a.box.x"
+    [attr.y]="a.box.y"
+    [attr.width]="a.box.w"
+    [attr.height]="a.box.h"
+    rx="6"
+    ry="6"
+    [attr.stroke]="a.color"
+  />
+  <text class="pie-label" [attr.text-anchor]="'middle'">
+    <tspan [attr.x]="a.text.cx" [attr.y]="a.text.y1">{{ a.label }}</tspan>
+    <tspan class="ttl" [attr.x]="a.text.cx" [attr.y]="a.text.y2">
+      {{ a.value }}
+    </tspan>
+    <tspan class="pct" [attr.x]="a.text.cx" [attr.y]="a.text.y3">
+      {{ pct(a.value) }}%
+    </tspan>
+  </text>
+  }
+
+  <!-- Total centrado -->
+  <text [attr.x]="cx" [attr.y]="cy - 2" text-anchor="middle" class="pie-total">
+    {{ total() }}
+  </text>
+  <text
+    [attr.x]="cx"
+    [attr.y]="cy + 14"
+    text-anchor="middle"
+    class="pie-caption"
+  >
+    total
+  </text>
+</svg>

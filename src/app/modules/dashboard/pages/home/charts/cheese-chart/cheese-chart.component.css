@@ -1,0 +1,65 @@
+.pie-svg {
+  display: block;
+  width: 100%;
+  height: auto; /* se ajusta a la relación del viewBox */
+  overflow: visible; /* por si hay sombras */
+}
+
+.connector {
+  stroke: currentColor;
+  stroke-width: 1;
+  opacity: 0.6;
+}
+
+.connector-dot {
+  fill: currentColor;
+  opacity: 0.6;
+}
+.label-box {
+  fill: #fff;
+  stroke-width: 1.25;
+  shape-rendering: geometricPrecision;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.05));
+}
+
+.pie-label {
+  font: 10px/1.15 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  fill: currentColor;
+  /* halo sutil para legibilidad sobre fondos claros */
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 2.5px;
+  stroke-linejoin: round;
+}
+.pie-label .ttl {
+  /* línea del TOTAL dentro de la etiqueta */
+  font-weight: 700; /* negrita */
+}
+
+.pie-label .pct {
+  /* porcentaje: más pequeño y grisecito */
+  font-size: 9px;
+  opacity: 0.6; /* si quieres gris fijo: fill: #6b7280; */
+}
+/* nª Total centrado en el medio del gráfico*/
+.pie-total {
+  font: 800 22px/1 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  fill: currentColor;
+}
+/* Total centrado en el medio del gráfcio */
+.pie-caption {
+  font: 9px/1 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  fill: currentColor;
+  opacity: 0.7;
+  color: rgb(81, 80, 80);
+  text-transform: uppercase;
+}
+.connector {
+  stroke: currentColor;
+  stroke-width: 1;
+  opacity: 0.6;
+}
+.connector-dot {
+  fill: currentColor;
+  opacity: 0.6;
+}

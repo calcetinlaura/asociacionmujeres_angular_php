@@ -16,9 +16,10 @@
   <section class="chart-card__body">
     <ng-content></ng-content>
   </section>
-
+  @if(footer){
   <!-- Pie opcional (leyendas, notas, etc.) -->
   <footer class="chart-card__footer">
     <ng-content select="[card-footer]"></ng-content>
   </footer>
+  }
 </article>

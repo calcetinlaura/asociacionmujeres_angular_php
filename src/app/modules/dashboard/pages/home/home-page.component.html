@@ -2,7 +2,7 @@
 <section class="grid gap-6 p-8">
   <!-- Encabezado -->
   <header class="flex flex-wrap items-center justify-between gap-3">
-    <h1 class="title">Panel de eventos</h1>
+    <h1 class="title">eventos</h1>
     <div class="controls">
       <div class="control">
         <label>Año</label>
@@ -70,7 +70,7 @@
     </article>
   </div>
 
-  <!-- Gráficas -->
+  <!-- EVENTOS -->
   <div class="flex flex-wrap gap-6 items-stretch">
     <app-chart-card
       class="flex-[1] min-w-[320px]"
@@ -94,6 +94,7 @@
         variant() === 'latest' ? 'Solo eventos únicos' : 'Todos los eventos'
       "
       ariaDescription="Gráfico de barras horizontales con el total de eventos por espacio durante el año seleccionado"
+      [footer]="true"
     >
       <div card-actions></div>
 
@@ -103,6 +104,70 @@
       <div card-footer>
         * Solo se cuentan eventos del año seleccionado ({{ vm.year }}).
       </div>
+    </app-chart-card>
+  </div>
+
+  <div class="flex flex-wrap gap-6 items-stretch w-full">
+    <!-- <app-chart-card
+      class="flex-[1] min-w-[320px]"
+      [title]="'Libros donados por género (' + vm.year + ')'"
+    >
+      @if (booksByGenreYear$ | async; as booksYear) {
+      <app-donut-chart
+        [title]="'Libros por género (año seleccionado)'"
+        [data]="booksYear"
+        [size]="260"
+        [ring]="28"
+      />
+      }
+    </app-chart-card> -->
+    <app-chart-card
+      class="flex-[1] min-w-[320px]"
+      [title]="'Libros donadas por género (' + vm.year + ')'"
+    >
+      @if (booksByGenreYear$ | async; as booksYear) {
+      <app-cheese-chart
+        [data]="booksByGenreYear$ | async"
+        [size]="220"
+        [rScale]="0.84"
+        [labelOffset]="34"
+        [labelMinGap]="10"
+        [labelSideGap]="16"
+        [margin]="{ top: 5, right: 40, bottom: 5, left: 40 }"
+      />
+      }
+    </app-chart-card>
+    <app-chart-card
+      class="flex-[1] min-w-[320px]"
+      [title]="'Películas donadas por género (' + vm.year + ')'"
+    >
+      @if (moviesByGenreYear$ | async; as moviesYear) {
+      <app-cheese-chart
+        [data]="moviesByGenreYear$ | async"
+        [size]="220"
+        [rScale]="0.84"
+        [labelOffset]="34"
+        [labelMinGap]="10"
+        [labelSideGap]="16"
+        [margin]="{ top: 5, right: 40, bottom: 5, left: 40 }"
+      />
+      }
+    </app-chart-card>
+    <app-chart-card
+      class="flex-[1] min-w-[320px]"
+      [title]="'Recetas por categoría (' + vm.year + ')'"
+    >
+      @if (recipesByCategoryYear$ | async; as recipesYear) {
+      <app-cheese-chart
+        [data]="recipesByCategoryYear$ | async"
+        [size]="220"
+        [rScale]="0.84"
+        [labelOffset]="34"
+        [labelMinGap]="10"
+        [labelSideGap]="16"
+        [margin]="{ top: 5, right: 40, bottom: 5, left: 40 }"
+      />
+      }
     </app-chart-card>
   </div>
 </section>
