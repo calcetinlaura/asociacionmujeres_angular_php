@@ -27,8 +27,10 @@ import { toObservable } from '@angular/core/rxjs-interop';
 import { BooksService } from 'src/app/core/services/books.services';
 import { MoviesService } from 'src/app/core/services/movies.services';
 import { RecipesService } from 'src/app/core/services/recipes.services';
+import { AnnualLineChartComponent } from './charts/annual-line-chart/annual-line-chart.component';
 import { CheeseChartComponent } from './charts/cheese-chart/cheese-chart.component';
 import { ChartCardComponent } from './charts/components/chart-card/chart-card.component';
+import { DonutChartComponent } from './charts/donut-chart/donut-chart.component';
 import { HorizontalBarChartComponent } from './charts/horizontal-bar-chart/horizontal-bar-chart.component';
 import { MonthlyChartComponent } from './charts/monthly-chart/monthly-chart.component';
 
@@ -42,9 +44,8 @@ function monthIdx(d: Date): number {
   return d.getMonth();
 }
 function weekOfYear(d: Date): number {
-  // ISO week number (aprox., suficiente para gráfica)
   const tmp = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-  const dayNum = tmp.getUTCDay() || 7; // 1..7 (domingo=7)
+  const dayNum = tmp.getUTCDay() || 7;
   tmp.setUTCDate(tmp.getUTCDate() + 4 - dayNum);
   const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
   const diffDays =
@@ -66,7 +67,7 @@ function getPlaceName(e: EventModelFullData): string {
 
 export type DashboardVM = {
   year: number;
-  variant: PeriodicVariant; // 'latest' (no repetidos) o 'all'
+  variant: PeriodicVariant;
   visible: EventModelFullData[];
   all: EventModelFullData[];
   latest: EventModelFullData[];
@@ -78,8 +79,8 @@ export type DashboardVM = {
     proximoEvento?: { title: string; date: Date } | null;
   };
   charts: {
-    byMonth: { month: number; count: number }[]; // 0..11
-    byWeek: { week: number; count: number }[]; // 1..53 aprox
+    byMonth: { month: number; count: number }[];
+    byWeek: { week: number; count: number }[];
     uniqueVsRepeated: { label: string; value: number }[];
     byPlace: { label: string; value: number }[];
   };
@@ -149,6 +150,8 @@ type YearFilter = number | 'historic';
     HorizontalBarChartComponent,
     ChartCardComponent,
     CheeseChartComponent,
+    AnnualLineChartComponent,
+    DonutChartComponent,
   ],
   templateUrl: './home-page.component.html',
   styleUrls: ['./home-page.component.css'],
@@ -181,7 +184,7 @@ export class HomePageComponent {
   /** Año numérico para la sección de eventos (KPI/visible) */
   readonly year = signal<number>(this.currentYear);
 
-  /** Filtro visible para quesitos **y** charts de eventos: número o 'historic' */
+  /** Filtro visible para charts: número o 'historic' */
   readonly viewYear = signal<YearFilter>(this.currentYear);
   private readonly viewYear$ = toObservable(this.viewYear);
 
@@ -331,7 +334,7 @@ export class HomePageComponent {
         return forkJoin(
           this.years.map((y) =>
             this.eventsService
-              .getEventsByYear(y, variant) // usa 'latest' o 'all'
+              .getEventsByYear(y, variant)
               .pipe(catchError(() => of([] as EventModelFullData[])))
           )
         ).pipe(map((lists) => lists.flat()));
@@ -342,7 +345,7 @@ export class HomePageComponent {
     })
   );
 
-  /** Eventos por mes (histórico o anual según selección) para <app-monthly-chart> */
+  /** Eventos por mes (histórico o anual) para <app-monthly-chart> */
   readonly eventsByMonthForChart$: Observable<
     { month: number; count: number }[]
   > = this.eventsForCharts$.pipe(
@@ -360,7 +363,7 @@ export class HomePageComponent {
     })
   );
 
-  /** Eventos por espacio (histórico o anual según selección) para <app-horizontal-bar-chart> */
+  /** Eventos por espacio (histórico o anual) para <app-horizontal-bar-chart> */
   readonly eventsByPlaceForChart$: Observable<
     { label: string; value: number }[]
   > = this.eventsForCharts$.pipe(
@@ -376,9 +379,25 @@ export class HomePageComponent {
     })
   );
 
-  // ===== Quesitos (pueden ser por año o HISTÓRICO) =====
+  /** Serie anual (2018..actual) para la línea histórica superior, respetando Únicos/Todos */
+  readonly annual$: Observable<{ year: number; count: number }[]> =
+    combineLatest([of(this.years), this.variant$]).pipe(
+      switchMap(([ys, variant]) =>
+        forkJoin(
+          ys.map((y) =>
+            this.eventsService.getEventsByYear(y, variant).pipe(
+              map((list) => ({ year: y, count: (list ?? []).length })),
+              catchError(() => of({ year: y, count: 0 }))
+            )
+          )
+        )
+      ),
+      map((arr) => arr.sort((a, b) => a.year - b.year))
+    );
 
-  /** Libros por género */
+  // ========= QUESITOS (AÑO o HISTÓRICO) =========
+
+  /** Libros por género (año o histórico) */
   readonly booksByGenreYear$: Observable<PieDatum[]> = this.viewYear$.pipe(
     distinctUntilChanged(),
     switchMap((y) => {
@@ -397,7 +416,7 @@ export class HomePageComponent {
     })
   );
 
-  /** Películas por género */
+  /** Películas por género (año o histórico) */
   readonly moviesByGenreYear$: Observable<PieDatum[]> = this.viewYear$.pipe(
     distinctUntilChanged(),
     switchMap((y) => {
@@ -416,7 +435,7 @@ export class HomePageComponent {
     })
   );
 
-  /** Recetas por categoría */
+  /** Recetas por categoría (año o histórico) */
   readonly recipesByCategoryYear$: Observable<PieDatum[]> = this.viewYear$.pipe(
     distinctUntilChanged(),
     switchMap((y) => {
@@ -435,8 +454,11 @@ export class HomePageComponent {
     })
   );
 
-  // ========= Utilidades varias =========
-  linePointsWeeks(data: { count: number }[], ymax: number): string {
+  // ========= Utilidades para líneas =========
+  linePointsYears(
+    data: { year: number; count: number }[],
+    ymax: number
+  ): string {
     if (!data || !data.length || !ymax) return '';
     const n = data.length;
     const denom = Math.max(1, n - 1);
@@ -464,7 +486,7 @@ export class HomePageComponent {
     return a.reduce((m, x) => Math.max(m, x.count ?? 0), 0);
   }
 
-  // Donut (devolver path SVG)
+  // Donut (devolver path SVG) – usado por otras vistas
   donutPath(
     cx: number,
     cy: number,
@@ -473,7 +495,7 @@ export class HomePageComponent {
     endAngle: number
   ) {
     const sx = cx + r * Math.cos(startAngle);
-    const sy = cy + r * Math.sin(startAngle);
+    const sy = cy + r * Math.sin(endAngle);
     const ex = cx + r * Math.cos(endAngle);
     const ey = cy + r * Math.sin(endAngle);
     const largeArc = endAngle - startAngle > Math.PI ? 1 : 0;
@@ -484,21 +506,4 @@ export class HomePageComponent {
     if (!points.length) return '';
     return points.map((p, i) => `${i ? 'L' : 'M'} ${p.x} ${p.y}`).join(' ');
   }
-
-  // Serie anual para sparklines, etc.
-  readonly annual$: Observable<{ year: number; count: number }[]> = of(
-    this.years
-  ).pipe(
-    switchMap((ys) =>
-      forkJoin(
-        ys.map((y) =>
-          this.eventsService.getEventsByYear(y, 'all').pipe(
-            map((list) => ({ year: y, count: (list ?? []).length })),
-            catchError(() => of({ year: y, count: 0 }))
-          )
-        )
-      )
-    ),
-    map((arr) => arr.sort((a, b) => a.year - b.year))
-  );
 }

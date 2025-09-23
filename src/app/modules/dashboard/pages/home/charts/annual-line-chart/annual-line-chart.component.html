@@ -1,0 +1,89 @@
+<figure class="card-figure">
+  <figcaption class="sr-only">
+    {{ title }}{{ subtitle ? ". " + subtitle : "" }}
+  </figcaption>
+
+  <svg
+    class="line-svg"
+    [class.compact]="compact"
+    [attr.viewBox]="'0 0 ' + outerWidth + ' ' + outerHeight"
+    preserveAspectRatio="xMidYMid meet"
+    role="img"
+    [attr.aria-label]="title"
+  >
+    <!-- Grid Y + etiquetas -->
+    @for (t of yTicks(); track t.v) {
+    <line
+      class="grid"
+      [attr.x1]="margin.left"
+      [attr.x2]="outerWidth - margin.right"
+      [attr.y1]="t.y"
+      [attr.y2]="t.y"
+    />
+    <text
+      class="tick-y"
+      [attr.x]="margin.left - 6"
+      [attr.y]="t.y"
+      text-anchor="end"
+      dominant-baseline="middle"
+    >
+      {{ formatY(t.v) }}
+    </text>
+    }
+
+    <!-- Eje X -->
+    <line
+      class="axis"
+      [attr.x1]="margin.left"
+      [attr.x2]="outerWidth - margin.right"
+      [attr.y1]="margin.top + innerHeight"
+      [attr.y2]="margin.top + innerHeight"
+    />
+    @for (tx of xTicks(); track tx.year; let i = $index) {
+    <line
+      class="axis"
+      [attr.x1]="tx.x"
+      [attr.x2]="tx.x"
+      [attr.y1]="margin.top + innerHeight"
+      [attr.y2]="margin.top + innerHeight + 3"
+    />
+    <text
+      class="tick-x"
+      [attr.x]="tx.x"
+      [attr.y]="margin.top + innerHeight + 14"
+      text-anchor="middle"
+    >
+      {{ tx.year }}
+    </text>
+    } @if (isEmpty) {
+    <text
+      class="empty"
+      [attr.x]="outerWidth / 2"
+      [attr.y]="outerHeight / 2"
+      text-anchor="middle"
+      dominant-baseline="middle"
+    >
+      Sin datos
+    </text>
+    } @else {
+    <!-- Línea -->
+    <polyline class="series" [attr.points]="pointsAttr()"></polyline>
+
+    <!-- Puntos + etiquetas de valor -->
+    @for (d of data; track d.year; let i = $index) {
+    <circle class="dot" [attr.cx]="x(i)" [attr.cy]="y(d.count)" r="2.4">
+      <title>{{ d.year }} — {{ formatY(d.count) }}</title>
+    </circle>
+    <!-- etiqueta en negrita 9px encima del punto -->
+    <text
+      class="dot-label"
+      [attr.x]="x(i)"
+      [attr.y]="labelY(d.count)"
+      text-anchor="middle"
+      dominant-baseline="baseline"
+    >
+      {{ d.count }}
+    </text>
+    } }
+  </svg>
+</figure>

@@ -54,12 +54,44 @@
       </div>
     </article>
   </div>
-
+  <div class="flex flex-wrap gap-6 items-stretch">
+    @if (viewYear() === 'historic') {
+    <app-chart-card
+      class="flex-[2] min-w-[320px]"
+      [title]="'Eventos por año (Histórico 2018–' + currentYear + ')'"
+      [subtitle]="
+        variant() === 'latest' ? 'Solo eventos únicos' : 'Todos los eventos'
+      "
+    >
+      @if (annual$ | async; as series) {
+      <app-annual-line-chart
+        [data]="annual$ | async"
+        [innerHeight]="110"
+        [margin]="{ top: 6, right: 12, bottom: 18, left: 28 }"
+        [yGridLines]="3"
+        [compact]="true"
+      />
+      }
+    </app-chart-card>
+    }<app-chart-card
+      class="flex-[1] min-w-[320px]"
+      [title]="'Libros donados por género (' + vm.year + ')'"
+    >
+      @if (booksByGenreYear$ | async; as booksYear) {
+      <app-donut-chart
+        [title]="'Libros por género (año seleccionado)'"
+        [data]="booksYear"
+        [size]="260"
+        [ring]="28"
+      />
+      }
+    </app-chart-card>
+  </div>
   <!-- EVENTOS -->
   <div class="flex flex-wrap gap-6 items-stretch">
     <app-chart-card
       class="flex-[1] min-w-[320px]"
-      [title]="'Eventos por mes (' + vm.year + ')'"
+      [title]="'Eventos por mes (' + yearLabel() + ')'"
       [subtitle]="
         variant() === 'latest' ? 'Solo eventos únicos' : 'Todos los eventos'
       "
@@ -74,7 +106,7 @@
 
     <app-chart-card
       class="flex-[2] min-w-[320px]"
-      [title]="'Eventos anuales por espacio (' + vm.year + ')'"
+      [title]="'Eventos por espacio (' + yearLabel() + ')'"
       [subtitle]="
         variant() === 'latest' ? 'Solo eventos únicos' : 'Todos los eventos'
       "
@@ -93,19 +125,6 @@
   </div>
 
   <div class="flex flex-wrap gap-6 items-stretch w-full">
-    <!-- <app-chart-card
-      class="flex-[1] min-w-[320px]"
-      [title]="'Libros donados por género (' + vm.year + ')'"
-    >
-      @if (booksByGenreYear$ | async; as booksYear) {
-      <app-donut-chart
-        [title]="'Libros por género (año seleccionado)'"
-        [data]="booksYear"
-        [size]="260"
-        [ring]="28"
-      />
-      }
-    </app-chart-card> -->
     <!-- Libros -->
     <app-chart-card
       class="flex-[1] min-w-[320px]"
