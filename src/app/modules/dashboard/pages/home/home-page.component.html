@@ -3,31 +3,16 @@
   <!-- Encabezado -->
   <header class="flex flex-wrap items-center justify-between gap-3">
     <h1 class="title">eventos</h1>
-    <div class="controls">
-      <div class="control">
-        <label>Año</label>
-        <select [ngModel]="year()" (ngModelChange)="onChangeYear($event)">
-          @for (year of years; track year) {
-          <option [value]="year">{{ year }}</option>
-          }
-        </select>
-      </div>
-      <div class="control seg">
-        <button
-          class="seg-btn"
-          [class.active]="variant() === 'latest'"
-          (click)="onChangeVariant('latest')"
-        >
-          Únicos
-        </button>
-        <button
-          class="seg-btn"
-          [class.active]="variant() === 'all'"
-          (click)="onChangeVariant('all')"
-        >
-          Todos
-        </button>
-      </div>
+    <div class="control">
+      <label>Año</label>
+      <select [ngModel]="viewYear()" (ngModelChange)="onChangeYear($event)">
+        <!-- opción HISTÓRICO -->
+        <option [ngValue]="'historic'">Histórico</option>
+        <!-- años desde 2018 -->
+        @for (year of years; track year) {
+        <option [ngValue]="year">{{ year }}</option>
+        }
+      </select>
     </div>
   </header>
 
@@ -80,7 +65,7 @@
       "
     >
       <app-monthly-chart
-        [data]="vm.charts.byMonth"
+        [data]="eventsByMonthForChart$ | async"
         [title]="'Eventos por mes (' + vm.year + ')'"
         [width]="0"
       />
@@ -98,7 +83,7 @@
     >
       <div card-actions></div>
 
-      <app-horizontal-bar-chart [data]="vm.charts.byPlace" />
+      <app-horizontal-bar-chart [data]="eventsByPlaceForChart$ | async" />
       <!-- sin width fijo: ocupará 100% -->
 
       <div card-footer>
@@ -121,9 +106,10 @@
       />
       }
     </app-chart-card> -->
+    <!-- Libros -->
     <app-chart-card
       class="flex-[1] min-w-[320px]"
-      [title]="'Libros donadas por género (' + vm.year + ')'"
+      [title]="'Libros donadas por género (' + yearLabel() + ')'"
     >
       @if (booksByGenreYear$ | async; as booksYear) {
       <app-cheese-chart
@@ -137,9 +123,11 @@
       />
       }
     </app-chart-card>
+
+    <!-- Películas -->
     <app-chart-card
       class="flex-[1] min-w-[320px]"
-      [title]="'Películas donadas por género (' + vm.year + ')'"
+      [title]="'Películas donadas por género (' + yearLabel() + ')'"
     >
       @if (moviesByGenreYear$ | async; as moviesYear) {
       <app-cheese-chart
@@ -153,9 +141,11 @@
       />
       }
     </app-chart-card>
+
+    <!-- Recetas -->
     <app-chart-card
       class="flex-[1] min-w-[320px]"
-      [title]="'Recetas por categoría (' + vm.year + ')'"
+      [title]="'Recetas por categoría (' + yearLabel() + ')'"
     >
       @if (recipesByCategoryYear$ | async; as recipesYear) {
       <app-cheese-chart

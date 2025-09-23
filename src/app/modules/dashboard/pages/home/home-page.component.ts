@@ -23,6 +23,7 @@ import {
 import { EventModelFullData } from 'src/app/core/interfaces/event.interface';
 import { EventsService } from 'src/app/core/services/events.services';
 
+import { toObservable } from '@angular/core/rxjs-interop';
 import { BooksService } from 'src/app/core/services/books.services';
 import { MoviesService } from 'src/app/core/services/movies.services';
 import { RecipesService } from 'src/app/core/services/recipes.services';
@@ -84,8 +85,9 @@ export type DashboardVM = {
   };
 };
 
-// ===== Donuts libros por género =====
+// ===== Helpers de quesito =====
 export type PieDatum = { label: string; value: number };
+
 function groupBooksByGender(books: any[]): PieDatum[] {
   const mapG = new Map<string, number>();
   for (const b of books ?? []) {
@@ -97,21 +99,20 @@ function groupBooksByGender(books: any[]): PieDatum[] {
     .sort((a, b) => b.value - a.value);
 }
 
-// ===== Quesito películas por género ===== (NUEVO)
 function groupMoviesByGender(movies: any[]): PieDatum[] {
   const mapG = new Map<string, number>();
   for (const m of movies ?? []) {
-    const g = (m?.gender || 'Sin género') as string; // ajusta a tu clave real si es 'genre'
+    const g = (m?.gender || 'Sin género') as string; // ajusta a 'genre' si procede
     mapG.set(g, (mapG.get(g) || 0) + 1);
   }
   return Array.from(mapG.entries())
     .map(([label, value]) => ({ label, value }))
     .sort((a, b) => b.value - a.value);
 }
+
 function groupRecipesByCategory(recipes: any[]): PieDatum[] {
   const mapC = new Map<string, number>();
   for (const r of recipes ?? []) {
-    // intenta varias claves comunes
     const c = (r?.category ??
       r?.categoria ??
       r?.type ??
@@ -122,6 +123,22 @@ function groupRecipesByCategory(recipes: any[]): PieDatum[] {
     .map(([label, value]) => ({ label, value }))
     .sort((a, b) => b.value - a.value);
 }
+
+/** Fusiona varios arrays de PieDatum sumando por etiqueta */
+function mergePieData(arrays: PieDatum[][]): PieDatum[] {
+  const m = new Map<string, number>();
+  for (const arr of arrays) {
+    for (const it of arr ?? []) {
+      m.set(it.label, (m.get(it.label) || 0) + (it.value || 0));
+    }
+  }
+  return Array.from(m.entries())
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => b.value - a.value);
+}
+
+type YearFilter = number | 'historic';
+
 @Component({
   selector: 'app-home-page',
   standalone: true,
@@ -138,18 +155,19 @@ function groupRecipesByCategory(recipes: any[]): PieDatum[] {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomePageComponent {
-  // Exponer Math al template para usar Math.max, etc.
+  // Exponer Math al template
   readonly Math = Math;
   private readonly facade = inject(EventsFacade);
   private readonly eventsService = inject(EventsService);
   private readonly booksService = inject(BooksService);
-  private readonly moviesService = inject(MoviesService); // 👈 NUEVO
+  private readonly moviesService = inject(MoviesService);
   private readonly recipesService = inject(RecipesService);
-  // Constantes para gráficas SVG
+
+  // Constantes para otras gráficas SVG
   private static readonly CHART_W = 600;
   private static readonly CHART_XPAD = 20;
   private static readonly CHART_H = 220;
-  private static readonly CHART_YSPAN = 180; // alto útil
+  private static readonly CHART_YSPAN = 180;
 
   // Estado UI
   readonly now = new Date();
@@ -159,20 +177,39 @@ export class HomePageComponent {
     { length: this.currentYear - this.START_YEAR + 1 },
     (_, i) => this.currentYear - i
   );
+
+  /** Año numérico para la sección de eventos (KPI/visible) */
   readonly year = signal<number>(this.currentYear);
+
+  /** Filtro visible para quesitos **y** charts de eventos: número o 'historic' */
+  readonly viewYear = signal<YearFilter>(this.currentYear);
+  private readonly viewYear$ = toObservable(this.viewYear);
+
   readonly variant = signal<PeriodicVariant>('latest');
+  private readonly variant$ = toObservable(this.variant);
+
   readonly keyword = signal<string>('');
 
   constructor() {
-    // Carga inicial del bundle para tener ambas fuentes en cache
     this.facade.loadYearBundle(this.year());
   }
 
-  onChangeYear(y: number) {
-    const val = Number(y);
-    this.year.set(val);
-    // recarga ambas listas para gráficos ágiles
-    this.facade.loadYearBundle(val);
+  // Etiqueta para títulos
+  yearLabel(): string {
+    const y = this.viewYear();
+    return y === 'historic' ? 'Histórico' : String(y);
+  }
+
+  onChangeYear(v: number | 'historic') {
+    // Filtro global para charts (quesitos + eventos)
+    this.viewYear.set(v === 'historic' ? 'historic' : Number(v));
+
+    // Para KPIs y flujos de la fachada seguimos usando año numérico
+    if (v !== 'historic') {
+      const val = Number(v);
+      this.year.set(val);
+      this.facade.loadYearBundle(val);
+    }
   }
 
   onChangeVariant(v: PeriodicVariant) {
@@ -198,11 +235,11 @@ export class HomePageComponent {
   // TrackBy para el select de años
   trackByYear = (_: number, y: number) => y;
 
-  // ========= Stream principal de vista =========
+  // ========= Stream principal de vista (EVENTOS por año numérico: KPIs, etc.) =========
   readonly vm$: Observable<DashboardVM> = combineLatest([
     this.facade.visibleEvents$,
     this.facade.eventsAll$,
-    this.facade.eventsNonRepeteatedSubject$, // se mantiene el nombre original de la fachada
+    this.facade.eventsNonRepeteatedSubject$,
   ]).pipe(
     map(([visible, all, latest]) => {
       const vis = this.safe(visible, [] as EventModelFullData[]);
@@ -219,9 +256,7 @@ export class HomePageComponent {
         month: m,
         count: 0,
       }));
-      for (const { d } of parseDates(vis)) {
-        byMonthCounts[monthIdx(d)].count++;
-      }
+      for (const { d } of parseDates(vis)) byMonthCounts[monthIdx(d)].count++;
 
       // Por semana
       const weekMap = new Map<number, number>();
@@ -233,20 +268,20 @@ export class HomePageComponent {
         .sort((a, b) => a[0] - b[0])
         .map(([week, count]) => ({ week, count }));
 
-      // Únicos / repetidos: latest = no repetidos; repetidos = all - latest
+      // Únicos / repetidos
       const unicos = l.length;
-      const total = a.length; // ya tenemos fallback a []
+      const total = a.length;
       const repetidos = Math.max(total - unicos, 0);
       const promedioMes = total ? +(total / 12).toFixed(1) : 0;
 
-      // Próximo evento (en visible): fecha >= hoy
+      // Próximo evento
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const next = parseDates(vis)
         .filter((x) => x.d >= today)
         .sort((x, y) => +x.d - +y.d)[0];
 
-      // --- Agregado anual por espacio (sobre 'all') ---
+      // Por espacio (del año)
       const byPlaceMap = new Map<string, number>();
       for (const ev of a) {
         const key = getPlaceName(ev) || 'Sin espacio';
@@ -254,7 +289,7 @@ export class HomePageComponent {
       }
       const byPlace = Array.from(byPlaceMap.entries())
         .map(([label, value]) => ({ label, value }))
-        .sort((x, y) => y.value - x.value); // mayor a menor
+        .sort((x, y) => y.value - x.value);
 
       return {
         year: this.year(),
@@ -284,36 +319,123 @@ export class HomePageComponent {
     })
   );
 
-  // ===== Donuts libros por género =====
+  // ========= EVENTOS (datos para CHARTS con opción HISTÓRICO) =========
 
-  /** Donut 1: libros por género del año seleccionado */
-  readonly booksByGenreYear$: Observable<PieDatum[]> = this.vm$.pipe(
-    map((vm) => vm.year),
-    distinctUntilChanged(),
-    switchMap((y) => this.booksService.getBooksByYear(y)),
-    map((books) => groupBooksByGender(books)),
-    catchError(() => of([]))
+  /** Lista de eventos para las charts (año elegido o histórico), respetando variant */
+  readonly eventsForCharts$: Observable<EventModelFullData[]> = combineLatest([
+    this.viewYear$,
+    this.variant$,
+  ]).pipe(
+    switchMap(([vy, variant]) => {
+      if (vy === 'historic') {
+        return forkJoin(
+          this.years.map((y) =>
+            this.eventsService
+              .getEventsByYear(y, variant) // usa 'latest' o 'all'
+              .pipe(catchError(() => of([] as EventModelFullData[])))
+          )
+        ).pipe(map((lists) => lists.flat()));
+      }
+      return this.eventsService
+        .getEventsByYear(vy as number, variant)
+        .pipe(catchError(() => of([] as EventModelFullData[])));
+    })
   );
 
-  /** Quesito 1: películas por género del año seleccionado */
-  readonly moviesByGenreYear$: Observable<PieDatum[]> = this.vm$.pipe(
-    map((vm) => vm.year),
-    distinctUntilChanged(),
-    switchMap((y) => this.moviesService.getMoviesByYear(y)),
-    map((movies) => groupMoviesByGender(movies)),
-    catchError(() => of([]))
-  );
-  /** Quesito: recetas por categoría del año seleccionado */
-  readonly recipesByCategoryYear$: Observable<PieDatum[]> = this.vm$.pipe(
-    map((vm) => vm.year),
-    distinctUntilChanged(),
-    switchMap((y) => this.recipesService.getRecipesByYear(y)),
-    map((recipes) => groupRecipesByCategory(recipes)),
-    catchError(() => of([]))
+  /** Eventos por mes (histórico o anual según selección) para <app-monthly-chart> */
+  readonly eventsByMonthForChart$: Observable<
+    { month: number; count: number }[]
+  > = this.eventsForCharts$.pipe(
+    map((list) => {
+      const counts = Array.from({ length: 12 }, (_, m) => ({
+        month: m,
+        count: 0,
+      }));
+      for (const ev of list ?? []) {
+        const d = toDate((ev as any).start);
+        if (!d) continue;
+        counts[monthIdx(d)].count++;
+      }
+      return counts;
+    })
   );
 
-  // ========= Utilidades para las gráficas SVG =========
-  // Genera el string 'x,y x,y ...' para el <polyline>
+  /** Eventos por espacio (histórico o anual según selección) para <app-horizontal-bar-chart> */
+  readonly eventsByPlaceForChart$: Observable<
+    { label: string; value: number }[]
+  > = this.eventsForCharts$.pipe(
+    map((list) => {
+      const m = new Map<string, number>();
+      for (const ev of list ?? []) {
+        const key = getPlaceName(ev) || 'Sin espacio';
+        m.set(key, (m.get(key) || 0) + 1);
+      }
+      return Array.from(m.entries())
+        .map(([label, value]) => ({ label, value }))
+        .sort((a, b) => b.value - a.value);
+    })
+  );
+
+  // ===== Quesitos (pueden ser por año o HISTÓRICO) =====
+
+  /** Libros por género */
+  readonly booksByGenreYear$: Observable<PieDatum[]> = this.viewYear$.pipe(
+    distinctUntilChanged(),
+    switchMap((y) => {
+      if (y === 'historic') {
+        return forkJoin(
+          this.years.map((yy) => this.booksService.getBooksByYear(yy))
+        ).pipe(
+          map((lists) => mergePieData(lists.map(groupBooksByGender))),
+          catchError(() => of([]))
+        );
+      }
+      return this.booksService.getBooksByYear(y as number).pipe(
+        map(groupBooksByGender),
+        catchError(() => of([]))
+      );
+    })
+  );
+
+  /** Películas por género */
+  readonly moviesByGenreYear$: Observable<PieDatum[]> = this.viewYear$.pipe(
+    distinctUntilChanged(),
+    switchMap((y) => {
+      if (y === 'historic') {
+        return forkJoin(
+          this.years.map((yy) => this.moviesService.getMoviesByYear(yy))
+        ).pipe(
+          map((lists) => mergePieData(lists.map(groupMoviesByGender))),
+          catchError(() => of([]))
+        );
+      }
+      return this.moviesService.getMoviesByYear(y as number).pipe(
+        map(groupMoviesByGender),
+        catchError(() => of([]))
+      );
+    })
+  );
+
+  /** Recetas por categoría */
+  readonly recipesByCategoryYear$: Observable<PieDatum[]> = this.viewYear$.pipe(
+    distinctUntilChanged(),
+    switchMap((y) => {
+      if (y === 'historic') {
+        return forkJoin(
+          this.years.map((yy) => this.recipesService.getRecipesByYear(yy))
+        ).pipe(
+          map((lists) => mergePieData(lists.map(groupRecipesByCategory))),
+          catchError(() => of([]))
+        );
+      }
+      return this.recipesService.getRecipesByYear(y as number).pipe(
+        map(groupRecipesByCategory),
+        catchError(() => of([]))
+      );
+    })
+  );
+
+  // ========= Utilidades varias =========
   linePointsWeeks(data: { count: number }[], ymax: number): string {
     if (!data || !data.length || !ymax) return '';
     const n = data.length;
@@ -330,7 +452,6 @@ export class HomePageComponent {
     return points;
   }
 
-  // Máximo de una colección de {count}
   maxCount(
     arr:
       | ReadonlyArray<{ count: number }>
@@ -351,7 +472,6 @@ export class HomePageComponent {
     startAngle: number,
     endAngle: number
   ) {
-    // ángulos en radianes
     const sx = cx + r * Math.cos(startAngle);
     const sy = cy + r * Math.sin(startAngle);
     const ex = cx + r * Math.cos(endAngle);
@@ -360,7 +480,6 @@ export class HomePageComponent {
     return `M ${cx} ${cy} L ${sx} ${sy} A ${r} ${r} 0 ${largeArc} 1 ${ex} ${ey} Z`;
   }
 
-  // Línea (escala simple)
   linePath(points: { x: number; y: number }[]) {
     if (!points.length) return '';
     return points.map((p, i) => `${i ? 'L' : 'M'} ${p.x} ${p.y}`).join(' ');
