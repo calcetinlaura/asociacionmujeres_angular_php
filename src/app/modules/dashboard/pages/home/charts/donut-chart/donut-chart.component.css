@@ -1,11 +1,25 @@
+/* donut-chart.component.css */
 :host {
   display: block;
+  /* si el contenedor no puede crecer, habilita scroll horizontal en la card: */
+  overflow-x: auto;
 }
+
+/* Layout lateral, ancho = contenido (leyenda + gap + svg) */
+.donut-layout {
+  display: inline-flex; /* inline-flex → el ancho intrínseco expande la card */
+  align-items: center;
+  gap: 16px;
+  width: max-content; /* asegura que no se comprima */
+}
+
+/* SVG con tamaño fijo (lo marcamos en el template) */
 .donut-svg {
-  width: 100%;
-  height: auto;
   display: block;
+  flex: none; /* no se reduce */
 }
+
+/* Tipografías */
 .donut-total {
   font-size: 18px;
   font-weight: 700;
@@ -16,20 +30,20 @@
   fill: #6b7280;
 }
 
-.donut-legend {
-  margin: 8px 0 0;
-  padding: 0;
+/* Leyenda izquierda */
+.donut-legend.left {
   list-style: none;
-  display: grid;
-  grid-template-columns: 1fr 1fr; /* dos columnas; ajusta si quieres */
-  gap: 6px 12px;
-}
-.donut-legend li {
+  margin: 0;
+  padding: 0;
   display: grid;
   grid-template-columns: auto 1fr auto auto;
-  align-items: center;
-  gap: 8px;
+  gap: 8px 10px;
 }
+
+.donut-legend.left li {
+  display: contents;
+}
+
 .donut-legend .dot {
   width: 10px;
   height: 10px;
@@ -51,4 +65,9 @@
 .donut-legend .pct {
   color: #6b7280;
   font-size: 11px;
+}
+
+/* (Opcional) Si hay muchas categorías, limita alto y añade scroll vertical */
+.donut-legend.left {
+  /* max-height: 280px; overflow: auto; */
 }

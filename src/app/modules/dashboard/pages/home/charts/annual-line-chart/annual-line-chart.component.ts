@@ -30,7 +30,7 @@ export class AnnualLineChartComponent {
   @Input() innerHeight = 110;
 
   /** Márgenes compactos */
-  @Input() margin = { top: 6, right: 12, bottom: 18, left: 28 };
+  @Input() margin = { top: 6, right: 12, bottom: 18, left: 12 };
 
   /** Nº de líneas horizontales de referencia */
   @Input() yGridLines = 3;
@@ -40,6 +40,9 @@ export class AnnualLineChartComponent {
 
   /** Formateador de Y (tooltip/labels) */
   @Input() formatY = (v: number) => `${v}`;
+
+  /** Tamaño de fuente (px) para las etiquetas del eje X (años) */
+  @Input() xTickFontSize = 9;
 
   // ---- derivadas
   get outerWidth() {

@@ -1,3 +1,4 @@
+// donut-chart.component.ts
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 
@@ -12,7 +13,6 @@ export type PieDatum = { label: string; value: number };
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DonutChartComponent {
-  /** Datos agregados por categoría (género) */
   private _data: PieDatum[] = [];
   @Input() set data(v: PieDatum[] | null | undefined) {
     this._data = (v ?? []).filter((d) => d && typeof d.value === 'number');
@@ -21,41 +21,35 @@ export class DonutChartComponent {
     return this._data;
   }
 
-  /** Título opcional para el aria-label */
   @Input() title = 'Donut';
-
-  /** Lado del lienzo interno (viewBox). El SVG ocupa 100% del ancho del contenedor. */
-  @Input() size = 220;
-
-  /** Grosor del anillo */
+  @Input() size = 220; // lado del SVG (px)
   @Input() ring = 24;
-
-  /** Separación angular entre porciones (radianes) */
   @Input() padAngle = 0.02;
 
-  /** Colores (ciclo) */
+  /** Ancho de la leyenda a la izquierda (px) */
+  @Input() legendWidth = 240;
+
   @Input() colors: string[] = [
-    '#dba4f1', // base (no tocar)
-    '#b7d3ff', // azul pastel
-    '#b7f0d8', // menta suave
-    '#ffe3a3', // amarillo pastel
-    '#f6b7d2', // rosa pastel
-    '#ffb8c1', // coral suave
-    '#d6c5ff', // lavanda
-    '#c7f5c8', // verde pastel
-    '#ffd8a8', // melocotón
-    '#b8ecf2', // cian pastel
+    '#dba4f1',
+    '#b7d3ff',
+    '#b7f0d8',
+    '#ffe3a3',
+    '#f6b7d2',
+    '#ffb8c1',
+    '#d6c5ff',
+    '#c7f5c8',
+    '#ffd8a8',
+    '#b8ecf2',
   ];
 
   total(): number {
     return this._data.reduce((s, d) => s + (d.value || 0), 0);
   }
 
-  /** Estructura lista para pintar con start/end angle */
   arcs() {
     const total = this.total();
     if (!total) return [];
-    let a0 = -Math.PI / 2; // arranque arriba
+    let a0 = -Math.PI / 2;
     return this._data.map((d, i) => {
       const frac = (d.value || 0) / total;
       const a1 = a0 + frac * (2 * Math.PI) - this.padAngle;
@@ -72,7 +66,6 @@ export class DonutChartComponent {
     });
   }
 
-  /** Path de arco en coordenadas polares */
   arcPath(
     cx: number,
     cy: number,
@@ -85,14 +78,11 @@ export class DonutChartComponent {
     const sy0 = cy + rOuter * Math.sin(a0);
     const ex0 = cx + rOuter * Math.cos(a1);
     const ey0 = cy + rOuter * Math.sin(a1);
-
     const sx1 = cx + rInner * Math.cos(a1);
     const sy1 = cy + rInner * Math.sin(a1);
     const ex1 = cx + rInner * Math.cos(a0);
     const ey1 = cy + rInner * Math.sin(a0);
-
     const largeArc = (a1 - a0) % (2 * Math.PI) > Math.PI ? 1 : 0;
-
     return [
       `M ${sx0} ${sy0}`,
       `A ${rOuter} ${rOuter} 0 ${largeArc} 1 ${ex0} ${ey0}`,
@@ -102,7 +92,6 @@ export class DonutChartComponent {
     ].join(' ');
   }
 
-  /** Coordenadas del centro y radios */
   get cx() {
     return this.size / 2;
   }
@@ -116,7 +105,6 @@ export class DonutChartComponent {
     return this.rOuter - this.ring;
   }
 
-  /** % (redondeado) */
   pct(v: number) {
     const t = this.total();
     return t ? Math.round((v / t) * 100) : 0;

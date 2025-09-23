@@ -26,6 +26,7 @@
       [attr.y]="t.y"
       text-anchor="end"
       dominant-baseline="middle"
+      [attr.font-size]="xTickFontSize"
     >
       {{ formatY(t.v) }}
     </text>
@@ -52,6 +53,7 @@
       [attr.x]="tx.x"
       [attr.y]="margin.top + innerHeight + 14"
       text-anchor="middle"
+      [attr.font-size]="xTickFontSize"
     >
       {{ tx.year }}
     </text>
@@ -74,7 +76,6 @@
     <circle class="dot" [attr.cx]="x(i)" [attr.cy]="y(d.count)" r="2.4">
       <title>{{ d.year }} — {{ formatY(d.count) }}</title>
     </circle>
-    <!-- etiqueta en negrita 9px encima del punto -->
     <text
       class="dot-label"
       [attr.x]="x(i)"

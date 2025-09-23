@@ -1,51 +1,53 @@
-<svg
-  class="donut-svg"
-  [attr.width]="'100%'"
-  [attr.height]="size"
-  [attr.viewBox]="'0 0 ' + size + ' ' + size"
-  preserveAspectRatio="xMidYMid meet"
-  role="img"
-  [attr.aria-label]="title"
->
-  @for (a of arcs(); track a.i) {
-  <path
-    [attr.d]="arcPath(cx, cy, rOuter, rInner, a.start, a.end)"
-    [attr.fill]="a.color"
-    [attr.stroke]="a.color"
-    [attr.opacity]="0.9"
-  />
-  }
+<!-- donut-chart.component.html -->
+<div class="donut-layout" role="group" [attr.aria-label]="title">
+  <!-- Leyenda izquierda (ancho fijo por input) -->
+  <ul class="donut-legend left" [style.width.px]="legendWidth">
+    @for (d of data; track d.label) {
+    <li>
+      <span
+        class="dot"
+        [style.background]="colors[$index % colors.length]"
+      ></span>
+      <span class="name">{{ d.label }}</span>
+      <span class="val">{{ d.value }}</span>
+      <span class="pct">{{ pct(d.value) }}%</span>
+    </li>
+    }
+  </ul>
 
-  <!-- Etiqueta central con total -->
-  <text
-    [attr.x]="cx"
-    [attr.y]="cy - 2"
-    text-anchor="middle"
-    class="donut-total"
+  <!-- Gráfico a la derecha con tamaño fijo (px) -->
+  <svg
+    class="donut-svg"
+    [style.width.px]="size"
+    [style.height.px]="size"
+    [attr.viewBox]="'0 0 ' + size + ' ' + size"
+    preserveAspectRatio="xMidYMid meet"
+    role="img"
+    [attr.aria-label]="title"
   >
-    {{ total() }}
-  </text>
-  <text
-    [attr.x]="cx"
-    [attr.y]="cy + 14"
-    text-anchor="middle"
-    class="donut-caption"
-  >
-    total
-  </text>
-</svg>
-
-<!-- Leyenda simple -->
-<ul class="donut-legend">
-  @for (d of data; track d.label) {
-  <li>
-    <span
-      class="dot"
-      [style.background]="colors[$index % colors.length]"
-    ></span>
-    <span class="name">{{ d.label }}</span>
-    <span class="val">{{ d.value }}</span>
-    <span class="pct">{{ pct(d.value) }}%</span>
-  </li>
-  }
-</ul>
+    @for (a of arcs(); track a.i) {
+    <path
+      [attr.d]="arcPath(cx, cy, rOuter, rInner, a.start, a.end)"
+      [attr.fill]="a.color"
+      [attr.stroke]="a.color"
+      [attr.opacity]="0.9"
+    />
+    }
+    <text
+      [attr.x]="cx"
+      [attr.y]="cy - 2"
+      text-anchor="middle"
+      class="donut-total"
+    >
+      {{ total() }}
+    </text>
+    <text
+      [attr.x]="cx"
+      [attr.y]="cy + 14"
+      text-anchor="middle"
+      class="donut-caption"
+    >
+      total
+    </text>
+  </svg>
+</div>

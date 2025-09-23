@@ -2,7 +2,7 @@
 <section class="grid gap-6 p-8">
   <!-- Encabezado -->
   <header class="flex flex-wrap items-center justify-between gap-3">
-    <h1 class="title">eventos</h1>
+    <h1 class="title">Eventos</h1>
     <div class="control">
       <label>Año</label>
       <select [ngModel]="viewYear()" (ngModelChange)="onChangeYear($event)">
@@ -16,46 +16,62 @@
     </div>
   </header>
 
-  <!-- KPIs -->
-  <div class="kpi-grid">
-    <article class="card kpi">
-      <div class="kpi-title">
-        Eventos ({{ vm.variant === "latest" ? "únicos" : "todos" }})
-      </div>
-      <div class="kpi-value">{{ vm.kpis.total }}</div>
-      <div class="kpi-sub">
-        Promedio/mes: <strong>{{ vm.kpis.promedioMes }}</strong>
-      </div>
-    </article>
-
-    <article class="card kpi">
-      <div class="kpi-title">Únicos</div>
-      <div class="kpi-value">{{ vm.kpis.unicos }}</div>
-      <div class="kpi-sub">
-        Repetidos: <strong>{{ vm.kpis.repetidos }}</strong>
-      </div>
-    </article>
-
-    @if (vm.kpis.proximoEvento; as next) {
-    <article class="card kpi">
-      <div class="kpi-title">Próximo evento</div>
-      <div class="kpi-value ellipsis" [title]="next.title">
-        {{ next.title }}
-      </div>
-      <div class="kpi-sub">{{ next.date | date : "EEE, d MMM" }}</div>
-    </article>
-    }
-
-    <article class="card kpi">
-      <div class="kpi-title">Visibles ahora</div>
-      <div class="kpi-value">{{ vm.visible.length }}</div>
-      <div class="kpi-sub">
-        Filtro: <strong>{{ keyword() || "—" }}</strong>
-      </div>
-    </article>
-  </div>
   <div class="flex flex-wrap gap-6 items-stretch">
-    @if (viewYear() === 'historic') {
+    <div class="flex flex-1 flex-col gap-y-6 justify-between">
+      <article class="card kpi">
+        <div class="kpi-title">
+          Eventos ({{ vm.variant === "latest" ? "únicos" : "todos" }})
+        </div>
+        <div class="kpi-value">{{ vm.kpis.total }}</div>
+        <div class="kpi-sub">
+          Promedio/mes: <strong>{{ vm.kpis.promedioMes }}</strong>
+        </div>
+      </article>
+
+      <article class="card kpi">
+        <div class="kpi-title">Únicos</div>
+        <div class="kpi-value">{{ vm.kpis.unicos }}</div>
+        <div class="kpi-sub">
+          Repetidos: <strong>{{ vm.kpis.repetidos }}</strong>
+        </div>
+      </article>
+
+      @if (vm.kpis.proximoEvento; as next) {
+      <article class="card kpi">
+        <div class="kpi-title">Próximo evento</div>
+        <div class="kpi-value ellipsis" [title]="next.title">
+          {{ next.title }}
+        </div>
+        <div class="kpi-sub">{{ next.date | date : "EEE, d MMM" }}</div>
+      </article>
+      }
+
+      <article class="card kpi">
+        <div class="kpi-title">Visibles ahora</div>
+        <div class="kpi-value">{{ vm.visible.length }}</div>
+        <div class="kpi-sub">
+          Filtro: <strong>{{ keyword() || "—" }}</strong>
+        </div>
+      </article>
+    </div>
+    <app-chart-card
+      class="flex-[1] min-w-[320px]"
+      [title]="'Eventos gratis vs Eventos de pago (' + vm.year + ')'"
+    >
+      @if (booksByGenreYear$ | async; as booksYear) {
+      <app-donut-chart [data]="booksYear" [size]="260" [legendWidth]="180" />
+      } </app-chart-card
+    ><app-chart-card
+      class="flex-[1] min-w-[320px]"
+      [title]="'Eventos por categoría (' + vm.year + ')'"
+    >
+      @if (booksByGenreYear$ | async; as booksYear) {
+      <app-donut-chart [data]="booksYear" [size]="260" [legendWidth]="180" />
+      }
+    </app-chart-card>
+  </div>
+  @if (viewYear() === 'historic') {
+  <div class="flex flex-wrap gap-6 items-stretch">
     <app-chart-card
       class="flex-[2] min-w-[320px]"
       [title]="'Eventos por año (Histórico 2018–' + currentYear + ')'"
@@ -67,26 +83,16 @@
       <app-annual-line-chart
         [data]="annual$ | async"
         [innerHeight]="110"
-        [margin]="{ top: 6, right: 12, bottom: 18, left: 28 }"
+        [margin]="{ top: 6, right: 12, bottom: 18, left: 18 }"
         [yGridLines]="3"
         [compact]="true"
-      />
-      }
-    </app-chart-card>
-    }<app-chart-card
-      class="flex-[1] min-w-[320px]"
-      [title]="'Libros donados por género (' + vm.year + ')'"
-    >
-      @if (booksByGenreYear$ | async; as booksYear) {
-      <app-donut-chart
-        [title]="'Libros por género (año seleccionado)'"
-        [data]="booksYear"
-        [size]="260"
-        [ring]="28"
+        [xTickFontSize]="6"
       />
       }
     </app-chart-card>
   </div>
+  }
+
   <!-- EVENTOS -->
   <div class="flex flex-wrap gap-6 items-stretch">
     <app-chart-card
@@ -123,61 +129,118 @@
       </div>
     </app-chart-card>
   </div>
+  <div class="mt-10">
+    <h1 class="title mt-10">Libros, películas y recetas</h1>
+    <div class="flex flex-wrap gap-6 items-stretch w-full">
+      <!-- Libros -->
+      <app-chart-card
+        class="flex-[1] min-w-[320px]"
+        [title]="'Libros donadas por género (' + yearLabel() + ')'"
+      >
+        @if (booksByGenreYear$ | async; as booksYear) {
+        <app-cheese-chart
+          [data]="booksByGenreYear$ | async"
+          [size]="220"
+          [rScale]="0.84"
+          [labelOffset]="34"
+          [labelMinGap]="10"
+          [labelSideGap]="16"
+          [margin]="{ top: 5, right: 40, bottom: 5, left: 40 }"
+        />
+        }
+      </app-chart-card>
 
-  <div class="flex flex-wrap gap-6 items-stretch w-full">
-    <!-- Libros -->
-    <app-chart-card
-      class="flex-[1] min-w-[320px]"
-      [title]="'Libros donadas por género (' + yearLabel() + ')'"
-    >
-      @if (booksByGenreYear$ | async; as booksYear) {
-      <app-cheese-chart
-        [data]="booksByGenreYear$ | async"
-        [size]="220"
-        [rScale]="0.84"
-        [labelOffset]="34"
-        [labelMinGap]="10"
-        [labelSideGap]="16"
-        [margin]="{ top: 5, right: 40, bottom: 5, left: 40 }"
-      />
-      }
-    </app-chart-card>
+      <!-- Películas -->
+      <app-chart-card
+        class="flex-[1] min-w-[320px]"
+        [title]="'Películas donadas por género (' + yearLabel() + ')'"
+      >
+        @if (moviesByGenreYear$ | async; as moviesYear) {
+        <app-cheese-chart
+          [data]="moviesByGenreYear$ | async"
+          [size]="220"
+          [rScale]="0.84"
+          [labelOffset]="34"
+          [labelMinGap]="10"
+          [labelSideGap]="16"
+          [margin]="{ top: 5, right: 40, bottom: 5, left: 40 }"
+        />
+        }
+      </app-chart-card>
 
-    <!-- Películas -->
-    <app-chart-card
-      class="flex-[1] min-w-[320px]"
-      [title]="'Películas donadas por género (' + yearLabel() + ')'"
-    >
-      @if (moviesByGenreYear$ | async; as moviesYear) {
-      <app-cheese-chart
-        [data]="moviesByGenreYear$ | async"
-        [size]="220"
-        [rScale]="0.84"
-        [labelOffset]="34"
-        [labelMinGap]="10"
-        [labelSideGap]="16"
-        [margin]="{ top: 5, right: 40, bottom: 5, left: 40 }"
-      />
-      }
-    </app-chart-card>
+      <!-- Recetas -->
+      <app-chart-card
+        class="flex-[1] min-w-[320px]"
+        [title]="'Recetas por categoría (' + yearLabel() + ')'"
+      >
+        @if (recipesByCategoryYear$ | async; as recipesYear) {
+        <app-cheese-chart
+          [data]="recipesByCategoryYear$ | async"
+          [size]="220"
+          [rScale]="0.84"
+          [labelOffset]="34"
+          [labelMinGap]="10"
+          [labelSideGap]="16"
+          [margin]="{ top: 5, right: 40, bottom: 5, left: 40 }"
+        />
+        }
+      </app-chart-card>
+    </div>
+  </div>
+  <div class="mt-10 flex flex-col gap-y-6">
+    <h1 class="title">Socias</h1>
+    <div class="flex flex-1 gap-6 flex-wrap items-stretch w-full">
+      <article class="card kpi flex-1">
+        <div class="kpi-title">Nº histórico socias</div>
+        <div class="kpi-value">{{ vm.kpis.total }}</div>
+        <div class="kpi-sub">
+          Año 2025: <strong>{{ vm.kpis.promedioMes }}</strong>
+        </div>
+      </article>
 
-    <!-- Recetas -->
-    <app-chart-card
-      class="flex-[1] min-w-[320px]"
-      [title]="'Recetas por categoría (' + yearLabel() + ')'"
-    >
-      @if (recipesByCategoryYear$ | async; as recipesYear) {
-      <app-cheese-chart
-        [data]="recipesByCategoryYear$ | async"
-        [size]="220"
-        [rScale]="0.84"
-        [labelOffset]="34"
-        [labelMinGap]="10"
-        [labelSideGap]="16"
-        [margin]="{ top: 5, right: 40, bottom: 5, left: 40 }"
-      />
-      }
-    </app-chart-card>
+      <article class="card kpi flex-1">
+        <div class="kpi-title">Edad media</div>
+        <div class="kpi-value">{{ vm.kpis.unicos }}</div>
+      </article>
+
+      <article class="card kpi flex-1">
+        <div class="kpi-title">Tiempo medio de socias</div>
+        <div class="kpi-value ellipsis" [title]=""></div>
+      </article>
+    </div>
+    <div class="flex flex-wrap gap-6 items-stretch w-full">
+      <app-chart-card
+        class="w-auto min-w-[320px]"
+        [title]="'Edad media de socias (' + vm.year + ')'"
+      >
+        @if (booksByGenreYear$ | async; as booksYear) {
+        <app-donut-chart
+          [title]="'Libros por género (año seleccionado)'"
+          [data]="booksYear"
+          [size]="260"
+          [legendWidth]="150"
+        />
+        }
+      </app-chart-card>
+      <app-chart-card
+        class="flex-[3] min-w-[320px]"
+        [title]="'Socias por año (1995–' + currentYear + ')'"
+        [subtitle]="'Evolución anual total'"
+      >
+        @if (membersAnnual$ | async; as mSeries) {
+        <app-annual-line-chart
+          [data]="mSeries"
+          [innerHeight]="110"
+          [margin]="{ top: 6, right: 12, bottom: 18, left: 18 }"
+          [yGridLines]="3"
+          [compact]="true"
+          [title]="'Socias por año (1995–' + currentYear + ')'"
+          [subtitle]="'Total de socias con cuota en el año'"
+          [xTickFontSize]="6"
+        />
+        }
+      </app-chart-card>
+    </div>
   </div>
 </section>
 }

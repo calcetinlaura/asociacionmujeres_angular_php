@@ -24,8 +24,10 @@ import { EventModelFullData } from 'src/app/core/interfaces/event.interface';
 import { EventsService } from 'src/app/core/services/events.services';
 
 import { toObservable } from '@angular/core/rxjs-interop';
+import { PartnerModel } from 'src/app/core/interfaces/partner.interface';
 import { BooksService } from 'src/app/core/services/books.services';
 import { MoviesService } from 'src/app/core/services/movies.services';
+import { PartnersService } from 'src/app/core/services/partners.services';
 import { RecipesService } from 'src/app/core/services/recipes.services';
 import { AnnualLineChartComponent } from './charts/annual-line-chart/annual-line-chart.component';
 import { CheeseChartComponent } from './charts/cheese-chart/cheese-chart.component';
@@ -165,6 +167,7 @@ export class HomePageComponent {
   private readonly booksService = inject(BooksService);
   private readonly moviesService = inject(MoviesService);
   private readonly recipesService = inject(RecipesService);
+  private readonly partnersService = inject(PartnersService);
 
   // Constantes para otras gráficas SVG
   private static readonly CHART_W = 600;
@@ -505,5 +508,29 @@ export class HomePageComponent {
   linePath(points: { x: number; y: number }[]) {
     if (!points.length) return '';
     return points.map((p, i) => `${i ? 'L' : 'M'} ${p.x} ${p.y}`).join(' ');
-  }
+  } /** Años desde 1995 hasta el actual para la serie de socias */
+
+  readonly memberYears = (() => {
+    const start = 1995;
+    const end = this.currentYear;
+    const out: number[] = [];
+    for (let y = start; y <= end; y++) out.push(y);
+    return out;
+  })();
+
+  /** Serie histórica: total de socias por año (1995..actual) */
+  readonly membersAnnual$: Observable<{ year: number; count: number }[]> =
+    this.partnersService.getPartners().pipe(
+      map((partners) => {
+        const safePartners = partners ?? [];
+        return this.memberYears.map((y) => {
+          const count = safePartners.reduce((acc: number, p: PartnerModel) => {
+            const cuotas = Array.isArray(p?.cuotas) ? p.cuotas : [];
+            // cuenta si la socia tiene ese año en cuotas
+            return acc + (cuotas.includes(y) ? 1 : 0);
+          }, 0);
+          return { year: y, count };
+        });
+      })
+    );
 }

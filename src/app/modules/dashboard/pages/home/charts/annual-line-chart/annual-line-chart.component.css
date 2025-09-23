@@ -13,9 +13,10 @@
   stroke-width: 1;
 }
 
+/* Quitamos tamaño aquí para que lo controle el @Input via [attr.font-size] */
 .tick-y,
 .tick-x {
-  font: 11px/1 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  font: 400 7px/1 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   fill: #6b7280;
 }
 
@@ -29,17 +30,12 @@
   r: 3;
 }
 .dot-label {
-  font: 700 9px/1 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  font: 700 7px/1 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   fill: currentColor;
-  /* halo blanco sutil para legibilidad sobre la línea */
   paint-order: stroke;
   stroke: #fff;
   stroke-width: 2px;
   stroke-linejoin: round;
-}
-.line-svg.compact .tick-y,
-.line-svg.compact .tick-x {
-  font-size: 9px;
 }
 
 .line-svg.compact .series {
@@ -50,7 +46,7 @@
 }
 
 .empty {
-  font: 12px/1.1 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  font: 7px/1.1 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   fill: #6b7280;
   opacity: 0.8;
 }
