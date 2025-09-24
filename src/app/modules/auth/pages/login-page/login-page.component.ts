@@ -57,7 +57,7 @@ export class LoginPageComponent implements OnInit {
           const { message, user } = response;
 
           // Assuming you could still want to handle token or session (if needed)
-          this.router.navigate(['/dashboard', 'events']);
+          this.router.navigate(['/dashboard', 'home']);
         }),
         tap({
           next: (response) => {

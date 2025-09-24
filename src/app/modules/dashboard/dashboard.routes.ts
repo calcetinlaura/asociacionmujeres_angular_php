@@ -42,6 +42,7 @@ export const dashboardRoutes: Routes = [
       { path: 'creditors', component: CreditorsPageComponent },
       { path: 'agents', component: AgentsPageComponent },
       { path: 'settings', component: SettingsPageComponent },
+      { path: '', pathMatch: 'full', redirectTo: 'home' },
       { path: '**', redirectTo: 'home' },
     ],
   },

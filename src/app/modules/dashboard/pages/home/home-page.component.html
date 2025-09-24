@@ -59,14 +59,14 @@
       [title]="'Eventos gratis vs Eventos de pago (' + vm.year + ')'"
     >
       @if (booksByGenreYear$ | async; as booksYear) {
-      <app-donut-chart [data]="booksYear" [size]="260" [legendWidth]="180" />
+      <app-donut-chart [data]="" [size]="260" [legendWidth]="180" />
       } </app-chart-card
     ><app-chart-card
       class="flex-[1] min-w-[320px]"
       [title]="'Eventos por categoría (' + vm.year + ')'"
     >
       @if (booksByGenreYear$ | async; as booksYear) {
-      <app-donut-chart [data]="booksYear" [size]="260" [legendWidth]="180" />
+      <app-donut-chart [data]="" [size]="260" [legendWidth]="180" />
       }
     </app-chart-card>
   </div>
@@ -79,22 +79,27 @@
         variant() === 'latest' ? 'Solo eventos únicos' : 'Todos los eventos'
       "
     >
-      @if (annual$ | async; as series) {
+      @if (annualState$ | async; as series) { @if (series.loading) {
+      <app-spinner-loading></app-spinner-loading>
+      } @else if (series.error) {
+      <div class="error">No se pudo cargar el gráfico.</div>
+      } @else {
       <app-annual-line-chart
-        [data]="annual$ | async"
+        [data]="series.data"
         [innerHeight]="110"
         [margin]="{ top: 6, right: 12, bottom: 18, left: 18 }"
         [yGridLines]="3"
         [compact]="true"
         [xTickFontSize]="6"
       />
-      }
+      } }
     </app-chart-card>
   </div>
   }
 
   <!-- EVENTOS -->
   <div class="flex flex-wrap gap-6 items-stretch">
+    <!-- Eventos por mes -->
     <app-chart-card
       class="flex-[1] min-w-[320px]"
       [title]="'Eventos por mes (' + yearLabel() + ')'"
@@ -102,14 +107,20 @@
         variant() === 'latest' ? 'Solo eventos únicos' : 'Todos los eventos'
       "
     >
+      @if (eventsByMonthState$ | async; as s) { @if (s.loading) {
+      <app-spinner-loading></app-spinner-loading>
+      } @else if (s.error) {
+      <div class="error">No se pudo cargar el gráfico.</div>
+      } @else {
       <app-monthly-chart
-        [data]="eventsByMonthForChart$ | async"
+        [data]="s.data"
         [title]="'Eventos por mes (' + vm.year + ')'"
         [width]="0"
       />
-      <!-- ver nota (3) sobre width -->
+      } }
     </app-chart-card>
 
+    <!-- Eventos por espacio -->
     <app-chart-card
       class="flex-[2] min-w-[320px]"
       [title]="'Eventos por espacio (' + yearLabel() + ')'"
@@ -117,18 +128,20 @@
         variant() === 'latest' ? 'Solo eventos únicos' : 'Todos los eventos'
       "
       ariaDescription="Gráfico de barras horizontales con el total de eventos por espacio durante el año seleccionado"
-      [footer]="true"
+      [footer]="false"
     >
       <div card-actions></div>
 
-      <app-horizontal-bar-chart [data]="eventsByPlaceForChart$ | async" />
-      <!-- sin width fijo: ocupará 100% -->
-
-      <div card-footer>
-        * Solo se cuentan eventos del año seleccionado ({{ vm.year }}).
-      </div>
+      @if (eventsByPlaceState$ | async; as s) { @if (s.loading) {
+      <app-spinner-loading></app-spinner-loading>
+      } @else if (s.error) {
+      <div class="error">No se pudo cargar el gráfico.</div>
+      } @else {
+      <app-horizontal-bar-chart [data]="s.data" />
+      } }
     </app-chart-card>
   </div>
+
   <div class="mt-10">
     <h1 class="title mt-10">Libros, películas y recetas</h1>
     <div class="flex flex-wrap gap-6 items-stretch w-full">
@@ -137,7 +150,11 @@
         class="flex-[1] min-w-[320px]"
         [title]="'Libros donadas por género (' + yearLabel() + ')'"
       >
-        @if (booksByGenreYear$ | async; as booksYear) {
+        @if (booksByGenreYearState$ | async; as s) { @if (s.loading) {
+        <app-spinner-loading></app-spinner-loading>
+        } @else if (s.error) {
+        <div class="error">No se pudieron cargar los datos.</div>
+        } @else {
         <app-cheese-chart
           [data]="booksByGenreYear$ | async"
           [size]="220"
@@ -147,7 +164,7 @@
           [labelSideGap]="16"
           [margin]="{ top: 5, right: 40, bottom: 5, left: 40 }"
         />
-        }
+        } }
       </app-chart-card>
 
       <!-- Películas -->
@@ -155,9 +172,13 @@
         class="flex-[1] min-w-[320px]"
         [title]="'Películas donadas por género (' + yearLabel() + ')'"
       >
-        @if (moviesByGenreYear$ | async; as moviesYear) {
+        @if (moviesByGenreYearState$ | async; as s) { @if (s.loading) {
+        <app-spinner-loading></app-spinner-loading>
+        } @else if (s.error) {
+        <div class="error">No se pudieron cargar los datos.</div>
+        } @else {
         <app-cheese-chart
-          [data]="moviesByGenreYear$ | async"
+          [data]="s.data"
           [size]="220"
           [rScale]="0.84"
           [labelOffset]="34"
@@ -165,7 +186,7 @@
           [labelSideGap]="16"
           [margin]="{ top: 5, right: 40, bottom: 5, left: 40 }"
         />
-        }
+        } }
       </app-chart-card>
 
       <!-- Recetas -->
@@ -173,9 +194,13 @@
         class="flex-[1] min-w-[320px]"
         [title]="'Recetas por categoría (' + yearLabel() + ')'"
       >
-        @if (recipesByCategoryYear$ | async; as recipesYear) {
+        @if (recipesByCategoryYearState$ | async; as s) { @if (s.loading) {
+        <app-spinner-loading></app-spinner-loading>
+        } @else if (s.error) {
+        <div class="error">No se pudieron cargar los datos.</div>
+        } @else {
         <app-cheese-chart
-          [data]="recipesByCategoryYear$ | async"
+          [data]="s.data"
           [size]="220"
           [rScale]="0.84"
           [labelOffset]="34"
@@ -183,10 +208,11 @@
           [labelSideGap]="16"
           [margin]="{ top: 5, right: 40, bottom: 5, left: 40 }"
         />
-        }
+        } }
       </app-chart-card>
     </div>
   </div>
+
   <div class="mt-10 flex flex-col gap-y-6">
     <h1 class="title">Socias</h1>
     <div class="flex flex-1 gap-6 flex-wrap items-stretch w-full">
@@ -216,7 +242,7 @@
         @if (booksByGenreYear$ | async; as booksYear) {
         <app-donut-chart
           [title]="'Libros por género (año seleccionado)'"
-          [data]="booksYear"
+          [data]=""
           [size]="260"
           [legendWidth]="150"
         />
@@ -227,9 +253,13 @@
         [title]="'Socias por año (1995–' + currentYear + ')'"
         [subtitle]="'Evolución anual total'"
       >
-        @if (membersAnnual$ | async; as mSeries) {
+        @if (membersAnnualState$ | async; as s) { @if (s.loading) {
+        <app-spinner-loading></app-spinner-loading>
+        } @else if (s.error) {
+        <div class="error">No se pudo cargar el gráfico.</div>
+        } @else {
         <app-annual-line-chart
-          [data]="mSeries"
+          [data]="s.data"
           [innerHeight]="110"
           [margin]="{ top: 6, right: 12, bottom: 18, left: 18 }"
           [yGridLines]="3"
@@ -238,7 +268,7 @@
           [subtitle]="'Total de socias con cuota en el año'"
           [xTickFontSize]="6"
         />
-        }
+        } }
       </app-chart-card>
     </div>
   </div>
