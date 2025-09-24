@@ -6,6 +6,10 @@ import { TextBackgroundComponent } from 'src/app/shared/components/text/text-bac
 import { FitTextDirective } from 'src/app/shared/directives/fit-text.directive';
 import { ImgBrokenDirective } from 'src/app/shared/directives/img-broken.directive';
 import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
+import {
+  DictTranslatePipe,
+  DictType,
+} from '../../../../../shared/pipe/dict-translate.pipe';
 
 @Component({
   selector: 'app-card-events',
@@ -17,6 +21,7 @@ import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
     ItemImagePipe,
     TextBackgroundComponent,
     FitTextDirective,
+    DictTranslatePipe,
   ],
 })
 export class CardPlayerComponent {
@@ -27,6 +32,7 @@ export class CardPlayerComponent {
   formattedEndDate: string | null = null;
   datesEquals = false;
   isMobile = window.matchMedia('(max-width: 450px)').matches;
+  dictType = DictType;
 
   constructor(private bo: BreakpointObserver) {
     this.bo.observe(['(max-width: 450px)']).subscribe((res) => {

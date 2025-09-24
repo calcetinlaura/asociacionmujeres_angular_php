@@ -32,179 +32,209 @@
         class="w-full bg-verdeClaro"
       />
     </div>
-    <div class="lg:w-3/5 flex flex-col justify-between">
-      <div>
-        @if (item.periodicEvents === null){
-        <div class="flex flex-col sm:flex-row gap-4 my-4">
-          <ng-container class="lowercase">
-            @if (item.start && item.end === item.start) {
-            <app-text-background
-              [text]="item.start | date : 'EEEE dd MMMM yyyy'"
-            ></app-text-background>
-            }
-          </ng-container>
-          @if (item.start && item.end !== item.start) {
-          <app-text-background
-            [text]="
-              (item.start | date : 'EEEE dd MMMM') +
-              '  al  ' +
-              (item.end | date : 'EEEE dd MMMM yyyy')
-            "
-          ></app-text-background>
-          }@if ( item.time_start && item.time_start !== '00:00:00') {
-          <div class="flex justify-start">
-            <p
-              class="text-[9px] md:text-[12px] px-[6px] pt-1 pb-[3px] rounded-[4px] border-[1px] border-lilaOscuro"
-            >
-              {{ item.time_start.slice(0, 5) + " h" }}
-            </p>
-          </div>
-          }
-        </div>
-        } @if (item.periodicEvents && item.periodicEvents.length > 0) {
-        <p
-          class="text-[16px] uppercase mt-6 mb-4 text-lilaOscuro font-semibold"
-        >
-          Pases
-        </p>
-        <div class="pl-6 flex flex-col gap-y-2">
-          @for (func of item.periodicEvents; track func) {
-          <div class="flex sm:flex-row gap-x-4 items-center">
-            <app-text-background
-              [text]="func.start | date : 'EEEE dd MMMM yyyy'"
-            ></app-text-background>
-
-            @if (func.time_start !== '00:00:00') {
-            <app-text-border [text]="func.time_start.slice(0, 5) + ' h'">
-            </app-text-border>
-            }
-          </div>
-          }
-        </div>
-        } @if (item.access === 'FREE'){
-        <app-text-background [text]="'Acceso gratuito'"></app-text-background>}
-        @if (item.access === 'TICKETS'){
-        <p
-          class="text-[16px] uppercase mt-6 mb-4 text-lilaOscuro font-semibold"
-        >
-          Precio
-        </p>
-        <div class="pl-6 flex flex-col gap-y-2">
-          @for (ticket of item.ticket_prices; track ticket) {
-          <div class="flex sm:flex-row gap-x-4 items-center">
-            <app-text-background [text]="ticket.type"></app-text-background>
-
-            @if (ticket.price.toString() !== "0") {
-            <app-text-border [text]="ticket.price + ' €'"> </app-text-border>
-            }@if (ticket.price.toString() === "0") {
-            <p>Gratis</p>
-            }
-          </div>
-          }
-        </div>
-        } @if (item.description){
-        <div class="py-4">
-          <app-text-editor [text]="item.description"></app-text-editor>
-        </div>
-        } @if (item.organizer && item.organizer.length > 0) {
-        <div class="mb-6 flex">
-          <div
-            class="border-r-[1px] border-lilaOscuro w-[60px] text-[10px] flex justify-start items-center"
+    <div class="lg:w-3/5 flex flex-col justify-between gap-y-4">
+      @if (item.periodicEvents === null){
+      <div class="flex flex-row gap-x-4">
+        <ng-container class="lowercase">
+          @if (item.start && item.end === item.start) {
+          <p
+            class="text-[9px] md:text-[12px] px-[6px] pt-1 pb-[3px] rounded-[4px] border-[1px] border-lilaOscuro"
           >
-            Organiza
-          </div>
-          <div class="flex flex-col justify-center">
-            @for (organizer of item.organizer; track organizer) {
-            <p class="text-[10px] font-bold pl-3">{{ organizer.name }}</p>
-            }
-          </div>
-        </div>
-        } @if (item.collaborator && item.collaborator.length > 0) {
-        <div class="mb-6 flex">
-          <div
-            class="border-r-[1px] border-lilaOscuro w-[60px] text-[10px] flex justify-start items-center"
-          >
-            Colabora
-          </div>
-
-          <div class="flex flex-col justify-center">
-            @for (colab of item.collaborator; track colab) {
-            <p class="text-[10px] font-bold pl-3">{{ colab.name }}</p>
-            }
-          </div>
-        </div>
-        } @if (item.sponsor && item.sponsor.length > 0) {
-        <div class="mb-6 flex">
-          <div
-            class="border-r-[1px] border-lilaOscuro w-[60px] text-[10px] flex justify-start items-center"
-          >
-            Patrocina
-          </div>
-
-          <div class="flex flex-col justify-center">
-            @for (sponsor of item.sponsor; track sponsor) {
-            <p class="text-[10px] font-bold pl-3">{{ sponsor.name }}</p>
-            }
-          </div>
-        </div>
-        }
-
-        <div class="my-4">
-          @if (item.inscription_method ) {
-          <p class="text-[12px]" [innerHTML]="item.inscription_method"></p>
-          }@if (item.tickets_method) {
-          <p class="text-[12px]" [innerHTML]="item.tickets_method"></p>
-          } @if (item.status === enumStatusEnum.CANCELADO) {
-          <app-text-background
-            [text]="'Evento ' + item.status"
-            [colorBack]="'#de7a71'"
-          ></app-text-background>
-          } @if (item.status === enumStatusEnum.AGOTADO) {
-          <div class="flex justify-center my-4">
-            <app-text-background
-              [text]="'Inscripciones agotadas'"
-              [colorBack]="'#de7a71'"
-              [colorText]="'white'"
-              [number]="12"
-            ></app-text-background>
-          </div>
-          } @if (item.status_reason) {
-          <app-text-editor [text]="item.status_reason"></app-text-editor>
+            {{ item.start | date : "EEEE dd MMMM yyyy" }}
+          </p>
           }
+        </ng-container>
+        @if (item.start && item.end !== item.start) {
+        <div class="flex items-center gap-x-2 flex-wrap">
+          <span
+            class="text-[9px] md:text-[12px] px-[6px] pt-1 pb-[3px] rounded-[4px] border-[1px] border-lilaOscuro"
+            >{{ item.start | date : "EEEE dd MMMM" }}</span
+          >
+          al
+          <span
+            class="text-[9px] md:text-[12px] px-[6px] pt-1 pb-[3px] rounded-[4px] border-[1px] border-lilaOscuro"
+            >{{ item.end | date : "EEEE dd MMMM yyyy" }}</span
+          >
         </div>
-        <hr class="my-6 border-b-1 border-[#1C1C3A]" />
-        @if (item.placeData?.name) {
-        <app-text-icon
-          [icon]="'building'"
-          [text]="
-            (item.placeData?.name ? item.placeData?.name : '') +
-            (item.town ? ', ' + item.town : '')
-          "
-        ></app-text-icon>
-        @if (item.salaData?.name) {
-        <p class="text-gray-500 pl-8 pb-2">
-          {{ item.salaData?.name }}
-          {{
-            item.salaData?.room_location
-              ? ", " +
-                (item.salaData?.room_location
-                  | filterTransformCode : "roomLocationPlaces")
-              : ""
-          }}
-        </p>
-        } }
-        <app-text-icon
-          [icon]="''"
-          [text]="item.placeData?.address"
-        ></app-text-icon>
-
-        @if (item.placeData && item.placeData.lat && item.placeData.lon) {
-        <app-map
-          [lat]="item.placeData.lat"
-          [lon]="item.placeData.lon"
-        ></app-map>
+        }@if ( item.time_start && item.time_start !== '00:00:00') {
+        <div class="flex justify-start">
+          <p
+            class="text-[9px] md:text-[12px] px-[6px] pt-1 pb-[3px] rounded-[4px] border-[1px] border-lilaClaro"
+          >
+            {{ item.time_start.slice(0, 5) + " h" }}
+          </p>
+        </div>
         }
       </div>
+      } @if (item.periodicEvents && item.periodicEvents.length > 0) {
+      <p class="text-[16px] uppercase text-lilaOscuro font-semibold">Pases</p>
+      <div class="pl-6 flex flex-col gap-y-4">
+        @for (func of item.periodicEvents; track func) {
+        <div class="flex sm:flex-row gap-x-4 items-center">
+          <p
+            class="text-[9px] md:text-[12px] px-[6px] pt-1 pb-[3px] rounded-[4px] border-[1px] border-lilaOscuro"
+          >
+            {{ func.start | date : "EEEE dd MMMM yyyy" }} >
+          </p>
+
+          @if (func.time_start !== '00:00:00') {
+          <p
+            class="text-[9px] md:text-[12px] px-[6px] pt-1 pb-[3px] rounded-[4px] border-[1px] border-lilaClaro"
+          >
+            {{ func.time_start.slice(0, 5) + " h" }}
+          </p>
+          }
+        </div>
+        }
+      </div>
+      } @if (item.category){
+      <div class="flex gap-x-2 flex-wrap">
+        @for (category of item.category; track category) {
+        <app-text-background
+          [text]="category | dicTranslate : dictType.Categories"
+          colorBack="#C1E6DD"
+        ></app-text-background>
+        }
+      </div>
+      } @if (item.description){
+      <app-text-editor [text]="item.description"></app-text-editor>
+      } @if (item.access === 'FREE'){
+      <app-text-background [text]="'Acceso gratuito'"></app-text-background>}
+      @if (item.access === 'TICKETS'){
+      <p class="text-[16px] uppercase text-lilaOscuro font-semibold">Precio</p>
+      <div class="pl-6 flex flex-col gap-y-4">
+        @for (ticket of item.ticket_prices; track ticket) {
+        <div class="flex sm:flex-row gap-x-4 items-center">
+          <p
+            class="text-[9px] md:text-[12px] px-[6px] pt-1 pb-[3px] rounded-[4px] border-[1px] border-lilaClaro"
+          >
+            {{ ticket.type }}
+          </p>
+
+          @if (ticket.price.toString() !== "0") {
+          <p
+            class="text-[9px] md:text-[12px] px-[6px] pt-1 pb-[3px] rounded-[4px] border-[1px] border-lilaClaro"
+          >
+            {{ ticket.price + " €" }}
+          </p>
+          }@if (ticket.price.toString() === "0") {
+          <p
+            class="text-[9px] md:text-[12px] px-[6px] pt-1 pb-[3px] rounded-[4px] border-[1px] border-lilaClaro"
+          >
+            Gratis
+          </p>
+          }
+        </div>
+        }
+      </div>
+
+      }@if (item.organizer && item.organizer.length > 0) {
+      <div class="flex">
+        <div
+          class="border-r-[1px] border-lilaOscuro w-[60px] text-[10px] flex justify-start items-center"
+        >
+          Organiza
+        </div>
+        <div class="flex flex-col justify-center">
+          @for (organizer of item.organizer; track organizer) {
+          <p class="text-[10px] font-bold pl-3">{{ organizer.name }}</p>
+          }
+        </div>
+      </div>
+      } @if (item.collaborator && item.collaborator.length > 0) {
+      <div class="flex">
+        <div
+          class="border-r-[1px] border-lilaOscuro w-[60px] text-[10px] flex justify-start items-center"
+        >
+          Colabora
+        </div>
+
+        <div class="flex flex-col justify-center">
+          @for (colab of item.collaborator; track colab) {
+          <p class="text-[10px] font-bold pl-3">{{ colab.name }}</p>
+          }
+        </div>
+      </div>
+      } @if (item.sponsor && item.sponsor.length > 0) {
+      <div class="flex">
+        <div
+          class="border-r-[1px] border-lilaOscuro w-[60px] text-[10px] flex justify-start items-center"
+        >
+          Patrocina
+        </div>
+
+        <div class="flex flex-col justify-center">
+          @for (sponsor of item.sponsor; track sponsor) {
+          <p class="text-[10px] font-bold pl-3">{{ sponsor.name }}</p>
+          }
+        </div>
+      </div>
+      }
+      <div>
+        @if (item.inscription_method ) {
+        <p class="text-[12px]" [innerHTML]="item.inscription_method"></p>
+        }@if (item.tickets_method) {
+        <p class="text-[12px]" [innerHTML]="item.tickets_method"></p>
+        } @if (item.status === enumStatusEnum.CANCELADO) {
+        <app-text-background
+          [text]="'Evento ' + item.status"
+          [colorBack]="'#de7a71'"
+        ></app-text-background>
+        } @if (item.status === enumStatusEnum.AGOTADO) {
+        <div class="flex justify-center my-4">
+          <app-text-background
+            [text]="'Plazas agotadas'"
+            [colorBack]="'#de7a71'"
+            [colorText]="'white'"
+            [number]="12"
+          ></app-text-background>
+        </div>
+        } @if (item.status_reason) {
+        <app-text-editor [text]="item.status_reason"></app-text-editor>
+        }
+      </div>
+      <hr class="mt-2 mb-2 border-b-1 border-[#1C1C3A]" />
+      <div class="flex items-center gap-x-6">
+        <div>
+          <span
+            class="inline-block w-7 h-7 shrink-0 text-red-500"
+            [style.maskImage]="'url(assets/icons/building.svg)'"
+            [style.webkitMaskImage]="'url(assets/icons/building.svg)'"
+            style="
+              mask-size: contain;
+              mask-repeat: no-repeat;
+              mask-position: center;
+              -webkit-mask-size: contain;
+              -webkit-mask-repeat: no-repeat;
+              -webkit-mask-position: center;
+              background-color: currentColor;
+            "
+          >
+          </span>
+        </div>
+        <div class="flex flex-col border-l-[1px] border-lilaOscuro pl-4">
+          <p>{{ item.placeData?.name }}</p>
+          <p>
+            {{ item.placeData?.address }} @if(item.placeData?.address){, }
+            {{ item.town }}
+          </p>
+          @if (item.salaData?.name) {
+          <p class="text-gray-500 pb-2">
+            {{ item.salaData?.name }}
+            {{
+              item.salaData?.room_location
+                ? ", " +
+                  (item.salaData?.room_location
+                    | filterTransformCode : "roomLocationPlaces")
+                : ""
+            }}
+          </p>
+          }
+        </div>
+      </div>
+      @if (item.placeData && item.placeData.lat && item.placeData.lon) {
+      <app-map [lat]="item.placeData.lat" [lon]="item.placeData.lon"></app-map>
+      }
     </div>
   </div>
 </div>

@@ -19,6 +19,7 @@
   cursor: pointer;
 }
 .card .cover {
+  position: relative;
   aspect-ratio: 210 / 297; /* Default cuadrado */
   max-height: 125%;
   overflow: hidden;
@@ -30,7 +31,21 @@
   object-fit: cover;
   display: block;
 }
-
+.cover_macro {
+  position: absolute; /* 👈 overlay */
+  left: 0;
+  bottom: 0;
+  z-index: 1; /* sobre la imagen */
+  padding: 6px 10px;
+  margin-bottom: 2px;
+  color: black;
+  background: rgba(239, 159, 128, 0.792);
+  font-size: 0.875rem;
+  font-weight: bold;
+  line-height: 1;
+  border-top-right-radius: 6px;
+  backdrop-filter: saturate(120%) blur(2px); /* opcional */
+}
 .card div .item-title {
   font-size: 14px;
   font-weight: 500;

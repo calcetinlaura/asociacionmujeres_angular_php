@@ -1,0 +1,30 @@
+{
+  "general": {
+    "title": "Título"
+  },
+  "dashboard": {
+    "events": "Eventos"
+  },
+  "charts": {
+    "access": "Acceso a los eventos",
+    "categories": "Categorías de eventos"
+  },
+  "accessType": {
+    "FREE": "Gratuito",
+    "TICKETS": "Con entrada",
+    "UNSPECIFIED": "Sin especificar"
+  },
+  "categories": {
+    "CINEMA": "Cine",
+    "WORKSHOP": "Taller",
+    "THEATER": "Teatro",
+    "ACTIVISM": "Activismo",
+    "MUSIC": "Música",
+    "TALK": "Charla",
+    "EXPOSURE": "Exposición",
+    "LEISURE": "Ocio",
+    "EXHIBITION": "Exhibición",
+    "LITERATURE": "Literatura",
+    "COURSE": "Curso"
+  }
+}

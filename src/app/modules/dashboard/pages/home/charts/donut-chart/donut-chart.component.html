@@ -8,7 +8,14 @@
         class="dot"
         [style.background]="colors[$index % colors.length]"
       ></span>
-      <span class="name">{{ d.label }}</span>
+      <span class="name">
+        {{
+          d.label
+            | dicTranslate
+              : labelType!
+              : { fallback: d.label, normalize: "upper" }
+        }}
+      </span>
       <span class="val">{{ d.value }}</span>
       <span class="pct">{{ pct(d.value) }}%</span>
     </li>

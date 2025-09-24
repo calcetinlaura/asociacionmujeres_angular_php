@@ -88,6 +88,12 @@ export class EventsPageComponent implements OnInit {
     { title: 'Título', key: 'title', sortable: true, width: ColumnWidth.XL },
     { title: 'Fecha', key: 'start', sortable: true, width: ColumnWidth.SM },
     {
+      title: 'Categoría',
+      key: 'category',
+      sortable: true,
+      width: ColumnWidth.SM,
+    },
+    {
       title: 'Descripción',
       key: 'description',
       sortable: true,

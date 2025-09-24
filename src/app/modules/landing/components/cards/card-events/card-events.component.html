@@ -6,6 +6,11 @@
       alt=""
       class="cover_image"
     />
+    @if (item.macroevent_title ){
+    <div class="cover_macro">
+      {{ item.macroevent_title }}
+    </div>
+    }
   </div>
   <div class="flex flex-col gap-y-3 text-center py-4">
     <div
@@ -17,6 +22,14 @@
       class="item-title"
     >
       {{ item.title }}
+    </div>
+    <div class="flex gap-x-2 flex-wrap justify-center">
+      @for (category of item.category; track category) {
+      <app-text-background
+        [text]="category | dicTranslate : dictType.Categories"
+        colorBack="#C1E6DD"
+      ></app-text-background>
+      }
     </div>
     <div class="flex justify-center">
       <p

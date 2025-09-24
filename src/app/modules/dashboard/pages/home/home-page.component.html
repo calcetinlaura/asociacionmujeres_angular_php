@@ -1,4 +1,4 @@
-@if (vm$ | async; as vm) {
+@let vm = (vm$ | async); @if (vm) {
 <section class="grid gap-6 p-8">
   <!-- Encabezado -->
   <header class="flex flex-wrap items-center justify-between gap-3">
@@ -6,9 +6,7 @@
     <div class="control">
       <label>Año</label>
       <select [ngModel]="viewYear()" (ngModelChange)="onChangeYear($event)">
-        <!-- opción HISTÓRICO -->
         <option [ngValue]="'historic'">Histórico</option>
-        <!-- años desde 2018 -->
         @for (year of years; track year) {
         <option [ngValue]="year">{{ year }}</option>
         }
@@ -20,7 +18,7 @@
     <div class="flex flex-1 flex-col gap-y-6 justify-between">
       <article class="card kpi">
         <div class="kpi-title">
-          Eventos ({{ vm.variant === "latest" ? "únicos" : "todos" }})
+          Eventos ({{ variant() === "latest" ? "únicos" : "todos" }})
         </div>
         <div class="kpi-value">{{ vm.kpis.total }}</div>
         <div class="kpi-sub">
@@ -54,22 +52,35 @@
         </div>
       </article>
     </div>
-    <app-chart-card
-      class="flex-[1] min-w-[320px]"
-      [title]="'Eventos gratis vs Eventos de pago (' + vm.year + ')'"
-    >
-      @if (booksByGenreYear$ | async; as booksYear) {
-      <app-donut-chart [data]="" [size]="260" [legendWidth]="180" />
-      } </app-chart-card
-    ><app-chart-card
-      class="flex-[1] min-w-[320px]"
-      [title]="'Eventos por categoría (' + vm.year + ')'"
-    >
-      @if (booksByGenreYear$ | async; as booksYear) {
-      <app-donut-chart [data]="" [size]="260" [legendWidth]="180" />
-      }
+
+    <!-- Acceso a los eventos -->
+    <app-chart-card title="Acceso a los eventos" [subtitle]="yearLabel()">
+      @if (eventsByAccessYearState$ | async; as st) { @if (st.loading) {
+      <app-spinner-loading />
+      } @else if (st.error) {
+      <div class="error">No se pudo cargar el gráfico.</div>
+      } @else if (st.data?.length) {
+      <app-donut-chart [data]="st.data" [labelType]="dictType.AccessType" />
+      } @else {
+      <div class="muted">Sin datos.</div>
+      } }
+    </app-chart-card>
+
+    <!-- Categorías de eventos -->
+    <app-chart-card title="Categorías de eventos" [subtitle]="yearLabel()">
+      @if (eventsByCategoryYearState$ | async; as st) { @if (st.loading) {
+      <app-spinner-loading />
+      } @else if (st.error) {
+      <div class="error">No se pudo cargar el gráfico.</div>
+      } @else if (st.data?.length) {
+      <app-donut-chart [data]="st.data" [labelType]="dictType.Categories" />
+      } @else {
+      <div class="muted">Sin datos.</div>
+      } }
     </app-chart-card>
   </div>
+
+  <!-- Histórico -->
   @if (viewYear() === 'historic') {
   <div class="flex flex-wrap gap-6 items-stretch">
     <app-chart-card
@@ -80,7 +91,7 @@
       "
     >
       @if (annualState$ | async; as series) { @if (series.loading) {
-      <app-spinner-loading></app-spinner-loading>
+      <app-spinner-loading />
       } @else if (series.error) {
       <div class="error">No se pudo cargar el gráfico.</div>
       } @else {
@@ -108,13 +119,13 @@
       "
     >
       @if (eventsByMonthState$ | async; as s) { @if (s.loading) {
-      <app-spinner-loading></app-spinner-loading>
+      <app-spinner-loading />
       } @else if (s.error) {
       <div class="error">No se pudo cargar el gráfico.</div>
       } @else {
       <app-monthly-chart
         [data]="s.data"
-        [title]="'Eventos por mes (' + vm.year + ')'"
+        [title]="'Eventos por mes (' + yearLabel() + ')'"
         [width]="0"
       />
       } }
@@ -131,9 +142,8 @@
       [footer]="false"
     >
       <div card-actions></div>
-
       @if (eventsByPlaceState$ | async; as s) { @if (s.loading) {
-      <app-spinner-loading></app-spinner-loading>
+      <app-spinner-loading />
       } @else if (s.error) {
       <div class="error">No se pudo cargar el gráfico.</div>
       } @else {
@@ -142,21 +152,22 @@
     </app-chart-card>
   </div>
 
+  <!-- Libros, películas y recetas -->
   <div class="mt-10">
     <h1 class="title mt-10">Libros, películas y recetas</h1>
     <div class="flex flex-wrap gap-6 items-stretch w-full">
       <!-- Libros -->
       <app-chart-card
         class="flex-[1] min-w-[320px]"
-        [title]="'Libros donadas por género (' + yearLabel() + ')'"
+        [title]="'Libros donados por género (' + yearLabel() + ')'"
       >
         @if (booksByGenreYearState$ | async; as s) { @if (s.loading) {
-        <app-spinner-loading></app-spinner-loading>
+        <app-spinner-loading />
         } @else if (s.error) {
         <div class="error">No se pudieron cargar los datos.</div>
         } @else {
         <app-cheese-chart
-          [data]="booksByGenreYear$ | async"
+          [data]="s.data"
           [size]="220"
           [rScale]="0.84"
           [labelOffset]="34"
@@ -173,7 +184,7 @@
         [title]="'Películas donadas por género (' + yearLabel() + ')'"
       >
         @if (moviesByGenreYearState$ | async; as s) { @if (s.loading) {
-        <app-spinner-loading></app-spinner-loading>
+        <app-spinner-loading />
         } @else if (s.error) {
         <div class="error">No se pudieron cargar los datos.</div>
         } @else {
@@ -195,7 +206,7 @@
         [title]="'Recetas por categoría (' + yearLabel() + ')'"
       >
         @if (recipesByCategoryYearState$ | async; as s) { @if (s.loading) {
-        <app-spinner-loading></app-spinner-loading>
+        <app-spinner-loading />
         } @else if (s.error) {
         <div class="error">No se pudieron cargar los datos.</div>
         } @else {
@@ -213,48 +224,49 @@
     </div>
   </div>
 
+  <!-- Socias -->
   <div class="mt-10 flex flex-col gap-y-6">
     <h1 class="title">Socias</h1>
+    @if (partnersKpisState$ | async; as st) {
     <div class="flex flex-1 gap-6 flex-wrap items-stretch w-full">
       <article class="card kpi flex-1">
         <div class="kpi-title">Nº histórico socias</div>
-        <div class="kpi-value">{{ vm.kpis.total }}</div>
+        <div class="kpi-value">
+          @if (st.loading) { — } @else { {{ st.data?.totalHistorico ?? "—" }} }
+        </div>
         <div class="kpi-sub">
-          Año 2025: <strong>{{ vm.kpis.promedioMes }}</strong>
+          Año {{ currentYear }}:
+          <strong>
+            @if (st.loading) { — } @else {
+            {{ st.data?.totalAnualActual ?? "—" }} }
+          </strong>
         </div>
       </article>
 
       <article class="card kpi flex-1">
         <div class="kpi-title">Edad media</div>
-        <div class="kpi-value">{{ vm.kpis.unicos }}</div>
+        <div class="kpi-value">
+          @if (st.loading) { — } @else { {{ st.data?.edadMedia ?? "—" }} }
+        </div>
       </article>
 
       <article class="card kpi flex-1">
         <div class="kpi-title">Tiempo medio de socias</div>
-        <div class="kpi-value ellipsis" [title]=""></div>
+        <div class="kpi-value ellipsis" [title]="st.data?.tiempoMedio || ''">
+          @if (st.loading) { — } @else { {{ st.data?.tiempoMedio ?? "—" }} }
+        </div>
       </article>
     </div>
+    }
+
     <div class="flex flex-wrap gap-6 items-stretch w-full">
-      <app-chart-card
-        class="w-auto min-w-[320px]"
-        [title]="'Edad media de socias (' + vm.year + ')'"
-      >
-        @if (booksByGenreYear$ | async; as booksYear) {
-        <app-donut-chart
-          [title]="'Libros por género (año seleccionado)'"
-          [data]=""
-          [size]="260"
-          [legendWidth]="150"
-        />
-        }
-      </app-chart-card>
       <app-chart-card
         class="flex-[3] min-w-[320px]"
         [title]="'Socias por año (1995–' + currentYear + ')'"
         [subtitle]="'Evolución anual total'"
       >
         @if (membersAnnualState$ | async; as s) { @if (s.loading) {
-        <app-spinner-loading></app-spinner-loading>
+        <app-spinner-loading />
         } @else if (s.error) {
         <div class="error">No se pudo cargar el gráfico.</div>
         } @else {

@@ -259,5 +259,47 @@ export class AnalyticsService {
       out.push({ year: y, count });
     }
     return out;
+  } /** Normaliza strings genéricamente */
+  private norm(v: unknown): string {
+    if (v == null) return 'DESCONOCIDO';
+    const s = String(v).trim();
+    return s ? s.toUpperCase() : 'DESCONOCIDO';
   }
+
+  /** Convierte un map de conteos a PieDatum[] ordenado desc */
+  toPieData(map: Record<string, number>): PieDatum[] {
+    return Object.entries(map)
+      .map(([label, value]) => ({ label, value }))
+      .sort((a, b) => b.value - a.value);
+  }
+
+  /** Agrupa eventos por tipo de acceso (campo `access`) */
+  groupEventsByAccess = (events: Array<{ access?: string }>): PieDatum[] => {
+    const acc: Record<string, number> = {};
+    for (const e of events) {
+      const key = this.norm(e?.access);
+      acc[key] = (acc[key] ?? 0) + 1;
+    }
+    return this.toPieData(acc);
+  };
+
+  /** Agrupa por categorías (campo `category` es string[] en cada evento) */
+  groupEventsByCategory = (
+    events: Array<{ category?: string[] }>
+  ): PieDatum[] => {
+    const acc: Record<string, number> = {};
+    for (const e of events) {
+      const cats = Array.isArray(e?.category) ? e.category : [];
+      // cuenta cada categoría del evento
+      for (const c of cats) {
+        const key = this.norm(c);
+        acc[key] = (acc[key] ?? 0) + 1;
+      }
+      // si no tiene categorías, opcional: cuenta como SIN CATEGORÍA
+      if (cats.length === 0) {
+        acc['SIN CATEGORÍA'] = (acc['SIN CATEGORÍA'] ?? 0) + 1;
+      }
+    }
+    return this.toPieData(acc);
+  };
 }

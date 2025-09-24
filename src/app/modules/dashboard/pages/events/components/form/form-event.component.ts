@@ -34,6 +34,9 @@ import {
 import { EventsFacade } from 'src/app/application/events.facade';
 import { AgentModel } from 'src/app/core/interfaces/agent.interface';
 import {
+  CATEGORY_LIST,
+  CATEGORY_UI,
+  CategoryCode,
   DayEventModel,
   EnumStatusEvent,
   EventModelFullData,
@@ -55,6 +58,7 @@ import { SalaModel } from 'src/app/core/interfaces/place.interface'; // Asegúra
 import { ProjectModel } from 'src/app/core/interfaces/project.interface';
 import { MacroeventsService } from 'src/app/core/services/macroevents.services';
 import { ProjectsService } from 'src/app/core/services/projects.services';
+import { ButtonCategoryComponent } from 'src/app/shared/components/buttons/button-category/button-category.component';
 import { ButtonSelectComponent } from 'src/app/shared/components/buttons/button-select/button-select.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import {
@@ -66,7 +70,10 @@ import {
 } from 'src/app/shared/utils/validators.utils';
 import { FilterTransformCodePipe } from '../../../../../../shared/pipe/filterTransformCode.pipe';
 import { DateArrayControlComponent } from '../array-dates/array-dates.component';
-
+function arrayNotEmpty(control: FormControl<CategoryCode[] | []>) {
+  const v = control.value || [];
+  return Array.isArray(v) && v.length > 0 ? null : { required: true };
+}
 @Component({
   selector: 'app-form-event',
   imports: [
@@ -81,6 +88,7 @@ import { DateArrayControlComponent } from '../array-dates/array-dates.component'
     DateArrayControlComponent,
     SpinnerLoadingComponent,
     FilterTransformCodePipe,
+    ButtonCategoryComponent,
   ],
   templateUrl: './form-event.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],
@@ -114,11 +122,13 @@ export class FormEventComponent implements OnInit, OnChanges {
   buttonAction: string = 'Guardar';
   typeList = TypeList.Events;
   statusEvent = statusEvent;
-  enumStatusEvent = EnumStatusEvent;
   showOrganizers = false;
   showCollaborators = false;
   showSponsors = false;
+  enumStatusEvent = EnumStatusEvent;
 
+  public readonly CATEGORY = CATEGORY_UI;
+  public readonly category_list = CATEGORY_LIST;
   eventTypeMacro: 'SINGLE' | 'MACRO' = 'SINGLE';
   eventTypeProject: 'NO_PROJECT' | 'PROJECT' = 'NO_PROJECT';
   eventTypePeriod: 'event' | 'single' | 'periodic' = 'event';
@@ -137,6 +147,10 @@ export class FormEventComponent implements OnInit, OnChanges {
       end: new FormControl('', [dateBetween(this.minDate, this.maxDate)]),
       time_start: new FormControl(''),
       time_end: new FormControl(''),
+      category: new FormControl<CategoryCode[]>([], {
+        nonNullable: true,
+        validators: [Validators.required],
+      }),
       description: new FormControl('', [Validators.maxLength(2000)]),
       online_link: new FormControl(''),
       province: new FormControl(''),
@@ -205,6 +219,7 @@ export class FormEventComponent implements OnInit, OnChanges {
       [{ indent: '-1' }, { indent: '+1' }],
     ],
   };
+
   private originalIdForDuplicate: number | null = null;
 
   ngOnInit(): void {
@@ -305,6 +320,20 @@ export class FormEventComponent implements OnInit, OnChanges {
         this.isLoading = false;
       });
   }
+  get categoryCtrl(): FormControl<CategoryCode[]> {
+    return this.formEvent.get('category') as FormControl<CategoryCode[]>;
+  }
+
+  isCategoryActive(code: CategoryCode): boolean {
+    return this.categoryCtrl.value.includes(code);
+  }
+
+  toggleCategory(code: CategoryCode): void {
+    const current = [...this.categoryCtrl.value];
+    const i = current.indexOf(code);
+    i >= 0 ? current.splice(i, 1) : current.push(code);
+    this.categoryCtrl.setValue(current);
+  }
 
   private populateFormWithEvent(event: EventModelFullData): Observable<void> {
     this.wasPeriodic = false;
@@ -339,6 +368,7 @@ export class FormEventComponent implements OnInit, OnChanges {
             end: event.end,
             time_start: event.time_start,
             time_end: event.time_end,
+            category: (event.category ?? []) as CategoryCode[],
             description: event.description,
             province: event.province,
             town: event.town,
@@ -1174,6 +1204,7 @@ export class FormEventComponent implements OnInit, OnChanges {
       end: string;
       time_start?: string;
       time_end?: string;
+      category: CategoryCode[] | [];
       description?: string;
       province?: string;
       town?: string;
@@ -1228,6 +1259,7 @@ export class FormEventComponent implements OnInit, OnChanges {
     put('end', data.end ?? '');
     put('time_start', data.time_start ?? '');
     put('time_end', data.time_end ?? '');
+    put('category', JSON.stringify(data.category ?? []));
     put('description', data.description ?? '');
     put('province', data.province ?? '');
     put('town', data.town ?? '');

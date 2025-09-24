@@ -397,7 +397,19 @@
           {{ element[column.key] }}
         </div>
         } }
-
+        <!-- CATEGORíAs -->
+        @case (column.key === 'category') { @if (element[column.key] | hasValue)
+        {
+        <div class="flex gap-2 flex-wrap justify-center">
+          @for (category of element[column.key]; track category) {
+          <div class="backColor">
+            <span class="categories">{{
+              category | dicTranslate : dictType.Categories
+            }}</span>
+          </div>
+          }
+        </div>
+        }}
         <!-- Organizadores -->
         @case (column.key === 'organizer') { @if (element[column.key] |
         hasValue) {

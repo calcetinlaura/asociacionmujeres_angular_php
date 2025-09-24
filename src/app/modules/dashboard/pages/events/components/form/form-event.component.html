@@ -260,6 +260,30 @@
         </div>
         }
       </div>
+      <!-- CATEGORÍA -->
+      <div class="border-2 pt-2 px-4 pb-6 mb-6">
+        <h2 class="font-bold text-lilaText mt-4 uppercase">
+          Categoría del evento
+        </h2>
+
+        <div class="flex justify-center gap-x-4 py-2 mb-2 flex-wrap">
+          @for (category of category_list; track category.code) {
+          <app-button-category
+            [code]="category.code"
+            [buttonText]="category.label"
+            [iconClass]="category.icon"
+            [active]="isCategoryActive(category.code)"
+            (addClicked)="toggleCategory($event)"
+          />
+          }
+        </div>
+
+        @if (submitted && categoryCtrl.hasError('required')) {
+        <div class="text-[red] text-[11px] text-center">
+          Selecciona al menos una categoría
+        </div>
+        }
+      </div>
 
       <!-- UBICACION -->
       <div class="border-2 pt-2 px-4 pb-6 mb-6">

@@ -1,0 +1,29 @@
+<button
+  type="button"
+  (click)="onAddClick()"
+  [class.active]="active"
+  class="button_select"
+>
+  <div class="flex gap-x-4 items-center">
+    @if (iconClass) {
+    <div>
+      <i class="uil" [ngClass]="iconClass"></i>
+    </div>
+    }
+    <div class="flex flex-col">
+      <span class="title">{{ buttonText }}</span>
+      @if (subText) {
+      <span class="text-[12px] text-gray-500">{{ subText }}</span>
+      }
+    </div>
+    <div class="w-[30px] flex items-center justify-center">
+      @if (active) {
+      <mat-icon class="true">check_circle</mat-icon>
+      } @else {
+      <div
+        class="w-[24px] h-[24px] rounded-full border-2 border-lilaOscuro"
+      ></div>
+      }
+    </div>
+  </div>
+</button>

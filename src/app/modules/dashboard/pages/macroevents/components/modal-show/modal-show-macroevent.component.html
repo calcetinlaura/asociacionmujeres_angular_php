@@ -14,9 +14,9 @@
         } } @else { @if (item!.start && item!.end) {
         <app-text-subtitle
           [text]="
-            (item!.start | date : 'EEEE dd MMMM ' : '' : 'es-ES' | titlecase) +
+            (item!.start | date : 'EEEE dd MMM ' : '' : 'es-ES' | titlecase) +
             ' - ' +
-            (item!.end | date : 'EEEE dd MMMM yyyy ' : '' : 'es-ES' | titlecase)
+            (item!.end | date : 'EEEE dd MMM yyyy ' : '' : 'es-ES' | titlecase)
           "
         ></app-text-subtitle>
         } }
@@ -69,7 +69,7 @@
               </div>
 
               <div
-                class="flex-1 p-3 rounded-lg shadow-sm bg-white/70 transition-all duration-300 ease-out group-hover:bg-white group-hover:shadow-md"
+                class="flex-1 py-2 px-3 rounded-lg shadow-sm bg-white/70 transition-all duration-300 ease-out group-hover:bg-white group-hover:shadow-md"
               >
                 <p class="text-[12px] font-semibold tracking-wide">
                   {{ event.title }}
@@ -85,7 +85,7 @@
                   | {{ event.time_start?.slice(0, 5) }}h
                 </p>
                 } @if (event.placeData?.name) {
-                <p class="text-[12px] text-gray-600 pt-4">
+                <p class="text-[12px] text-gray-600 pt-2">
                   {{ event.placeData?.name }}
                 </p>
                 } @if (event.town) {

@@ -1,13 +1,21 @@
 // donut-chart.component.ts
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import {
+  ChartColors,
+  PALETTE_PASTEL,
+} from 'src/app/core/interfaces/general.interface';
+import {
+  DictTranslatePipe,
+  DictType,
+} from 'src/app/shared/pipe/dict-translate.pipe';
 
 export type PieDatum = { label: string; value: number };
 
 @Component({
   selector: 'app-donut-chart',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, DictTranslatePipe],
   templateUrl: './donut-chart.component.html',
   styleUrls: ['./donut-chart.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -20,7 +28,7 @@ export class DonutChartComponent {
   get data() {
     return this._data;
   }
-
+  @Input() labelType?: DictType = DictType.General;
   @Input() title = 'Donut';
   @Input() size = 220; // lado del SVG (px)
   @Input() ring = 24;
@@ -29,18 +37,7 @@ export class DonutChartComponent {
   /** Ancho de la leyenda a la izquierda (px) */
   @Input() legendWidth = 240;
 
-  @Input() colors: string[] = [
-    '#dba4f1',
-    '#b7d3ff',
-    '#b7f0d8',
-    '#ffe3a3',
-    '#f6b7d2',
-    '#ffb8c1',
-    '#d6c5ff',
-    '#c7f5c8',
-    '#ffd8a8',
-    '#b8ecf2',
-  ];
+  @Input() colors: ChartColors = PALETTE_PASTEL;
 
   total(): number {
     return this._data.reduce((s, d) => s + (d.value || 0), 0);

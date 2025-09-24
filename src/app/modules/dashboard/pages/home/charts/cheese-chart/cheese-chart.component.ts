@@ -1,5 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import {
+  ChartColors,
+  PALETTE_PASTEL,
+} from 'src/app/core/interfaces/general.interface';
 
 export type PieDatum = { label: string; value: number };
 
@@ -62,19 +66,8 @@ export class CheeseChartComponent {
   @Input() margin = { top: 40, right: 40, bottom: 40, left: 40 };
   /** Factor para escalar el radio del pastel (0–1). Útil para que no se corte. */
   @Input() rScale = 0.86;
-  /** Paleta FIJA: 1º color respetado y resto pasteles que combinan */
-  @Input() colors: string[] = [
-    '#dba4f1', // base (rosa/lila)
-    '#b7d3ff', // azul pastel
-    '#b7f0d8', // menta suave
-    '#ffe3a3', // amarillo pastel
-    '#f6b7d2', // rosa pastel
-    '#ffb8c1', // coral suave
-    '#d6c5ff', // lavanda
-    '#c7f5c8', // verde pastel
-    '#ffd8a8', // melocotón
-    '#b8ecf2', // cian pastel
-  ];
+
+  @Input() colors: ChartColors = PALETTE_PASTEL;
   @Input() emptyFill = '#f3f4f6'; // gris claro
   @Input() emptyStroke = '#e5e7eb'; // borde suave
 

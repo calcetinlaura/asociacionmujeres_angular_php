@@ -21,6 +21,7 @@ import { ColumnModel } from 'src/app/core/interfaces/column.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { SubsidiesService } from 'src/app/core/services/subsidies.services';
 import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
+import { TextBackgroundComponent } from 'src/app/shared/components/text/text-background/text-background.component';
 import { CalculateAgePipe } from 'src/app/shared/pipe/caculate_age.pipe';
 import { EurosFormatPipe } from 'src/app/shared/pipe/eurosFormat.pipe';
 import { FilterTransformCodePipe } from 'src/app/shared/pipe/filterTransformCode.pipe';
@@ -28,6 +29,10 @@ import { HasValuePipe } from 'src/app/shared/pipe/hasValue.pipe';
 import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
 import { PhoneFormatPipe } from 'src/app/shared/pipe/phoneFormat.pipe';
 import { HmsPipe } from '../../../../shared/pipe/dateTime_form.pipe';
+import {
+  DictTranslatePipe,
+  DictType,
+} from '../../../../shared/pipe/dict-translate.pipe';
 import { CircleIndicatorComponent } from '../circle-indicator/circle-indicator.component';
 
 @Component({
@@ -52,6 +57,8 @@ import { CircleIndicatorComponent } from '../circle-indicator/circle-indicator.c
     CalculateAgePipe,
     HmsPipe,
     ItemImagePipe,
+    TextBackgroundComponent,
+    DictTranslatePipe,
   ],
   providers: [ItemImagePipe],
   selector: 'app-table',
@@ -86,6 +93,7 @@ export class TableComponent {
   typeActionModal = TypeActionModal;
   searchKeywordFilter = new FormControl();
   TypeList = TypeList;
+  dictType = DictType;
 
   @ViewChild(MatSort) sort!: MatSort;
 

@@ -51,6 +51,44 @@ export enum EnumStatusEvent {
   APLAZADO = 'APLAZADO',
   AGOTADO = 'AGOTADO',
 }
+
+export type CategoryCode =
+  | 'CINEMA'
+  | 'WORKSHOP'
+  | 'THEATER'
+  | 'ACTIVISM'
+  | 'MUSIC'
+  | 'TALK'
+  | 'EXPOSURE'
+  | 'LEISURE'
+  | 'EXHIBITION'
+  | 'LITERATURE'
+  | 'COURSE';
+
+export const CATEGORY_UI: Record<
+  CategoryCode,
+  { label: string; icon: string }
+> = {
+  CINEMA: { label: 'Cine', icon: 'uil-film' },
+  WORKSHOP: { label: 'Taller', icon: 'uil-brush-alt' },
+  THEATER: { label: 'Teatro', icon: 'uil-theater-masks' },
+  ACTIVISM: { label: 'Activismo', icon: 'uil-megaphone' },
+  MUSIC: { label: 'Música', icon: 'uil-music' },
+  TALK: { label: 'Charla', icon: 'uil-music' },
+  EXPOSURE: { label: 'Exposición', icon: 'uil-music' },
+  LEISURE: { label: 'Ocio', icon: 'uil-music' },
+  EXHIBITION: { label: 'Exhibición', icon: 'uil-music' },
+  LITERATURE: { label: 'Literatura', icon: 'uil-music' },
+  COURSE: { label: 'Curso', icon: 'uil-music' },
+};
+
+export const CATEGORY_LIST = (
+  Object.entries(CATEGORY_UI) as [
+    CategoryCode,
+    { label: string; icon: string }
+  ][]
+).map(([code, ui]) => ({ code, ...ui }));
+
 export const statusEvent: Filter[] = [
   { code: 'EJECUCION', name: 'En ejecución' },
   { code: 'CANCELADO', name: 'Cancelado' },
@@ -59,6 +97,7 @@ export const statusEvent: Filter[] = [
 ];
 
 export interface EventModelFullData extends EventModel {
+  category?: CategoryCode[] | [];
   placeData?: PlaceModel;
   salaData?: SalaModel;
   organizer?: AgentAutocompleteModel[];
