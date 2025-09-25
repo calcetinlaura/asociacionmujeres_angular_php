@@ -25,10 +25,9 @@
     </div>
     <div class="flex gap-x-2 flex-wrap justify-center">
       @for (category of item.category; track category) {
-      <app-text-background
-        [text]="category | dicTranslate : dictType.Categories"
-        colorBack="#C1E6DD"
-      ></app-text-background>
+      <p class="categories">
+        {{ category | dicTranslate : dictType.Categories }}
+      </p>
       }
     </div>
     <div class="flex justify-center">

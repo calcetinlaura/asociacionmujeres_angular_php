@@ -28,7 +28,7 @@ $basePath = "../uploads/img/EVENTS/";
 // ======= CATEGORY WHITELIST (EN) =======
 if (!defined('CATEGORY_WHITELIST')) {
   // Puede ser JSON, CSV o incluso array; dejamos un valor por defecto seguro
-  define('CATEGORY_WHITELIST', '["CINEMA","WORKSHOP","THEATER","ACTIVISM","MUSIC","TALK", "EXPOSURE","LEISURE", "EXHIBITION", "LITERATURE","COURSE"]');
+  define('CATEGORY_WHITELIST', '["CINEMA","WORKSHOP","THEATER","ACTIVISM","MUSIC","TALK", "EXPOSURE","LEISURE","LITERATURE","COURSE"]');
 }
 
 /// ===== CATEGORIES HELPERS (safe, no redeclare) =====
@@ -59,7 +59,7 @@ if (!function_exists('getCategoryWhitelist')) {
     }
 
     // Fallback ultra seguro
-    return ["CINEMA","WORKSHOP","THEATER","ACTIVISM","MUSIC","TALK", "EXPOSURE","LEISURE", "EXHIBITION", "LITERATURE","COURSE"];
+    return ["CINEMA","WORKSHOP","THEATER","ACTIVISM","MUSIC","TALK", "EXPOSURE","LEISURE", "LITERATURE","COURSE"];
   }
 }
 

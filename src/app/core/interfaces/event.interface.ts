@@ -61,7 +61,6 @@ export type CategoryCode =
   | 'TALK'
   | 'EXPOSURE'
   | 'LEISURE'
-  | 'EXHIBITION'
   | 'LITERATURE'
   | 'COURSE';
 
@@ -70,16 +69,16 @@ export const CATEGORY_UI: Record<
   { label: string; icon: string }
 > = {
   CINEMA: { label: 'Cine', icon: 'uil-film' },
-  WORKSHOP: { label: 'Taller', icon: 'uil-brush-alt' },
-  THEATER: { label: 'Teatro', icon: 'uil-theater-masks' },
+  WORKSHOP: { label: 'Taller', icon: 'uil-palette' }, // si es más técnico: 'uil-wrench'
+  THEATER: { label: 'Teatro', icon: 'uil-ticket' },
   ACTIVISM: { label: 'Activismo', icon: 'uil-megaphone' },
   MUSIC: { label: 'Música', icon: 'uil-music' },
-  TALK: { label: 'Charla', icon: 'uil-music' },
-  EXPOSURE: { label: 'Exposición', icon: 'uil-music' },
-  LEISURE: { label: 'Ocio', icon: 'uil-music' },
-  EXHIBITION: { label: 'Exhibición', icon: 'uil-music' },
-  LITERATURE: { label: 'Literatura', icon: 'uil-music' },
-  COURSE: { label: 'Curso', icon: 'uil-music' },
+  TALK: { label: 'Charla', icon: 'uil-meeting-board' }, // alternativa: 'uil-comment-dots'
+  EXPOSURE: { label: 'Exposición', icon: 'uil-images' }, // “exposición fotográfica”
+  LEISURE: { label: 'Ocio', icon: 'uil-smile' }, // alternativas: 'uil-sun' | 'uil-coffee'
+
+  LITERATURE: { label: 'Literatura', icon: 'uil-book-open' },
+  COURSE: { label: 'Curso', icon: 'uil-graduation-cap' },
 };
 
 export const CATEGORY_LIST = (

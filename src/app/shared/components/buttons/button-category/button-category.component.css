@@ -9,7 +9,7 @@
   background-color: white;
   color: #333;
   cursor: pointer;
-  min-width: 160px;
+  width: 100%;
   text-align: left;
   transition: all 0.2s ease-in-out;
 }

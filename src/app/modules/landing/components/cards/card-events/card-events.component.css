@@ -37,10 +37,9 @@
   bottom: 0;
   z-index: 1; /* sobre la imagen */
   padding: 6px 10px;
-  margin-bottom: 2px;
   color: black;
   background: rgba(239, 159, 128, 0.792);
-  font-size: 0.875rem;
+  font-size: 13px;
   font-weight: bold;
   line-height: 1;
   border-top-right-radius: 6px;
@@ -109,6 +108,15 @@
   text-transform: capitalize;
   color: gray;
 }
+.categories {
+  border-radius: 16px;
+  font-weight: 500;
+  padding: 4px 16px 4px 16px;
+  width: max-content;
+  text-transform: uppercase;
+  background-color: #c1e6dd;
+  font-size: 10px;
+}
 /* Media Queries para dispositivos más pequeños */
 
 /* Ordenador pequeño */
@@ -149,6 +157,14 @@
     transform: 0;
     box-shadow: 0;
     cursor: pointer;
+  }
+  .cover_macro {
+    font-size: 10px;
+  }
+  .categories {
+    border-radius: 16px;
+    padding: 2px 10px 2px 10px;
+    font-size: 10px;
   }
 }
 /* Móvil pequeño */

@@ -21,7 +21,6 @@ import { ColumnModel } from 'src/app/core/interfaces/column.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { SubsidiesService } from 'src/app/core/services/subsidies.services';
 import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
-import { TextBackgroundComponent } from 'src/app/shared/components/text/text-background/text-background.component';
 import { CalculateAgePipe } from 'src/app/shared/pipe/caculate_age.pipe';
 import { EurosFormatPipe } from 'src/app/shared/pipe/eurosFormat.pipe';
 import { FilterTransformCodePipe } from 'src/app/shared/pipe/filterTransformCode.pipe';
@@ -57,7 +56,6 @@ import { CircleIndicatorComponent } from '../circle-indicator/circle-indicator.c
     CalculateAgePipe,
     HmsPipe,
     ItemImagePipe,
-    TextBackgroundComponent,
     DictTranslatePipe,
   ],
   providers: [ItemImagePipe],
