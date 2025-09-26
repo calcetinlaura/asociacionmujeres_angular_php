@@ -2,6 +2,7 @@ import { Component, Input } from '@angular/core';
 import { PiteraModel } from 'src/app/core/interfaces/pitera.interface';
 import { TypeList } from 'src/app/core/models/general.model';
 import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
+import { ImageZoomOverlayComponent } from 'src/app/shared/components/image-zoom-overlay/image-zoom-overlay.component';
 import { ModalPdfComponent } from 'src/app/shared/components/modal/pages/modal-pdf/modal-pdf.component';
 import { TextBackgroundComponent } from 'src/app/shared/components/text/text-background/text-background.component';
 import { TextEditorComponent } from 'src/app/shared/components/text/text-editor/text-editor.component';
@@ -19,6 +20,7 @@ import { ItemImagePipe } from '../../../../../../shared/pipe/item-img.pipe';
     TextEditorComponent,
     ButtonIconComponent,
     ModalPdfComponent,
+    ImageZoomOverlayComponent,
   ],
   templateUrl: './modal-show-pitera.component.html',
 })
@@ -29,6 +31,13 @@ export class ModalShowPiteraComponent {
   selectedPdf: string | null = null;
   private basePath = '/uploads/pdf';
   private typeFolder = '/PITERAS';
+  showZoom = false;
+  openZoom() {
+    this.showZoom = true;
+  }
+  closeZoom() {
+    this.showZoom = false;
+  }
 
   openPdf(): void {
     const file = this.item?.url || (this as any).item?.file;

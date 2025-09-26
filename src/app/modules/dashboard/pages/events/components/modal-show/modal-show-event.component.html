@@ -263,37 +263,13 @@
   </div>
 </div>
 @if (showZoom) {
-<div
-  class="fixed inset-0 z-[9999] bg-black/90"
-  role="dialog"
-  aria-modal="true"
-  aria-label="Vista ampliada de la imagen"
-  (click)="closeZoom()"
->
-  <div
-    class="relative w-full h-full overflow-hidden"
-    style="touch-action: none"
-    (click)="$event.stopPropagation()"
-  >
-    <img
-      appPinchZoom
-      [maxScale]="5"
-      [minScale]="1"
-      [src]="(item.img ? item.img : '') | itemImage : typeModal"
-      [alt]="item.title"
-      class="block max-w-none select-none"
-      draggable="false"
-    />
-
-    <button
-      type="button"
-      class="absolute top-4 right-4 text-white/90 hover:text-white text-2xl"
-      (click)="closeZoom()"
-      aria-label="Cerrar imagen ampliada"
-    >
-      ✕
-    </button>
-  </div>
-</div>
-
+<app-image-zoom-overlay
+  [open]="showZoom"
+  [src]="(item.img ? item.img : '') | itemImage : typeModal"
+  [alt]="item.title"
+  [maxScale]="5"
+  [minScale]="1"
+  [caption]="item.title"
+  (closed)="closeZoom()"
+></app-image-zoom-overlay>
 }

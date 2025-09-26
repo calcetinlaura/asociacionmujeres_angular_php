@@ -5,6 +5,7 @@ import {
   EventModelFullData,
 } from 'src/app/core/interfaces/event.interface';
 import { TypeList } from 'src/app/core/models/general.model';
+import { ImageZoomOverlayComponent } from 'src/app/shared/components/image-zoom-overlay/image-zoom-overlay.component';
 import { MapComponent } from 'src/app/shared/components/map/map.component';
 import { SocialMediaShareComponent } from 'src/app/shared/components/social-media/social-media-share.component';
 import { TextBackgroundComponent } from 'src/app/shared/components/text/text-background/text-background.component';
@@ -35,6 +36,7 @@ import { ItemImagePipe } from '../../../../../../shared/pipe/item-img.pipe';
     DictTranslatePipe,
     AudienceBadgesPipe,
     PinchZoomDirective,
+    ImageZoomOverlayComponent,
   ],
   templateUrl: './modal-show-event.component.html',
   styleUrls: ['./modal-show-event.component.css'],
@@ -51,13 +53,11 @@ export class ModalShowEventComponent {
     if (macroeventId) {
       this.openMacroevent.emit(macroeventId);
     }
-  } // 👇 Abrir/cerrar zoom
+  }
   openZoom() {
     this.showZoom = true;
-    document.body.style.overflow = 'hidden';
   }
   closeZoom() {
     this.showZoom = false;
-    document.body.style.overflow = '';
   }
 }

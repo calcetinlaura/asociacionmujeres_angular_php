@@ -29,6 +29,7 @@
           [src]="(item.img ? item.img : '') | itemImage : typeModal"
           [alt]="item.title"
           class="imagen"
+          (click)="openZoom()"
         />
       </div>
       <div>
@@ -57,3 +58,14 @@
     </div>
   </div>
 </div>
+@if (showZoom) {
+<app-image-zoom-overlay
+  [open]="showZoom"
+  [src]="(item!.img ? item!.img : '') | itemImage : typeModal"
+  [alt]="item!.title"
+  [maxScale]="5"
+  [minScale]="1"
+  [caption]="item!.title"
+  (closed)="closeZoom()"
+></app-image-zoom-overlay>
+}

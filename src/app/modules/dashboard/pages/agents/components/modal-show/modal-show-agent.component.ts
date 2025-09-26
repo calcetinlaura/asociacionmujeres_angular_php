@@ -15,6 +15,7 @@ import { EventsService } from 'src/app/core/services/events.services';
 
 // UI/Utils
 import { TotalsByYearTableComponent } from 'src/app/modules/dashboard/components/table/table-total-years/table-total-years.component';
+import { ImageZoomOverlayComponent } from 'src/app/shared/components/image-zoom-overlay/image-zoom-overlay.component';
 import { TextBackgroundComponent } from 'src/app/shared/components/text/text-background/text-background.component';
 import { TextEditorComponent } from 'src/app/shared/components/text/text-editor/text-editor.component';
 import { TextIconComponent } from 'src/app/shared/components/text/text-icon/text-icon.component';
@@ -37,6 +38,7 @@ type SortOrder = 'asc' | 'desc';
     PhoneFormatPipe,
     ItemImagePipe,
     TotalsByYearTableComponent,
+    ImageZoomOverlayComponent,
   ],
   templateUrl: './modal-show-agent.component.html',
   styleUrl: './modal-show-agent.component.css',
@@ -63,6 +65,8 @@ export class ModalShowAgentComponent implements OnChanges {
   // Agrupaciones y totales
   eventsByYear = new Map<number, EventModelFullData[]>();
   totalEvents = 0;
+  showZoom = false;
+
   // Si tuvieras importes por evento, podrías calcular totales; aquí solo contamos.
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -162,5 +166,11 @@ export class ModalShowAgentComponent implements OnChanges {
     if (hasCollaborator) roles.push('COLABORADOR');
     if (hasSponsor) roles.push('PATROCINADOR');
     return roles;
+  }
+  openZoom() {
+    this.showZoom = true;
+  }
+  closeZoom() {
+    this.showZoom = false;
   }
 }
