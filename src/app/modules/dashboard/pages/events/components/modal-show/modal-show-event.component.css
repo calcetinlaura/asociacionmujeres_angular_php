@@ -7,6 +7,12 @@
   width: auto;
   display: inline-block;
 }
+img[appPinchZoom] {
+  cursor: grab;
+}
+img[appPinchZoom]:active {
+  cursor: grabbing;
+}
 /* Media Queries para dispositivos más pequeños */
 /* Ordenador pequeño */
 @media (max-width: 1200px) {

@@ -2,6 +2,7 @@
   <div class="text-center pb-5 uppercase">
     <p class="text-2xl">{{ titleForm }}</p>
   </div>
+
   @if (isLoading) {
   <div class="spinner-container">
     <app-spinner-loading />
@@ -42,6 +43,7 @@
             />
           </div>
         </div>
+
         <div class="w-72">
           <app-image-control
             [previewImg]="
@@ -57,23 +59,28 @@
           ></app-image-control>
         </div>
       </div>
+
       <!-- FECHA -->
       <div
+        id="dateSection"
         class="border-2 pt-2 px-4 pb-6 mb-6"
         [ngClass]="{
-  'border-[red]': submitted && (
-    !isTypePeriodSelected ||
-    formEvent.errors?.['periodicNeedsAtLeastTwoDates'] ||
-    formEvent.errors?.['invalidDateRange'] ||
-    formEvent.errors?.['invalidTimeRange'] ||
-    repeatedDates.errors?.['duplicateStartDatesAndTimes'] ||
-    formEvent.get('start')?.invalid || formEvent.get('start')?.errors?.['minDate']||
-    formEvent.get('start')?.invalid || formEvent.get('start')?.errors?.['maxDate']||
-    formEvent.get('end')?.invalid || formEvent.get('start')?.errors?.['minDate']||
-    formEvent.get('end')?.invalid || formEvent.get('start')?.errors?.['maxDate']
-
-  )
-}"
+            'border-[red]': submitted && (
+              !isTypePeriodSelected ||
+              formEvent.errors?.['periodicNeedsAtLeastTwoDates'] ||
+              formEvent.errors?.['invalidDateRange'] ||
+              formEvent.errors?.['invalidTimeRange'] ||
+              repeatedDates.errors?.['duplicateStartDatesAndTimes'] ||
+              formEvent.get('start')?.invalid ||
+              formEvent.get('end')?.invalid
+            )
+          }"
+        [attr.aria-invalid]="submitted && (
+            formEvent.errors?.['periodicNeedsAtLeastTwoDates'] ||
+            formEvent.errors?.['invalidDateRange'] ||
+            formEvent.errors?.['invalidTimeRange'] ||
+            !isTypePeriodSelected
+          ) ? 'true' : null"
       >
         <h2 class="font-bold text-lilaText mt-4 uppercase">Tipo de evento</h2>
         <div class="flex justify-center gap-x-4 py-2">
@@ -95,11 +102,13 @@
           >
           </app-button-select>
         </div>
+
         @if(submitted && !isTypePeriodSelected){
         <div class="flex justify-center gap-x-4 py-2">
-          <p class="text-[red] text-[11px]">Debes seleccionar una opción</p>
+          <p class="is-invalid-text">Debes seleccionar una opción</p>
         </div>
         }
+
         <!-- Pase único -->
         @if (eventTypePeriod === 'single') {
         <div class="pt-4 px-4">
@@ -129,15 +138,13 @@
                 />
                 @if (submitted && formEvent.get('start')?.hasError('required'))
                 {
-                <div class="text-[red] text-[11px] pt-2">Campo requerido</div>
+                <div class="is-invalid-text">Campo requerido</div>
                 } @if (submitted && formEvent.get('start')?.hasError('minDate'))
                 {
-                <div class="text-[red] text-[11px] pt-2">
-                  Debe ser desde 01/01/2018.
-                </div>
+                <div class="is-invalid-text">Debe ser desde 01/01/2018.</div>
                 } @if (submitted && formEvent.get('start')?.hasError('maxDate'))
                 {
-                <div class="text-[red] text-[11px] pt-2">
+                <div class="is-invalid-text">
                   Debe ser fecha máxima próximo año.
                 </div>
                 }
@@ -160,20 +167,14 @@
                     'is-invalid': submitted && formEvent.get('end')?.invalid
                   }"
                 />
-                <!-- Mensajes del control END -->
                 @if (submitted && formEvent.get('end')?.hasError('minDate')) {
-                <div class="text-[red] text-[11px] pt-2">
-                  Debe ser desde 01/01/2018.
-                </div>
+                <div class="is-invalid-text">Debe ser desde 01/01/2018.</div>
                 } @if (submitted && formEvent.get('end')?.hasError('maxDate')) {
-                <div class="text-[red] text-[11px] pt-2">
+                <div class="is-invalid-text">
                   Debe ser fecha máxima próximo año.
                 </div>
-                }
-
-                <!-- Mensaje de rango (del FormGroup) -->
-                @if (submitted && formEvent.hasError('invalidDateRange')) {
-                <p class="text-[red] text-[11px] pt-2">
+                } @if (submitted && formEvent.hasError('invalidDateRange')) {
+                <p class="is-invalid-text">
                   La fecha fin no puede ser anterior a la fecha de inicio
                 </p>
                 }
@@ -212,14 +213,14 @@
                     class="w-full p-1 border rounded"
                     placeholder="00:00"
                     [ngClass]="{
-                'is-invalid': submitted && formEvent.errors?.['invalidTimeRange']
-              }"
+                          'is-invalid': submitted && formEvent.errors?.['invalidTimeRange']
+                        }"
                   />
                 </div>
               </div>
 
               @if (submitted && formEvent.errors?.['invalidTimeRange']) {
-              <p class="text-[red] text-[11px]">
+              <p class="is-invalid-text">
                 La hora fin no puede ser anterior a inicio
               </p>
               }
@@ -243,7 +244,7 @@
           @if (submitted && formEvent.errors?.['periodicNeedsAtLeastTwoDates'])
           {
           <div class="text-center">
-            <p class="text-[red] text-[11px]">
+            <p class="is-invalid-text">
               Un evento periódico debe tener al menos dos fechas. Si es solo una
               fecha pasar a evento de pase único.
             </p>
@@ -260,26 +261,35 @@
         </div>
         }
       </div>
-      <!-- CATEGORÍA -->
-      <div class="border-2 pt-2 px-4 pb-6 mb-6">
-        <h2 class="font-bold text-lilaText mt-4 uppercase">
-          Categoría del evento
-        </h2>
 
-        <div class="flex justify-center gap-x-4 py-2 mb-2 flex-wrap">
+      <!-- CATEGORÍA -->
+      <div
+        class="border-2 pt-2 px-4 pb-6 mb-6"
+        [ngClass]="{
+          'border-[red]': submitted && categoryCtrl.hasError('required')
+        }"
+      >
+        <h2 class="font-bold text-lilaText my-4 uppercase">Categoría</h2>
+        <p class="text-[15px] text-center mb-10 text-lilaText px-4">
+          Un evento puede estar clasificado en más de una categoría.
+        </p>
+        <div class="grid grid-cols-5 gap-4 mx-16">
           @for (category of category_list; track category.code) {
-          <app-button-category
-            [code]="category.code"
-            [buttonText]="category.label"
-            [iconClass]="category.icon"
-            [active]="isCategoryActive(category.code)"
-            (addClicked)="toggleCategory($event)"
-          />
+          <div class="w-full">
+            <app-button-category
+              class="w-full h-full"
+              [code]="category.code"
+              [buttonText]="category.label"
+              [iconClass]="category.icon"
+              [active]="isCategoryActive(category.code)"
+              (addClicked)="toggleCategory($event)"
+            />
+          </div>
           }
         </div>
 
         @if (submitted && categoryCtrl.hasError('required')) {
-        <div class="text-[red] text-[11px] text-center">
+        <div class="is-invalid-text text-center">
           Selecciona al menos una categoría
         </div>
         }
@@ -309,7 +319,7 @@
             iconClass="uil-megaphone"
           />
         </div>
-        <!-- 🔹 Todo el bloque de ubicación sólo si NO es online -->
+
         @if (eventTypeUbication === 'place') {
         <div class="flex flex-col px-4 pt-6 gap-y-4">
           <!-- Provincia -->
@@ -323,10 +333,7 @@
                 'text-placeholder': !formEvent.get('province')?.value
               }"
             >
-              <!-- Placeholder en gris -->
               <option value="" disabled hidden>Seleccione una provincia</option>
-
-              <!-- Opción libre -->
               <option value="">Sin provincia</option>
               @for (prov of provincias; track trackByLabel($index, prov)) {
               <option [value]="prov.label">{{ prov.label }}</option>
@@ -348,10 +355,7 @@
                 'text-placeholder': !formEvent.get('town')?.value
               }"
             >
-              <!-- Placeholder en gris -->
               <option value="" disabled hidden>Seleccione un municipio</option>
-
-              <!-- Opción libre -->
               <option value="">Sin municipio</option>
               @for (mun of municipios; track trackByLabel($index, mun)) {
               <option [value]="mun.label">{{ mun.label }}</option>
@@ -398,9 +402,7 @@
             <input formControlName="capacity" type="number" min="0" />
           </div>
         </div>
-        }
-        <!-- 🔹 Campo para enlace online si es online -->
-        @if (eventTypeUbication === 'online') {
+        } @if (eventTypeUbication === 'online') {
         <div class="box-input gap-x-4 flex flex-1 items-center px-4 pt-6">
           <label for="onlineLink">Enlace del evento online</label>
           <div class="flex flex-col gap-y-2 flex-1">
@@ -421,6 +423,7 @@
         </div>
         }
       </div>
+
       <!-- MACRO -->
       <div class="border-2 pt-2 px-4 pb-6 mb-6">
         <h2 class="font-bold text-lilaText mt-4 uppercase">Macroevento</h2>
@@ -431,7 +434,8 @@
             [active]="eventTypeMacro === 'SINGLE'"
             (addClicked)="setEventTypeMacro('SINGLE')"
             iconClass="uil-calendar-alt"
-          /><app-button-select
+          />
+          <app-button-select
             [buttonText]="'Está dentro de un macroevento'"
             subText="Está dentro de una programación más amplia"
             [active]="eventTypeMacro === 'MACRO'"
@@ -439,7 +443,7 @@
             iconClass="uil-calendar-alt"
           />
         </div>
-        <!-- macro -->
+
         @if (eventTypeMacro === 'MACRO') {
         <div class="pt-4 px-4">
           <p class="text-[15px] text-center mb-10 text-lilaText px-4">
@@ -475,6 +479,7 @@
         </div>
         }
       </div>
+
       <!-- PROYECTO -->
       <div class="border-2 pt-2 px-4 pb-6 mb-6">
         <h2 class="font-bold text-lilaText mt-4 uppercase">Proyecto</h2>
@@ -485,7 +490,8 @@
             [active]="eventTypeProject === 'NO_PROJECT'"
             (addClicked)="setEventTypeProject('NO_PROJECT')"
             iconClass="uil-calendar-alt"
-          /><app-button-select
+          />
+          <app-button-select
             [buttonText]="'Está dentro de un proyecto'"
             subText="Está dentro de una programación más amplia"
             [active]="eventTypeProject === 'PROJECT'"
@@ -493,6 +499,7 @@
             iconClass="uil-calendar-alt"
           />
         </div>
+
         @if (eventTypeProject === 'PROJECT') {
         <div class="pt-4 px-4">
           <p class="text-[15px] text-center mb-10 text-lilaText px-4">
@@ -529,6 +536,159 @@
         </div>
         }
       </div>
+
+      <!-- PÚBLICO -->
+      <div
+        id="audienceSection"
+        class="border-2 pt-2 px-4 pb-6 mb-6"
+        [ngClass]="{
+          'border-[red]': submitted && audienceErrorMessage
+        }"
+        [attr.aria-invalid]="
+          submitted && !!audienceErrorMessage ? 'true' : null
+        "
+      >
+        <h2 class="font-bold text-lilaText mt-4 uppercase">Público</h2>
+
+        <!-- Línea 1: flags globales -->
+        <div class="flex gap-x-4 justify-center mb-2">
+          <app-button-select
+            role="button"
+            [attr.aria-pressed]="audienceForm.value.allPublic"
+            [buttonText]="'Todos los públicos'"
+            subText=""
+            [active]="!!audienceForm.value.allPublic"
+            (addClicked)="selectAudiencePrimary('ALL')"
+            iconClass="uil-user"
+          />
+          <app-button-select
+            role="button"
+            [attr.aria-pressed]="audienceForm.value.hasAgeRecommendation"
+            [buttonText]="'Hay una recomendación de edad'"
+            subText=""
+            [active]="!!audienceForm.value.hasAgeRecommendation"
+            (addClicked)="selectAudiencePrimary('AGE')"
+            iconClass="uil-info-circle"
+          />
+          <app-button-select
+            role="button"
+            [attr.aria-pressed]="audienceForm.value.hasRestriction"
+            [buttonText]="'Hay alguna restricción'"
+            subText=""
+            [active]="!!audienceForm.value.hasRestriction"
+            (addClicked)="selectAudiencePrimary('RESTRICTION')"
+            iconClass="uil-ban"
+          />
+        </div>
+
+        <!-- Línea 2: rangos de edad -->
+        @if (audienceForm.value.hasAgeRecommendation) {
+        <div class="mt-6">
+          <div class="flex gap-x-4 justify-center mb-6">
+            <app-button-select
+              [buttonText]="'Bebés'"
+              subText="0–3"
+              [active]="!!audienceForm.value.ages?.babies"
+              (addClicked)="toggleAudience('ages.babies')"
+              iconClass="uil-baby-carriage"
+            />
+            <app-button-select
+              [buttonText]="'Infantil'"
+              subText="4–11"
+              [active]="!!audienceForm.value.ages?.kids"
+              (addClicked)="toggleAudience('ages.kids')"
+              iconClass="uil-puzzle-piece"
+            />
+            <app-button-select
+              [buttonText]="'Adolescentes'"
+              subText="12–17"
+              [active]="!!audienceForm.value.ages?.teens"
+              (addClicked)="toggleAudience('ages.teens')"
+              iconClass="uil-user"
+            />
+            <app-button-select
+              [buttonText]="'Adultos'"
+              subText="18+"
+              [active]="!!audienceForm.value.ages?.adults"
+              (addClicked)="toggleAudience('ages.adults')"
+              iconClass="uil-18-plus"
+            />
+            <app-button-select
+              [buttonText]="'Mayores'"
+              subText="55+"
+              [active]="!!audienceForm.value.ages?.seniors"
+              (addClicked)="toggleAudience('ages.seniors')"
+              iconClass="uil-user-check"
+            />
+          </div>
+
+          <div [formGroup]="audienceForm" class="box-input gap-x-4 pt-2">
+            <label for="ageNote">Nota breve</label>
+            <input
+              id="ageNote"
+              type="text"
+              maxlength="120"
+              class="flex-1"
+              formControlName="ageNote"
+              placeholder="p. ej., recomendado 8+ por contenido…"
+            />
+          </div>
+        </div>
+        }
+
+        <!-- Restricciones -->
+        @if (audienceForm.get('hasRestriction')?.value) {
+        <div class="mt-6">
+          <div class="flex gap-x-4 justify-center">
+            <app-button-select
+              [active]="!!audienceForm.get('restrictions.membersOnly')?.value"
+              (addClicked)="toggleRestriction('membersOnly')"
+              [buttonText]="'Exclusivamente socias'"
+              subText="Debe formar parte de la asociación"
+              iconClass="uil-exclamation-circle"
+            />
+            <app-button-select
+              [active]="!!audienceForm.get('restrictions.womenOnly')?.value"
+              (addClicked)="toggleRestriction('womenOnly')"
+              [buttonText]="'Solo mujeres'"
+              subText="Aforo o política del evento"
+              iconClass="uil-exclamation-circle"
+            />
+            <app-button-select
+              [active]="!!audienceForm.get('restrictions.other')?.value"
+              (addClicked)="toggleRestriction('other')"
+              [buttonText]="'Otra restricción'"
+              subText="Especifica"
+              iconClass="uil-question-circle"
+            />
+          </div>
+
+          <div
+            [formGroup]="audienceForm"
+            formGroupName="restrictions"
+            class="box-input gap-x-4 pt-6"
+          >
+            @if (audienceForm.get('restrictions.other')?.value) {
+            <label for="otherText">Especificar reestricción</label>
+            <input
+              class="w-full"
+              placeholder="Describe la restricción"
+              formControlName="otherText"
+            />
+            }
+          </div>
+        </div>
+        } @if (submitted && audienceErrorMessage) {
+        <p
+          class="is-invalid-text text-center"
+          role="alert"
+          aria-live="assertive"
+        >
+          {{ audienceErrorMessage }}
+        </p>
+        }
+      </div>
+
       <!-- ADMISIÓN -->
       <div class="border-2 pt-2 px-4 pb-6 mb-6">
         <h2 class="font-bold text-lilaText mt-4 uppercase">Admisión</h2>
@@ -544,13 +704,15 @@
             [active]="eventTypeAccess === 'TICKETS'"
             (addClicked)="setEventTypeAccess('TICKETS')"
             iconClass="uil-ticket"
-          /><app-button-select
+          />
+          <app-button-select
             [buttonText]="'Por determinar'"
             [active]="eventTypeAccess === 'UNSPECIFIED'"
             (addClicked)="setEventTypeAccess('UNSPECIFIED')"
             iconClass="uil-question-circle"
           />
         </div>
+
         @if (eventTypeAccess === 'TICKETS') {
         <div class="pt-4 px-4">
           <p class="text-[15px] text-center mb-10 text-lilaText px-4">
@@ -599,6 +761,7 @@
         </div>
         }
       </div>
+
       @if (eventTypeAccess !== 'TICKETS' ) {
       <div class="border-2 pt-2 px-4 pb-6 mb-6">
         <h2 class="font-bold text-lilaText mt-4 uppercase">Inscripción</h2>
@@ -608,13 +771,15 @@
             [active]="eventTypeInscription === 'unlimited'"
             (addClicked)="setEventTypeInscription('unlimited')"
             iconClass="uil-border-clear"
-          /><app-button-select
+          />
+          <app-button-select
             [buttonText]="'Requiere inscripción previa'"
             [active]="eventTypeInscription === 'inscription'"
             (addClicked)="setEventTypeInscription('inscription')"
             iconClass="uil-clipboard-notes"
           />
         </div>
+
         @if (eventTypeInscription === 'inscription') {
         <div class="box-input gap-x-4 pt-4 px-4">
           <label for="inscription_method">Medio de registro</label>
@@ -644,7 +809,8 @@
         </div>
       </div>
       }
-      <!-- CAMBIOS -->
+
+      <!-- STATUS -->
       <div class="border-2 pt-2 px-4 pb-6 mb-6">
         <h2 class="font-bold text-lilaText mt-4 uppercase">
           Estado del evento
@@ -664,13 +830,15 @@
             [active]="eventTypeStatus === enumStatusEvent.CANCELADO"
             (addClicked)="setEventTypeStatus(enumStatusEvent.CANCELADO)"
             iconClass="uil-time_starts-circle"
-          /><app-button-select
+          />
+          <app-button-select
             [buttonText]="'Aplazado'"
             subText="Se postpone para otra fecha"
             [active]="eventTypeStatus === enumStatusEvent.APLAZADO"
             (addClicked)="setEventTypeStatus(enumStatusEvent.APLAZADO)"
             iconClass="uil-calendar-slash"
-          /><app-button-select
+          />
+          <app-button-select
             [buttonText]="'Agotado'"
             subText="No hay más aforo disponible"
             [active]="eventTypeStatus === enumStatusEvent.AGOTADO"
@@ -691,12 +859,12 @@
         </div>
         }
       </div>
+
       <!-- GESTIÓN -->
       <div class="border-2 pt-2 px-4 pb-6 mb-6">
         <h2 class="font-bold text-lilaText mt-4 uppercase">Gestión</h2>
-        <!-- ORGANIZADORES -->
+
         <div class="pt-6">
-          <!-- BOTONES -->
           <div class="mb-10 flex gap-x-4 justify-center">
             <app-button-icon
               [buttonText]="'Añadir organizador'"
@@ -716,7 +884,6 @@
           </div>
         </div>
 
-        <!-- ORGANIZADORES -->
         @if (showOrganizers) {
         <app-agent-array-control
           [formArray]="organizers"
@@ -740,11 +907,13 @@
         ></app-agent-array-control>
         }
       </div>
+
       @if (formEvent.invalid && submitted) {
       <div class="flex justify-center">
         <div class="error">Hay algún campo incorrecto</div>
       </div>
       }
+
       <div class="flex justify-center">
         <button class="bg-black p-4 text-white" type="submit">
           {{ buttonAction }}

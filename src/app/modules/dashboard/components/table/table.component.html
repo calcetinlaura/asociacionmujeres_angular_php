@@ -396,6 +396,17 @@
         <div>
           {{ element[column.key] }}
         </div>
+        } }<!-- PÚBLICO -->
+        @case (column.key === 'audience') { @if (element[column.key]) {
+        <div class="flex gap-2 flex-wrap justify-center">
+          @for (badge of (element.audience | audienceBadges); track badge) {
+          <div class="backColor">
+            <span class="badge">{{ badge }}</span>
+          </div>
+          }
+        </div>
+        } @else {
+        <app-circle-indicator [item]="false"></app-circle-indicator>
         } }
         <!-- CATEGORíAs -->
         @case (column.key === 'category') { @if (element[column.key] | hasValue)
@@ -403,8 +414,8 @@
         <div class="flex gap-2 flex-wrap justify-center">
           @for (category of element[column.key]; track category) {
           <div class="backColor">
-            <span class="categories">{{
-              category | dicTranslate : dictType.Categories
+            <span class="categories uppercase">{{
+              category | dictTranslate : dictType.Categories
             }}</span>
           </div>
           }

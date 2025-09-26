@@ -11,6 +11,8 @@ import { TextBackgroundComponent } from 'src/app/shared/components/text/text-bac
 import { TextEditorComponent } from 'src/app/shared/components/text/text-editor/text-editor.component';
 import { TextSubTitleComponent } from 'src/app/shared/components/text/text-subTitle/text-subtitle.component';
 import { TextTitleComponent } from 'src/app/shared/components/text/text-title/text-title.component';
+import { PinchZoomDirective } from 'src/app/shared/directives/pinch-zoom.directive';
+import { AudienceBadgesPipe } from '../../../../../../shared/pipe/audience-badges.pipe';
 import {
   DictTranslatePipe,
   DictType,
@@ -31,6 +33,8 @@ import { ItemImagePipe } from '../../../../../../shared/pipe/item-img.pipe';
     ItemImagePipe,
     FilterTransformCodePipe,
     DictTranslatePipe,
+    AudienceBadgesPipe,
+    PinchZoomDirective,
   ],
   templateUrl: './modal-show-event.component.html',
   styleUrls: ['./modal-show-event.component.css'],
@@ -41,10 +45,19 @@ export class ModalShowEventComponent {
   typeModal: TypeList = TypeList.Events;
   enumStatusEnum = EnumStatusEvent;
   dictType = DictType;
+  showZoom = false;
 
   onOpenMacroevent(macroeventId: number) {
     if (macroeventId) {
       this.openMacroevent.emit(macroeventId);
     }
+  } // 👇 Abrir/cerrar zoom
+  openZoom() {
+    this.showZoom = true;
+    document.body.style.overflow = 'hidden';
+  }
+  closeZoom() {
+    this.showZoom = false;
+    document.body.style.overflow = '';
   }
 }

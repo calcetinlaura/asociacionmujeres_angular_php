@@ -1,26 +1,33 @@
 import { CommonModule } from '@angular/common';
 import {
+  ChangeDetectorRef,
   Component,
   DestroyRef,
+  ElementRef,
   EventEmitter,
   inject,
   Input,
+  NgZone,
   OnChanges,
   OnInit,
   Output,
   SimpleChanges,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
+  AbstractControl,
   FormArray,
   FormBuilder,
   FormControl,
   FormGroup,
   ReactiveFormsModule,
+  ValidationErrors,
+  ValidatorFn,
   Validators,
 } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
-
 import townsData from 'data/towns.json';
+import { QuillModule } from 'ngx-quill';
 import {
   filter,
   forkJoin,
@@ -32,6 +39,7 @@ import {
   tap,
 } from 'rxjs';
 import { EventsFacade } from 'src/app/application/events.facade';
+import { PlacesFacade } from 'src/app/application/places.facade';
 import { AgentModel } from 'src/app/core/interfaces/agent.interface';
 import {
   CATEGORY_LIST,
@@ -42,25 +50,20 @@ import {
   EventModelFullData,
   statusEvent,
 } from 'src/app/core/interfaces/event.interface';
-import { PlaceModel } from 'src/app/core/interfaces/place.interface';
+import { MacroeventModel } from 'src/app/core/interfaces/macroevent.interface';
+import { PlaceModel, SalaModel } from 'src/app/core/interfaces/place.interface';
+import { ProjectModel } from 'src/app/core/interfaces/project.interface';
 import { TypeList } from 'src/app/core/models/general.model';
 import { AgentsService } from 'src/app/core/services/agents.services';
-import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
-import { GeneralService } from 'src/app/shared/services/generalService.service';
-import { ButtonIconComponent } from '../../../../../../shared/components/buttons/button-icon/button-icon.component';
-import { AgentArrayControlComponent } from '../array-agents/array-agents.component';
-// Importaciones...
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { QuillModule } from 'ngx-quill';
-import { PlacesFacade } from 'src/app/application/places.facade';
-import { MacroeventModel } from 'src/app/core/interfaces/macroevent.interface';
-import { SalaModel } from 'src/app/core/interfaces/place.interface'; // Asegúrate de tener este modelo
-import { ProjectModel } from 'src/app/core/interfaces/project.interface';
 import { MacroeventsService } from 'src/app/core/services/macroevents.services';
 import { ProjectsService } from 'src/app/core/services/projects.services';
+import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
 import { ButtonCategoryComponent } from 'src/app/shared/components/buttons/button-category/button-category.component';
+import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
 import { ButtonSelectComponent } from 'src/app/shared/components/buttons/button-select/button-select.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
+import { FilterTransformCodePipe } from 'src/app/shared/pipe/filterTransformCode.pipe';
+import { GeneralService } from 'src/app/shared/services/generalService.service';
 import {
   dateBetween,
   dateRangeValidator,
@@ -68,27 +71,104 @@ import {
   timeRangeValidator,
   uniqueDateTimeValidator,
 } from 'src/app/shared/utils/validators.utils';
-import { FilterTransformCodePipe } from '../../../../../../shared/pipe/filterTransformCode.pipe';
+import { AgentArrayControlComponent } from '../array-agents/array-agents.component';
 import { DateArrayControlComponent } from '../array-dates/array-dates.component';
+
+// ------------------------------------------------------
+// Helpers mínimos
+// ------------------------------------------------------
 function arrayNotEmpty(control: FormControl<CategoryCode[] | []>) {
   const v = control.value || [];
   return Array.isArray(v) && v.length > 0 ? null : { required: true };
 }
+
+// --- Tipado del bloque de público
+type AudienceDTO = {
+  allPublic: boolean;
+  hasAgeRecommendation: boolean;
+  hasRestriction: boolean;
+  ages: {
+    babies: boolean; // 0–3
+    kids: boolean; // 4–11
+    teens: boolean; // 12–17
+    adults: boolean; // 18+
+    seniors: boolean; // 65+
+  };
+  ageNote: string;
+  restrictions: {
+    membersOnly: boolean;
+    womenOnly: boolean;
+    other: boolean;
+    otherText: string;
+  };
+};
+
+// ------------------------------------------------------
+// Validador de "Público" AUTOCONTENIDO en este TS
+// - Exactamente UNA opción principal: allPublic XOR hasAgeRecommendation XOR hasRestriction
+// - Si allPublic => OK
+// - Si hasAgeRecommendation => al menos un rango de edad seleccionado
+// - Si hasRestriction => al menos una restricción; si 'other' => otherText requerido
+// ------------------------------------------------------
+export function audienceValidatorFactory(
+  shouldValidate: () => boolean
+): ValidatorFn {
+  return (fg: AbstractControl): ValidationErrors | null => {
+    if (!shouldValidate()) return null; // modo perezoso
+
+    const get = (p: string) => fg.get(p)?.value;
+    const all = !!get('allPublic');
+    const age = !!get('hasAgeRecommendation');
+    const res = !!get('hasRestriction');
+
+    const ages = fg.get('ages')?.value || {};
+    const r = fg.get('restrictions')?.value || {};
+
+    const primaryCount = [all, age, res].filter(Boolean).length;
+
+    const errors: ValidationErrors = {};
+
+    if (primaryCount === 0) errors['audienceRequired'] = true;
+    if (primaryCount > 1) errors['audiencePrimaryConflict'] = true;
+
+    if (age) {
+      const anyAge =
+        !!ages.babies ||
+        !!ages.kids ||
+        !!ages.teens ||
+        !!ages.adults ||
+        !!ages.seniors;
+      if (!anyAge) errors['ageRangeRequired'] = true;
+    }
+
+    if (res) {
+      const anyR = !!r.membersOnly || !!r.womenOnly || !!r.other;
+      if (!anyR) errors['restrictionRequired'] = true;
+      if (r.other && !(r.otherText || '').toString().trim()) {
+        errors['restrictionOtherTextRequired'] = true;
+      }
+    }
+
+    return Object.keys(errors).length ? errors : null;
+  };
+}
+
 @Component({
   selector: 'app-form-event',
+  standalone: true,
   imports: [
     CommonModule,
     ReactiveFormsModule,
     MatCardModule,
     ImageControlComponent,
     ButtonIconComponent,
-    AgentArrayControlComponent,
     QuillModule,
     ButtonSelectComponent,
-    DateArrayControlComponent,
     SpinnerLoadingComponent,
     FilterTransformCodePipe,
     ButtonCategoryComponent,
+    AgentArrayControlComponent,
+    DateArrayControlComponent,
   ],
   templateUrl: './form-event.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],
@@ -102,7 +182,13 @@ export class FormEventComponent implements OnInit, OnChanges {
   private readonly agentsService = inject(AgentsService);
   private readonly generalService = inject(GeneralService);
   private readonly fb = inject(FormBuilder);
-  readonly minDate = new Date(2018, 0, 1); // > 2018 ⇒ desde 2018-01-01
+  private readonly cdr = inject(ChangeDetectorRef);
+
+  // Para scroll + focus al primer error
+  private el = inject(ElementRef<HTMLElement>);
+  private zone = inject(NgZone);
+
+  readonly minDate = new Date(2018, 0, 1);
   readonly maxDate = (() => {
     const nextYear = new Date().getFullYear() + 1;
     return new Date(nextYear, 11, 31, 0, 0, 0, 0);
@@ -129,6 +215,8 @@ export class FormEventComponent implements OnInit, OnChanges {
 
   public readonly CATEGORY = CATEGORY_UI;
   public readonly category_list = CATEGORY_LIST;
+  private enforceAudienceValidation = false;
+
   eventTypeMacro: 'SINGLE' | 'MACRO' = 'SINGLE';
   eventTypeProject: 'NO_PROJECT' | 'PROJECT' = 'NO_PROJECT';
   eventTypePeriod: 'event' | 'single' | 'periodic' = 'event';
@@ -137,6 +225,9 @@ export class FormEventComponent implements OnInit, OnChanges {
   eventTypeStatus: EnumStatusEvent = EnumStatusEvent.EJECUCION;
   eventTypeInscription: 'unlimited' | 'inscription' = 'unlimited';
 
+  // ------------------------------------------------------
+  // Formulario principal
+  // ------------------------------------------------------
   formEvent = new FormGroup(
     {
       title: new FormControl('', [Validators.required]),
@@ -192,6 +283,40 @@ export class FormEventComponent implements OnInit, OnChanges {
     }
   );
 
+  // ------------------------------------------------------
+  // Formulario de "Público" (audience)
+  // ------------------------------------------------------
+  public audienceForm = this.fb.group(
+    {
+      allPublic: this.fb.control(false, { nonNullable: true }),
+      hasAgeRecommendation: this.fb.control(false, { nonNullable: true }),
+      hasRestriction: this.fb.control(false, { nonNullable: true }),
+      ages: this.fb.group({
+        babies: this.fb.control(false, { nonNullable: true }),
+        kids: this.fb.control(false, { nonNullable: true }),
+        teens: this.fb.control(false, { nonNullable: true }),
+        adults: this.fb.control(false, { nonNullable: true }),
+        seniors: this.fb.control(false, { nonNullable: true }),
+      }),
+      ageNote: this.fb.control('', { nonNullable: true }),
+      restrictions: this.fb.group({
+        membersOnly: this.fb.control(false, { nonNullable: true }),
+        womenOnly: this.fb.control(false, { nonNullable: true }),
+        other: this.fb.control(false, { nonNullable: true }),
+        otherText: this.fb.control(
+          { value: '', disabled: true },
+          { nonNullable: true }
+        ),
+      }),
+    },
+    {
+      validators: [
+        audienceValidatorFactory(() => this.enforceAudienceValidation),
+      ],
+    }
+  );
+
+  // Datos auxiliares
   macroevents: MacroeventModel[] = [];
   projects: ProjectModel[] = [];
   provincias: {
@@ -201,12 +326,13 @@ export class FormEventComponent implements OnInit, OnChanges {
   }[] = [];
   municipios: { label: string; code: string }[] = [];
   espacios: PlaceModel[] = [];
-  salasDelLugar: SalaModel[] = []; // ← NUEVO
+  salasDelLugar: SalaModel[] = [];
   agents: AgentModel[] = [];
   dates: DayEventModel[] = [];
   wasPeriodic = false;
   selectedPlaceId: number | null = null;
   isLoading = true;
+
   quillModules = {
     toolbar: [
       [{ header: [1, 2, false] }],
@@ -222,8 +348,73 @@ export class FormEventComponent implements OnInit, OnChanges {
 
   private originalIdForDuplicate: number | null = null;
 
+  // ------------------------------------------------------
+  // Ciclo de vida
+  // ------------------------------------------------------
   ngOnInit(): void {
     this.isLoading = true;
+
+    // Suscripciones del audience (con teardown)
+    this.audienceForm
+      .get('allPublic')!
+      .valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((v) => {
+        const ages = this.audienceForm.get('ages')!;
+        const rest = this.audienceForm.get('restrictions')!;
+        if (v) {
+          ages.patchValue(
+            {
+              babies: false,
+              kids: false,
+              teens: false,
+              adults: false,
+              seniors: false,
+            },
+            { emitEvent: false }
+          );
+          rest.patchValue(
+            {
+              membersOnly: false,
+              womenOnly: false,
+              other: false,
+              otherText: '',
+            },
+            { emitEvent: false }
+          );
+          this.audienceForm.patchValue(
+            { hasRestriction: false },
+            { emitEvent: false }
+          );
+        }
+      });
+
+    this.audienceForm
+      .get('ages')!
+      .valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((ages) => {
+        const anyAge = Object.values(ages as Record<string, boolean>).some(
+          Boolean
+        );
+        if (anyAge && this.audienceForm.get('allPublic')!.value) {
+          this.audienceForm.patchValue(
+            { allPublic: false },
+            { emitEvent: false }
+          );
+        }
+      });
+
+    this.audienceForm
+      .get('restrictions.other')!
+      .valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((v) => {
+        const otherText = this.audienceForm.get('restrictions.otherText')!;
+        v
+          ? otherText.enable({ emitEvent: false })
+          : otherText.disable({ emitEvent: false });
+        if (!v) otherText.setValue('', { emitEvent: false });
+      });
+
+    // Carga inicial/duplicado
     if (this.itemId === 0 || !this.itemId) {
       if (this.item) {
         this.populateFormWithEvent(this.item!).subscribe(() => {
@@ -232,6 +423,8 @@ export class FormEventComponent implements OnInit, OnChanges {
       } else {
         this.isLoading = false;
         this.formEvent.reset();
+        // audience reset también
+        this.resetAudienceForm();
         this.titleForm = 'Registrar evento';
         this.buttonAction = 'Guardar';
       }
@@ -286,7 +479,6 @@ export class FormEventComponent implements OnInit, OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['itemId'] && changes['itemId'].currentValue) {
       const newId = changes['itemId'].currentValue;
-
       if (newId !== 0) {
         this.isLoading = true;
         this.loadEventData(newId);
@@ -297,12 +489,53 @@ export class FormEventComponent implements OnInit, OnChanges {
       this.originalIdForDuplicate = this.item?.id ?? null;
       this.isLoading = true;
       this.formEvent.reset();
+      this.resetAudienceForm();
       this.populateFormWithEvent(this.item!).subscribe(() => {
         this.isLoading = false;
       });
     }
   }
 
+  // ------------------------------------------------------
+  // Getters y UI helpers
+  // ------------------------------------------------------
+  get categoryCtrl(): FormControl<CategoryCode[]> {
+    return this.formEvent.get('category') as FormControl<CategoryCode[]>;
+  }
+  isCategoryActive(code: CategoryCode): boolean {
+    return this.categoryCtrl.value.includes(code);
+  }
+  toggleCategory(code: CategoryCode): void {
+    const current = [...this.categoryCtrl.value];
+    const i = current.indexOf(code);
+    i >= 0 ? current.splice(i, 1) : current.push(code);
+    this.categoryCtrl.setValue(current);
+  }
+
+  get repeatedDates(): FormArray {
+    return this.formEvent.get('repeated_dates') as FormArray;
+  }
+  get organizers(): FormArray {
+    return this.formEvent.get('organizer') as FormArray;
+  }
+  get collaborators(): FormArray {
+    return this.formEvent.get('collaborator') as FormArray;
+  }
+  get sponsors(): FormArray {
+    return this.formEvent.get('sponsor') as FormArray;
+  }
+  get ticketPrices(): FormArray {
+    return this.formEvent.get('ticket_prices') as FormArray;
+  }
+  get isTypePeriodSelected(): boolean {
+    return (
+      this.eventTypePeriod === 'single' || this.eventTypePeriod === 'periodic'
+    );
+  }
+
+  // ------------------------------------------------------
+  // Carga e hidratación
+  // ------------------------------------------------------
   private loadEventData(eventId: number): void {
     this.eventsFacade.loadEventById(eventId);
 
@@ -313,26 +546,15 @@ export class FormEventComponent implements OnInit, OnChanges {
           (event): event is EventModelFullData =>
             !!event && event.id === eventId
         ),
-        tap(() => this.formEvent.reset()),
+        tap(() => {
+          this.formEvent.reset();
+          this.resetAudienceForm();
+        }),
         switchMap((event) => this.populateFormWithEvent(event))
       )
       .subscribe(() => {
         this.isLoading = false;
       });
-  }
-  get categoryCtrl(): FormControl<CategoryCode[]> {
-    return this.formEvent.get('category') as FormControl<CategoryCode[]>;
-  }
-
-  isCategoryActive(code: CategoryCode): boolean {
-    return this.categoryCtrl.value.includes(code);
-  }
-
-  toggleCategory(code: CategoryCode): void {
-    const current = [...this.categoryCtrl.value];
-    const i = current.indexOf(code);
-    i >= 0 ? current.splice(i, 1) : current.push(code);
-    this.categoryCtrl.setValue(current);
   }
 
   private populateFormWithEvent(event: EventModelFullData): Observable<void> {
@@ -361,6 +583,7 @@ export class FormEventComponent implements OnInit, OnChanges {
           (p) => p.label === event.province
         );
         this.municipios = province?.towns ?? [];
+
         this.formEvent.patchValue(
           {
             title: event.title,
@@ -392,19 +615,11 @@ export class FormEventComponent implements OnInit, OnChanges {
         );
 
         this.eventTypePeriod = event.periodic ? 'periodic' : 'single';
-        if (event.macroevent_id) {
-          this.eventTypeMacro = 'MACRO';
-        }
-        if (event.project_id) {
-          this.eventTypeProject = 'PROJECT';
-        }
-        if (event.place_id) {
-          this.eventTypeUbication = 'place';
-        } else if (event.online_link) {
-          this.eventTypeUbication = 'online';
-        } else {
-          this.eventTypeUbication = 'pending';
-        }
+        if (event.macroevent_id) this.eventTypeMacro = 'MACRO';
+        if (event.project_id) this.eventTypeProject = 'PROJECT';
+        if (event.place_id) this.eventTypeUbication = 'place';
+        else if (event.online_link) this.eventTypeUbication = 'online';
+        else this.eventTypeUbication = 'pending';
 
         let parsedTicketPrices: any[] = [];
         try {
@@ -423,6 +638,7 @@ export class FormEventComponent implements OnInit, OnChanges {
             this.createTicketPriceForm(ticket.type, ticket.price)
           );
         });
+
         switch (event.access as 'FREE' | 'TICKETS' | 'UNSPECIFIED') {
           case 'TICKETS':
             this.setEventTypeAccess('TICKETS');
@@ -473,7 +689,6 @@ export class FormEventComponent implements OnInit, OnChanges {
               (a.time_start || '').localeCompare(b.time_start || '')
           );
 
-          // ✅ Empuja TODOS los pases, incluido el actual (con su id)
           sorted.forEach((e) => {
             this.repeatedDates.push(
               this.fb.group({
@@ -486,7 +701,6 @@ export class FormEventComponent implements OnInit, OnChanges {
             );
           });
 
-          // Recalcular validaciones tras hidratar
           this.repeatedDates.updateValueAndValidity({ emitEvent: true });
         } else {
           this.eventTypePeriod = 'single';
@@ -532,11 +746,173 @@ export class FormEventComponent implements OnInit, OnChanges {
           this.imageSrc = event.img;
           this.selectedImageFile = null;
         }
+
+        // --- Hidratar audience
+        this.patchAudienceFromEvent(event);
       }),
       map(() => void 0)
     );
   }
 
+  private patchAudienceFromEvent(event?: Partial<EventModelFullData>): void {
+    const raw = (event as any)?.audience;
+
+    if (!raw || raw === 'null') {
+      this.resetAudienceForm();
+      this.cdr.markForCheck();
+      return;
+    }
+
+    let parsed: any = null;
+    try {
+      parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    } catch {
+      parsed = null;
+    }
+    if (!parsed || typeof parsed !== 'object') {
+      this.resetAudienceForm();
+      this.cdr.markForCheck();
+      return;
+    }
+
+    const b = (v: any) => v === true || v === 'true' || v === 1 || v === '1';
+
+    const norm = {
+      allPublic: b(parsed.allPublic),
+      hasAgeRecommendation: b(parsed.hasAgeRecommendation),
+      hasRestriction: b(parsed.hasRestriction),
+      ages: {
+        babies: b(parsed.ages?.babies),
+        kids: b(parsed.ages?.kids),
+        teens: b(parsed.ages?.teens),
+        adults: b(parsed.ages?.adults),
+        seniors: b(parsed.ages?.seniors),
+      },
+      ageNote: typeof parsed.ageNote === 'string' ? parsed.ageNote : '',
+      restrictions: {
+        membersOnly: b(parsed.restrictions?.membersOnly),
+        womenOnly: b(parsed.restrictions?.womenOnly),
+        other: b(parsed.restrictions?.other),
+        otherText:
+          typeof parsed.restrictions?.otherText === 'string'
+            ? parsed.restrictions.otherText
+            : '',
+      },
+    };
+
+    if (norm.allPublic) {
+      norm.hasAgeRecommendation = false;
+      norm.hasRestriction = false;
+      norm.ages = {
+        babies: false,
+        kids: false,
+        teens: false,
+        adults: false,
+        seniors: false,
+      };
+      norm.ageNote = '';
+      norm.restrictions = {
+        membersOnly: false,
+        womenOnly: false,
+        other: false,
+        otherText: '',
+      };
+    } else if (norm.hasAgeRecommendation) {
+      norm.hasRestriction = false;
+      const anyAge = Object.values(norm.ages).some(Boolean);
+      if (!anyAge) norm.ages.kids = true;
+      norm.restrictions = {
+        membersOnly: false,
+        womenOnly: false,
+        other: false,
+        otherText: '',
+      };
+    } else if (norm.hasRestriction) {
+      norm.hasAgeRecommendation = false;
+      norm.allPublic = false;
+      norm.ages = {
+        babies: false,
+        kids: false,
+        teens: false,
+        adults: false,
+        seniors: false,
+      };
+      norm.ageNote = '';
+      if (!norm.restrictions.other) norm.restrictions.otherText = '';
+    } else {
+      norm.allPublic = false;
+      norm.hasAgeRecommendation = false;
+      norm.hasRestriction = false;
+    }
+
+    this.audienceForm.patchValue(norm, { emitEvent: false });
+
+    const other = !!norm.restrictions.other;
+    const otherTextCtrl = this.audienceForm.get('restrictions.otherText')!;
+    other
+      ? otherTextCtrl.enable({ emitEvent: false })
+      : otherTextCtrl.disable({ emitEvent: false });
+
+    this.enforceAudienceValidation = false;
+    this.audienceForm.updateValueAndValidity({ emitEvent: false });
+
+    this.cdr.markForCheck();
+  }
+
+  private resetAudienceForm(): void {
+    this.audienceForm.reset(
+      {
+        allPublic: false,
+        hasAgeRecommendation: false,
+        hasRestriction: false,
+        ages: {
+          babies: false,
+          kids: false,
+          teens: false,
+          adults: false,
+          seniors: false,
+        },
+        ageNote: '',
+        restrictions: {
+          membersOnly: false,
+          womenOnly: false,
+          other: false,
+          otherText: '',
+        },
+      },
+      { emitEvent: false }
+    );
+    this.audienceForm
+      .get('restrictions.otherText')
+      ?.disable({ emitEvent: false });
+  }
+
+  private buildAudienceDTO(): AudienceDTO {
+    const v = this.audienceForm.getRawValue();
+    return {
+      allPublic: !!v.allPublic,
+      hasAgeRecommendation: !!v.hasAgeRecommendation,
+      hasRestriction: !!v.hasRestriction,
+      ages: {
+        babies: !!v.ages?.babies,
+        kids: !!v.ages?.kids,
+        teens: !!v.ages?.teens,
+        adults: !!v.ages?.adults,
+        seniors: !!v.ages?.seniors,
+      },
+      ageNote: v.ageNote || '',
+      restrictions: {
+        membersOnly: !!v.restrictions?.membersOnly,
+        womenOnly: !!v.restrictions?.womenOnly,
+        other: !!v.restrictions?.other,
+        otherText: v.restrictions?.otherText || '',
+      },
+    };
+  }
+
+  // ------------------------------------------------------
+  // Auxiliares
+  // ------------------------------------------------------
   private uniqById<T extends { id?: number }>(arr: T[] = []): T[] {
     const seen = new Set<number>();
     return arr.filter((a) => {
@@ -634,55 +1010,31 @@ export class FormEventComponent implements OnInit, OnChanges {
     }
   }
 
-  get isTypePeriodSelected(): boolean {
-    return (
-      this.eventTypePeriod === 'single' || this.eventTypePeriod === 'periodic'
-    );
-  }
-
-  get organizers(): FormArray {
-    return this.formEvent.get('organizer') as FormArray;
-  }
-
-  get collaborators(): FormArray {
-    return this.formEvent.get('collaborator') as FormArray;
-  }
-
-  get sponsors(): FormArray {
-    return this.formEvent.get('sponsor') as FormArray;
-  }
-
   createAgentForm(agent_id: number | null = null): FormGroup {
     return new FormGroup({
       agent_id: new FormControl(agent_id, Validators.required),
     });
   }
-
   addOrganizer(): void {
     this.showOrganizers = true;
     this.organizers.push(this.createAgentForm(null));
   }
-
   addCollaborator(): void {
     this.showCollaborators = true;
     this.collaborators.push(this.createAgentForm(null));
   }
-
   addSponsor(): void {
     this.showSponsors = true;
     this.sponsors.push(this.createAgentForm(null));
   }
-
   removeOrganizer(index: number): void {
     this.organizers.removeAt(index);
     if (this.organizers.length === 0) this.showOrganizers = false;
   }
-
   removeCollaborator(index: number): void {
     this.collaborators.removeAt(index);
     if (this.collaborators.length === 0) this.showCollaborators = false;
   }
-
   removeSponsor(index: number): void {
     this.sponsors.removeAt(index);
     if (this.sponsors.length === 0) this.showSponsors = false;
@@ -695,7 +1047,6 @@ export class FormEventComponent implements OnInit, OnChanges {
       this.formEvent.get('img')?.setValue(null);
       return;
     }
-
     const result = await this.generalService.handleFileSelection(file);
     this.selectedImageFile = result.file;
     this.imageSrc = result.imageSrc;
@@ -726,7 +1077,6 @@ export class FormEventComponent implements OnInit, OnChanges {
       startControl?.updateValueAndValidity({ emitEvent: false });
       endControl?.updateValueAndValidity({ emitEvent: false });
     } else if (type === 'periodic') {
-      // Guarda valores actuales antes de limpiar
       const curStart = this.formEvent.get('start')?.value || null;
       const curEnd = this.formEvent.get('end')?.value || curStart;
       const curTs = this.formEvent.get('time_start')?.value || '';
@@ -735,7 +1085,6 @@ export class FormEventComponent implements OnInit, OnChanges {
       this.formEvent.patchValue({ periodic: true });
       this.wasPeriodic = true;
 
-      // Limpia cabeceras para que el usuario gestione solo el array
       this.formEvent.patchValue({
         start: null,
         end: null,
@@ -748,7 +1097,6 @@ export class FormEventComponent implements OnInit, OnChanges {
 
       this.repeatedDates.clear();
 
-      // ✅ Si venimos de single con valores, siembra ese pase
       if (curStart) {
         this.repeatedDates.push(
           this.fb.group({
@@ -797,7 +1145,6 @@ export class FormEventComponent implements OnInit, OnChanges {
     this.eventTypeMacro = type;
     this.formEvent.patchValue({ macroevent_id: null });
   }
-
   setEventTypeProject(type: 'NO_PROJECT' | 'PROJECT'): void {
     this.eventTypeProject = type;
     this.formEvent.patchValue({ project_id: null });
@@ -807,9 +1154,7 @@ export class FormEventComponent implements OnInit, OnChanges {
     this.eventTypeAccess = type;
 
     if (type === 'TICKETS') {
-      if (this.ticketPrices.length === 0) {
-        this.addTicketPrice();
-      }
+      if (this.ticketPrices.length === 0) this.addTicketPrice();
       this.formEvent.patchValue({ inscription_method: '' });
       this.formEvent.patchValue({ access: 'TICKETS' });
     }
@@ -827,12 +1172,9 @@ export class FormEventComponent implements OnInit, OnChanges {
 
   setEventTypeInscription(type: 'unlimited' | 'inscription'): void {
     this.eventTypeInscription = type;
-
-    if (type === 'inscription') {
+    if (type === 'inscription')
       this.formEvent.patchValue({ inscription: true });
-    } else {
-      this.formEvent.patchValue({ inscription: false });
-    }
+    else this.formEvent.patchValue({ inscription: false });
   }
 
   setEventTypeStatus(type: EnumStatusEvent): void {
@@ -846,15 +1188,8 @@ export class FormEventComponent implements OnInit, OnChanges {
     });
 
     const statusReasonControl = this.formEvent.get('status_reason');
-    if (statusReasonRequired) {
-      statusReasonControl?.enable();
-    } else {
-      statusReasonControl?.disable();
-    }
-  }
-
-  get repeatedDates(): FormArray {
-    return this.formEvent.get('repeated_dates') as FormArray;
+    if (statusReasonRequired) statusReasonControl?.enable();
+    else statusReasonControl?.disable();
   }
 
   addRepeatedDate(): void {
@@ -869,18 +1204,12 @@ export class FormEventComponent implements OnInit, OnChanges {
         time_end: [''],
       })
     );
-    // 🔁 recalcula validaciones
     this.repeatedDates.updateValueAndValidity({ emitEvent: true });
   }
 
   removeRepeatedDate(index: number): void {
     this.repeatedDates.removeAt(index);
-    // 🔁 recalcula validaciones
     this.repeatedDates.updateValueAndValidity({ emitEvent: true });
-  }
-
-  get ticketPrices(): FormArray {
-    return this.formEvent.get('ticket_prices') as FormArray;
   }
 
   createTicketPriceForm(
@@ -892,11 +1221,9 @@ export class FormEventComponent implements OnInit, OnChanges {
       price: new FormControl(price, [Validators.required, Validators.min(0)]),
     });
   }
-
   addTicketPrice(): void {
     this.ticketPrices.push(this.createTicketPriceForm());
   }
-
   removeTicketPrice(index: number): void {
     this.ticketPrices.removeAt(index);
   }
@@ -915,11 +1242,9 @@ export class FormEventComponent implements OnInit, OnChanges {
   trackByLabel(index: number, item: any) {
     return item.label;
   }
-
   trackById(index: number, item: any) {
     return item.id;
   }
-
   trackBySalaId(index: number, item: any) {
     return item.sala_id;
   }
@@ -932,49 +1257,73 @@ export class FormEventComponent implements OnInit, OnChanges {
     return `${hh}:${mm}:00`;
   }
 
-  private uniqByDateAndTime<
-    T extends {
-      start?: string;
-      end?: string;
-      time_start?: string | null;
-      time_end?: string | null;
-    }
-  >(arr: T[]): T[] {
-    const seen = new Set<string>();
-    const out: T[] = [];
-    for (const r of arr) {
-      const d = (r.start || '').slice(0, 10);
-      if (!d) continue;
-      const ts = this.normTime(r.time_start || '00:00');
-      const key = `${d}|${ts}`;
-      if (seen.has(key)) continue; // elimina duplicados exactos fecha+hora
-      out.push({
-        ...r,
-        start: d as any,
-        end: (r.end?.slice(0, 10) || d) as any,
-        time_start: r.time_start ?? '',
-        time_end: r.time_end ?? '',
-      });
-      seen.add(key);
-    }
-    return out;
+  // ------------------------------------------------------
+  // Scroll + focus al primer error (de arriba a abajo)
+  // ------------------------------------------------------
+  private scrollAndFocusFirstError(): void {
+    const rootEl = this.el.nativeElement as HTMLElement;
+
+    // 1) Selección de candidatos (tipado explícito)
+    const nodeList: NodeListOf<HTMLElement> =
+      rootEl.querySelectorAll<HTMLElement>(
+        `
+    [formControlName].ng-invalid,
+    [formArrayName].ng-invalid,
+    [formGroupName].ng-invalid,
+    .is-invalid,
+    [aria-invalid="true"]
+    `
+      );
+
+    // 2) Filtrar visibles (tipa el callback)
+    const visible: HTMLElement[] = Array.from(nodeList).filter(
+      (el: HTMLElement) => {
+        const style = window.getComputedStyle(el);
+        const rect = el.getBoundingClientRect();
+        return (
+          style.visibility !== 'hidden' &&
+          style.display !== 'none' &&
+          rect.width > 0 &&
+          rect.height > 0
+        );
+      }
+    );
+
+    if (visible.length === 0) return;
+
+    // 3) El más alto (tipa el comparator)
+    const target: HTMLElement = visible.sort(
+      (a: HTMLElement, b: HTMLElement) =>
+        a.getBoundingClientRect().top - b.getBoundingClientRect().top
+    )[0];
+
+    this.zone.runOutsideAngular(() => {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const focusable: HTMLElement | null = target.matches(
+        'input,select,textarea,button,[tabindex]'
+      )
+        ? target
+        : target.querySelector<HTMLElement>(
+            'input,select,textarea,button,[tabindex]'
+          );
+      if (focusable) {
+        setTimeout(() => focusable.focus({ preventScroll: true }), 250);
+      }
+    });
   }
 
+  // ------------------------------------------------------
+  // Envío
+  // ------------------------------------------------------
   onSendFormEvent(): void {
     this.submitted = true;
 
-    const normTime = (t?: string | null): string => {
-      if (!t) return '';
-      const [h = '0', m = '0'] = t.split(':');
-      return `${h.padStart(2, '0')}:${m.padStart(2, '0')}:00`;
-    };
     const isEmptyOrMidnight = (v?: string | null) =>
       !v || v === '00:00' || v === '00:00:00';
 
     const isPeriodic = this.eventTypePeriod === 'periodic';
     this.formEvent.patchValue({ periodic: isPeriodic });
 
-    // Autocompletar end y time_end en cabecera
     const start = this.formEvent.get('start')?.value as string | null;
     const end = this.formEvent.get('end')?.value as string | null;
     if (!end && start) {
@@ -992,25 +1341,22 @@ export class FormEventComponent implements OnInit, OnChanges {
 
     this.formEvent.updateValueAndValidity({ emitEvent: false });
 
-    if (this.formEvent.invalid) {
-      const hasDate = isPeriodic
-        ? this.repeatedDates.controls.some((fg) => !!fg.get('start')?.value)
-        : !!this.formEvent.get('start')?.value;
+    // Forzar validación de audience ANTES de decidir
+    this.enforceAudienceValidation = true;
+    this.audienceForm.markAllAsTouched();
+    this.audienceForm.updateValueAndValidity({ emitEvent: false });
 
-      if (!hasDate) {
-        console.warn('Debe añadir al menos una fecha válida');
-        return;
-      }
-
-      this.logFormErrors();
+    // ¿Hay errores?
+    if (this.formEvent.invalid || this.audienceForm.invalid) {
+      this.scrollAndFocusFirstError();
+      if (this.formEvent.invalid) this.logFormErrors();
       return;
     }
 
+    // ----- Construcción de payload -----
     const rawValues = this.formEvent.getRawValue();
 
-    if (!rawValues.end && rawValues.start) {
-      rawValues.end = rawValues.start;
-    }
+    if (!rawValues.end && rawValues.start) rawValues.end = rawValues.start;
 
     const isTimeEndEmptyRaw =
       !rawValues.time_end ||
@@ -1025,7 +1371,6 @@ export class FormEventComponent implements OnInit, OnChanges {
 
     const toNum = (v: any) =>
       v === null || v === undefined || v === '' ? null : Number(v);
-
     const getIds = (fa: FormArray) =>
       Array.from(
         new Set(
@@ -1047,6 +1392,10 @@ export class FormEventComponent implements OnInit, OnChanges {
       ticket_prices: this.ticketPrices.getRawValue(),
     };
 
+    // --- Audience empaquetado
+    const audienceDTO = this.buildAudienceDTO();
+    (baseData as any).audience = JSON.stringify(audienceDTO);
+
     if (isPeriodic) {
       const rdRaw = this.repeatedDates.getRawValue() as Array<{
         id?: number;
@@ -1058,17 +1407,17 @@ export class FormEventComponent implements OnInit, OnChanges {
 
       if (!rdRaw.length) {
         console.warn('Debe incluir al menos una fecha de pase');
+        this.scrollAndFocusFirstError();
         return;
       }
 
-      // Normaliza, autocompleta time_end y CONSERVA id
       const seen = new Set<string>();
       const rdNorm = rdRaw
         .map((r) => {
           const d = (r.start || '').slice(0, 10);
           if (!d) return null;
           const e = (r.end && r.end.slice(0, 10)) || d;
-          const tStart = normTime(r.time_start || '00:00');
+          const tStart = this.normTime(r.time_start || '00:00');
           let tEnd = r.time_end || '';
           if (tStart && isEmptyOrMidnight(tEnd)) {
             tEnd = this.calcTimeEnd(tStart);
@@ -1089,7 +1438,6 @@ export class FormEventComponent implements OnInit, OnChanges {
         time_end: string;
       }>;
 
-      // Dedup exacto por (fecha|hora) manteniendo el primero
       const repeated: typeof rdNorm = [];
       for (const r of rdNorm) {
         const key = `${r.start}|${r.time_start}`;
@@ -1098,7 +1446,6 @@ export class FormEventComponent implements OnInit, OnChanges {
         repeated.push(r);
       }
 
-      // Asegura campos principales obligatorios
       let mainDate = (rawValues.start as string | null)?.slice(0, 10) || null;
       if (!mainDate && repeated.length) {
         mainDate = repeated
@@ -1126,28 +1473,24 @@ export class FormEventComponent implements OnInit, OnChanges {
         this.generateUUID();
 
       baseData.periodic_id = periodic_id;
-      // ❗️Mandamos TODOS los pases, incluido el principal
       baseData.repeated_dates = repeated;
     } else {
       baseData.periodic_id = '';
       baseData.repeated_dates = [];
     }
 
-    if (baseData.description) {
+    if (baseData.description)
       baseData.description = baseData.description.replace(/&nbsp;/g, ' ');
-    }
-    if (baseData.tickets_method) {
+    if (baseData.tickets_method)
       baseData.tickets_method = baseData.tickets_method.replace(/&nbsp;/g, ' ');
-    }
-    if (baseData.inscription_method) {
+    if (baseData.inscription_method)
       baseData.inscription_method = baseData.inscription_method.replace(
         /&nbsp;/g,
         ' '
       );
-    }
-    if (baseData.status_reason) {
+    if (baseData.status_reason)
       baseData.status_reason = baseData.status_reason.replace(/&nbsp;/g, ' ');
-    }
+
     const duplicateFromId =
       (!this.itemId || this.itemId === 0) && this.originalIdForDuplicate
         ? this.originalIdForDuplicate
@@ -1172,27 +1515,20 @@ export class FormEventComponent implements OnInit, OnChanges {
 
     Object.entries(this.formEvent.controls).forEach(([key, control]) => {
       if (control.invalid) {
-        console.warn(`Campo inválido "${key}":`, control.errors);
+        console.warn(`Campo inválido "${key}":`, (control as any).errors);
       }
     });
   }
 
-  // Función auxiliar para sumar 3 horas y normalizar formato HH:mm:ss
   private calcTimeEnd(timeStart: string): string {
     if (!timeStart || !timeStart.includes(':')) return '';
-
     const [h, m] = timeStart.split(':');
     const hours = parseInt(h, 10);
     const minutes = parseInt(m, 10);
-
     if (isNaN(hours) || isNaN(minutes)) return '';
-
     let newHours = hours + 3;
-    if (newHours >= 24) {
-      newHours -= 24;
-    }
-
-    const pad = (n: number) => (n < 10 ? '0' + n : n);
+    if (newHours >= 24) newHours -= 24;
+    const pad = (n: number) => (n < 10 ? '0' + n : '' + n);
     return `${pad(newHours)}:${pad(minutes)}:00`;
   }
 
@@ -1233,6 +1569,7 @@ export class FormEventComponent implements OnInit, OnChanges {
       organizer: number[];
       collaborator: number[];
       sponsor: number[];
+      audience?: string;
     },
     files?: { img?: File | null },
     itemId?: number | null,
@@ -1272,6 +1609,7 @@ export class FormEventComponent implements OnInit, OnChanges {
     put('online_link', data.online_link ?? '');
     put('periodic', !!data.periodic);
     put('periodic_id', data.periodic_id ?? '');
+    put('audience', data.audience ?? '');
 
     // Numéricos opcionales
     put('place_id', typeof data.place_id === 'number' ? data.place_id : '');
@@ -1312,7 +1650,7 @@ export class FormEventComponent implements OnInit, OnChanges {
       });
     }
 
-    // repeated_dates (como JSON) — incluye id cuando exista
+    // repeated_dates
     fd.append('repeated_dates', JSON.stringify(data.repeated_dates ?? []));
 
     // Imagen
@@ -1336,5 +1674,135 @@ export class FormEventComponent implements OnInit, OnChanges {
     }
 
     return fd;
+  }
+
+  selectAudiencePrimary(mode: 'ALL' | 'AGE' | 'RESTRICTION'): void {
+    const f = this.audienceForm;
+
+    const resetAges = () =>
+      f.get('ages')!.patchValue(
+        {
+          babies: false,
+          kids: false,
+          teens: false,
+          adults: false,
+          seniors: false,
+        },
+        { emitEvent: false }
+      );
+
+    const resetRestrictions = () =>
+      f
+        .get('restrictions')!
+        .patchValue(
+          { membersOnly: false, womenOnly: false, other: false, otherText: '' },
+          { emitEvent: false }
+        );
+
+    if (mode === 'ALL') {
+      f.patchValue(
+        {
+          allPublic: true,
+          hasAgeRecommendation: false,
+          hasRestriction: false,
+          ageNote: '',
+        },
+        { emitEvent: false }
+      );
+      resetAges();
+      resetRestrictions();
+      f.get('restrictions.otherText')!.disable({ emitEvent: false });
+    }
+
+    if (mode === 'AGE') {
+      f.patchValue(
+        { allPublic: false, hasAgeRecommendation: true, hasRestriction: false },
+        { emitEvent: false }
+      );
+      resetRestrictions();
+      f.get('restrictions.otherText')!.disable({ emitEvent: false });
+    }
+
+    if (mode === 'RESTRICTION') {
+      f.patchValue(
+        {
+          allPublic: false,
+          hasAgeRecommendation: false,
+          hasRestriction: true,
+          ageNote: '',
+        },
+        { emitEvent: false }
+      );
+      resetAges();
+      const other = !!f.get('restrictions.other')!.value;
+      const otherText = f.get('restrictions.otherText')!;
+      other
+        ? otherText.enable({ emitEvent: false })
+        : otherText.disable({ emitEvent: false });
+      if (!other) otherText.setValue('', { emitEvent: false });
+    }
+    this.enforceAudienceValidation = true;
+    this.audienceForm.updateValueAndValidity({ emitEvent: false });
+  }
+
+  /** Toggle seguro para flags dentro de 'ages' y 'restrictions' */
+  toggleAudience(path: string): void {
+    const c = this.audienceForm.get(path);
+    if (!c) return;
+    c.setValue(!c.value, { emitEvent: true });
+    if (path === 'restrictions.other') {
+      const enabled =
+        this.audienceForm.get('restrictions.other')!.value === true;
+      const otherText = this.audienceForm.get('restrictions.otherText')!;
+      enabled
+        ? otherText.enable({ emitEvent: false })
+        : otherText.disable({ emitEvent: false });
+      if (!enabled) otherText.setValue('', { emitEvent: false });
+    }
+    this.enforceAudienceValidation = true;
+    this.audienceForm.updateValueAndValidity({ emitEvent: false });
+  }
+
+  toggleRestriction(key: 'membersOnly' | 'womenOnly' | 'other'): void {
+    const grp = this.audienceForm.get('restrictions') as FormGroup;
+    if (!grp) return;
+
+    const was = grp.get(key)!.value === true;
+    const next = !was;
+
+    grp.setValue(
+      { membersOnly: false, womenOnly: false, other: false, otherText: '' },
+      { emitEvent: false }
+    );
+
+    grp.patchValue({ [key]: next } as any, { emitEvent: true });
+
+    const otherTextCtrl = grp.get('otherText')!;
+    if (key === 'other' && next) {
+      otherTextCtrl.enable({ emitEvent: false });
+    } else {
+      otherTextCtrl.disable({ emitEvent: false });
+      otherTextCtrl.setValue('', { emitEvent: false });
+    }
+
+    grp.markAsDirty();
+    grp.markAsTouched();
+    this.enforceAudienceValidation = true;
+    this.audienceForm.updateValueAndValidity({ emitEvent: false });
+
+    this.cdr.markForCheck();
+  }
+
+  get audienceErrorMessage(): string | null {
+    const e = this.audienceForm.errors;
+    if (!e) return null;
+    if (e['audiencePrimaryConflict'])
+      return 'Solo puede haber una opción principal.';
+    if (e['audienceRequired']) return 'Selecciona una opción principal.';
+    if (e['ageRangeRequired']) return 'Selecciona al menos un rango de edad.';
+    if (e['restrictionRequired']) return 'Selecciona al menos una restricción.';
+    if (e['restrictionOtherTextRequired'])
+      return 'Describe la “Otra restricción”.';
+    return 'Completa la sección de Público.';
   }
 }

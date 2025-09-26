@@ -12,6 +12,7 @@ export interface EventModel {
   time_start?: string;
   time_end?: string;
   description?: string;
+  audience?: AudienceDTO;
   online_link?: string;
   province: string;
   town: string;
@@ -44,7 +45,25 @@ export interface TicketPriceModel {
   type: string;
   price: number;
 }
-
+export type AudienceDTO = {
+  allPublic: boolean;
+  hasAgeRecommendation: boolean;
+  hasRestriction: boolean;
+  ages: {
+    babies: boolean;
+    kids: boolean;
+    teens: boolean;
+    adults: boolean;
+    seniors: boolean;
+  };
+  ageNote: string;
+  restrictions: {
+    membersOnly: boolean;
+    womenOnly: boolean;
+    other: boolean;
+    otherText: string;
+  };
+};
 export enum EnumStatusEvent {
   EJECUCION = 'EJECUCION',
   CANCELADO = 'CANCELADO',

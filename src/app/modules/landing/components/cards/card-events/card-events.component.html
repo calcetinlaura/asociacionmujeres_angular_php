@@ -26,7 +26,7 @@
     <div class="flex gap-x-2 flex-wrap justify-center">
       @for (category of item.category; track category) {
       <p class="categories">
-        {{ category | dicTranslate : dictType.Categories }}
+        {{ category | dictTranslate : dictType.Categories }}
       </p>
       }
     </div>
@@ -109,7 +109,7 @@
       } } } @if (item.periodicEvents && item.periodicEvents.length > 0) { @let
       shown = getPeriodicEventsToShow(item.periodicEvents);
       <div
-        class="flex gap-x-2 overflow-x-auto w-full min-w-0 max-w-full overflow-y-hidden"
+        class="flex gap-x-2 overflow-x-auto h-full w-full min-w-0 max-w-full overflow-y-hidden"
         [class.justify-start]="
           (item?.periodicEvents?.length || 0) > (isMobile ? 5 : 7)
         "

@@ -27,6 +27,7 @@ import { FilterTransformCodePipe } from 'src/app/shared/pipe/filterTransformCode
 import { HasValuePipe } from 'src/app/shared/pipe/hasValue.pipe';
 import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
 import { PhoneFormatPipe } from 'src/app/shared/pipe/phoneFormat.pipe';
+import { AudienceBadgesPipe } from '../../../../shared/pipe/audience-badges.pipe';
 import { HmsPipe } from '../../../../shared/pipe/dateTime_form.pipe';
 import {
   DictTranslatePipe,
@@ -57,6 +58,7 @@ import { CircleIndicatorComponent } from '../circle-indicator/circle-indicator.c
     HmsPipe,
     ItemImagePipe,
     DictTranslatePipe,
+    AudienceBadgesPipe,
   ],
   providers: [ItemImagePipe],
   selector: 'app-table',

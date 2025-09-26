@@ -91,6 +91,12 @@ export class EventsPageComponent implements OnInit {
       title: 'Categoría',
       key: 'category',
       sortable: true,
+      width: ColumnWidth.XS,
+    },
+    {
+      title: 'Público',
+      key: 'audience',
+      sortable: true,
       width: ColumnWidth.SM,
     },
     {
@@ -167,7 +173,7 @@ export class EventsPageComponent implements OnInit {
   ngOnInit(): void {
     this.columnVisibility = this.generalService.setColumnVisibility(
       this.headerListEvents,
-      ['capacity', 'organizer', 'collaborator', 'sponsor'] // Coloca las columnas que deseas ocultar aquí
+      ['capacity', 'organizer', 'collaborator', 'sponsor', 'status'] // Coloca las columnas que deseas ocultar aquí
     );
 
     // Actualiza las columnas visibles según el estado de visibilidad

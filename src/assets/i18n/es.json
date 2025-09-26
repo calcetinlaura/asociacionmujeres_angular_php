@@ -25,5 +25,37 @@
     "LEISURE": "Ocio",
     "LITERATURE": "Literatura",
     "COURSE": "Curso"
+  },
+  "audience": {
+    "allPublic": "Todos los públicos",
+    "ages": {
+      "label": "Edades: {{list}}",
+      "babies": "Bebés",
+      "kids": "Infantil",
+      "teens": "Adolescentes",
+      "adults": "Adultos",
+      "seniors": "Mayores de 55 años"
+    },
+    "note": "Nota: {{text}}",
+    "restrictions": {
+      "membersOnly": "Solo socias",
+      "womenOnly": "Solo mujeres",
+      "other": "Restricción: {{text}}"
+    },
+    "combo": {
+      "over12": "Mayores de 12 años",
+      "adultsSeniors": "Mayores de edad",
+      "over3": "Mayores de 3 años",
+
+      "kidsTeens": "Infantil y adolescentes",
+      "teensAdults": "Adolescentes y adultos",
+      "kidsTeensAdults": "Infantil, adolescentes y adultos",
+      "kidsAdultsSeniors": "Infantil, adultos y mayores",
+      "teensSeniors": "Adolescentes y mayores",
+      "babiesKids": "Peques (0 - 11 años)",
+      "babiesKidsTeens": "Menores de edad",
+
+      "allAges": "Todos los públicos"
+    }
   }
 }

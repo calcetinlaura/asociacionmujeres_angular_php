@@ -138,4 +138,61 @@ export function dateBetween(min: Date, max: Date): ValidatorFn {
       return { maxDate: { requiredMaxExclusive: maxUTC, actual: v } };
     return null;
   };
+  // ✅ Validador integral de “Público”
+}
+export function audienceValidatorFactory(
+  shouldEnforce: () => boolean
+): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const enforce = shouldEnforce();
+
+    const allPublic = control.get('allPublic')?.value === true;
+    const hasAgeRec = control.get('hasAgeRecommendation')?.value === true;
+    const hasRestr = control.get('hasRestriction')?.value === true;
+
+    const primaryCount =
+      (allPublic ? 1 : 0) + (hasAgeRec ? 1 : 0) + (hasRestr ? 1 : 0);
+
+    const ages = control.get('ages')?.value as
+      | {
+          babies: boolean;
+          kids: boolean;
+          teens: boolean;
+          adults: boolean;
+          seniors: boolean;
+        }
+      | undefined;
+
+    const restrGroup = control.get('restrictions');
+    const membersOnly = restrGroup?.get('membersOnly')?.value === true;
+    const womenOnly = restrGroup?.get('womenOnly')?.value === true;
+    const other = restrGroup?.get('other')?.value === true;
+    const otherText = (restrGroup?.get('otherText')?.value ?? '')
+      .toString()
+      .trim();
+
+    const errors: Record<string, true> = {};
+
+    // 🔕 Si aún no queremos forzar validación y no hay selección primaria, no marcamos error
+    if (!enforce && primaryCount === 0) return null;
+
+    // — Principal: obligatorio y exclusivo
+    if (primaryCount === 0) errors['audienceRequired'] = true;
+    if (primaryCount > 1) errors['audiencePrimaryConflict'] = true;
+
+    // — Edad: al menos un rango
+    if (hasAgeRec) {
+      const anyAge = !!ages && Object.values(ages).some(Boolean);
+      if (!anyAge) errors['ageRangeRequired'] = true;
+    }
+
+    // — Restricciones: una marcada; si 'other', texto requerido
+    if (hasRestr) {
+      const anyRestr = membersOnly || womenOnly || other;
+      if (!anyRestr) errors['restrictionRequired'] = true;
+      if (other && !otherText) errors['restrictionOtherTextRequired'] = true;
+    }
+
+    return Object.keys(errors).length ? errors : null;
+  };
 }

@@ -29,11 +29,23 @@
         appImgBroken
         [src]="(item.img ? item.img : '') | itemImage : typeModal"
         [alt]="item.title"
-        class="w-full bg-verdeClaro"
+        class="w-full"
+        (click)="openZoom()"
       />
     </div>
     <div class="lg:w-3/5 flex flex-col justify-between gap-y-4">
-      @if (item.periodicEvents === null){
+      @if (item.category){
+      <div class="flex gap-x-2 flex-wrap">
+        @for (category of item.category; track category) {
+        <app-text-background
+          [text]="category | dictTranslate : dictType.Categories"
+          colorBack="#C1E6DD"
+        ></app-text-background>
+        }
+      </div>
+      } @if (item.description){
+      <app-text-editor [text]="item.description"></app-text-editor>
+      } @if (item.periodicEvents === null){
       <div class="flex flex-row gap-x-4">
         <ng-container class="lowercase">
           @if (item.start && item.end === item.start) {
@@ -67,14 +79,18 @@
         }
       </div>
       } @if (item.periodicEvents && item.periodicEvents.length > 0) {
-      <p class="text-[16px] uppercase text-lilaOscuro font-semibold">Pases</p>
+      <p
+        class="text-[16px] leading-[16px] uppercase text-lilaOscuro font-semibold"
+      >
+        Pases
+      </p>
       <div class="pl-6 flex flex-col gap-y-4">
         @for (func of item.periodicEvents; track func) {
         <div class="flex sm:flex-row gap-x-4 items-center">
           <p
             class="text-[9px] md:text-[12px] px-[6px] pt-1 pb-[3px] rounded-[4px] border-[1px] border-lilaOscuro"
           >
-            {{ func.start | date : "EEEE dd MMMM yyyy" }} >
+            {{ func.start | date : "EEEE dd MMMM yyyy" }}
           </p>
 
           @if (func.time_start !== '00:00:00') {
@@ -87,21 +103,29 @@
         </div>
         }
       </div>
-      } @if (item.category){
-      <div class="flex gap-x-2 flex-wrap">
-        @for (category of item.category; track category) {
+      }@if (item.audience) {
+      <div class="flex">
+        <div
+          class="border-r-[1px] border-lilaOscuro w-[120px] text-[10px] flex justify-start items-center mr-4"
+        >
+          Público recomendado
+        </div>
+        @for (badge of (item.audience | audienceBadges); track badge) {
         <app-text-background
-          [text]="category | dicTranslate : dictType.Categories"
-          colorBack="#C1E6DD"
+          [text]="badge"
+          colorBack="#bed8f7"
         ></app-text-background>
         }
       </div>
-      } @if (item.description){
-      <app-text-editor [text]="item.description"></app-text-editor>
-      } @if (item.access === 'FREE'){
+
+      } @if(item.access === 'FREE'){
       <app-text-background [text]="'Acceso gratuito'"></app-text-background>}
       @if (item.access === 'TICKETS'){
-      <p class="text-[16px] uppercase text-lilaOscuro font-semibold">Precio</p>
+      <p
+        class="text-[16px] leading-[16px] uppercase text-lilaOscuro font-semibold"
+      >
+        Precio
+      </p>
       <div class="pl-6 flex flex-col gap-y-4">
         @for (ticket of item.ticket_prices; track ticket) {
         <div class="flex sm:flex-row gap-x-4 items-center">
@@ -238,3 +262,38 @@
     </div>
   </div>
 </div>
+@if (showZoom) {
+<div
+  class="fixed inset-0 z-[9999] bg-black/90"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Vista ampliada de la imagen"
+  (click)="closeZoom()"
+>
+  <div
+    class="relative w-full h-full overflow-hidden"
+    style="touch-action: none"
+    (click)="$event.stopPropagation()"
+  >
+    <img
+      appPinchZoom
+      [maxScale]="5"
+      [minScale]="1"
+      [src]="(item.img ? item.img : '') | itemImage : typeModal"
+      [alt]="item.title"
+      class="block max-w-none select-none"
+      draggable="false"
+    />
+
+    <button
+      type="button"
+      class="absolute top-4 right-4 text-white/90 hover:text-white text-2xl"
+      (click)="closeZoom()"
+      aria-label="Cerrar imagen ampliada"
+    >
+      ✕
+    </button>
+  </div>
+</div>
+
+}

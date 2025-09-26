@@ -65,6 +65,7 @@
 .is-invalid-text {
   color: Red;
   font-size: 11px;
+  padding-top: 2px;
 }
 .is-invalid-form {
   color: Red;

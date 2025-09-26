@@ -838,7 +838,16 @@ $match = (isset($_GET['match']) && strtolower($_GET['match']) === 'all') ? 'all'
     $ticketPrices      = $data['ticket_prices'] ?? null;
     $ticketPricesJson  = json_encode($ticketPrices ?: []);
     $status = isset($data['status']) && $data['status'] !== '' ? (string)$data['status'] : 'EJECUCION';
-
+    $audience = '';
+    if (isset($data['audience'])) {
+      $audience = is_string($data['audience'])
+        ? $data['audience']
+        : json_encode($data['audience']);
+      // opcional: validación suave
+      if (json_decode($audience, true) === null && $audience !== 'null') {
+        $audience = ''; // si no es JSON válido, guardamos vacío
+      }
+    }
     // Categorías EN
     global $CATEGORY_WHITELIST;
     $categories = normalizeCategories($data['category'] ?? null, $CATEGORY_WHITELIST);
@@ -878,13 +887,13 @@ $match = (isset($_GET['match']) && strtolower($_GET['match']) === 'all') ? 'all'
       if (empty($imgName)) $imgName = $oldImg;
 
       $stmt = $connection->prepare("UPDATE events SET
-        macroevent_id=?, project_id=?, title=?, start=?, end=?, time_start=?, time_end=?, description=?, province=?, town=?,
+        macroevent_id=?, project_id=?, title=?, start=?, end=?, time_start=?, time_end=?, description=?, audience=?, province=?, town=?,
         place_id=?, sala_id=?, capacity=?, access=?, ticket_prices=?, img=?, status=?, status_reason=?, inscription=?,
         inscription_method=?, tickets_method=?, online_link=?, periodic=?, periodic_id=?
         WHERE id=?");
-      $stmt->bind_param("iissssssssiiisssssisssisi",
+      $stmt->bind_param("iisssssssssiiisssssisssisi",
         $data['macroevent_id'], $data['project_id'], $data['title'], $data['start'], $data['end'],
-        $data['time_start'], $data['time_end'], $data['description'], $data['province'], $data['town'],
+        $data['time_start'], $data['time_end'], $data['description'], $audience, $data['province'], $data['town'],
         $data['place_id'], $data['sala_id'], $capacity, $data['access'], $ticketPricesJson, $imgName,
         $data['status'], $data['status_reason'], $inscription, $data['inscription_method'],
         $data['tickets_method'], $data['online_link'], $periodic, $periodicId, $id
@@ -899,13 +908,13 @@ $match = (isset($_GET['match']) && strtolower($_GET['match']) === 'all') ? 'all'
     } else {
       $stmt = $connection->prepare("INSERT INTO events (
         macroevent_id, project_id, title, start, end, time_start, time_end, description,
-        province, town, place_id, sala_id, capacity, access, ticket_prices, img,
+        audience, province, town, place_id, sala_id, capacity, access, ticket_prices, img,
         status, status_reason, inscription, inscription_method, tickets_method,
         online_link, periodic, periodic_id
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-      $stmt->bind_param("iissssssssiiisssssisssis",
+      ) VALUES (?, ?, ?, ?, ?, ?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+      $stmt->bind_param("iisssssssssiiisssssisssis",
         $data['macroevent_id'], $data['project_id'], $data['title'], $data['start'], $data['end'],
-        $data['time_start'], $data['time_end'], $data['description'], $data['province'], $data['town'],
+        $data['time_start'], $data['time_end'], $data['description'], $audience, $data['province'], $data['town'],
         $data['place_id'], $data['sala_id'], $capacity, $data['access'], $ticketPricesJson, $imgName,
         $data['status'], $data['status_reason'], $inscription, $data['inscription_method'],
         $data['tickets_method'], $data['online_link'], $periodic, $periodicId
@@ -984,13 +993,13 @@ $match = (isset($_GET['match']) && strtolower($_GET['match']) === 'all') ? 'all'
         if ($rd['id'] && isset($existingById[$rd['id']])) {
           $eid = (int)$rd['id'];
           $stmtUpdate = $connection->prepare("UPDATE events SET
-            macroevent_id=?, project_id=?, title=?, start=?, end=?, time_start=?, time_end=?, description=?, province=?, town=?,
+            macroevent_id=?, project_id=?, title=?, start=?, end=?, time_start=?, time_end=?, description=?, audience=?, province=?, town=?,
             place_id=?, sala_id=?, capacity=?, access=?, ticket_prices=?, img=?, status=?, status_reason=?, inscription=?,
             inscription_method=?, tickets_method=?, online_link=?, periodic=?, periodic_id=?
             WHERE id=?");
-          $stmtUpdate->bind_param("iissssssssiiisssssisssisi",
+          $stmtUpdate->bind_param("iisssssssssiiisssssisssisi",
             $data['macroevent_id'], $data['project_id'], $data['title'], $start, $end,
-            $time_start, $time_end, $data['description'], $data['province'], $data['town'],
+            $time_start, $time_end, $data['description'], $audience, $data['province'], $data['town'],
             $data['place_id'], $data['sala_id'], $capacity, $data['access'], $ticketPricesJson, $imgName,
             $data['status'], $data['status_reason'], $inscription, $data['inscription_method'],
             $data['tickets_method'], $data['online_link'], $periodic, $periodicId, $eid
@@ -1004,13 +1013,13 @@ $match = (isset($_GET['match']) && strtolower($_GET['match']) === 'all') ? 'all'
         if (isset($existingByKey[$key])) {
           $eid = (int)$existingByKey[$key]['id'];
           $stmtUpdate = $connection->prepare("UPDATE events SET
-            macroevent_id=?, project_id=?, title=?, start=?, end=?, time_start=?, time_end=?, description=?, province=?, town=?,
+            macroevent_id=?, project_id=?, title=?, start=?, end=?, time_start=?, time_end=?, description=?, audience=?,province=?, town=?,
             place_id=?, sala_id=?, capacity=?, access=?, ticket_prices=?, img=?, status=?, status_reason=?, inscription=?,
             inscription_method=?, tickets_method=?, online_link=?, periodic=?, periodic_id=?
             WHERE id=?");
-          $stmtUpdate->bind_param("iissssssssiiisssssisssisi",
+          $stmtUpdate->bind_param("iisssssssssiiisssssisssisi",
             $data['macroevent_id'], $data['project_id'], $data['title'], $start, $end,
-            $time_start, $time_end, $data['description'], $data['province'], $data['town'],
+            $time_start, $time_end, $data['description'], $audience, $data['province'], $data['town'],
             $data['place_id'], $data['sala_id'], $capacity, $data['access'], $ticketPricesJson, $imgName,
             $data['status'], $data['status_reason'], $inscription, $data['inscription_method'],
             $data['tickets_method'], $data['online_link'], $periodic, $periodicId, $eid
@@ -1022,14 +1031,14 @@ $match = (isset($_GET['match']) && strtolower($_GET['match']) === 'all') ? 'all'
 
         // INSERT nuevo pase
         $stmtInsert = $connection->prepare("INSERT INTO events (
-          macroevent_id, project_id, title, start, end, time_start, time_end, description,
+          macroevent_id, project_id, title, start, end, time_start, time_end, description,audience,
           province, town, place_id, sala_id, capacity, access, ticket_prices, img,
           status, status_reason, inscription, inscription_method, tickets_method,
           online_link, periodic, periodic_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmtInsert->bind_param("iissssssssiiisssssisssis",
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmtInsert->bind_param("iisssssssssiiisssssisssis",
           $data['macroevent_id'], $data['project_id'], $data['title'], $start, $end,
-          $time_start, $time_end, $data['description'], $data['province'], $data['town'],
+          $time_start, $time_end, $data['description'], $audience, $data['province'], $data['town'],
           $data['place_id'], $data['sala_id'], $capacity, $data['access'], $ticketPricesJson, $imgName,
           $data['status'], $data['status_reason'], $inscription, $data['inscription_method'],
           $data['tickets_method'], $data['online_link'], $periodic, $periodicId

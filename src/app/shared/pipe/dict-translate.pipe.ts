@@ -5,10 +5,13 @@ export enum DictType {
   General = 'general',
   Categories = 'categories',
   AccessType = 'accessType',
+  Audience = 'audience',
+  AudienceAges = 'audienceAges',
+  AudienceRestrictions = 'audienceRestrictions',
 }
 
 @Pipe({
-  name: 'dicTranslate',
+  name: 'dictTranslate',
   standalone: true,
   // la traducción se carga asíncronamente → necesitamos que se reevalúe
   pure: false,

@@ -88,6 +88,7 @@ th.mat-sort-header-sorted {
 }
 .backColor > .categories {
   background-color: #c1e6dd;
+  font-size: 9px;
 }
 .statusColumn > span {
   font-size: 9px;
