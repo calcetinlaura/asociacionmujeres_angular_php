@@ -39,6 +39,7 @@
 }
 .chart-card__body {
   overflow: auto;
+  text-align: center;
 }
 .chart-card__footer {
   margin-top: 4px;

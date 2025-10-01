@@ -13,48 +13,66 @@
       </select>
     </div>
   </header>
+  <div class="flex gap-y-6 justify-between">
+    <article class="card kpi flex-1">
+      <div class="kpi-title">
+        Eventos ({{ variant() === "latest" ? "únicos" : "todos" }})
+      </div>
+      <div class="kpi-value">{{ vm.kpis.total }}</div>
+      <div class="kpi-sub">
+        Promedio/mes: <strong>{{ vm.kpis.promedioMes }}</strong>
+      </div>
+    </article>
 
-  <div class="flex flex-wrap gap-6 items-stretch">
-    <div class="flex flex-1 flex-col gap-y-6 justify-between">
-      <article class="card kpi">
-        <div class="kpi-title">
-          Eventos ({{ variant() === "latest" ? "únicos" : "todos" }})
-        </div>
-        <div class="kpi-value">{{ vm.kpis.total }}</div>
-        <div class="kpi-sub">
-          Promedio/mes: <strong>{{ vm.kpis.promedioMes }}</strong>
-        </div>
-      </article>
+    <article class="card kpi flex-1">
+      <div class="kpi-title">Únicos</div>
+      <div class="kpi-value">{{ vm.kpis.unicos }}</div>
+      <div class="kpi-sub">
+        Repetidos: <strong>{{ vm.kpis.repetidos }}</strong>
+      </div>
+    </article>
 
-      <article class="card kpi">
-        <div class="kpi-title">Únicos</div>
-        <div class="kpi-value">{{ vm.kpis.unicos }}</div>
-        <div class="kpi-sub">
-          Repetidos: <strong>{{ vm.kpis.repetidos }}</strong>
-        </div>
-      </article>
+    @if (vm.kpis.proximoEvento; as next) {
+    <article class="card kpi flex-1">
+      <div class="kpi-title">Próximo evento</div>
+      <div class="kpi-value ellipsis" [title]="next.title">
+        {{ next.title }}
+      </div>
+      <div class="kpi-sub">{{ next.date | date : "EEE, d MMM" }}</div>
+    </article>
+    }
 
-      @if (vm.kpis.proximoEvento; as next) {
-      <article class="card kpi">
-        <div class="kpi-title">Próximo evento</div>
-        <div class="kpi-value ellipsis" [title]="next.title">
-          {{ next.title }}
-        </div>
-        <div class="kpi-sub">{{ next.date | date : "EEE, d MMM" }}</div>
-      </article>
-      }
-
-      <article class="card kpi">
-        <div class="kpi-title">Visibles ahora</div>
-        <div class="kpi-value">{{ vm.visible.length }}</div>
-        <div class="kpi-sub">
-          Filtro: <strong>{{ keyword() || "—" }}</strong>
-        </div>
-      </article>
-    </div>
-
+    <article class="card kpi flex-1">
+      <div class="kpi-title">Visibles ahora</div>
+      <div class="kpi-value">{{ vm.visible.length }}</div>
+      <div class="kpi-sub">
+        Filtro: <strong>{{ keyword() || "—" }}</strong>
+      </div>
+    </article>
+  </div>
+  <div class="flex gap-6">
+    <!-- Público de los eventos -->
+    <app-chart-card
+      [title]="'Público de los eventos (' + yearLabel() + ')'"
+      [subtitle]=""
+      class="flex-1"
+    >
+      @if (audienceYearState$ | async; as st) { @if (st.loading) {
+      <app-spinner-loading />
+      } @else if (st.error) {
+      <div class="error">No se pudo cargar el gráfico.</div>
+      } @else if (st.data?.length) {
+      <app-donut-chart [data]="st.data" />
+      } @else {
+      <div class="muted">Sin datos.</div>
+      } }
+    </app-chart-card>
     <!-- Acceso a los eventos -->
-    <app-chart-card title="Acceso a los eventos" [subtitle]="yearLabel()">
+    <app-chart-card
+      [title]="'Acceso a los eventos (' + yearLabel() + ')'"
+      [subtitle]=""
+      class="flex-1"
+    >
       @if (eventsByAccessYearState$ | async; as st) { @if (st.loading) {
       <app-spinner-loading />
       } @else if (st.error) {
@@ -67,7 +85,11 @@
     </app-chart-card>
 
     <!-- Categorías de eventos -->
-    <app-chart-card title="Categorías de eventos" [subtitle]="yearLabel()">
+    <app-chart-card
+      [title]="'Categorías de eventos (' + yearLabel() + ')'"
+      [subtitle]=""
+      class="flex-1"
+    >
       @if (eventsByCategoryYearState$ | async; as st) { @if (st.loading) {
       <app-spinner-loading />
       } @else if (st.error) {
@@ -154,7 +176,7 @@
 
   <!-- Libros, películas y recetas -->
   <div class="mt-10">
-    <h1 class="title mt-10">Libros, películas y recetas</h1>
+    <h1 class="title mt-10">Libros, películas, recetas y Piteras</h1>
     <div class="flex flex-wrap gap-6 items-stretch w-full">
       <!-- Libros -->
       <app-chart-card
@@ -222,50 +244,148 @@
         } }
       </app-chart-card>
     </div>
+    <app-chart-card
+      class="flex-[3] min-w-[320px]"
+      title="Páginas por número de Pitera"
+      subtitle="Ordenado por edición"
+    >
+      @if (pagesPerIssueState$ | async; as st) { @if (st.loading) {
+      <app-spinner-loading /> } @else if (st.error) {
+      <div class="error">No se pudo cargar el gráfico.</div>
+      } @else if (st.data.length) {
+      <app-annual-line-chart
+        [data]="st.data"
+        [innerHeight]="110"
+        [margin]="{ top: 6, right: 12, bottom: 18, left: 18 }"
+        [yGridLines]="3"
+        [compact]="true"
+        [title]="'Páginas por número'"
+        [subtitle]="'Cada punto es un número de Pitera'"
+        [xTickFontSize]="6"
+      />
+      } @else {
+      <div class="muted">Sin datos.</div>
+      } }
+    </app-chart-card>
   </div>
 
   <!-- Socias -->
+  <!-- Socias -->
   <div class="mt-10 flex flex-col gap-y-6">
     <h1 class="title">Socias</h1>
-    @if (partnersKpisState$ | async; as st) {
-    <div class="flex flex-1 gap-6 flex-wrap items-stretch w-full">
-      <article class="card kpi flex-1">
-        <div class="kpi-title">Nº histórico socias</div>
-        <div class="kpi-value">
-          @if (st.loading) { — } @else { {{ st.data?.totalHistorico ?? "—" }} }
-        </div>
-        <div class="kpi-sub">
-          Año {{ currentYear }}:
-          <strong>
+
+    <div class="flex gap-6">
+      @if (partnersKpisState$ | async; as st) {
+      <div class="flex flex-col w-[400px] gap-y-2">
+        <!-- <article class="card kpi flex-1">
+          <div class="kpi-title">Nº total de socias</div>
+          <div class="kpi-value">
+            @if (st.loading) { — } @else { {{ st.data?.totalSocias ?? "—" }} }
+          </div>
+        </article> -->
+
+        <article class="card kpi flex-1">
+          <div class="kpi-title">Socias en {{ yearLabel() }}</div>
+          <div class="kpi-value">
+            @if (st.loading) { — } @else { {{ st.data?.sociasAnio ?? "—" }} }
+          </div>
+        </article>
+
+        <article class="card kpi flex-1">
+          <div class="kpi-title">Edad media ({{ yearLabel() }})</div>
+          <div class="kpi-value">
+            @if (st.loading) { — } @if (st.data?.edadMediaAnio != null) {
+            {{ st.data!.edadMediaAnio | number : "1.0-1" }} años } @else { — }
+          </div>
+        </article>
+
+        <article class="card kpi flex-1">
+          <div class="kpi-title">Método pago más usado ({{ yearLabel() }})</div>
+          <div class="kpi-value">
             @if (st.loading) { — } @else {
-            {{ st.data?.totalAnualActual ?? "—" }} }
-          </strong>
-        </div>
-      </article>
+            {{ st.data?.metodoMasUsadoAnio ?? "—" }} }
+          </div>
+        </article>
 
-      <article class="card kpi flex-1">
-        <div class="kpi-title">Edad media</div>
-        <div class="kpi-value">
-          @if (st.loading) { — } @else { {{ st.data?.edadMedia ?? "—" }} }
-        </div>
-      </article>
+        <article class="card kpi flex-1">
+          <div class="kpi-title">Mes con más pagos ({{ yearLabel() }})</div>
+          <div class="kpi-value">
+            @if (st.loading) { — } @else {
+            {{ monthName(st.data?.mesTopPagosAnio) }} }
+          </div>
+        </article>
+      </div>
+      }
 
-      <article class="card kpi flex-1">
-        <div class="kpi-title">Tiempo medio de socias</div>
-        <div class="kpi-value ellipsis" [title]="st.data?.tiempoMedio || ''">
-          @if (st.loading) { — } @else { {{ st.data?.tiempoMedio ?? "—" }} }
-        </div>
-      </article>
-    </div>
-    }
-
-    <div class="flex flex-wrap gap-6 items-stretch w-full">
+      <!-- Métodos de pago (cheese chart) -->
       <app-chart-card
-        class="flex-[3] min-w-[320px]"
-        [title]="'Socias por año (1995–' + currentYear + ')'"
-        [subtitle]="'Evolución anual total'"
+        class="flex-1 min-w-[320px]"
+        [title]="'Métodos de pago de cuotas (' + yearLabel() + ')'"
+        [subtitle]=""
       >
-        @if (membersAnnualState$ | async; as s) { @if (s.loading) {
+        @if (paymentsByMethodState$ | async; as st) { @if (st.loading) {
+        <app-spinner-loading /> } @else if (st.error) {
+        <div class="error">No se pudieron cargar los datos.</div>
+        } @else if (st.data?.length) {
+        <app-cheese-chart
+          [data]="st.data"
+          [size]="220"
+          [rScale]="0.84"
+          [labelOffset]="34"
+          [labelMinGap]="10"
+          [labelSideGap]="16"
+          [margin]="{ top: 5, right: 40, bottom: 5, left: 40 }"
+        />
+        } @else {
+        <div class="muted">Sin datos.</div>
+        } }
+      </app-chart-card>
+
+      <!-- Pagos por mes -->
+      <app-chart-card
+        class="flex-1 min-w-[320px]"
+        [title]="'Mes pago de cuota anual (' + yearLabel() + ')'"
+        [subtitle]=""
+      >
+        @if (paymentsByMonthState$ | async; as s) { @if (s.loading) {
+        <app-spinner-loading /> } @else if (s.error) {
+        <div class="error">No se pudo cargar el gráfico.</div>
+        } @else {
+        <app-monthly-chart
+          [data]="s.data"
+          [title]="'Pago de cuota por meses (' + yearLabel() + ')'"
+          [width]="0"
+        />
+        } }
+      </app-chart-card>
+    </div>
+
+    <div class="flex gap-6">
+      <app-chart-card
+        [title]="'Distribución por edad de socias (' + yearLabel() + ')'"
+        [subtitle]=""
+      >
+        @if (partnersAgeBucketsState$ | async; as st) { @if (st.loading) {
+        <app-spinner-loading />
+        } @else if (st.error) {
+        <div class="error">No se pudo cargar el gráfico.</div>
+        } @else if (st.data?.length) {
+        <app-donut-chart
+          [data]="st.data"
+          [labelType]="dictType.PartnersAgeBuckets"
+          [labelNormalize]="false"
+        />
+        } @else {
+        <div class="muted">Sin datos.</div>
+        } }
+      </app-chart-card>
+
+      <app-chart-card
+        class="flex-1 min-w-[320px]"
+        [title]="'Socias por año (1995–' + currentYear + ')'"
+        [subtitle]=""
+      >
+        @if (partnersAnnualState$ | async; as s) { @if (s.loading) {
         <app-spinner-loading />
         } @else if (s.error) {
         <div class="error">No se pudo cargar el gráfico.</div>

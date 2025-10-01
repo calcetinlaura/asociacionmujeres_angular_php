@@ -40,7 +40,7 @@
       [attr.y1]="margin.top + innerHeight"
       [attr.y2]="margin.top + innerHeight"
     />
-    @for (tx of xTicks(); track tx.year; let i = $index) {
+    @for (tx of xTicks(); track tx.label; let i = $index) {
     <line
       class="axis"
       [attr.x1]="tx.x"
@@ -55,7 +55,7 @@
       text-anchor="middle"
       [attr.font-size]="xTickFontSize"
     >
-      {{ tx.year }}
+      {{ tx.label }}
     </text>
     } @if (isEmpty) {
     <text
@@ -72,9 +72,9 @@
     <polyline class="series" [attr.points]="pointsAttr()"></polyline>
 
     <!-- Puntos + etiquetas de valor -->
-    @for (d of data; track d.year; let i = $index) {
+    @for (d of data; track d.label; let i = $index) {
     <circle class="dot" [attr.cx]="x(i)" [attr.cy]="y(d.count)" r="2.4">
-      <title>{{ d.year }} — {{ formatY(d.count) }}</title>
+      <title>{{ d.label }} — {{ formatY(d.count) }}</title>
     </circle>
     <text
       class="dot-label"

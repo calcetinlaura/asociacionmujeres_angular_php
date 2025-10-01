@@ -8,6 +8,9 @@ export enum DictType {
   Audience = 'audience',
   AudienceAges = 'audienceAges',
   AudienceRestrictions = 'audienceRestrictions',
+  Partners = 'partners',
+  PartnersAgeBuckets = 'partners.ageBuckets',
+  PaymentMethod = 'paymentMethod', // 👈 nuevo
 }
 
 @Pipe({
@@ -30,19 +33,23 @@ export class DictTranslatePipe implements PipeTransform {
     opts?: { fallback?: string; normalize?: 'upper' | 'lower' | false }
   ): string {
     const dict = (this.i18n.dict() as any) ?? {};
-    const map: Record<string, string> = dict?.[type] ?? {};
+
+    // 👇 resolver ruta anidada: 'partners.ageBuckets' → dict.partners.ageBuckets
+    const map =
+      String(type)
+        .split('.')
+        .reduce((acc: any, k) => acc?.[k], dict) ?? {};
 
     const norm = (s: string) => {
+      if (opts?.normalize === false) return s; // 👈 respeta claves tal cual
       if (opts?.normalize === 'lower') return s.toLowerCase();
-      if (opts?.normalize === 'upper' || opts?.normalize == null)
-        return s.toUpperCase();
-      return s;
+      // por compatibilidad, mantenemos 'upper' como defecto
+      return s.toUpperCase();
     };
 
     const key = norm(String(value ?? ''));
     const res = map[key] ?? map['other'] ?? opts?.fallback ?? value ?? '';
 
-    // marca para comprobar por si la dict ha llegado después
     this.cdr.markForCheck();
     return res;
   }

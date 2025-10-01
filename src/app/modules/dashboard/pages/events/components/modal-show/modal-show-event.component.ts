@@ -12,7 +12,6 @@ import { TextBackgroundComponent } from 'src/app/shared/components/text/text-bac
 import { TextEditorComponent } from 'src/app/shared/components/text/text-editor/text-editor.component';
 import { TextSubTitleComponent } from 'src/app/shared/components/text/text-subTitle/text-subtitle.component';
 import { TextTitleComponent } from 'src/app/shared/components/text/text-title/text-title.component';
-import { PinchZoomDirective } from 'src/app/shared/directives/pinch-zoom.directive';
 import { AudienceBadgesPipe } from '../../../../../../shared/pipe/audience-badges.pipe';
 import {
   DictTranslatePipe,
@@ -35,7 +34,6 @@ import { ItemImagePipe } from '../../../../../../shared/pipe/item-img.pipe';
     FilterTransformCodePipe,
     DictTranslatePipe,
     AudienceBadgesPipe,
-    PinchZoomDirective,
     ImageZoomOverlayComponent,
   ],
   templateUrl: './modal-show-event.component.html',

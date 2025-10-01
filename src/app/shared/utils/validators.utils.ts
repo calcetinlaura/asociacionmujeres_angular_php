@@ -164,7 +164,7 @@ export function audienceValidatorFactory(
       | undefined;
 
     const restrGroup = control.get('restrictions');
-    const membersOnly = restrGroup?.get('membersOnly')?.value === true;
+    const partnersOnly = restrGroup?.get('partnersOnly')?.value === true;
     const womenOnly = restrGroup?.get('womenOnly')?.value === true;
     const other = restrGroup?.get('other')?.value === true;
     const otherText = (restrGroup?.get('otherText')?.value ?? '')
@@ -188,7 +188,7 @@ export function audienceValidatorFactory(
 
     // — Restricciones: una marcada; si 'other', texto requerido
     if (hasRestr) {
-      const anyRestr = membersOnly || womenOnly || other;
+      const anyRestr = partnersOnly || womenOnly || other;
       if (!anyRestr) errors['restrictionRequired'] = true;
       if (other && !otherText) errors['restrictionOtherTextRequired'] = true;
     }

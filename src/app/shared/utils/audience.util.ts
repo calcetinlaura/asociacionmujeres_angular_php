@@ -14,7 +14,7 @@ export type AudienceDict = {
     };
     note: string;
     restrictions: {
-      membersOnly: string;
+      partnersOnly: string;
       womenOnly: string;
       other: string;
     };
@@ -142,7 +142,7 @@ export function audienceBadges(raw: unknown, dict: AudienceDict): string[] {
 
   // 2) Restricciones
   if (a.hasRestriction) {
-    if (a.restrictions?.membersOnly) out.push(A.restrictions.membersOnly);
+    if (a.restrictions?.partnersOnly) out.push(A.restrictions.partnersOnly);
     if (a.restrictions?.womenOnly) out.push(A.restrictions.womenOnly);
     if (a.restrictions?.other && a.restrictions?.otherText) {
       out.push(

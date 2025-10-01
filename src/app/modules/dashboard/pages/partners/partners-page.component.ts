@@ -35,6 +35,7 @@ import { ModalService } from 'src/app/shared/components/modal/services/modal.ser
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
+import { normalizeCuotas } from 'src/app/shared/utils/cuotas.utils';
 import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.component';
 import { TableComponent } from '../../components/table/table.component';
 
@@ -258,16 +259,21 @@ export class PartnersPageComponent implements OnInit {
     if (!partners) return;
 
     this.partners = this.partnersService.sortPartnersById(partners).map((p) => {
-      const allCuotasPaid = p.cuotas || [];
-      const lastCuotaPaid = allCuotasPaid.includes(this.currentYear);
-      const years = allCuotasPaid.length;
+      const cuotas = normalizeCuotas(p.cuotas);
+
+      const paidYears = cuotas.filter((c) => c.paid).map((c) => c.year);
+      const years = paidYears.length; // nº de cuotas pagadas
+      const lastCuotaPaid = paidYears.includes(this.currentYear); // ¿pagó el año actual?
+      const lastPaidYear = paidYears.length ? Math.max(...paidYears) : null;
 
       return {
         ...p,
         years,
         lastCuotaPaid,
+        lastPaidYear, // lo usas si quieres mostrarlo en tabla/filtros
       };
     });
+
     this.filteredPartners = [...this.partners];
     this.number = this.partnersService.countPartners(partners);
   }

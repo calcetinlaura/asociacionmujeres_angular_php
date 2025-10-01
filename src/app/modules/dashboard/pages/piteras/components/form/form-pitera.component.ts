@@ -67,6 +67,10 @@ export class FormPiteraComponent {
       Validators.min(1995),
       Validators.max(new Date().getFullYear()),
     ]),
+    pages: new FormControl<number | null>(null, [
+      Validators.min(0),
+      Validators.max(300),
+    ]),
   });
   currentYear = this.generalService.currentYear;
   isLoading = true;
@@ -101,6 +105,7 @@ export class FormPiteraComponent {
                 url: pitera.url || '',
                 img: pitera.img || '',
                 year: Number(pitera.year) || 0,
+                pages: pitera.pages || null,
               });
 
               this.titleForm = 'Editar Pitera';

@@ -2,6 +2,7 @@
   <div class="text-center pb-5 uppercase">
     <p class="text-2xl">{{ titleForm }}</p>
   </div>
+
   @if (isLoading) {
   <div class="spinner-container">
     <app-spinner-loading />
@@ -30,6 +31,7 @@
             <div class="is-invalid-text">Campo requerido</div>
             }
           </div>
+
           <!-- Apellidos -->
           <div class="box-input gap-x-4">
             <label for="surname">Apellidos</label>
@@ -39,6 +41,7 @@
               type="text"
             />
           </div>
+
           <div class="flex gap-x-4">
             <!-- Fecha de nacimiento -->
             <div class="box-input gap-x-4 flex-1">
@@ -47,10 +50,11 @@
                 formControlName="birthday"
                 type="date"
                 [ngClass]="{
-                  'text-placeholder': !formPartner.get('end')?.value
+                  'text-placeholder': !formPartner.get('birthday')?.value
                 }"
               />
             </div>
+
             <!-- Teléfono -->
             <div class="box-input">
               <label for="address">Teléfono</label>
@@ -69,6 +73,7 @@
               </div>
             </div>
           </div>
+
           <!-- Email -->
           <div class="box-input flex-1">
             <label for="email">Email</label>
@@ -80,11 +85,12 @@
               />
               @if (formPartner.get('email')?.hasError('email') &&
               formPartner.get('email')?.touched){
-              <div class="is-invalid-text">Formato de teléfono no válido.</div>
+              <div class="is-invalid-text">Formato de email no válido.</div>
               }
             </div>
           </div>
         </div>
+
         <div class="w-60">
           <app-image-control
             [previewImg]="
@@ -101,7 +107,9 @@
           ></app-image-control>
         </div>
       </div>
+
       <hr />
+
       <div class="box-input flex gap-x-4">
         <!-- Provincia -->
         <div class="box-input flex gap-x-4 flex-1">
@@ -113,39 +121,30 @@
               'text-placeholder': !formPartner.get('province')?.value
             }"
           >
-            <!-- Placeholder en gris -->
             <option value="" disabled hidden>Seleccione una provincia</option>
-
-            <!-- Opción libre -->
             <option value="">Sin provincia</option>
             @for (prov of provincias; track prov) {
-            <option [value]="prov.label">
-              {{ prov.label }}
-            </option>
+            <option [value]="prov.label">{{ prov.label }}</option>
             }
           </select>
         </div>
+
         <!-- Municipio -->
         <div class="box-input gap-x-4 flex flex-1">
           <label for="town">Municipio</label>
           <select
-            [ngClass]="{
-              'text-placeholder': !formPartner.get('town')?.value
-            }"
+            formControlName="town"
+            [ngClass]="{ 'text-placeholder': !formPartner.get('town')?.value }"
           >
-            <!-- Placeholder en gris -->
             <option value="" disabled hidden>Seleccione un municipio</option>
-
-            <!-- Opción libre -->
             <option value="">Sin municipio</option>
             @for (mun of municipios; track mun) {
-            <option [value]="mun.label">
-              {{ mun.label }}
-            </option>
+            <option [value]="mun.label">{{ mun.label }}</option>
             }
           </select>
         </div>
       </div>
+
       <div class="box-input flex gap-x-4">
         <div class="box-input gap-x-4 flex-1">
           <label for="address">Dirección</label>
@@ -155,6 +154,7 @@
             type="text"
           />
         </div>
+
         <div class="box-input gap-x-4 w-auto">
           <label for="post_code">C. Postal</label>
           <div class="flex flex-col flex-1">
@@ -162,27 +162,68 @@
               formControlName="post_code"
               type="text"
               placeholder="Código postal"
-            />@if (formPartner.get('post_code')?.hasError('pattern') &&
+            />
+            @if (formPartner.get('post_code')?.hasError('pattern') &&
             formPartner.get('post_code')?.touched){
-            <div class="is-invalid-text">Formato de teléfono no válido.</div>
+            <div class="is-invalid-text">
+              Formato de código postal no válido.
+            </div>
             }
           </div>
         </div>
       </div>
-      <hr />
-      <div class="p-4 border border-[#cb8dd952]">
+
+      <!-- CUOTAS -->
+      <div class="mt-4 p-4 border border-[#cb8dd952]">
         <h3 class="titleCuotas">Cuotas</h3>
-        <!-- Cuota -->
-        <div class="flex flex-col flex-wrap h-96">
-          @for (year of years; track year; let i = $index) {
-          <div class="flex flex-col flex-wrap w-40">
-            <mat-checkbox [formControl]="getCuotaControl(i)" color="primary">
-              Cuota {{ year }}
-            </mat-checkbox>
+
+        <!-- formArrayName para cuotas -->
+        <div formArrayName="cuotas" class="">
+          @for (ctrl of cuotasFA.controls; track ctrl; let i = $index) {
+          <!-- Cada cuota es un FormGroup -->
+          <div
+            [formGroupName]="i"
+            class="w-full rounded p-3 flex hover:bg-lilaClaro"
+          >
+            <div class="w-full flex items-center gap-3">
+              <div class="flex flex-1 gap-x-4 items-center">
+                <!-- Pagado -->
+                <mat-checkbox formControlName="paid" color="primary">
+                  Pagado
+                </mat-checkbox>
+                <!-- Año (solo lectura) -->
+
+                <div class="min-w-16 font-semibold">
+                  {{ getCuotaGroupAt(i).get("year")?.value }}
+                </div>
+              </div>
+              <div class="flex flex-1 gap-x-4 items-center">
+                <p>Fecha de pago</p>
+                <!-- Fecha de pago -->
+                <input
+                  type="date"
+                  formControlName="date_payment"
+                  class="border rounded px-2 py-1"
+                  placeholder="Fecha de pago"
+                />
+              </div>
+              <!-- Método de pago -->
+              <div class="flex-1">
+                <select
+                  formControlName="method_payment"
+                  class="border rounded px-2 py-1 w-full"
+                >
+                  <option [ngValue]="null">Método de pago</option>
+                  <option [ngValue]="'cash'">Efectivo</option>
+                  <option [ngValue]="'domiciliation'">Domiciliación</option>
+                </select>
+              </div>
+            </div>
           </div>
           }
         </div>
       </div>
+
       <div class="box-input gap-x-4 flex-1">
         <label for="observations">Observaciones</label>
         <input
@@ -191,19 +232,22 @@
           placeholder="Añadir cualquier apreciación importante"
         />
       </div>
+
       <div class="flex gap-4">
         <mat-checkbox color="primary" formControlName="death"
-          >Ha fallecido
-        </mat-checkbox>
+          >Ha fallecido</mat-checkbox
+        >
         <mat-checkbox color="primary" formControlName="unsubscribe"
-          >Se ha dado de baja
-        </mat-checkbox>
+          >Se ha dado de baja</mat-checkbox
+        >
       </div>
+
       @if (formPartner.invalid && submitted) {
       <div class="flex justify-center">
         <div class="error">Hay algún campo incorrecto</div>
       </div>
       }
+
       <!-- Botón de envío -->
       <div class="flex justify-center">
         <button class="bg-black p-4 text-white" type="submit">

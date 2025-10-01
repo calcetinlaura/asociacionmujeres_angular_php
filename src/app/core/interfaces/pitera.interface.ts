@@ -7,4 +7,5 @@ export interface PiteraModel {
   theme: string;
   description: string;
   img?: string;
+  pages?: number;
 }

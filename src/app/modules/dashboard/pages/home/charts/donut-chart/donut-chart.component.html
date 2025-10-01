@@ -1,8 +1,14 @@
-<!-- donut-chart.component.html -->
 <div class="donut-layout" role="group" [attr.aria-label]="title">
   <!-- Leyenda izquierda (ancho fijo por input) -->
   <ul class="donut-legend left" [style.width.px]="legendWidth">
-    @for (d of data; track d.label) {
+    @if (isEmpty()) {
+    <li class="muted">
+      <span class="dot" [style.background]="emptyColor"></span>
+      <span class="name">Sin datos</span>
+      <span class="val">0</span>
+      <span class="pct">0%</span>
+    </li>
+    } @else { @for (d of data; track d.label) {
     <li>
       <span
         class="dot"
@@ -13,13 +19,17 @@
           d.label
             | dictTranslate
               : labelType!
-              : { fallback: d.label, normalize: "upper" }
+              : {
+                  fallback: d.label,
+                  normalize:
+                    labelType === dictType.PartnersAgeBuckets ? false : "upper"
+                }
         }}
       </span>
       <span class="val">{{ d.value }}</span>
       <span class="pct">{{ pct(d.value) }}%</span>
     </li>
-    }
+    } }
   </ul>
 
   <!-- Gráfico a la derecha con tamaño fijo (px) -->
@@ -32,14 +42,28 @@
     role="img"
     [attr.aria-label]="title"
   >
-    @for (a of arcs(); track a.i) {
+    <!-- Fondo: anillo gris SIEMPRE visible -->
+    <circle
+      [attr.cx]="cx"
+      [attr.cy]="cy"
+      [attr.r]="rEmpty"
+      fill="none"
+      [attr.stroke]="emptyColor"
+      [attr.stroke-opacity]="emptyOpacity"
+      [attr.stroke-width]="emptyStrokeWidth"
+    />
+
+    <!-- Sectores solo si hay datos -->
+    @if (!isEmpty()) { @for (a of arcs(); track a.i) {
     <path
       [attr.d]="arcPath(cx, cy, rOuter, rInner, a.start, a.end)"
       [attr.fill]="a.color"
       [attr.stroke]="a.color"
       [attr.opacity]="0.9"
     />
-    }
+    } }
+
+    <!-- Centro -->
     <text
       [attr.x]="cx"
       [attr.y]="cy - 2"

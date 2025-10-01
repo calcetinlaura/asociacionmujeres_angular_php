@@ -101,9 +101,10 @@
   font-size: 0.9rem;
 }
 .kpi .kpi-value {
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 800;
   letter-spacing: 0.4px;
+  text-transform: capitalize;
 }
 .kpi .kpi-sub {
   color: #6f768c;
@@ -125,6 +126,9 @@
 .muted {
   fill: #9aa1b5;
   font-size: 0.9rem;
+  border: 1px solid gray;
+  padding: 4px 6px;
+  display: inline-block;
 }
 
 .donut-bg {

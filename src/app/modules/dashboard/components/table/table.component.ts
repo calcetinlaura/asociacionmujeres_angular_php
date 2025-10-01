@@ -21,7 +21,7 @@ import { ColumnModel } from 'src/app/core/interfaces/column.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { SubsidiesService } from 'src/app/core/services/subsidies.services';
 import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
-import { CalculateAgePipe } from 'src/app/shared/pipe/caculate_age.pipe';
+import { AgePipe } from 'src/app/shared/pipe/caculate_age.pipe';
 import { EurosFormatPipe } from 'src/app/shared/pipe/eurosFormat.pipe';
 import { FilterTransformCodePipe } from 'src/app/shared/pipe/filterTransformCode.pipe';
 import { HasValuePipe } from 'src/app/shared/pipe/hasValue.pipe';
@@ -54,7 +54,7 @@ import { CircleIndicatorComponent } from '../circle-indicator/circle-indicator.c
     MatMenuModule,
     MatSelectModule,
     HasValuePipe,
-    CalculateAgePipe,
+    AgePipe,
     HmsPipe,
     ItemImagePipe,
     DictTranslatePipe,

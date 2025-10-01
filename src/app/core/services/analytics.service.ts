@@ -4,8 +4,8 @@ import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
 export type PieDatum = { label: string; value: number };
 export type YearFilter = number | 'historic';
 export type PeriodicVariant = 'latest' | 'all';
-export interface YearCount {
-  year: number;
+export interface AnnualPoint {
+  label: number;
   count: number;
 }
 // Si tienes una interfaz real para tu evento, usa esa.
@@ -249,14 +249,18 @@ export class AnalyticsService {
   }
 
   // ======== Serie anual de socias ========
-  countMembersByYear(partners: any[], start: number, end: number): YearCount[] {
-    const out: YearCount[] = [];
+  countPartnersByYear(
+    partners: any[],
+    start: number,
+    end: number
+  ): AnnualPoint[] {
+    const out: AnnualPoint[] = [];
     for (let y = start; y <= end; y++) {
       const count = (partners ?? []).reduce((acc: number, p: any) => {
         const cuotas = Array.isArray(p?.cuotas) ? p.cuotas : [];
         return acc + (cuotas.includes(y) ? 1 : 0);
       }, 0);
-      out.push({ year: y, count });
+      out.push({ label: y, count });
     }
     return out;
   } /** Normaliza strings genéricamente */

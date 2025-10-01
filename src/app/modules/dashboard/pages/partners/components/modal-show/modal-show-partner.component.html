@@ -9,31 +9,37 @@
         (click)="openZoom()"
       />
     </div>
+
     <div class="flex flex-1 flex-col justify-between">
       <div
         class="inline-block border-b border-[#1C1C3A] pb-4 mb-4 md:pb-4 md:mb-8"
       >
         <app-text-title
-          [text]="item.name + ' ' + item.surname"
+          [text]="item.name + ' ' + (item.surname || '')"
           [align]="'left'"
         />
-        <!-- <app-text-subtitle [text]="item.author" /> -->
       </div>
+
       <div>
         <div class="flex flex-row gap-x-4 my-4">
           @if (item.birthday) {
           <app-text-background
             [text]="item.birthday | date : 'dd MMM yyyy'"
           ></app-text-background>
-          } @if (item.birthday) {
           <app-text-border
-            [text]="(item.birthday | calculateAge) + ' años'"
+            [text]="(item.birthday | age) + ' años'"
           ></app-text-border>
           }
         </div>
         <app-text-icon
           [icon]="'building'"
-          [text]="item.address + ', ' + item.town + ' - ' + item.post_code"
+          [text]="
+            (item.address || '') +
+            ', ' +
+            (item.town || '') +
+            ' - ' +
+            (item.post_code || '')
+          "
         ></app-text-icon>
         <app-text-icon
           [icon]="'phone'"
@@ -41,17 +47,40 @@
         ></app-text-icon>
         <app-text-icon [icon]="'email'" [text]="item.email"></app-text-icon>
       </div>
+
       <hr class="my-4" />
+
       <div>
         <div class="mb-4">
           <app-text-background
             [text]="getYearsText(item)"
           ></app-text-background>
         </div>
-        <div class="flex flex-row gap-4">
-          @for (cuota of item.cuotas; track cuota) {
-          <div class="gap-4">
-            <app-text-border [text]="cuota"></app-text-border>
+
+        <div class="flex flex-col gap-2">
+          @for (cuota of cuotasPaidView; track cuota.year) {
+          <div class="flex gap-4">
+            <div
+              class="w-16 text-center text-[9px] md:text-[12px] px-[6px] pt-1 pb-[3px] rounded-[4px] border-[1px] border-lilaClaro"
+            >
+              {{ cuota.year }}
+            </div>
+            <div
+              class="uppercase flex items-center justify-center flex-1 text-[8px] md:text-[10px] rounded-[4px] border-[1px] border-lilaClaro"
+            >
+              {{
+                cuota.method_payment
+                  | dictTranslate
+                    : dictType.PaymentMethod
+                    : { fallback: "—", normalize: "lower" }
+              }}
+            </div>
+            <div
+              class="uppercase flex items-center justify-center w-32 text-[8px] md:text-[10px] px-[6px] rounded-[4px] border-[1px] border-lilaClaro"
+            >
+              @if(cuota.date_payment){
+              {{ cuota.date_payment | date : "dd MMM yyyy" }}}@else{-}
+            </div>
           </div>
           }
         </div>

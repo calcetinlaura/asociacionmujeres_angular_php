@@ -641,8 +641,8 @@
         <div class="mt-6">
           <div class="flex gap-x-4 justify-center">
             <app-button-select
-              [active]="!!audienceForm.get('restrictions.membersOnly')?.value"
-              (addClicked)="toggleRestriction('membersOnly')"
+              [active]="!!audienceForm.get('restrictions.partnersOnly')?.value"
+              (addClicked)="toggleRestriction('partnersOnly')"
               [buttonText]="'Exclusivamente socias'"
               subText="Debe formar parte de la asociación"
               iconClass="uil-exclamation-circle"

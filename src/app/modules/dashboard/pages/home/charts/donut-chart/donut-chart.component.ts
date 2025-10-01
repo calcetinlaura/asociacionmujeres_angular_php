@@ -1,4 +1,3 @@
-// donut-chart.component.ts
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import {
@@ -28,19 +27,31 @@ export class DonutChartComponent {
   get data() {
     return this._data;
   }
+
   @Input() labelType?: DictType = DictType.General;
+  @Input() labelNormalize: 'upper' | 'lower' | false = false;
   @Input() title = 'Donut';
   @Input() size = 220; // lado del SVG (px)
   @Input() ring = 24;
   @Input() padAngle = 0.02;
-
+  @Input() emptyColor = '#D1D5DB'; // gris
+  @Input() emptyOpacity = 0.9;
   /** Ancho de la leyenda a la izquierda (px) */
   @Input() legendWidth = 240;
 
   @Input() colors: ChartColors = PALETTE_PASTEL;
 
+  /** Color del donut vacío */
+
+  dictType = DictType;
+
   total(): number {
     return this._data.reduce((s, d) => s + (d.value || 0), 0);
+  }
+
+  /** No hay datos o el total es 0 */
+  isEmpty(): boolean {
+    return this._data.length === 0 || this.total() === 0;
   }
 
   arcs() {
@@ -100,6 +111,16 @@ export class DonutChartComponent {
   }
   get rInner() {
     return this.rOuter - this.ring;
+  }
+
+  /** radio para dibujar el donut vacío con stroke */
+  get rEmpty() {
+    return (this.rOuter + this.rInner) / 2;
+  }
+
+  /** grosor del stroke para el donut vacío */
+  get emptyStrokeWidth() {
+    return this.rOuter - this.rInner;
   }
 
   pct(v: number) {

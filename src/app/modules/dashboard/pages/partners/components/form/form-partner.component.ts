@@ -20,11 +20,25 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import townsData from 'data/towns.json';
 import { filter, tap } from 'rxjs';
 import { PartnersFacade } from 'src/app/application/partners.facade';
-import { PartnerModel } from 'src/app/core/interfaces/partner.interface';
+import {
+  CuotaModel,
+  PartnerModel,
+  PaymentMethod,
+} from 'src/app/core/interfaces/partner.interface';
 import { TypeList } from 'src/app/core/models/general.model';
 import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
+
+type CuotaForm = {
+  year: FormControl<number>;
+  paid: FormControl<boolean>;
+  date_payment: FormControl<string | null>;
+  method_payment: FormControl<PaymentMethod | null>;
+};
+
+type CuotaFormGroup = FormGroup<CuotaForm>;
+
 @Component({
   selector: 'app-form-partner',
   imports: [
@@ -58,6 +72,47 @@ export class FormPartnerComponent {
   years: number[] = [];
   typeList = TypeList.Partners;
 
+  // (opcional) método de pago "por defecto" para facilitar clicks masivos en la UI
+  defaultMethodPayment: PaymentMethod | null = null;
+  PaymentMethod = {
+    CASH: 'cash' as PaymentMethod,
+    DOMICILIATION: 'domiciliation' as PaymentMethod,
+  };
+
+  // ---------- FACTORÍA DE FORM GROUP PARA CADA AÑO
+  private createCuotaGroup = (seed: Partial<CuotaModel>): CuotaFormGroup => {
+    const fg = new FormGroup<CuotaForm>({
+      year: new FormControl(seed.year ?? new Date().getFullYear(), {
+        nonNullable: true,
+      }),
+      paid: new FormControl(!!seed.paid, { nonNullable: true }),
+      date_payment: new FormControl(seed.date_payment ?? null),
+      method_payment: new FormControl(seed.method_payment ?? null),
+    }); // 👈 sin validators
+
+    // habilitar/deshabilitar campos según 'paid'
+    const toggle = (isPaid: boolean) => {
+      const dc = fg.get('date_payment') as FormControl<string | null>;
+      const mc = fg.get('method_payment') as FormControl<PaymentMethod | null>;
+      if (isPaid) {
+        dc.enable({ emitEvent: false });
+        mc.enable({ emitEvent: false });
+      } else {
+        // ✅ Si NO quieres borrar lo ya rellenado al desmarcar, no hagas reset:
+        // dc.reset(null, { emitEvent: false });
+        // mc.reset(null, { emitEvent: false });
+        dc.disable({ emitEvent: false });
+        mc.disable({ emitEvent: false });
+      }
+      fg.updateValueAndValidity({ emitEvent: false });
+    };
+
+    toggle(fg.get('paid')!.value);
+    fg.get('paid')!.valueChanges.subscribe(toggle);
+
+    return fg;
+  };
+
   formPartner = new FormGroup({
     name: new FormControl('', [Validators.required]),
     surname: new FormControl(''),
@@ -69,19 +124,17 @@ export class FormPartnerComponent {
     ]),
     address: new FormControl(''),
     phone: new FormControl('', [
-      // Permite vacío; si hay valor, debe cumplir el patrón
       Validators.pattern(/^\s*(\+?\d[\d\s\-().]{6,14}\d)\s*$/),
     ]),
-    email: new FormControl('', [
-      // Permite vacío; si hay valor, debe ser email válido
-      Validators.email,
-    ]),
-    cuotas: new FormArray([]), // FormArray para checkboxes dinámicos
+    email: new FormControl('', [Validators.email]),
+    // ⛔️ eliminados 'method_payment' y 'date_paymnet' del root: ahora viven en cada cuota
+    cuotas: new FormArray<CuotaFormGroup>([]),
     img: new FormControl(''),
     observations: new FormControl(''),
     death: new FormControl(false),
     unsubscribe: new FormControl(false),
   });
+
   provincias: {
     label: string;
     code: string;
@@ -91,15 +144,51 @@ export class FormPartnerComponent {
   currentYear = this.generalService.currentYear;
   isLoading = true;
 
+  // ---------- HELPERS DE CUOTAS ----------
+  private buildCuotasArray(
+    from: number,
+    to: number,
+    existing?: CuotaModel[]
+  ): FormArray<CuotaFormGroup> {
+    const arr = new FormArray<CuotaFormGroup>([]);
+    for (let y = from; y >= to; y--) {
+      // mismo orden que ya usas (descendiente)
+      const found = existing?.find((c) => c.year === y);
+      arr.push(this.createCuotaGroup(found ?? { year: y, paid: false }));
+    }
+    return arr;
+  }
+
+  get cuotasFA(): FormArray<CuotaFormGroup> {
+    return this.formPartner.get('cuotas') as FormArray<CuotaFormGroup>;
+  }
+
+  getCuotaGroupAt(index: number): CuotaFormGroup {
+    return this.cuotasFA.at(index) as CuotaFormGroup;
+  }
+
+  // Si tu backend viejo trae number[] (años pagados), lo migramos a CuotaModel[]
+  private migrateLegacyCuotas(legacyYears: number[]): CuotaModel[] {
+    return legacyYears.map((year) => ({
+      year,
+      paid: true,
+      date_payment: null,
+      method_payment: null,
+    }));
+  }
+
+  // ---------- INIT ----------
   ngOnInit(): void {
     this.isLoading = true;
+
+    // p.ej. desde 1995 hasta el año actual, en descendente
     this.years = this.generalService.loadYears(this.currentYear, 1995);
 
     this.provincias = townsData
       .flatMap((region) => region.provinces)
       .sort((a, b) => a.label.localeCompare(b.label));
 
-    // Inicializa los checkboxes como vacíos al principio
+    // inicia array vacío (lo rellenamos justo después)
     this.initializeCuotasControls();
 
     if (this.itemId) {
@@ -110,30 +199,46 @@ export class FormPartnerComponent {
           filter((partner: PartnerModel | null) => partner !== null),
           tap((partner: PartnerModel | null) => {
             if (partner) {
-              // 🔹 Primero actualizamos los municipios basándonos en la provincia recibida
+              // provincia/municipios
               const province = this.provincias.find(
                 (p) => p.label === partner.province
               );
               this.municipios = province?.towns ?? [];
-              this.partnerData = partner;
-              this.formPartner.patchValue({
-                name: partner.name,
-                surname: partner.surname,
-                birthday: partner.birthday
-                  ? partner.birthday.toString().slice(0, 10)
-                  : '',
-                province: partner.province || '',
-                town: partner.town || '',
-                post_code: partner.post_code || '',
-                address: partner.address || '',
-                phone: partner.phone || '',
-                email: partner.email || '',
 
-                observations: partner.observations || '',
-                img: partner.img || '',
-                death: partner.death || false,
-                unsubscribe: partner.unsubscribe || false,
-              });
+              this.partnerData = partner;
+
+              // campos simples
+              this.formPartner.patchValue(
+                {
+                  name: partner.name,
+                  surname: partner.surname ?? '',
+                  birthday: partner.birthday
+                    ? partner.birthday.toString().slice(0, 10)
+                    : '',
+                  province: partner.province || '',
+                  town: partner.town || '',
+                  post_code: partner.post_code || '',
+                  address: partner.address || '',
+                  phone: partner.phone || '',
+                  email: partner.email || '',
+                  observations: partner.observations || '',
+                  img: partner.img || '',
+                  death: partner.death || false,
+                  unsubscribe: partner.unsubscribe || false,
+                },
+                { emitEvent: false }
+              );
+
+              // cuotas (aceptamos CuotaModel[] o legacy number[])
+              const existingCuotas: CuotaModel[] =
+                Array.isArray(partner.cuotas) &&
+                typeof partner.cuotas[0] === 'number'
+                  ? this.migrateLegacyCuotas(
+                      partner.cuotas as unknown as number[]
+                    )
+                  : (partner.cuotas as CuotaModel[]);
+
+              this.setCuotasForm(existingCuotas);
 
               this.titleForm = 'Editar Socia';
               this.buttonAction = 'Guardar cambios';
@@ -142,8 +247,6 @@ export class FormPartnerComponent {
                 this.imageSrc = partner.img;
                 this.selectedImageFile = null;
               }
-              // Marcar cuotas si existen en la base de datos
-              this.setCuotasForm(partner.cuotas || []);
             }
             this.isLoading = false;
           })
@@ -154,71 +257,73 @@ export class FormPartnerComponent {
     }
   }
 
+  // ---------- UI generales ----------
   onProvinceChange(): void {
     const selectedProvince = this.formPartner.value.province;
     const province = this.provincias.find((p) => p.label === selectedProvince);
     this.municipios = province?.towns ?? [];
-    this.formPartner.patchValue({ town: '' }); // limpia el municipio
+    this.formPartner.patchValue({ town: '' });
   }
+
   async onImageSelected(file: File) {
     const result = await this.generalService.handleFileSelection(file);
     this.selectedImageFile = result.file;
     this.imageSrc = result.imageSrc;
   }
-  /**
-   * Inicializa el FormArray `cuotas` con checkboxes vacíos.
-   * Si es una edición, se marcarán automáticamente en `setCuotasForm()`.
-   */
+
+  // (opcional) seteo de método por defecto, útil si tienes botones tipo "CASH/DOMICILIATION"
+  setDefaultMethodPayment(type: PaymentMethod | null): void {
+    this.defaultMethodPayment = type;
+  }
+
+  // ---------- CUOTAS: construir/actualizar ----------
   initializeCuotasControls(): void {
-    const cuotasFormArray = this.formPartner.get('cuotas') as FormArray;
-    cuotasFormArray.clear(); // 🔹 LIMPIA EL FORM ARRAY antes de añadir nuevos controles
-
-    this.years.forEach(() => {
-      cuotasFormArray.push(new FormControl(false)); // Inicia vacío
-    });
+    this.cuotasFA.clear({ emitEvent: false });
+    // construimos con años (descendente) sin datos previos
+    const built = this.buildCuotasArray(
+      this.years[0],
+      this.years[this.years.length - 1]
+    );
+    built.controls.forEach((c) => this.cuotasFA.push(c, { emitEvent: false }));
   }
 
-  /**
-   * Devuelve el control específico de cuota por índice
-   */
-  getCuotaControl(index: number): FormControl {
-    return (this.formPartner.get('cuotas') as FormArray).at(
-      index
-    ) as FormControl;
+  setCuotasForm(cuotas: CuotaModel[]): void {
+    this.cuotasFA.clear({ emitEvent: false });
+    // Construimos tantas cuotas como años visibles en UI, emparejando por 'year'
+    const built = this.buildCuotasArray(
+      this.years[0],
+      this.years[this.years.length - 1],
+      cuotas
+    );
+    built.controls.forEach((c) => this.cuotasFA.push(c, { emitEvent: false }));
   }
 
-  /**
-   * Establece las cuotas marcadas cuando se edita un socio
-   */
-  setCuotasForm(cuotas: number[]): void {
-    const cuotasFormArray = this.formPartner.get('cuotas') as FormArray;
-
-    // 🔹 Primero, reiniciar todas las cuotas a "false"
-    cuotasFormArray.controls.forEach((control) => control.setValue(false));
-
-    // 🔹 Marcar las cuotas del socio actual
-    cuotas.forEach((year) => {
-      const index = this.years.indexOf(year);
-      if (index !== -1) {
-        cuotasFormArray.at(index).setValue(true);
-      }
-    });
+  // Helpers para la UI si los necesitas en plantillas (ej. setters por índice)
+  setCuotaPaid(index: number, paid: boolean) {
+    this.getCuotaGroupAt(index).get('paid')!.setValue(paid);
+  }
+  setCuotaMethod(index: number, method: PaymentMethod | null) {
+    this.getCuotaGroupAt(index).get('method_payment')!.setValue(method);
+  }
+  setCuotaDate(index: number, isoDate: string | null) {
+    this.getCuotaGroupAt(index).get('date_payment')!.setValue(isoDate);
   }
 
-  /**
-   * Envía el formulario con los datos del socio.
-   */
+  // ---------- ENVÍO ----------
   onSendFormPartner(): void {
     if (this.formPartner.invalid) {
       this.submitted = true;
-      console.log('Formulario inválido', this.formPartner.errors);
+      this.formPartner.markAllAsTouched();
       return;
     }
 
-    const selectedCuotas = this.years.filter(
-      (_, index) =>
-        (this.formPartner.get('cuotas') as FormArray).at(index).value
-    );
+    // Serializamos todas las cuotas visibles (una por año)
+    const cuotasToSend: CuotaModel[] = this.cuotasFA.controls.map((fg) => ({
+      year: fg.get('year')!.value,
+      paid: fg.get('paid')!.value,
+      date_payment: fg.get('date_payment')!.value,
+      method_payment: fg.get('method_payment')!.value,
+    }));
 
     const formData = new FormData();
     formData.append('name', this.formPartner.value.name ?? '');
@@ -231,14 +336,14 @@ export class FormPartnerComponent {
     formData.append('phone', this.formPartner.value.phone ?? '');
     formData.append('email', this.formPartner.value.email ?? '');
     formData.append('observations', this.formPartner.value.observations ?? '');
-    formData.append('death', String(this.formPartner.value.death ?? false)); // 🔧 Arreglado
+    formData.append('death', String(this.formPartner.value.death ?? false));
     formData.append(
       'unsubscribe',
       String(this.formPartner.value.unsubscribe ?? false)
     );
 
-    // Cuotas: solo las seleccionadas
-    formData.append('cuotas', JSON.stringify(selectedCuotas));
+    // ⬇️ cuotas como JSON de CuotaModel[]
+    formData.append('cuotas', JSON.stringify(cuotasToSend));
 
     if (this.selectedImageFile) {
       formData.append('img', this.selectedImageFile);
@@ -253,7 +358,7 @@ export class FormPartnerComponent {
 
     this.submitForm.emit({
       itemId: this.itemId,
-      formData: formData,
+      formData,
     });
   }
 }

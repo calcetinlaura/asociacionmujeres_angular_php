@@ -80,9 +80,17 @@ export class PiterasPageComponent implements OnInit {
       sortable: true,
       width: ColumnWidth.XS,
       textAlign: 'center',
+      backColor: true,
     },
-    { title: 'Temática', key: 'theme', sortable: true },
-    { title: 'Url', key: 'url', sortable: true },
+    { title: 'Temática', key: 'theme', sortable: true, textAlign: 'center' },
+    {
+      title: 'Nº págines',
+      key: 'pages',
+      sortable: true,
+      width: ColumnWidth.XS,
+      textAlign: 'center',
+    },
+    { title: 'Url', key: 'url', sortable: true, textAlign: 'center' },
   ];
 
   piteras: PiteraModel[] = [];

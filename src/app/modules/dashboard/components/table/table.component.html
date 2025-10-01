@@ -217,9 +217,7 @@
         @case (column.key === 'birthday') { @if (element.birthday) {
         <div class="text-center">
           {{ element.birthday | date : "dd MMM yyyy" }}<br />
-          <span class="dateColumn">
-            {{ element.birthday | calculateAge }} años
-          </span>
+          <span class="dateColumn"> {{ element.birthday | age }} años </span>
         </div>
         } } @case (column.key === 'years') {
         {{ element.years || 0 }} años } @case (column.key === 'subsidy_name') {

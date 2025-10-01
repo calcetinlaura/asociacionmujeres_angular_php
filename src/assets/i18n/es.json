@@ -38,7 +38,7 @@
     },
     "note": "Nota: {{text}}",
     "restrictions": {
-      "membersOnly": "Solo socias",
+      "partnersOnly": "Solo socias",
       "womenOnly": "Solo mujeres",
       "other": "Restricción: {{text}}"
     },
@@ -57,5 +57,22 @@
 
       "allAges": "Todos los públicos"
     }
+  },
+  "partners": {
+    "ageBuckets": {
+      "under18": "Menores 18 años",
+      "from18to30": "Entre 18-30 años",
+      "from30to45": "Entre 30-45 años",
+      "from45to60": "Entre 45 - 60 años",
+      "from60to75": "Entre 60 - 75 años",
+      "from75to80": "Entre 75 y 80 años",
+      "over80": "Mayores 80 años",
+      "unknown": "Desconocido"
+    }
+  },
+
+  "paymentMethod": {
+    "cash": "Efectivo",
+    "domiciliation": "Domiciliación"
   }
 }

@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
-
-export type AnnualPoint = { year: number; count: number };
+import { AnnualPoint } from 'src/app/core/services/analytics.service';
 
 @Component({
   selector: 'app-annual-line-chart',
@@ -15,7 +14,7 @@ export class AnnualLineChartComponent {
   /** Serie anual: [{year, count}] (se ordena por año) */
   private _data: AnnualPoint[] = [];
   @Input() set data(v: AnnualPoint[] | null | undefined) {
-    this._data = (v ?? []).slice().sort((a, b) => a.year - b.year);
+    this._data = (v ?? []).slice().sort((a, b) => a.label - b.label);
   }
   get data(): AnnualPoint[] {
     return this._data;
@@ -107,9 +106,9 @@ export class AnnualLineChartComponent {
   }
 
   /** Ticks X: todos los años */
-  xTicks(): { year: number; x: number }[] {
+  xTicks(): { label: number; x: number }[] {
     const arr = this._data ?? [];
     if (!arr.length) return [];
-    return arr.map((d, i) => ({ year: d?.year ?? 0, x: this.x(i) }));
+    return arr.map((d, i) => ({ label: d?.label ?? 0, x: this.x(i) }));
   }
 }

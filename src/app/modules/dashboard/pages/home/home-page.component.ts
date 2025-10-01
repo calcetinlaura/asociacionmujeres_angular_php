@@ -13,6 +13,25 @@ import { ChartCardComponent } from './charts/components/chart-card/chart-card.co
 import { DonutChartComponent } from './charts/donut-chart/donut-chart.component';
 import { HorizontalBarChartComponent } from './charts/horizontal-bar-chart/horizontal-bar-chart.component';
 import { MonthlyChartComponent } from './charts/monthly-chart/monthly-chart.component';
+
+const AGE_BUCKETS = [
+  { label: 'MENORES DE 18 años', min: null, max: 18 },
+  { label: 'ENTRE 18-30 años', min: 18, max: 30 },
+  { label: 'Entre 30-45 años', min: 30, max: 45 },
+  { label: 'Entre 45 - 60 años', min: 45, max: 60 },
+  { label: 'entre 60 - 75 años', min: 60, max: 75 },
+  { label: 'Entre 75 y 80 años', min: 75, max: 80 },
+  { label: 'mayores de 80 años', min: 80, max: null },
+];
+
+function bucketLabel(age: number): string {
+  for (const b of AGE_BUCKETS) {
+    const okMin = b.min == null || age >= b.min;
+    const okMax = b.max == null || age < b.max; // [min, max)
+    if (okMin && okMax) return b.label;
+  }
+  return 'Desconocido';
+}
 @Component({
   selector: 'app-home-page',
   standalone: true,
@@ -46,7 +65,7 @@ export class HomePageComponent {
   readonly booksByGenreYear$ = this.facade.booksByGenreYear$;
   readonly moviesByGenreYear$ = this.facade.moviesByGenreYear$;
   readonly recipesByCategoryYear$ = this.facade.recipesByCategoryYear$;
-  readonly membersAnnual$ = this.facade.membersAnnual$;
+  readonly partnersAnnual$ = this.facade.partnersAnnual$;
 
   // ✅ Estados listos para la vista
   readonly annualState$ = this.facade.annualState$;
@@ -58,9 +77,31 @@ export class HomePageComponent {
   readonly moviesByGenreYearState$ = this.facade.moviesByGenreYearState$;
   readonly recipesByCategoryYearState$ =
     this.facade.recipesByCategoryYearState$;
-  readonly membersAnnualState$ = this.facade.membersAnnualState$;
+  readonly partnersAnnualState$ = this.facade.partnersAnnualState$;
   readonly partnersKpisState$ = this.facade.partnersKpisState$;
-
+  readonly pagesPerIssueState$ = this.facade.pagesPerIssueState$;
+  readonly audienceYearState$ = this.facade.audienceYearState$;
+  readonly partnersAgeBucketsState$ = this.facade.partnersAgeBucketsState$;
+  readonly paymentsByMethodState$ = this.facade.paymentsByMethodState$;
+  readonly paymentsByMonthState$ = this.facade.paymentsByMonthState$;
+  monthName(n?: number): string {
+    if (!n || n < 1 || n > 12) return '—';
+    const nombres = [
+      'enero',
+      'febrero',
+      'marzo',
+      'abril',
+      'mayo',
+      'junio',
+      'julio',
+      'agosto',
+      'septiembre',
+      'octubre',
+      'noviembre',
+      'diciembre',
+    ];
+    return nombres[n - 1];
+  }
   dictType = DictType;
   // getters/handlers UI
   year() {

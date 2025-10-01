@@ -4,16 +4,8 @@
   xmlns="http://www.w3.org/2000/svg"
   [attr.viewBox]="'0 0 ' + canvasWidth + ' ' + canvasHeight"
 >
-  @if (maxCount(data); as max) { @if (max === 0) {
-  <text
-    [attr.x]="canvasWidth / 2"
-    [attr.y]="canvasHeight / 2"
-    text-anchor="middle"
-    class="indice"
-  >
-    Sin datos
-  </text>
-  } @else {
+  @let max = maxCount(series);
+
   <g>
     <!-- Línea separadora -->
     <line
@@ -24,7 +16,8 @@
       class="sep"
       [attr.stroke-width]="effStroke1"
     />
-    @for (m of (data || []); track $index; let i = $index) {
+
+    @for (m of series; track $index; let i = $index) {
     <rect
       [attr.x]="i * (usableWidth / 12) + left"
       [attr.y]="baseY - (m.count / max) * usableHeight"
@@ -34,6 +27,7 @@
       ry="12"
       class="bar"
     />
+
     @if (m.count > 0) {
     <text
       [attr.x]="i * (usableWidth / 12) + left + (usableWidth / 12 - 12) / 2"
@@ -45,6 +39,7 @@
       {{ m.count }}
     </text>
     }
+
     <text
       [attr.x]="i * (usableWidth / 12) + left + (usableWidth / 12 - 12) / 2"
       [attr.y]="baseY + labelOffset"
@@ -56,5 +51,4 @@
     </text>
     }
   </g>
-  } }
 </svg>

@@ -73,14 +73,23 @@
           </div>
         </div>
       </div>
-      <div class="box-input gap-x-4">
-        <label for="theme">Temática</label>
-        <div class="flex flex-col flex-1">
-          <input
-            formControlName="theme"
-            placeholder="Temática de la revista"
-            type="text"
-          />
+      <div class="flex justify-between gap-x-4">
+        <div class="box-input gap-x-4 flex-1">
+          <label for="theme">Temática</label>
+          <div class="flex flex-col flex-1">
+            <input
+              formControlName="theme"
+              placeholder="Temática de la revista"
+              type="text"
+            />
+          </div>
+        </div>
+        <!-- Nº PÁGINAS -->
+        <div class="box-input gap-x-4 w-96">
+          <label for="pages">Nº páginas</label>
+          <div class="flex flex-col flex-1">
+            <input formControlName="pages" placeholder="Número" type="number" />
+          </div>
         </div>
       </div>
       <div class="flex gap-x-4 items-start">

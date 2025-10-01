@@ -96,7 +96,7 @@ type AudienceDTO = {
   };
   ageNote: string;
   restrictions: {
-    membersOnly: boolean;
+    partnersOnly: boolean;
     womenOnly: boolean;
     other: boolean;
     otherText: string;
@@ -142,7 +142,7 @@ export function audienceValidatorFactory(
     }
 
     if (res) {
-      const anyR = !!r.membersOnly || !!r.womenOnly || !!r.other;
+      const anyR = !!r.partnersOnly || !!r.womenOnly || !!r.other;
       if (!anyR) errors['restrictionRequired'] = true;
       if (r.other && !(r.otherText || '').toString().trim()) {
         errors['restrictionOtherTextRequired'] = true;
@@ -300,7 +300,7 @@ export class FormEventComponent implements OnInit, OnChanges {
       }),
       ageNote: this.fb.control('', { nonNullable: true }),
       restrictions: this.fb.group({
-        membersOnly: this.fb.control(false, { nonNullable: true }),
+        partnersOnly: this.fb.control(false, { nonNullable: true }),
         womenOnly: this.fb.control(false, { nonNullable: true }),
         other: this.fb.control(false, { nonNullable: true }),
         otherText: this.fb.control(
@@ -374,7 +374,7 @@ export class FormEventComponent implements OnInit, OnChanges {
           );
           rest.patchValue(
             {
-              membersOnly: false,
+              partnersOnly: false,
               womenOnly: false,
               other: false,
               otherText: '',
@@ -790,7 +790,7 @@ export class FormEventComponent implements OnInit, OnChanges {
       },
       ageNote: typeof parsed.ageNote === 'string' ? parsed.ageNote : '',
       restrictions: {
-        membersOnly: b(parsed.restrictions?.membersOnly),
+        partnersOnly: b(parsed.restrictions?.partnersOnly),
         womenOnly: b(parsed.restrictions?.womenOnly),
         other: b(parsed.restrictions?.other),
         otherText:
@@ -812,7 +812,7 @@ export class FormEventComponent implements OnInit, OnChanges {
       };
       norm.ageNote = '';
       norm.restrictions = {
-        membersOnly: false,
+        partnersOnly: false,
         womenOnly: false,
         other: false,
         otherText: '',
@@ -822,7 +822,7 @@ export class FormEventComponent implements OnInit, OnChanges {
       const anyAge = Object.values(norm.ages).some(Boolean);
       if (!anyAge) norm.ages.kids = true;
       norm.restrictions = {
-        membersOnly: false,
+        partnersOnly: false,
         womenOnly: false,
         other: false,
         otherText: '',
@@ -874,7 +874,7 @@ export class FormEventComponent implements OnInit, OnChanges {
         },
         ageNote: '',
         restrictions: {
-          membersOnly: false,
+          partnersOnly: false,
           womenOnly: false,
           other: false,
           otherText: '',
@@ -902,7 +902,7 @@ export class FormEventComponent implements OnInit, OnChanges {
       },
       ageNote: v.ageNote || '',
       restrictions: {
-        membersOnly: !!v.restrictions?.membersOnly,
+        partnersOnly: !!v.restrictions?.partnersOnly,
         womenOnly: !!v.restrictions?.womenOnly,
         other: !!v.restrictions?.other,
         otherText: v.restrictions?.otherText || '',
@@ -1695,7 +1695,12 @@ export class FormEventComponent implements OnInit, OnChanges {
       f
         .get('restrictions')!
         .patchValue(
-          { membersOnly: false, womenOnly: false, other: false, otherText: '' },
+          {
+            partnersOnly: false,
+            womenOnly: false,
+            other: false,
+            otherText: '',
+          },
           { emitEvent: false }
         );
 
@@ -1763,7 +1768,7 @@ export class FormEventComponent implements OnInit, OnChanges {
     this.audienceForm.updateValueAndValidity({ emitEvent: false });
   }
 
-  toggleRestriction(key: 'membersOnly' | 'womenOnly' | 'other'): void {
+  toggleRestriction(key: 'partnersOnly' | 'womenOnly' | 'other'): void {
     const grp = this.audienceForm.get('restrictions') as FormGroup;
     if (!grp) return;
 
@@ -1771,7 +1776,7 @@ export class FormEventComponent implements OnInit, OnChanges {
     const next = !was;
 
     grp.setValue(
-      { membersOnly: false, womenOnly: false, other: false, otherText: '' },
+      { partnersOnly: false, womenOnly: false, other: false, otherText: '' },
       { emitEvent: false }
     );
 

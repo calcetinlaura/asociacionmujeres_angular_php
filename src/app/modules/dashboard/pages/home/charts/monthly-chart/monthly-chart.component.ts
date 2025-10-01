@@ -107,9 +107,26 @@ export class MonthlyChartComponent implements AfterViewInit, OnDestroy {
     if (this.ro) this.ro.disconnect();
   }
 
-  maxCount(arr: unknown): number {
-    if (!Array.isArray(arr) || arr.length === 0) return 0;
-    const a = arr as { count: number }[];
-    return a.reduce((m, x) => Math.max(m, x?.count ?? 0), 0);
+  // ← NUEVO: serie normalizada a 12 meses
+  get series(): MonthBar[] {
+    const base = Array.from({ length: 12 }, (_, i) => ({
+      month: i + 1,
+      count: 0,
+    }));
+    if (!Array.isArray(this.data)) return base;
+
+    for (const item of this.data) {
+      const idx = (Number(item?.month) || 0) - 1;
+      const c = Number(item?.count) || 0;
+      if (idx >= 0 && idx < 12) base[idx].count = c;
+    }
+    return base;
+  }
+
+  // Ajuste: acepta MonthBar[] y garantiza max >= 1
+  maxCount(arr: MonthBar[] | null | undefined): number {
+    const a = Array.isArray(arr) ? arr : [];
+    const max = a.reduce((m, x) => Math.max(m, Number(x?.count) || 0), 0);
+    return Math.max(max, 1); // evita división por 0; si todo es 0 → 1
   }
 }

@@ -58,7 +58,7 @@ export type AudienceDTO = {
   };
   ageNote: string;
   restrictions: {
-    membersOnly: boolean;
+    partnersOnly: boolean;
     womenOnly: boolean;
     other: boolean;
     otherText: string;
