@@ -26,6 +26,7 @@ import {
 } from 'src/app/core/interfaces/agent.interface';
 import { TypeList } from 'src/app/core/models/general.model';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
+import { ScrollToFirstErrorDirective } from 'src/app/shared/directives/scroll-to-first-error.directive';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { ImageControlComponent } from '../../../../components/image-control/image-control.component';
 @Component({
@@ -37,6 +38,7 @@ import { ImageControlComponent } from '../../../../components/image-control/imag
     MatCardModule,
     QuillModule,
     SpinnerLoadingComponent,
+    ScrollToFirstErrorDirective,
   ],
   templateUrl: './form-agent.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],

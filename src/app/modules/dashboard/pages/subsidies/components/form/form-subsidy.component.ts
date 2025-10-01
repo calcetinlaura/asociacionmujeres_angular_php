@@ -36,6 +36,7 @@ import {
 import { TypeList } from 'src/app/core/models/general.model';
 import { SubsidiesService } from 'src/app/core/services/subsidies.services';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
+import { ScrollToFirstErrorDirective } from 'src/app/shared/directives/scroll-to-first-error.directive';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
@@ -51,6 +52,7 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
     MatCardModule,
     QuillModule,
     SpinnerLoadingComponent,
+    ScrollToFirstErrorDirective,
   ],
   templateUrl: './form-subsidy.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],

@@ -8,6 +8,7 @@
   </div>
   } @else {
   <form
+    appScrollToFirstError
     (ngSubmit)="onSendFormCreditor()"
     [formGroup]="formCreditor"
     class="login-auth-form"

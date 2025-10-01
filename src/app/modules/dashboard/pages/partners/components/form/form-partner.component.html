@@ -9,6 +9,7 @@
   </div>
   } @else {
   <form
+    appScrollToFirstError
     (ngSubmit)="onSendFormPartner()"
     [formGroup]="formPartner"
     class="login-auth-form"
@@ -19,17 +20,19 @@
           <!-- Nombre -->
           <div class="box-input gap-x-4">
             <label for="name">Nombre</label>
-            <input
-              formControlName="name"
-              placeholder="Nombre de la persona socia"
-              type="text"
-              [ngClass]="{
-                'is-invalid': submitted && formPartner.get('name')?.invalid
-              }"
-            />
-            @if (submitted && formPartner.get('name')?.invalid) {
-            <div class="is-invalid-text">Campo requerido</div>
-            }
+            <div class="flex flex-col flex-1">
+              <input
+                formControlName="name"
+                placeholder="Nombre de la persona socia"
+                type="text"
+                [ngClass]="{
+                  'is-invalid': submitted && formPartner.get('name')?.invalid
+                }"
+              />
+              @if (submitted && formPartner.get('name')?.invalid) {
+              <div class="is-invalid-text">Campo requerido</div>
+              }
+            </div>
           </div>
 
           <!-- Apellidos -->

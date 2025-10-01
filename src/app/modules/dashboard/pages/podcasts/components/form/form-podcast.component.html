@@ -8,6 +8,7 @@
   </div>
   } @else {
   <form
+    appScrollToFirstError
     (ngSubmit)="onSendFormPodcast()"
     [formGroup]="formPodcast"
     class="login-auth-form"

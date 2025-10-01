@@ -128,3 +128,8 @@ hr {
   margin-bottom: 12px;
   border-top: 1px solid #c7c7c9;
 }
+.is-invalid,
+.is-invalid-text,
+[formcontrolname].ng-invalid.ng-touched {
+  scroll-margin-top: 96px; /* si prefieres no usar offset en la directiva */
+}

@@ -52,6 +52,7 @@ import { ProjectsService } from 'src/app/core/services/projects.services';
 import { SubsidiesService } from 'src/app/core/services/subsidies.services';
 import { ButtonSelectComponent } from 'src/app/shared/components/buttons/button-select/button-select.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
+import { ScrollToFirstErrorDirective } from 'src/app/shared/directives/scroll-to-first-error.directive';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { dateBetween } from 'src/app/shared/utils/validators.utils';
 import { PdfControlComponent } from '../../../../components/pdf-control/pdf-control.component';
@@ -71,6 +72,7 @@ import { PdfControlComponent } from '../../../../components/pdf-control/pdf-cont
     QuillModule,
     SpinnerLoadingComponent,
     ButtonSelectComponent,
+    ScrollToFirstErrorDirective,
   ],
   templateUrl: './form-invoice.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],

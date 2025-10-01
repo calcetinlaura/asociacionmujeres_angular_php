@@ -23,6 +23,7 @@ import { ArticleModel } from 'src/app/core/interfaces/article.interface';
 import { TypeList } from 'src/app/core/models/general.model';
 import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
+import { ScrollToFirstErrorDirective } from 'src/app/shared/directives/scroll-to-first-error.directive';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
@@ -34,6 +35,7 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
     ImageControlComponent,
     QuillModule,
     SpinnerLoadingComponent,
+    ScrollToFirstErrorDirective,
   ],
   templateUrl: './form-article.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],

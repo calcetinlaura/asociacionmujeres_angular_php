@@ -24,6 +24,7 @@ import {
   CreditorModel,
 } from 'src/app/core/interfaces/creditor.interface';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
+import { ScrollToFirstErrorDirective } from 'src/app/shared/directives/scroll-to-first-error.directive';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 @Component({
   selector: 'app-form-creditor',
@@ -32,6 +33,7 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
     ReactiveFormsModule,
     QuillModule,
     SpinnerLoadingComponent,
+    ScrollToFirstErrorDirective,
   ],
   templateUrl: './form-creditor.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],

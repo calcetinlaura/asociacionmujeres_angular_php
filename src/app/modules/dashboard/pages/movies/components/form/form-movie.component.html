@@ -8,6 +8,7 @@
   </div>
   } @else {
   <form
+    appScrollToFirstError
     (ngSubmit)="onSendFormMovie()"
     [formGroup]="formMovie"
     class="login-auth-form"

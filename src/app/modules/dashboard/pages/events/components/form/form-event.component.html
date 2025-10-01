@@ -9,6 +9,7 @@
   </div>
   } @else {
   <form
+    appScrollToFirstError
     (ngSubmit)="onSendFormEvent()"
     [formGroup]="formEvent"
     class="login-auth-form"

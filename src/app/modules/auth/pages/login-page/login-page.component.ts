@@ -10,6 +10,7 @@ import {
 import { Router } from '@angular/router';
 import { tap } from 'rxjs';
 import { AuthService } from 'src/app/modules/auth/services/auth.service';
+import { ScrollToFirstErrorDirective } from 'src/app/shared/directives/scroll-to-first-error.directive';
 
 @Component({
   selector: 'app-login-page',
@@ -18,6 +19,7 @@ import { AuthService } from 'src/app/modules/auth/services/auth.service';
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    ScrollToFirstErrorDirective,
     // RouterOutlet
   ],
 })

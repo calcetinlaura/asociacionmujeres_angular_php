@@ -23,6 +23,7 @@ import { TypeList } from 'src/app/core/models/general.model';
 import { AudioControlComponent } from 'src/app/modules/dashboard/components/audio-control//audio-control.component';
 import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
+import { ScrollToFirstErrorDirective } from 'src/app/shared/directives/scroll-to-first-error.directive';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
@@ -35,6 +36,7 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
     QuillModule,
     SpinnerLoadingComponent,
     AudioControlComponent,
+    ScrollToFirstErrorDirective,
   ],
   templateUrl: './form-podcast.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],

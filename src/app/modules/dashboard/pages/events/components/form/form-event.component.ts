@@ -3,11 +3,9 @@ import {
   ChangeDetectorRef,
   Component,
   DestroyRef,
-  ElementRef,
   EventEmitter,
   inject,
   Input,
-  NgZone,
   OnChanges,
   OnInit,
   Output,
@@ -62,6 +60,7 @@ import { ButtonCategoryComponent } from 'src/app/shared/components/buttons/butto
 import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
 import { ButtonSelectComponent } from 'src/app/shared/components/buttons/button-select/button-select.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
+import { ScrollToFirstErrorDirective } from 'src/app/shared/directives/scroll-to-first-error.directive';
 import { FilterTransformCodePipe } from 'src/app/shared/pipe/filterTransformCode.pipe';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import {
@@ -169,6 +168,7 @@ export function audienceValidatorFactory(
     ButtonCategoryComponent,
     AgentArrayControlComponent,
     DateArrayControlComponent,
+    ScrollToFirstErrorDirective,
   ],
   templateUrl: './form-event.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],
@@ -183,10 +183,6 @@ export class FormEventComponent implements OnInit, OnChanges {
   private readonly generalService = inject(GeneralService);
   private readonly fb = inject(FormBuilder);
   private readonly cdr = inject(ChangeDetectorRef);
-
-  // Para scroll + focus al primer error
-  private el = inject(ElementRef<HTMLElement>);
-  private zone = inject(NgZone);
 
   readonly minDate = new Date(2018, 0, 1);
   readonly maxDate = (() => {
@@ -1258,61 +1254,6 @@ export class FormEventComponent implements OnInit, OnChanges {
   }
 
   // ------------------------------------------------------
-  // Scroll + focus al primer error (de arriba a abajo)
-  // ------------------------------------------------------
-  private scrollAndFocusFirstError(): void {
-    const rootEl = this.el.nativeElement as HTMLElement;
-
-    // 1) Selección de candidatos (tipado explícito)
-    const nodeList: NodeListOf<HTMLElement> =
-      rootEl.querySelectorAll<HTMLElement>(
-        `
-    [formControlName].ng-invalid,
-    [formArrayName].ng-invalid,
-    [formGroupName].ng-invalid,
-    .is-invalid,
-    [aria-invalid="true"]
-    `
-      );
-
-    // 2) Filtrar visibles (tipa el callback)
-    const visible: HTMLElement[] = Array.from(nodeList).filter(
-      (el: HTMLElement) => {
-        const style = window.getComputedStyle(el);
-        const rect = el.getBoundingClientRect();
-        return (
-          style.visibility !== 'hidden' &&
-          style.display !== 'none' &&
-          rect.width > 0 &&
-          rect.height > 0
-        );
-      }
-    );
-
-    if (visible.length === 0) return;
-
-    // 3) El más alto (tipa el comparator)
-    const target: HTMLElement = visible.sort(
-      (a: HTMLElement, b: HTMLElement) =>
-        a.getBoundingClientRect().top - b.getBoundingClientRect().top
-    )[0];
-
-    this.zone.runOutsideAngular(() => {
-      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      const focusable: HTMLElement | null = target.matches(
-        'input,select,textarea,button,[tabindex]'
-      )
-        ? target
-        : target.querySelector<HTMLElement>(
-            'input,select,textarea,button,[tabindex]'
-          );
-      if (focusable) {
-        setTimeout(() => focusable.focus({ preventScroll: true }), 250);
-      }
-    });
-  }
-
-  // ------------------------------------------------------
   // Envío
   // ------------------------------------------------------
   onSendFormEvent(): void {
@@ -1348,7 +1289,6 @@ export class FormEventComponent implements OnInit, OnChanges {
 
     // ¿Hay errores?
     if (this.formEvent.invalid || this.audienceForm.invalid) {
-      this.scrollAndFocusFirstError();
       if (this.formEvent.invalid) this.logFormErrors();
       return;
     }
@@ -1407,7 +1347,7 @@ export class FormEventComponent implements OnInit, OnChanges {
 
       if (!rdRaw.length) {
         console.warn('Debe incluir al menos una fecha de pase');
-        this.scrollAndFocusFirstError();
+
         return;
       }
 
@@ -1692,17 +1632,15 @@ export class FormEventComponent implements OnInit, OnChanges {
       );
 
     const resetRestrictions = () =>
-      f
-        .get('restrictions')!
-        .patchValue(
-          {
-            partnersOnly: false,
-            womenOnly: false,
-            other: false,
-            otherText: '',
-          },
-          { emitEvent: false }
-        );
+      f.get('restrictions')!.patchValue(
+        {
+          partnersOnly: false,
+          womenOnly: false,
+          other: false,
+          otherText: '',
+        },
+        { emitEvent: false }
+      );
 
     if (mode === 'ALL') {
       f.patchValue(

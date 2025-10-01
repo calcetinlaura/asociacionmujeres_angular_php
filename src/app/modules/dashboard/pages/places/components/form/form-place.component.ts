@@ -22,6 +22,7 @@ import { TypeList } from 'src/app/core/models/general.model';
 import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
 import { ButtonSelectComponent } from 'src/app/shared/components/buttons/button-select/button-select.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
+import { ScrollToFirstErrorDirective } from 'src/app/shared/directives/scroll-to-first-error.directive';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
@@ -30,11 +31,11 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
     CommonModule,
     ReactiveFormsModule,
     MatCardModule,
-    // ImageControlComponent,
     ButtonIconComponent,
     QuillModule,
     SpinnerLoadingComponent,
     ButtonSelectComponent,
+    ScrollToFirstErrorDirective,
   ],
   templateUrl: './form-place.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],

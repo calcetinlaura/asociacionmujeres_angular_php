@@ -1,6 +1,7 @@
 <div class="login-auth-page">
   <div class="login-auth-wrapper">
     <form
+      appScrollToFirstError
       (ngSubmit)="sendLogin()"
       [formGroup]="formLogin"
       class="login-auth-form"
