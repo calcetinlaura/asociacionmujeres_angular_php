@@ -50,7 +50,6 @@ export class MonthlyChartComponent implements AfterViewInit, OnDestroy {
   readonly valueFontPx = 80; // tamaño del número en px
 
   @ViewChild('wrapEl', { static: true }) wrapEl!: ElementRef<HTMLDivElement>;
-  @ViewChild('svgEl', { static: true }) svgEl!: ElementRef<SVGSVGElement>;
 
   // Tamaños deseados en pantalla (px). Se compensan por escala del SVG.
   readonly desiredValueFontPx = 14;

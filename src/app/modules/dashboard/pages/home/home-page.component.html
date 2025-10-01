@@ -13,6 +13,8 @@
       </select>
     </div>
   </header>
+
+  <!-- KPIs -->
   <div class="flex gap-y-6 justify-between">
     <article class="card kpi flex-1">
       <div class="kpi-title">
@@ -50,59 +52,109 @@
       </div>
     </article>
   </div>
+
+  <!-- Donuts: Público / Acceso / Categorías -->
   <div class="flex gap-6">
-    <!-- Público de los eventos -->
+    <!-- Público -->
     <app-chart-card
+      class="flex-1"
       [title]="'Público de los eventos (' + yearLabel() + ')'"
-      [subtitle]=""
-      class="flex-1"
     >
+      <div card-actions>
+        <app-icon-action
+          [icon]="'uil-print'"
+          [tooltip]="'Imprimir card'"
+          (click)="
+            printClosestCard(
+              $event,
+              'Público de los eventos (' + yearLabel() + ')'
+            )
+          "
+        >
+        </app-icon-action>
+      </div>
+
       @if (audienceYearState$ | async; as st) { @if (st.loading) {
-      <app-spinner-loading />
-      } @else if (st.error) {
+      <app-spinner-loading /> } @else if (st.error) {
       <div class="error">No se pudo cargar el gráfico.</div>
       } @else if (st.data?.length) {
-      <app-donut-chart [data]="st.data" />
-      } @else {
-      <div class="muted">Sin datos.</div>
-      } }
-    </app-chart-card>
-    <!-- Acceso a los eventos -->
-    <app-chart-card
-      [title]="'Acceso a los eventos (' + yearLabel() + ')'"
-      [subtitle]=""
-      class="flex-1"
-    >
-      @if (eventsByAccessYearState$ | async; as st) { @if (st.loading) {
-      <app-spinner-loading />
-      } @else if (st.error) {
-      <div class="error">No se pudo cargar el gráfico.</div>
-      } @else if (st.data?.length) {
-      <app-donut-chart [data]="st.data" [labelType]="dictType.AccessType" />
+      <app-donut-chart
+        [data]="st.data"
+        [title]="'Público de los eventos (' + yearLabel() + ')'"
+      />
       } @else {
       <div class="muted">Sin datos.</div>
       } }
     </app-chart-card>
 
-    <!-- Categorías de eventos -->
+    <!-- Acceso -->
     <app-chart-card
-      [title]="'Categorías de eventos (' + yearLabel() + ')'"
-      [subtitle]=""
       class="flex-1"
+      [title]="'Acceso a los eventos (' + yearLabel() + ')'"
     >
-      @if (eventsByCategoryYearState$ | async; as st) { @if (st.loading) {
-      <app-spinner-loading />
-      } @else if (st.error) {
+      <div card-actions>
+        <app-icon-action
+          [icon]="'uil-print'"
+          [tooltip]="'Imprimir card'"
+          (click)="
+            printClosestCard(
+              $event,
+              'Acceso a los eventos (' + yearLabel() + ')'
+            )
+          "
+        >
+        </app-icon-action>
+      </div>
+
+      @if (eventsByAccessYearState$ | async; as st) { @if (st.loading) {
+      <app-spinner-loading /> } @else if (st.error) {
       <div class="error">No se pudo cargar el gráfico.</div>
       } @else if (st.data?.length) {
-      <app-donut-chart [data]="st.data" [labelType]="dictType.Categories" />
+      <app-donut-chart
+        [data]="st.data"
+        [labelType]="dictType.AccessType"
+        [title]="'Acceso a los eventos (' + yearLabel() + ')'"
+      />
+      } @else {
+      <div class="muted">Sin datos.</div>
+      } }
+    </app-chart-card>
+
+    <!-- Categorías -->
+    <app-chart-card
+      class="flex-1"
+      [title]="'Categorías de eventos (' + yearLabel() + ')'"
+    >
+      <div card-actions>
+        <app-icon-action
+          [icon]="'uil-print'"
+          [tooltip]="'Imprimir card'"
+          (click)="
+            printClosestCard(
+              $event,
+              'Categorías de eventos (' + yearLabel() + ')'
+            )
+          "
+        >
+        </app-icon-action>
+      </div>
+
+      @if (eventsByCategoryYearState$ | async; as st) { @if (st.loading) {
+      <app-spinner-loading /> } @else if (st.error) {
+      <div class="error">No se pudo cargar el gráfico.</div>
+      } @else if (st.data?.length) {
+      <app-donut-chart
+        [data]="st.data"
+        [labelType]="dictType.Categories"
+        [title]="'Categorías de eventos (' + yearLabel() + ')'"
+      />
       } @else {
       <div class="muted">Sin datos.</div>
       } }
     </app-chart-card>
   </div>
 
-  <!-- Histórico -->
+  <!-- Histórico: serie anual -->
   @if (viewYear() === 'historic') {
   <div class="flex flex-wrap gap-6 items-stretch">
     <app-chart-card
@@ -112,9 +164,22 @@
         variant() === 'latest' ? 'Solo eventos únicos' : 'Todos los eventos'
       "
     >
+      <div card-actions>
+        <app-icon-action
+          [icon]="'uil-print'"
+          [tooltip]="'Imprimir card'"
+          (click)="
+            printClosestCard(
+              $event,
+              'Eventos por año (Histórico 2018–' + currentYear + ')'
+            )
+          "
+        >
+        </app-icon-action>
+      </div>
+
       @if (annualState$ | async; as series) { @if (series.loading) {
-      <app-spinner-loading />
-      } @else if (series.error) {
+      <app-spinner-loading /> } @else if (series.error) {
       <div class="error">No se pudo cargar el gráfico.</div>
       } @else {
       <app-annual-line-chart
@@ -140,9 +205,19 @@
         variant() === 'latest' ? 'Solo eventos únicos' : 'Todos los eventos'
       "
     >
+      <div card-actions>
+        <app-icon-action
+          [icon]="'uil-print'"
+          [tooltip]="'Imprimir card'"
+          (click)="
+            printClosestCard($event, 'Eventos por mes (' + yearLabel() + ')')
+          "
+        >
+        </app-icon-action>
+      </div>
+
       @if (eventsByMonthState$ | async; as s) { @if (s.loading) {
-      <app-spinner-loading />
-      } @else if (s.error) {
+      <app-spinner-loading /> } @else if (s.error) {
       <div class="error">No se pudo cargar el gráfico.</div>
       } @else {
       <app-monthly-chart
@@ -163,29 +238,53 @@
       ariaDescription="Gráfico de barras horizontales con el total de eventos por espacio durante el año seleccionado"
       [footer]="false"
     >
-      <div card-actions></div>
-      @if (eventsByPlaceState$ | async; as s) { @if (s.loading) {
-      <app-spinner-loading />
-      } @else if (s.error) {
+      <div card-actions>
+        <app-icon-action
+          [icon]="'uil-print'"
+          [tooltip]="'Imprimir card'"
+          (click)="
+            printClosestCard(
+              $event,
+              'Eventos por espacio (' + yearLabel() + ')'
+            )
+          "
+        >
+        </app-icon-action>
+      </div>
+
+      @if (eventsByPlaceHBarState$ | async; as s) { @if (s.loading) {
+      <app-spinner-loading /> } @else if (s.error) {
       <div class="error">No se pudo cargar el gráfico.</div>
-      } @else {
-      <app-horizontal-bar-chart [data]="s.data" />
-      } }
+      } @else { <app-horizontal-bar-chart [data]="s.data" /> } }
     </app-chart-card>
   </div>
 
   <!-- Libros, películas y recetas -->
   <div class="mt-10">
     <h1 class="title mt-10">Libros, películas, recetas y Piteras</h1>
+
     <div class="flex flex-wrap gap-6 items-stretch w-full">
       <!-- Libros -->
       <app-chart-card
         class="flex-[1] min-w-[320px]"
         [title]="'Libros donados por género (' + yearLabel() + ')'"
       >
+        <div card-actions>
+          <app-icon-action
+            [icon]="'uil-print'"
+            [tooltip]="'Imprimir card'"
+            (click)="
+              printClosestCard(
+                $event,
+                'Libros donados por género (' + yearLabel() + ')'
+              )
+            "
+          >
+          </app-icon-action>
+        </div>
+
         @if (booksByGenreYearState$ | async; as s) { @if (s.loading) {
-        <app-spinner-loading />
-        } @else if (s.error) {
+        <app-spinner-loading /> } @else if (s.error) {
         <div class="error">No se pudieron cargar los datos.</div>
         } @else {
         <app-cheese-chart
@@ -205,9 +304,22 @@
         class="flex-[1] min-w-[320px]"
         [title]="'Películas donadas por género (' + yearLabel() + ')'"
       >
+        <div card-actions>
+          <app-icon-action
+            [icon]="'uil-print'"
+            [tooltip]="'Imprimir card'"
+            (click)="
+              printClosestCard(
+                $event,
+                'Películas donadas por género (' + yearLabel() + ')'
+              )
+            "
+          >
+          </app-icon-action>
+        </div>
+
         @if (moviesByGenreYearState$ | async; as s) { @if (s.loading) {
-        <app-spinner-loading />
-        } @else if (s.error) {
+        <app-spinner-loading /> } @else if (s.error) {
         <div class="error">No se pudieron cargar los datos.</div>
         } @else {
         <app-cheese-chart
@@ -227,9 +339,22 @@
         class="flex-[1] min-w-[320px]"
         [title]="'Recetas por categoría (' + yearLabel() + ')'"
       >
+        <div card-actions>
+          <app-icon-action
+            [icon]="'uil-print'"
+            [tooltip]="'Imprimir card'"
+            (click)="
+              printClosestCard(
+                $event,
+                'Recetas por categoría (' + yearLabel() + ')'
+              )
+            "
+          >
+          </app-icon-action>
+        </div>
+
         @if (recipesByCategoryYearState$ | async; as s) { @if (s.loading) {
-        <app-spinner-loading />
-        } @else if (s.error) {
+        <app-spinner-loading /> } @else if (s.error) {
         <div class="error">No se pudieron cargar los datos.</div>
         } @else {
         <app-cheese-chart
@@ -244,11 +369,22 @@
         } }
       </app-chart-card>
     </div>
+
+    <!-- Páginas por número (Pitera) -->
     <app-chart-card
       class="flex-[3] min-w-[320px]"
       title="Páginas por número de Pitera"
       subtitle="Ordenado por edición"
     >
+      <div card-actions>
+        <app-icon-action
+          [icon]="'uil-print'"
+          [tooltip]="'Imprimir card'"
+          (click)="printClosestCard($event, 'Páginas por número de Pitera')"
+        >
+        </app-icon-action>
+      </div>
+
       @if (pagesPerIssueState$ | async; as st) { @if (st.loading) {
       <app-spinner-loading /> } @else if (st.error) {
       <div class="error">No se pudo cargar el gráfico.</div>
@@ -270,27 +406,18 @@
   </div>
 
   <!-- Socias -->
-  <!-- Socias -->
   <div class="mt-10 flex flex-col gap-y-6">
     <h1 class="title">Socias</h1>
 
     <div class="flex gap-6">
       @if (partnersKpisState$ | async; as st) {
       <div class="flex flex-col w-[400px] gap-y-2">
-        <!-- <article class="card kpi flex-1">
-          <div class="kpi-title">Nº total de socias</div>
-          <div class="kpi-value">
-            @if (st.loading) { — } @else { {{ st.data?.totalSocias ?? "—" }} }
-          </div>
-        </article> -->
-
         <article class="card kpi flex-1">
           <div class="kpi-title">Socias en {{ yearLabel() }}</div>
           <div class="kpi-value">
             @if (st.loading) { — } @else { {{ st.data?.sociasAnio ?? "—" }} }
           </div>
         </article>
-
         <article class="card kpi flex-1">
           <div class="kpi-title">Edad media ({{ yearLabel() }})</div>
           <div class="kpi-value">
@@ -298,7 +425,6 @@
             {{ st.data!.edadMediaAnio | number : "1.0-1" }} años } @else { — }
           </div>
         </article>
-
         <article class="card kpi flex-1">
           <div class="kpi-title">Método pago más usado ({{ yearLabel() }})</div>
           <div class="kpi-value">
@@ -306,7 +432,6 @@
             {{ st.data?.metodoMasUsadoAnio ?? "—" }} }
           </div>
         </article>
-
         <article class="card kpi flex-1">
           <div class="kpi-title">Mes con más pagos ({{ yearLabel() }})</div>
           <div class="kpi-value">
@@ -317,12 +442,25 @@
       </div>
       }
 
-      <!-- Métodos de pago (cheese chart) -->
+      <!-- Métodos de pago -->
       <app-chart-card
         class="flex-1 min-w-[320px]"
         [title]="'Métodos de pago de cuotas (' + yearLabel() + ')'"
-        [subtitle]=""
       >
+        <div card-actions>
+          <app-icon-action
+            [icon]="'uil-print'"
+            [tooltip]="'Imprimir card'"
+            (click)="
+              printClosestCard(
+                $event,
+                'Métodos de pago de cuotas (' + yearLabel() + ')'
+              )
+            "
+          >
+          </app-icon-action>
+        </div>
+
         @if (paymentsByMethodState$ | async; as st) { @if (st.loading) {
         <app-spinner-loading /> } @else if (st.error) {
         <div class="error">No se pudieron cargar los datos.</div>
@@ -345,8 +483,21 @@
       <app-chart-card
         class="flex-1 min-w-[320px]"
         [title]="'Mes pago de cuota anual (' + yearLabel() + ')'"
-        [subtitle]=""
       >
+        <div card-actions>
+          <app-icon-action
+            [icon]="'uil-print'"
+            [tooltip]="'Imprimir card'"
+            (click)="
+              printClosestCard(
+                $event,
+                'Mes pago de cuota anual (' + yearLabel() + ')'
+              )
+            "
+          >
+          </app-icon-action>
+        </div>
+
         @if (paymentsByMonthState$ | async; as s) { @if (s.loading) {
         <app-spinner-loading /> } @else if (s.error) {
         <div class="error">No se pudo cargar el gráfico.</div>
@@ -361,33 +512,61 @@
     </div>
 
     <div class="flex gap-6">
+      <!-- Distribución por edad (donut) -->
       <app-chart-card
         [title]="'Distribución por edad de socias (' + yearLabel() + ')'"
-        [subtitle]=""
       >
+        <div card-actions>
+          <app-icon-action
+            [icon]="'uil-print'"
+            [tooltip]="'Imprimir card'"
+            (click)="
+              printClosestCard(
+                $event,
+                'Distribución por edad de socias (' + yearLabel() + ')'
+              )
+            "
+          >
+          </app-icon-action>
+        </div>
+
         @if (partnersAgeBucketsState$ | async; as st) { @if (st.loading) {
-        <app-spinner-loading />
-        } @else if (st.error) {
+        <app-spinner-loading /> } @else if (st.error) {
         <div class="error">No se pudo cargar el gráfico.</div>
         } @else if (st.data?.length) {
         <app-donut-chart
           [data]="st.data"
           [labelType]="dictType.PartnersAgeBuckets"
           [labelNormalize]="false"
+          [title]="'Distribución por edad de socias (' + yearLabel() + ')'"
         />
         } @else {
         <div class="muted">Sin datos.</div>
         } }
       </app-chart-card>
 
+      <!-- Socias por año -->
       <app-chart-card
         class="flex-1 min-w-[320px]"
         [title]="'Socias por año (1995–' + currentYear + ')'"
-        [subtitle]=""
+        [subtitle]="'Total de socias con cuota en el año'"
       >
+        <div card-actions>
+          <app-icon-action
+            [icon]="'uil-print'"
+            [tooltip]="'Imprimir card'"
+            (click)="
+              printClosestCard(
+                $event,
+                'Socias por año (1995–' + currentYear + ')'
+              )
+            "
+          >
+          </app-icon-action>
+        </div>
+
         @if (partnersAnnualState$ | async; as s) { @if (s.loading) {
-        <app-spinner-loading />
-        } @else if (s.error) {
+        <app-spinner-loading /> } @else if (s.error) {
         <div class="error">No se pudo cargar el gráfico.</div>
         } @else {
         <app-annual-line-chart
