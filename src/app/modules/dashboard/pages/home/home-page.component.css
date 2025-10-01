@@ -191,3 +191,35 @@
   color: #6b7280;
   font-variant-numeric: tabular-nums;
 }
+@media print {
+  /* Oculta controles/acciones en el PDF */
+  header .control,
+  header app-icon-action,
+  .chart-card__actions,
+  [card-actions] {
+    display: none !important;
+  }
+
+  /* Una sola columna para evitar cortes raros */
+  .container-charts {
+    flex-direction: column !important;
+  }
+  .container-articles {
+    flex-direction: row !important;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .card,
+  .chart-card,
+  article {
+    break-inside: avoid-page;
+    box-shadow: none !important;
+  }
+
+  /* Márgenes de página “amables” */
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+}

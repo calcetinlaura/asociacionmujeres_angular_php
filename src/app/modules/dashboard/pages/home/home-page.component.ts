@@ -1,5 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  inject,
+  ViewChild,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { PeriodicVariant } from 'src/app/application/events.facade';
 
@@ -77,7 +83,8 @@ export class HomePageComponent {
   readonly paymentsByMonthState$ = this.facade.paymentsByMonthState$;
 
   dictType = DictType;
-
+  @ViewChild('reportRoot', { read: ElementRef })
+  reportRoot?: ElementRef<HTMLElement>;
   // Helpers UI
   monthName(n?: number): string {
     if (!n || n < 1 || n > 12) return '—';
@@ -146,5 +153,11 @@ export class HomePageComponent {
     ) as HTMLElement | null;
     if (!el) return;
     this.exportSvc.printCardElement(el, title);
+  }
+  printWholeReport() {
+    const root = this.reportRoot?.nativeElement;
+    if (!root) return;
+    const title = `Informe Dashboard (${this.yearLabel()})`;
+    this.exportSvc.printCardElement(root, title);
   }
 }
