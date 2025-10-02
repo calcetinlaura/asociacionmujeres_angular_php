@@ -40,6 +40,7 @@ import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loadi
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
 import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.component';
+import { ColumnMenuComponent } from '../../components/table/column-menu.component';
 
 @Component({
   selector: 'app-books-page',
@@ -59,6 +60,7 @@ import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.co
     MatCheckboxModule,
     CommonModule,
     StickyZoneComponent,
+    ColumnMenuComponent,
   ],
   templateUrl: './books-page.component.html',
 })

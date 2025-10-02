@@ -18,17 +18,18 @@ import {
   ColumnWidth,
 } from 'src/app/core/interfaces/column.interface';
 import { EventModelFullData } from 'src/app/core/interfaces/event.interface';
+import { MacroeventModelFullData } from 'src/app/core/interfaces/macroevent.interface';
 import {
   Filter,
   TypeActionModal,
   TypeList,
 } from 'src/app/core/models/general.model';
 import { EventsService } from 'src/app/core/services/events.services';
+import { MacroeventsService } from 'src/app/core/services/macroevents.services';
 import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
 import { TableComponent } from 'src/app/modules/dashboard/components/table/table.component';
 import { FiltersComponent } from 'src/app/modules/landing/components/filters/filters.component';
 import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
-import { ButtonComponent } from 'src/app/shared/components/buttons/button/button.component';
 import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
 import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
 import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
@@ -37,7 +38,12 @@ import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loadi
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
 import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.component';
-
+import { ColumnMenuComponent } from '../../components/table/column-menu.component';
+type ModalState = {
+  typeModal: TypeList;
+  action: TypeActionModal;
+  item: EventModelFullData | MacroeventModelFullData | null;
+};
 @Component({
   selector: 'app-events-page',
   standalone: true,
@@ -51,11 +57,11 @@ import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.co
     TableComponent,
     FiltersComponent,
     IconActionComponent,
-    ButtonComponent,
     MatMenuModule,
     MatCheckboxModule,
     CommonModule,
     StickyZoneComponent,
+    ColumnMenuComponent,
   ],
   templateUrl: './events-page.component.html',
 })
@@ -66,6 +72,7 @@ export class EventsPageComponent implements OnInit {
   private readonly eventsService = inject(EventsService);
   private readonly generalService = inject(GeneralService);
   private readonly pdfPrintService = inject(PdfPrintService);
+  private readonly macroeventsService = inject(MacroeventsService);
   readonly events$ = this.eventsFacade.visibleEvents$;
 
   filters: Filter[] = [];
@@ -77,7 +84,8 @@ export class EventsPageComponent implements OnInit {
 
   isModalVisible = false;
 
-  item: EventModelFullData | null = null;
+  item: EventModelFullData | MacroeventModelFullData | null = null;
+  modalHistory: ModalState[] = [];
   currentModalAction: TypeActionModal = TypeActionModal.Create;
   searchForm!: FormGroup;
   columnVisibility: Record<string, boolean> = {};
@@ -224,27 +232,77 @@ export class EventsPageComponent implements OnInit {
   private openModal(
     typeModal: TypeList,
     action: TypeActionModal,
-    item: EventModelFullData | null
+    item: EventModelFullData | MacroeventModelFullData | null
   ): void {
     this.currentModalAction = action;
     this.item = item;
     this.typeModal = typeModal;
-    this.eventsFacade.clearSelectedEvent();
+
+    // sólo limpiar en CREATE de eventos
+    if (typeModal === TypeList.Events && action === TypeActionModal.Create) {
+      this.eventsFacade.clearSelectedEvent();
+    }
+
     this.modalService.openModal();
+  }
+  onOpenEvent = (eventId: number) => {
+    // guardar estado actual (puede ser Evento o Macroevento)
+    this.modalHistory.push({
+      typeModal: this.typeModal,
+      action: this.currentModalAction,
+      item: this.item,
+    });
+
+    this.eventsService
+      .getEventById(eventId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (ev: EventModelFullData) => {
+          this.openModal(TypeList.Events, TypeActionModal.Show, ev);
+        },
+        error: (err) => console.error('Error cargando evento', err),
+      });
+  };
+  onOpenMacroevent(macroId: number) {
+    // Guardar estado actual para "volver"
+    this.modalHistory.push({
+      typeModal: this.typeModal,
+      action: this.currentModalAction,
+      item: this.item,
+    });
+
+    this.macroeventsService
+      .getMacroeventById(macroId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (macro: MacroeventModelFullData) => {
+          this.openModal(TypeList.Macroevents, TypeActionModal.Show, macro);
+        },
+        error: (err) => console.error('Error cargando macroevento', err),
+      });
+  }
+
+  // ⬅️ Volver al estado anterior de la modal
+  onBackModal(): void {
+    const prev = this.modalHistory.pop();
+    if (!prev) return;
+    this.currentModalAction = prev.action;
+    this.item = prev.item;
+    this.typeModal = prev.typeModal;
   }
 
   onCloseModal(): void {
     this.modalService.closeModal();
     this.item = null;
+    this.modalHistory = []; // reset al cerrar completamente
   }
 
   onDelete({ type, id, item }: { type: TypeList; id: number; item?: any }) {
     const actions: Partial<Record<TypeList, (id: number, item?: any) => void>> =
       {
         [TypeList.Events]: (x, it) => {
-          const periodicId = it?.periodic_id;
+          const periodicId = this.isEvent(it) ? it.periodic_id : null;
           if (periodicId) {
-            // 🔥 Borrar todo el grupo
             this.eventsService
               .deleteEventsByPeriodicId(periodicId)
               .pipe(
@@ -255,7 +313,6 @@ export class EventsPageComponent implements OnInit {
               )
               .subscribe();
           } else {
-            // 🔥 Borrar solo el evento individual
             this.eventsFacade.deleteEvent(x);
           }
         },
@@ -264,10 +321,15 @@ export class EventsPageComponent implements OnInit {
     actions[type]?.(id, item);
   }
 
+  isEvent(item: unknown): item is EventModelFullData {
+    return !!item && typeof item === 'object' && 'periodic_id' in item;
+  }
   sendFormEvent(event: { itemId: number; formData: FormData }): void {
     const currentItem = this.item;
     const newPeriodicId = event.formData.get('periodic_id');
-    const oldPeriodicId = currentItem?.periodic_id || null;
+    const oldPeriodicId = this.isEvent(currentItem)
+      ? currentItem?.periodic_id ?? null
+      : null;
     const isRepeatedToUnique = !!oldPeriodicId && !newPeriodicId;
 
     const request$ = event.itemId

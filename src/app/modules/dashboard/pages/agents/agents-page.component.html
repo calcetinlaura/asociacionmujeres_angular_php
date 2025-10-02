@@ -23,24 +23,11 @@
         [tooltip]="'Imprimir tabla'"
         (click)="printTableAsPdf()"
       ></app-icon-action>
-
-      <app-button
-        [buttonText]="'Filtrar columnas'"
-        [menu]="columnsMenu"
-      ></app-button>
-
-      <mat-menu #columnsMenu="matMenu">
-        @for (column of headerListAgents; track $index) {
-        <button mat-menu-item>
-          <mat-checkbox
-            [checked]="columnVisibility[column.key]"
-            (change)="toggleColumn(column.key)"
-          >
-            {{ column.title }}
-          </mat-checkbox>
-        </button>
-        }
-      </mat-menu>
+      <app-column-menu
+        [columns]="headerListAgents"
+        [visibility]="columnVisibility"
+        (toggle)="toggleColumn($event)"
+      />
     </div>
   </div>
 </app-sticky-zone>
@@ -68,7 +55,9 @@
 </div>
 
 <!-- Modal -->
-@if (isModalVisible) {
+
+<!-- Modal de AGENTES -->
+@if (isModalVisible && typeModal === typeList.Agents) {
 <app-modal
   [item]="item"
   [typeModal]="typeModal"
@@ -76,5 +65,21 @@
   (closeModal)="onCloseModal()"
   (confirmDelete)="onDelete($event)"
   (sendFormAgentData)="sendFormAgent($event)"
-></app-modal>
+  (openEvent)="onOpenEvent($event)"
+/>
+}
+
+<!-- Modal de EVENTOS -->
+@if (isModalVisible && typeModal === typeList.Events) {
+<app-modal
+  [item]="item"
+  [typeModal]="typeModal"
+  [action]="currentModalAction"
+  (closeModal)="onCloseModal()"
+  (confirmDelete)="onDelete($event)"
+  (sendFormAgentData)="sendFormAgent($event)"
+  (openEvent)="onOpenEvent($event)"
+  [canGoBack]="modalHistory.length > 0"
+  (back)="onBackModal()"
+/>
 }

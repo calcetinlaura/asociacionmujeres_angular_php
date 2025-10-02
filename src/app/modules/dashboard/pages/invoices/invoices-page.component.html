@@ -98,22 +98,13 @@
         [tooltip]="'Imprimir tabla'"
         (click)="printTableAsPdf()"
       />
-      <app-button [buttonText]="'Filtrar columnas'" [menu]="columnsMenu" />
+      <app-column-menu
+        [columns]="headerListInvoices"
+        [visibility]="columnVisibility"
+        (toggle)="toggleColumn($event)"
+      />
     </div>
   </ng-template>
-
-  <!-- Menú separado (único, accesible por todos los tabs) -->
-  <mat-menu #columnsMenu="matMenu">
-    @for (column of headerListInvoices; track $index) {
-    <button mat-menu-item>
-      <mat-checkbox
-        [checked]="columnVisibility[column.key]"
-        (change)="toggleColumn(column.key)"
-      >
-        {{ column.title }}
-      </mat-checkbox></button
-    >}
-  </mat-menu>
   }
 </div>
 

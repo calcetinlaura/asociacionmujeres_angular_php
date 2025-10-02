@@ -17,18 +17,19 @@ import {
   ColumnModel,
   ColumnWidth,
 } from 'src/app/core/interfaces/column.interface';
+import { EventModelFullData } from 'src/app/core/interfaces/event.interface';
 import { MacroeventModelFullData } from 'src/app/core/interfaces/macroevent.interface';
 import {
   Filter,
   TypeActionModal,
   TypeList,
 } from 'src/app/core/models/general.model';
+import { EventsService } from 'src/app/core/services/events.services';
 import { MacroeventsService } from 'src/app/core/services/macroevents.services';
 import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
 import { TableComponent } from 'src/app/modules/dashboard/components/table/table.component';
 import { FiltersComponent } from 'src/app/modules/landing/components/filters/filters.component';
 import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
-import { ButtonComponent } from 'src/app/shared/components/buttons/button/button.component';
 import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
 import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
 import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
@@ -37,6 +38,13 @@ import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loadi
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
 import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.component';
+import { ColumnMenuComponent } from '../../components/table/column-menu.component';
+
+type ModalState = {
+  typeModal: TypeList;
+  action: TypeActionModal;
+  item: MacroeventModelFullData | EventModelFullData | null;
+};
 
 @Component({
   selector: 'app-macroevents-page',
@@ -52,14 +60,15 @@ import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.co
     FiltersComponent,
     MatMenuModule,
     MatCheckboxModule,
-    ButtonComponent,
     IconActionComponent,
     CommonModule,
     StickyZoneComponent,
+    ColumnMenuComponent,
   ],
   templateUrl: './macroevents-page.component.html',
 })
 export class MacroeventsPageComponent implements OnInit {
+  private readonly eventsService = inject(EventsService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly modalService = inject(ModalService);
   readonly macroeventsFacade = inject(MacroeventsFacade);
@@ -93,7 +102,8 @@ export class MacroeventsPageComponent implements OnInit {
   isModalVisible = false;
   number = 0;
 
-  item: MacroeventModelFullData | null = null;
+  item: MacroeventModelFullData | EventModelFullData | null = null;
+  modalHistory: ModalState[] = [];
   currentModalAction: TypeActionModal = TypeActionModal.Create;
   searchForm!: FormGroup;
 
@@ -175,20 +185,48 @@ export class MacroeventsPageComponent implements OnInit {
     );
   }
 
+  onOpenEvent(eventId: number) {
+    // Guarda estado actual para el botón “volver”
+    this.modalHistory.push({
+      typeModal: this.typeModal,
+      action: this.currentModalAction,
+      item: this.item,
+    });
+
+    this.eventsService
+      .getEventById(eventId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (event: EventModelFullData) => {
+          this.openModal(TypeList.Events, TypeActionModal.Show, event);
+        },
+        error: (err) => console.error('Error cargando evento', err),
+      });
+  }
+
   private openModal(
     typeModal: TypeList,
     action: TypeActionModal,
-    item: MacroeventModelFullData | null
+    item: MacroeventModelFullData | EventModelFullData | null
   ): void {
     this.currentModalAction = action;
     this.item = item;
     this.typeModal = typeModal;
-    this.macroeventsFacade.clearSelectedMacroevent();
+
+    if (
+      typeModal === TypeList.Macroevents &&
+      action === TypeActionModal.Create
+    ) {
+      this.macroeventsFacade.clearSelectedMacroevent();
+    }
+
     this.modalService.openModal();
   }
 
   onCloseModal(): void {
     this.modalService.closeModal();
+    this.item = null;
+    this.modalHistory = []; // 🔑 limpiar el stack al cerrar del todo
   }
 
   onDelete({ type, id }: { type: TypeList; id: number }) {
@@ -246,5 +284,13 @@ export class MacroeventsPageComponent implements OnInit {
       this.headerListMacroevents,
       this.columnVisibility
     );
+  }
+
+  onBackModal(): void {
+    const prev = this.modalHistory.pop();
+    if (!prev) return;
+    this.currentModalAction = prev.action;
+    this.item = prev.item;
+    this.typeModal = prev.typeModal;
   }
 }

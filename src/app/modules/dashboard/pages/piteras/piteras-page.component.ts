@@ -23,7 +23,6 @@ import { PiterasService } from 'src/app/core/services/piteras.services';
 import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
 import { TableComponent } from 'src/app/modules/dashboard/components/table/table.component';
 import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
-import { ButtonComponent } from 'src/app/shared/components/buttons/button/button.component';
 import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
 import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
 import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
@@ -32,6 +31,7 @@ import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loadi
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
 import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.component';
+import { ColumnMenuComponent } from '../../components/table/column-menu.component';
 
 @Component({
   selector: 'app-piteras-page',
@@ -46,10 +46,10 @@ import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.co
     TableComponent,
     MatCheckboxModule,
     MatMenuModule,
-    ButtonComponent,
     IconActionComponent,
     CommonModule,
     StickyZoneComponent,
+    ColumnMenuComponent,
   ],
   templateUrl: './piteras-page.component.html',
 })

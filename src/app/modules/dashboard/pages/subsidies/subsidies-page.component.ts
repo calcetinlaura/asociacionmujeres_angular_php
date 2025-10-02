@@ -36,7 +36,6 @@ import { SubsidiesService } from 'src/app/core/services/subsidies.services';
 import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
 import { FiltersComponent } from 'src/app/modules/landing/components/filters/filters.component';
 import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
-import { ButtonComponent } from 'src/app/shared/components/buttons/button/button.component';
 import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
 import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
 import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
@@ -45,6 +44,7 @@ import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loadi
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
 import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.component';
+import { ColumnMenuComponent } from '../../components/table/column-menu.component';
 import { TableComponent } from '../../components/table/table.component';
 import { ModalShowSubsidyComponent } from './components/tab-subsidy/tab-subsidies.component';
 
@@ -64,10 +64,10 @@ import { ModalShowSubsidyComponent } from './components/tab-subsidy/tab-subsidie
     ModalShowSubsidyComponent,
     MatMenuModule,
     MatCheckboxModule,
-    ButtonComponent,
     IconActionComponent,
     CommonModule,
     StickyZoneComponent,
+    ColumnMenuComponent,
   ],
   providers: [SubsidiesService],
   templateUrl: './subsidies-page.component.html',

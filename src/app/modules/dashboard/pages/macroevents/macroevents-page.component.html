@@ -24,24 +24,11 @@
         [tooltip]="'Imprimir tabla'"
         (click)="printTableAsPdf()"
       ></app-icon-action>
-
-      <app-button
-        [buttonText]="'Filtrar columnas'"
-        [menu]="columnsMenu"
-      ></app-button>
-
-      <mat-menu #columnsMenu="matMenu">
-        @for (column of headerListMacroevents; track $index) {
-        <button mat-menu-item>
-          <mat-checkbox
-            [checked]="columnVisibility[column.key]"
-            (change)="toggleColumn(column.key)"
-          >
-            {{ column.title }}
-          </mat-checkbox>
-        </button>
-        }
-      </mat-menu>
+      <app-column-menu
+        [columns]="headerListMacroevents"
+        [visibility]="columnVisibility"
+        (toggle)="toggleColumn($event)"
+      />
     </div>
   </div>
 </app-sticky-zone>
@@ -69,13 +56,17 @@
 </div>
 
 <!-- Modal -->
-@if (isModalVisible) {
+@for (k of [typeModal]; track k) { @if (isModalVisible) {
 <app-modal
   [item]="item"
-  [typeModal]="typeModal"
+  [typeModal]="k"
+  [typePage]="k"
   [action]="currentModalAction"
+  [canGoBack]="modalHistory.length > 0"
+  (back)="onBackModal()"
   (closeModal)="onCloseModal()"
   (confirmDelete)="onDelete($event)"
   (sendFormMacroeventData)="sendFormMacroevent($event)"
-></app-modal>
-}
+  (openEvent)="onOpenEvent($event)"
+/>
+} }
