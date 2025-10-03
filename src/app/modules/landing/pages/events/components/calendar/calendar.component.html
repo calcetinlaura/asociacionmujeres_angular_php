@@ -64,7 +64,7 @@
       @if (cell.events.length > 1) {
       <div
         class="cursor-pointer absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-sm font-bold text-black bg-[#c79cd3] bg-opacity-80 rounded p-4 z-20"
-        (click)="openMultiEventModal($event, cell.events)"
+        (click)="openMultiEventModal($event, cell.date!, cell.events)"
       >
         +{{ cell.events.length }}
       </div>
@@ -81,6 +81,8 @@
   [typeModal]="typeModal"
   [action]="selectedActionModal"
   (closeModal)="onCloseModal()"
+  [canGoBack]="!!lastMultiContext"
+  (back)="onBackFromEvent()"
 />
 } @if (showMultiEventModal) {
 <app-modal-multievent

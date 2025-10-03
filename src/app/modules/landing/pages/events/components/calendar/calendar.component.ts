@@ -1,12 +1,5 @@
 import { CommonModule } from '@angular/common';
-import {
-  Component,
-  Input,
-  OnChanges,
-  SimpleChanges,
-  inject,
-} from '@angular/core';
-import { EventsFacade } from 'src/app/application/events.facade';
+import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { EventModel } from 'src/app/core/interfaces/event.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { ModalComponent } from 'src/app/shared/components/modal/modal.component'; // modal grande (tu antigua)
@@ -28,15 +21,13 @@ import { ModalMultiEventComponent } from '../../../../../../shared/components/mo
   styleUrls: ['./calendar.component.css'],
 })
 export class CalendarComponent implements OnChanges {
-  private readonly eventsFacade = inject(EventsFacade);
-
   @Input() events: EventModel[] = [];
   @Input() filterYear: number | null = null;
 
   calendar: { date: Date | null; events: EventModel[] }[] = [];
   currentMonth: number = new Date().getMonth();
   currentYear: number = new Date().getFullYear();
-
+  lastMultiContext: { date: Date; events: EventModel[] } | null = null;
   // Modal grande (una tarjeta de evento)
   showModalView = false;
   selectedActionModal: TypeActionModal = TypeActionModal.Show;
@@ -135,16 +126,19 @@ export class CalendarComponent implements OnChanges {
       this.item = cell.events[0];
       this.showModalView = true;
       this.selectedActionModal = TypeActionModal.Show;
+      this.lastMultiContext = null; // ← no hay listado que preservar
     } else if (cell.events.length > 1) {
       this.multiEventItems = cell.events;
       this.showMultiEventModal = true;
+      this.lastMultiContext = { date: cell.date, events: cell.events }; // ← guarda contexto
     }
   }
 
-  openMultiEventModal(ev: MouseEvent, events: EventModel[]): void {
+  openMultiEventModal(ev: MouseEvent, date: Date, events: EventModel[]): void {
     ev?.stopPropagation();
     this.multiEventItems = events ?? [];
     this.showMultiEventModal = true;
+    this.lastMultiContext = { date, events }; // ← guarda contexto
   }
 
   // idem, por si usas otro handler
@@ -154,9 +148,11 @@ export class CalendarComponent implements OnChanges {
       this.item = cell.events[0];
       this.showModalView = true;
       this.selectedActionModal = TypeActionModal.Show;
+      this.lastMultiContext = null;
     } else {
       this.multiEventItems = cell.events;
       this.showMultiEventModal = true;
+      this.lastMultiContext = { date: cell.date, events: cell.events };
     }
   }
 
@@ -164,6 +160,7 @@ export class CalendarComponent implements OnChanges {
   onCloseModal(): void {
     this.showModalView = false;
     this.item = null;
+    this.lastMultiContext = null; // ← cerrar ≠ volver
   }
 
   // seleccionas en la pequeña → abres la grande
@@ -171,11 +168,13 @@ export class CalendarComponent implements OnChanges {
     this.item = event;
     this.showModalView = true;
     this.showMultiEventModal = false;
+    // ⬆️ mantenemos lastMultiContext para poder VOLVER
   }
 
   closeMultiEventModal(): void {
     this.showMultiEventModal = false;
     this.multiEventItems = [];
+    this.lastMultiContext = null; // ← si cierro listado, ya no hay “volver”
   }
 
   // utilidades UI
@@ -193,5 +192,15 @@ export class CalendarComponent implements OnChanges {
     if (eventCount <= 1) return '100%';
     if (eventCount <= 4) return '50%';
     return '33.3333%';
+  }
+
+  onBackFromEvent(): void {
+    if (!this.lastMultiContext) return;
+    this.showModalView = false;
+    this.item = null;
+
+    this.multiEventItems = this.lastMultiContext.events;
+    this.showMultiEventModal = true;
+    // dejamos lastMultiContext tal cual (para poder seguir navegando)
   }
 }
