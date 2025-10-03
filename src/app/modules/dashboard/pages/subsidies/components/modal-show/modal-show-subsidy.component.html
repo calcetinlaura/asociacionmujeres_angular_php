@@ -141,30 +141,31 @@
       acts = project.activities ?? []; @let rows = acts.length > 0 ? acts.length
       : 1;
 
-      <tbody>
+      <tbody class="group">
         <!-- Con actividades -->
         @if (acts.length > 0) { @for (activity of acts; track activity; let i =
         $index) {
-        <tr>
+        <tr
+          class="cursor-pointer hover:bg-gray-50 group-hover:bg-gray-50 transition-colors"
+          (click)="onOpenProject(project.id)"
+        >
           @if (i === 0) {
           <td
             [attr.rowspan]="rows"
-            class="align-middle text-left text-[14px] uppercase w-2/6"
+            class="align-middle text-left text-[14px] uppercase w-2/6 group-hover:bg-gray-50 transition-colors"
           >
             {{ project.title }}
           </td>
           }
 
           <td class="pl-6 w-2/6">
-            <div>
-              <p class="text-[13px] text-gray-800">{{ activity.name }}</p>
-              @if (activity.attendant) {
-              <p class="text-[12px] text-gray-500 flex items-center gap-1 mt-1">
-                <i class="uil uil-user text-[10px]"></i>
-                {{ activity.attendant }}
-              </p>
-              }
-            </div>
+            <p class="text-[13px] text-gray-800">{{ activity.name }}</p>
+            @if (activity.attendant) {
+            <p class="text-[12px] text-gray-500 flex items-center gap-1 mt-1">
+              <i class="uil uil-user text-[10px]"></i>
+              {{ activity.attendant }}
+            </p>
+            }
           </td>
 
           <td class="text-right text-[12px] w-1/6">
@@ -174,7 +175,7 @@
           @if (i === 0) {
           <td
             [attr.rowspan]="rows"
-            class="align-middle text-right text-[12px] font-bold w-1/6"
+            class="align-middle text-right text-[12px] font-bold w-1/6 group-hover:bg-gray-50 transition-colors"
           >
             {{ getProjectTotalBudget(project) | eurosFormat }}
           </td>
@@ -183,10 +184,13 @@
         } }
         <!-- Sin actividades -->
         @else {
-        <tr>
+        <tr
+          class="hover:bg-gray-50 group-hover:bg-gray-50 cursor-pointer transition-colors"
+          (click)="onOpenProject(project.id)"
+        >
           <td
             [attr.rowspan]="rows"
-            class="align-middle text-left text-[14px] uppercase w-2/6"
+            class="align-middle text-left text-[14px] uppercase w-2/6 group-hover:bg-gray-50 transition-colors"
           >
             {{ project.title }}
           </td>
@@ -225,6 +229,7 @@
           [showCreditor]="true"
           [showTotals]="true"
           totalLabel="TOTAL"
+          (rowClick)="onOpenInvoice($event)"
         >
         </app-invoices-table>
       </div>

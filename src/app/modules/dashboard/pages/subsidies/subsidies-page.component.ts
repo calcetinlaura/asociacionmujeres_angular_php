@@ -1,13 +1,16 @@
 import { CommonModule, KeyValue } from '@angular/common';
 import {
   Component,
+  computed,
   DestroyRef,
   ElementRef,
   inject,
   OnInit,
   QueryList,
+  Signal,
   ViewChild,
   ViewChildren,
+  WritableSignal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -15,9 +18,11 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTabChangeEvent, MatTabsModule } from '@angular/material/tabs';
 import { EMPTY, Observable, take } from 'rxjs';
+
 import { InvoicesFacade } from 'src/app/application/invoices.facade';
 import { ProjectsFacade } from 'src/app/application/projects.facade';
 import { SubsidiesFacade } from 'src/app/application/subsidies.facade';
+
 import {
   ColumnModel,
   ColumnWidth,
@@ -32,28 +37,46 @@ import {
   TypeActionModal,
   TypeList,
 } from 'src/app/core/models/general.model';
+
 import { SubsidiesService } from 'src/app/core/services/subsidies.services';
+
 import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
 import { FiltersComponent } from 'src/app/modules/landing/components/filters/filters.component';
 import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
 import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
 import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
-import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
-import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
+
 import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.component';
 import { ColumnMenuComponent } from '../../components/table/column-menu.component';
+import { ColumnVisibilityStore } from '../../components/table/column-visibility.store';
 import { TableComponent } from '../../components/table/table.component';
-import { ModalShowSubsidyComponent } from './components/tab-subsidy/tab-subsidies.component';
 
+import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
+import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
+
+import { InvoiceModelFullData } from 'src/app/core/interfaces/invoice.interface';
+import { ProjectModelFullData } from 'src/app/core/interfaces/project.interface';
+import { InvoicesService } from 'src/app/core/services/invoices.services';
+import { ProjectsService } from 'src/app/core/services/projects.services';
+import { ModalNavService } from 'src/app/shared/components/modal/services/modal-nav.service';
+import { ModalShowSubsidyComponent } from './components/tab-subsidy/tab-subsidies.component';
+type ModalItem =
+  | SubsidyModel
+  | SubsidyModelFullData
+  | ProjectModelFullData
+  | InvoiceModelFullData
+  | null;
 @Component({
   selector: 'app-subsidies-page',
   standalone: true,
   imports: [
+    CommonModule,
     DashboardHeaderComponent,
-    ModalComponent,
+    // ModalComponent ➜ sustituido por ModalShellComponent
+    ModalShellComponent,
     ButtonIconComponent,
     ReactiveFormsModule,
     InputSearchComponent,
@@ -65,7 +88,6 @@ import { ModalShowSubsidyComponent } from './components/tab-subsidy/tab-subsidie
     MatMenuModule,
     MatCheckboxModule,
     IconActionComponent,
-    CommonModule,
     StickyZoneComponent,
     ColumnMenuComponent,
   ],
@@ -76,29 +98,36 @@ import { ModalShowSubsidyComponent } from './components/tab-subsidy/tab-subsidie
 export class SubsidiesPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly modalService = inject(ModalService);
-  readonly subsidiesFacade = inject(SubsidiesFacade);
-  private readonly invoicesFacade = inject(InvoicesFacade);
-  private readonly projectsFacade = inject(ProjectsFacade);
-  private readonly subsidiesService = inject(SubsidiesService);
   private readonly generalService = inject(GeneralService);
   private readonly pdfPrintService = inject(PdfPrintService);
 
-  // ViewChildren
+  readonly subsidiesFacade = inject(SubsidiesFacade);
+  private readonly invoicesFacade = inject(InvoicesFacade);
+  private readonly invoicesService = inject(InvoicesService);
+  private readonly projectsFacade = inject(ProjectsFacade);
+  private readonly projectsService = inject(ProjectsService);
+  private readonly subsidiesService = inject(SubsidiesService);
+  private readonly colStore = inject(ColumnVisibilityStore);
+  private readonly modalNav = inject(
+    ModalNavService<
+      SubsidyModelFullData | ProjectModelFullData | InvoiceModelFullData
+    >
+  );
+
   @ViewChildren(ModalShowSubsidyComponent)
   tabSubsidies!: QueryList<ModalShowSubsidyComponent>;
 
-  columnVisibility: Record<string, boolean> = {};
-  displayedColumns: string[] = [];
+  // Signals para columnas
+  columnVisSig!: WritableSignal<Record<string, boolean>>;
+  displayedColumnsSig!: Signal<string[]>;
+
   activeTabKey: string | null = null;
   makeKey(s: SubsidyModelFullData) {
     return `${s.name}__${s.year}`;
   }
+
   headerListSubsidies: ColumnModel[] = [
-    {
-      title: 'Nombre',
-      key: 'nameSubsidy',
-      sortable: true,
-    },
+    { title: 'Nombre', key: 'nameSubsidy', sortable: true },
     {
       title: 'Año',
       key: 'year',
@@ -209,18 +238,21 @@ export class SubsidiesPageComponent implements OnInit {
     },
   ];
 
-  // Estado de UI
+  // Estado de UI y datos
   typeSection = TypeList;
   typePage: TypeList = TypeList.Subsidies;
   typeModal: TypeList = TypeList.Subsidies;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
+
   selectedFilter: number | null = null;
-  selectedIndex: number = 0;
+  selectedIndex = 0;
   isModalVisible = false;
   showAllSubsidies = false;
   number = 0;
-  item: any;
+
+  item: ModalItem = null;
   currentYear = this.generalService.currentYear;
+
   subsidies: SubsidyModelFullData[] = [];
   filteredSubsidies: SubsidyModelFullData[] = [];
   filters: Filter[] = [];
@@ -232,61 +264,61 @@ export class SubsidiesPageComponent implements OnInit {
   printArea!: ElementRef<HTMLElement>;
 
   ngOnInit(): void {
+    // Persistencia de columnas con signals
+    this.columnVisSig = this.colStore.init(
+      'subsidies-table',
+      this.headerListSubsidies,
+      ['date_justification', 'start', 'url_presentation', 'url_justification']
+    );
+    this.displayedColumnsSig = computed(() =>
+      this.colStore.displayedColumns(
+        this.headerListSubsidies,
+        this.columnVisSig()
+      )
+    );
+
+    // Eventos de guardado/borrado
     this.projectsFacade.saved$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.afterProjectChanged());
-
     this.projectsFacade.deleted$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.afterProjectChanged());
-
     this.subsidiesFacade.saved$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.afterSubsidyChanged());
-
     this.subsidiesFacade.deleted$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.afterSubsidyChanged());
-
     this.invoicesFacade.saved$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.afterInvoiceChanged());
-
     this.invoicesFacade.deleted$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.afterInvoiceChanged());
 
-    // Columnas visibles iniciales
-    this.columnVisibility = this.generalService.setColumnVisibility(
-      this.headerListSubsidies,
-      ['date_justification', 'start', 'url_presentation', 'url_justification'] // Coloca las columnas que deseas ocultar aquí
-    );
-
-    // Actualiza las columnas visibles según el estado de visibilidad
-    this.displayedColumns = this.generalService.updateDisplayedColumns(
-      this.headerListSubsidies,
-      this.columnVisibility
-    );
-
+    // Filtros
     this.filters = [
       { code: '', name: 'Histórico' },
       ...this.generalService.getYearFilters(2018, this.currentYear),
     ];
 
+    // Visibilidad modal
     this.modalService.modalVisibility$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((isVisible) => (this.isModalVisible = isVisible));
 
+    // Estado desde facade
     this.subsidiesFacade.filteredSubsidies$
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((subsidies) => this.updateSubsidyState(subsidies));
+      .subscribe((subs) => this.updateSubsidyState(subs));
 
+    // Carga inicial
     this.filterSelected('');
   }
 
   filterSelected(filter: string): void {
     this.selectedFilter = filter === '' ? null : Number(filter);
-
     this.visibleTabs = [];
 
     if (filter === '') {
@@ -306,27 +338,24 @@ export class SubsidiesPageComponent implements OnInit {
     this.filteredSubsidiesByType = {};
     this.visibleTabs = [];
 
-    categoryFilterSubsidies.forEach((filter) => {
-      this.filteredSubsidiesByType[filter.code] = [];
-    });
-
-    subsidies.forEach((subsidy) => {
-      const code = subsidy.name;
-      if (this.filteredSubsidiesByType[code]) {
-        this.filteredSubsidiesByType[code].push(subsidy);
-      }
+    categoryFilterSubsidies.forEach(
+      (f) => (this.filteredSubsidiesByType[f.code] = [])
+    );
+    subsidies.forEach((s) => {
+      const code = s.name;
+      if (this.filteredSubsidiesByType[code])
+        this.filteredSubsidiesByType[code].push(s);
     });
 
     this.visibleTabs = categoryFilterSubsidies
-      .map((filter) => {
-        const items = this.filteredSubsidiesByType[filter.code];
+      .map((f) => {
+        const items = this.filteredSubsidiesByType[f.code];
         return items.length > 0
-          ? { label: 'Sub. ' + filter.name, item: items[0] }
+          ? { label: 'Sub. ' + f.name, item: items[0] }
           : null;
       })
       .filter(
-        (tab): tab is { label: string; item: SubsidyModelFullData } =>
-          tab !== null
+        (t): t is { label: string; item: SubsidyModelFullData } => t !== null
       );
   }
 
@@ -343,37 +372,24 @@ export class SubsidiesPageComponent implements OnInit {
 
   private afterProjectChanged() {
     this.onCloseModal();
-
-    // Si estás viendo tabs (no "Histórico"), recarga el tab actual
-    if (!this.showAllSubsidies) {
-      this.reloadActiveTab();
-    }
-
-    // Refresca los datos agregados de subvenciones del año seleccionado
+    if (!this.showAllSubsidies) this.reloadActiveTab();
     const year = this.selectedFilter ?? this.currentYear;
     this.subsidiesFacade.loadSubsidiesByYear(year);
   }
   private afterSubsidyChanged() {
     this.onCloseModal();
-    // Si estás en “Histórico”, recarga la lista:
-    if (this.showAllSubsidies) {
-      this.filterSelected('');
-    } else {
-      // Si estás en tabs por subvención, recarga el tab activo:
-      this.reloadActiveTab();
-    }
+    if (this.showAllSubsidies) this.filterSelected('');
+    else this.reloadActiveTab();
   }
   private afterInvoiceChanged() {
     this.onCloseModal();
-
     if (this.showAllSubsidies) {
-      // Refresca la tabla "Histórico"
       this.filterSelected((this.selectedFilter ?? this.currentYear).toString());
     } else {
-      // Estás en tabs por subvención → recarga el tab activo
       this.reloadActiveTab();
     }
   }
+
   addNewSubsidyModal(): void {
     this.openModal(this.typeModal, TypeActionModal.Create, null);
   }
@@ -381,7 +397,7 @@ export class SubsidiesPageComponent implements OnInit {
   onOpenModal(event: {
     typeModal: TypeList;
     action: TypeActionModal;
-    item: SubsidyModel;
+    item: ModalItem;
   }): void {
     this.openModal(event.typeModal, event.action, event.item ?? null);
   }
@@ -389,36 +405,94 @@ export class SubsidiesPageComponent implements OnInit {
   private openModal(
     typeModal: TypeList,
     action: TypeActionModal,
-    item: SubsidyModel | null
+    item: ModalItem
   ): void {
     this.currentModalAction = action;
     this.typeModal = typeModal;
     this.item = item;
 
-    this.subsidiesFacade.clearSelectedSubsidy();
+    if (typeModal === TypeList.Subsidies && action === TypeActionModal.Create) {
+      this.subsidiesFacade.clearSelectedSubsidy();
+    }
+    if (typeModal === TypeList.Projects && action === TypeActionModal.Create) {
+      this.projectsFacade.clearSelectedProject();
+    }
+    if (typeModal === TypeList.Invoices && action === TypeActionModal.Create) {
+      this.invoicesFacade.clearSelectedInvoice();
+    }
+
     this.modalService.openModal();
   }
 
   onCloseModal(): void {
     this.modalService.closeModal();
+    this.item = null; // evitar arrastrar estado entre aperturas
+  }
+  // 🔎 Abrir PROYECTO desde la modal actual (pasas el id)
+  onOpenProject(projectId: number): void {
+    // Guarda el estado actual para poder volver
+    this.modalNav.push({
+      typeModal: this.typeModal,
+      action: this.currentModalAction,
+      item: this.item,
+    });
+
+    this.projectsService
+      .getProjectById(projectId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (project: ProjectModelFullData) => {
+          this.openModal(TypeList.Projects, TypeActionModal.Show, project);
+        },
+        error: (err) => console.error('Error cargando proyecto', err),
+      });
+  }
+
+  // 💶 Abrir INVOICE desde la modal actual (pasas el id)
+  onOpenInvoice(invoiceId: number): void {
+    // Guarda el estado actual para poder volver
+    this.modalNav.push({
+      typeModal: this.typeModal,
+      action: this.currentModalAction,
+      item: this.item,
+    });
+
+    this.invoicesService
+      .getInvoiceById(invoiceId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (invoice: InvoiceModelFullData) => {
+          this.openModal(TypeList.Invoices, TypeActionModal.Show, invoice);
+        },
+        error: (err) => console.error('Error cargando factura', err),
+      });
+  }
+
+  onBackModal(): void {
+    const prev = this.modalNav.pop();
+    if (!prev) return;
+    this.currentModalAction = prev.action;
+    this.item = prev.item;
+    this.typeModal = prev.typeModal;
+  }
+
+  get canGoBack(): boolean {
+    return this.modalNav.canGoBack();
   }
 
   onDelete({ type, id }: { type: TypeList; id: number }) {
     const ops: Partial<Record<TypeList, (id: number) => Observable<any>>> = {
-      [this.typeSection.Invoices]: (x) => {
-        this.invoicesFacade.deleteInvoice(x);
-        return EMPTY;
-      },
-      [this.typeSection.Projects]: (x) => {
-        this.projectsFacade.deleteProject(x);
-        return EMPTY;
-      },
-      [this.typeSection.Subsidies]: (x) => {
-        this.subsidiesFacade.deleteSubsidy(x);
-        return EMPTY;
-      },
+      [this.typeSection.Invoices]: (x) => (
+        this.invoicesFacade.deleteInvoice(x), EMPTY
+      ),
+      [this.typeSection.Projects]: (x) => (
+        this.projectsFacade.deleteProject(x), EMPTY
+      ),
+      [this.typeSection.Subsidies]: (x) => (
+        this.subsidiesFacade.deleteSubsidy(x), EMPTY
+      ),
     };
-    ops[type]?.(id).pipe(take(1)).subscribe(); // el refresco lo hará deleted$
+    ops[type]?.(id).pipe(take(1)).subscribe();
   }
 
   private reloadActiveTab(): void {
@@ -426,7 +500,6 @@ export class SubsidiesPageComponent implements OnInit {
     this.activeTabKey = current
       ? this.makeKey(current.item)
       : this.activeTabKey;
-
     const selected = this.tabSubsidies.toArray()[this.selectedIndex];
     selected?.load();
   }
@@ -435,52 +508,43 @@ export class SubsidiesPageComponent implements OnInit {
     const req$ = event.itemId
       ? this.subsidiesFacade.editSubsidy(event.formData)
       : this.subsidiesFacade.addSubsidy(event.formData);
-
-    req$.pipe(/* take(1) si quieres */).subscribe();
+    req$.pipe(take(1)).subscribe(); // los streams saved$/deleted$ refrescan
   }
 
   sendFormProject(event: { itemId?: number; formData: FormData }) {
     const obs = event.itemId
       ? this.projectsFacade.editProject(event.formData)
       : this.projectsFacade.addProject(event.formData);
-
-    obs.pipe(take(1)).subscribe(); // el refresco lo dispara saved$ arriba
+    obs.pipe(take(1)).subscribe();
   }
 
   sendFormInvoice(event: { itemId: number; formData: FormData }): void {
     const req$ = event.itemId
       ? this.invoicesFacade.editInvoice(event.formData)
       : this.invoicesFacade.addInvoice(event.formData);
-
-    // No hace falta hacer nada en el subscribe; saved$ se encargará de refrescar/cerrar
     req$.pipe(take(1)).subscribe();
   }
 
   async printTableAsPdf(): Promise<void> {
     if (!this.printArea) return;
-
     await this.pdfPrintService.printElementAsPdf(this.printArea, {
       filename: 'subvenciones.pdf',
-      preset: 'compact', // 'compact' reduce paddings en celdas
-      orientation: 'landscape', // o 'landscape' si la tabla es muy ancha
+      preset: 'compact',
+      orientation: 'landscape',
       format: 'a4',
-      margins: [5, 5, 5, 5], // mm
+      margins: [5, 5, 5, 5],
     });
   }
 
+  // Columnas (vía store)
   getVisibleColumns() {
-    return this.headerListSubsidies.filter(
-      (col) => this.columnVisibility[col.key]
+    return this.colStore.visibleColumnModels(
+      this.headerListSubsidies,
+      this.columnVisSig()
     );
   }
-
-  // Método para actualizar las columnas visibles cuando se hace toggle
   toggleColumn(key: string): void {
-    this.columnVisibility[key] = !this.columnVisibility[key];
-    this.displayedColumns = this.generalService.updateDisplayedColumns(
-      this.headerListSubsidies,
-      this.columnVisibility
-    );
+    this.colStore.toggle('subsidies-table', this.columnVisSig, key);
   }
 
   private buildGroupsByYear(list: SubsidyModelFullData[]) {
@@ -490,10 +554,9 @@ export class SubsidiesPageComponent implements OnInit {
       if (!groups[y]) groups[y] = [];
       groups[y].push(s);
     }
-    this.groupedByYear = groups;
+    this.groupedByYear = groups as any;
   }
 
-  // Comparator para ordenar los años desc en el keyvalue pipe
   sortYearsDesc(
     a: KeyValue<string, SubsidyModelFullData[]>,
     b: KeyValue<string, SubsidyModelFullData[]>
@@ -504,20 +567,17 @@ export class SubsidiesPageComponent implements OnInit {
   private updateSubsidyState(subsidies: SubsidyModelFullData[] | null): void {
     if (!subsidies) return;
 
-    const enrichedSubsidies = subsidies.map((sub) => ({
+    const enriched = subsidies.map((sub) => ({
       ...sub,
       nameSubsidy: sub.name,
     }));
-
-    this.subsidies =
-      this.subsidiesService.sortSubsidiesByYear(enrichedSubsidies);
+    this.subsidies = this.subsidiesService.sortSubsidiesByYear(enriched);
     this.filteredSubsidies = [...this.subsidies];
-    this.number = this.subsidiesService.countSubsidies(enrichedSubsidies);
+    this.number = this.subsidiesService.countSubsidies(enriched);
 
     this.buildGroupsByYear(this.filteredSubsidies);
-
     this.classifySubsidies(this.subsidies);
-    // ⬇️ Mantén el tab activo si existe, si no, clamp al rango
+
     if (!this.showAllSubsidies && this.visibleTabs.length > 0) {
       if (this.activeTabKey) {
         const idx = this.visibleTabs.findIndex(
@@ -534,7 +594,7 @@ export class SubsidiesPageComponent implements OnInit {
         );
       }
     } else {
-      this.selectedIndex = 0; // solo si no hay tabs o estás en "Histórico"
+      this.selectedIndex = 0;
     }
   }
 }

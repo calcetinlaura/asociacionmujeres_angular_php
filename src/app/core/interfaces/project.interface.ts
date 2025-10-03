@@ -1,4 +1,4 @@
-import { EventModel } from './event.interface';
+import { EventModelFullData } from './event.interface';
 import { InvoiceModelFullData } from './invoice.interface';
 
 export interface ProjectModel {
@@ -20,6 +20,6 @@ export interface ActivityModel {
 }
 export interface ProjectModelFullData extends ProjectModel {
   subsidy_name?: string;
-  events?: EventModel[];
+  events?: EventModelFullData[];
   invoices?: InvoiceModelFullData[];
 }

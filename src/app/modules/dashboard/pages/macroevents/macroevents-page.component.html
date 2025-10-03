@@ -26,7 +26,7 @@
       ></app-icon-action>
       <app-column-menu
         [columns]="headerListMacroevents"
-        [visibility]="columnVisibility"
+        [visibility]="columnVisSig()"
         (toggle)="toggleColumn($event)"
       />
     </div>
@@ -43,9 +43,9 @@
       [typeSection]="typeSection"
       [typeModal]="typeModal"
       [headerColumns]="getVisibleColumns()"
-      [columnVisibility]="columnVisibility"
+      [columnVisibility]="columnVisSig()"
       (openModal)="onOpenModal($event)"
-      [displayedColumns]="displayedColumns"
+      [displayedColumns]="displayedColumnsSig()"
     />
   </div>
   }@else{
@@ -55,18 +55,15 @@
   } }
 </div>
 
-<!-- Modal -->
-@for (k of [typeModal]; track k) { @if (isModalVisible) {
-<app-modal
-  [item]="item"
-  [typeModal]="k"
-  [typePage]="k"
+<app-modal-shell
+  [visible]="isModalVisible"
+  [typeModal]="typeModal"
   [action]="currentModalAction"
-  [canGoBack]="modalHistory.length > 0"
+  [item]="item"
+  [canGoBack]="canGoBack"
   (back)="onBackModal()"
-  (closeModal)="onCloseModal()"
+  (close)="onCloseModal()"
+  (openEvent)="onOpenEvent($event)"
   (confirmDelete)="onDelete($event)"
   (sendFormMacroeventData)="sendFormMacroevent($event)"
-  (openEvent)="onOpenEvent($event)"
 />
-} }

@@ -21,7 +21,7 @@
       ></app-icon-action>
       <app-column-menu
         [columns]="headerListPiteras"
-        [visibility]="columnVisibility"
+        [visibility]="columnVisSig()"
         (toggle)="toggleColumn($event)"
       />
     </div>
@@ -38,9 +38,9 @@
       [typeSection]="typeSection"
       [typeModal]="typeModal"
       [headerColumns]="getVisibleColumns()"
-      [columnVisibility]="columnVisibility"
+      [columnVisibility]="columnVisSig()"
       (openModal)="onOpenModal($event)"
-      [displayedColumns]="displayedColumns"
+      [displayedColumns]="displayedColumnsSig()"
       [topHeader]="210"
       [showNumberColumn]="false"
       [printIncludeNumber]="false"
@@ -54,13 +54,15 @@
 </div>
 
 <!-- Modal -->
-@if (isModalVisible) {
-<app-modal
-  [item]="item"
+
+<app-modal-shell
+  [visible]="isModalVisible"
   [typeModal]="typeModal"
   [action]="currentModalAction"
-  (closeModal)="onCloseModal()"
+  [item]="item"
+  [canGoBack]="false"
+  (close)="onCloseModal()"
   (confirmDelete)="onDelete($event)"
   (sendFormPiteraData)="sendFormPitera($event)"
-></app-modal>
-}
+>
+</app-modal-shell>

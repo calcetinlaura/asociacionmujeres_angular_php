@@ -3,9 +3,12 @@ import {
   Component,
   DestroyRef,
   ElementRef,
-  inject,
   OnInit,
+  Signal,
   ViewChild,
+  WritableSignal,
+  computed,
+  inject,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -25,44 +28,44 @@ import { TableComponent } from 'src/app/modules/dashboard/components/table/table
 import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
 import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
 import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
-import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
+import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
 import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
-import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
 import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.component';
 import { ColumnMenuComponent } from '../../components/table/column-menu.component';
+import { ColumnVisibilityStore } from '../../components/table/column-visibility.store';
 
 @Component({
   selector: 'app-places-page',
   standalone: true,
   imports: [
+    // UI
     DashboardHeaderComponent,
-    ModalComponent,
-    ButtonIconComponent,
-    ReactiveFormsModule,
-    InputSearchComponent,
     SpinnerLoadingComponent,
+    StickyZoneComponent,
     TableComponent,
+    ButtonIconComponent,
+    IconActionComponent,
+    InputSearchComponent,
+    ColumnMenuComponent,
+    ModalShellComponent,
+    // Angular
+    CommonModule,
+    ReactiveFormsModule,
     MatMenuModule,
     MatCheckboxModule,
-    IconActionComponent,
-    CommonModule,
-    StickyZoneComponent,
-    ColumnMenuComponent,
   ],
   templateUrl: './places-page.component.html',
 })
 export class PlacesPageComponent implements OnInit {
   readonly placesFacade = inject(PlacesFacade);
+  // Services
   private readonly modalService = inject(ModalService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly placesService = inject(PlacesService);
-  private readonly generalService = inject(GeneralService);
   private readonly pdfPrintService = inject(PdfPrintService);
-
-  columnVisibility: Record<string, boolean> = {};
-  displayedColumns: string[] = [];
+  private readonly colStore = inject(ColumnVisibilityStore);
 
   headerListPlaces: ColumnModel[] = [
     { title: 'Nombre', key: 'name', sortable: true, width: ColumnWidth.FULL },
@@ -113,46 +116,57 @@ export class PlacesPageComponent implements OnInit {
     },
   ];
 
+  // Signals de columnas
+  columnVisSig!: WritableSignal<Record<string, boolean>>;
+  displayedColumnsSig!: Signal<string[]>;
+
+  // Datos
   places: PlaceModel[] = [];
   filteredPlaces: PlaceModel[] = [];
-
-  isModalVisible = false;
   number = 0;
 
+  // Modal
+  isModalVisible = false;
   item: PlaceModel | null = null;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
-  searchForm!: FormGroup;
-
   typeModal = TypeList.Places;
   typeSection = TypeList.Places;
+
+  // Form
+  searchForm!: FormGroup;
 
   @ViewChild('printArea', { static: false })
   printArea!: ElementRef<HTMLElement>;
 
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Lifecycle
+  // ──────────────────────────────────────────────────────────────────────────────
   ngOnInit(): void {
-    // Columnas visibles iniciales
-    this.columnVisibility = this.generalService.setColumnVisibility(
+    // 1) Inicializa visibilidad persistente
+    this.columnVisSig = this.colStore.init(
+      'places-table',
       this.headerListPlaces,
-      ['lat', 'lon'] // Coloca las columnas que deseas ocultar aquí
+      ['lat', 'lon']
+    );
+    // 2) Derivada con keys visibles
+    this.displayedColumnsSig = computed(() =>
+      this.colStore.displayedColumns(this.headerListPlaces, this.columnVisSig())
     );
 
-    // Actualiza las columnas visibles según el estado de visibilidad
-    this.displayedColumns = this.generalService.updateDisplayedColumns(
-      this.headerListPlaces,
-      this.columnVisibility
-    );
+    // Visibilidad modal
     this.modalService.modalVisibility$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((isVisible) => {
-          this.isModalVisible = isVisible;
-        })
+        tap((v) => (this.isModalVisible = v))
       )
       .subscribe();
 
     this.loadAllPlaces();
   }
 
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Carga / búsqueda
+  // ──────────────────────────────────────────────────────────────────────────────
   loadAllPlaces(): void {
     this.placesFacade.loadAllPlaces();
 
@@ -168,6 +182,9 @@ export class PlacesPageComponent implements OnInit {
     this.placesFacade.applyFilterWord(keyword);
   }
 
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Modal
+  // ──────────────────────────────────────────────────────────────────────────────
   addNewPlaceModal(): void {
     this.openModal(this.typeModal, TypeActionModal.Create, null);
   }
@@ -188,14 +205,23 @@ export class PlacesPageComponent implements OnInit {
     this.currentModalAction = action;
     this.item = place;
     this.typeModal = typeModal;
-    this.placesFacade.clearSelectedPlace();
+
+    // 🔑 limpiar seleccionado SOLO en Create (evita abrir vacío al ver/editar)
+    if (typeModal === TypeList.Places && action === TypeActionModal.Create) {
+      this.placesFacade.clearSelectedPlace();
+    }
+
     this.modalService.openModal();
   }
 
   onCloseModal(): void {
     this.modalService.closeModal();
+    this.item = null; // 🔥 evita arrastrar estado al reabrir
   }
 
+  // ──────────────────────────────────────────────────────────────────────────────
+  // CRUD
+  // ──────────────────────────────────────────────────────────────────────────────
   onDelete({ type, id }: { type: TypeList; id: number }) {
     const actions: Partial<Record<TypeList, (id: number) => void>> = {
       [TypeList.Places]: (x) => this.placesFacade.deletePlace(x),
@@ -216,57 +242,52 @@ export class PlacesPageComponent implements OnInit {
       .subscribe();
   }
 
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Tabla helpers
+  // ──────────────────────────────────────────────────────────────────────────────
   private updatePlaceState(places: PlaceModel[] | null): void {
     if (!places) return;
 
     this.places = places.map((place) => {
-      let salasArray = [];
-
-      // 🔹 Verifica si `salas` es un string (probablemente en JSON) y conviértelo a array
+      // Normalizas 'salas' por si viene como string JSON:
       if (typeof place.salas === 'string') {
         try {
-          salasArray = JSON.parse(place.salas);
-        } catch (error) {
-          console.error('Error al parsear salas:', error);
-          salasArray = []; // Evita fallos si el JSON es inválido
+          const parsed = JSON.parse(place.salas);
+          return { ...place, salas: Array.isArray(parsed) ? parsed : [] };
+        } catch {
+          return { ...place, salas: [] };
         }
-      } else if (Array.isArray(place.salas)) {
-        salasArray = place.salas;
       }
-
-      return {
-        ...place,
-      };
+      return place;
     });
 
     this.filteredPlaces = [...this.places];
     this.number = this.placesService.countPlaces(places);
   }
 
+  getVisibleColumns() {
+    return this.colStore.visibleColumnModels(
+      this.headerListPlaces,
+      this.columnVisSig()
+    );
+  }
+
+  toggleColumn(key: string): void {
+    this.colStore.toggle('places-table', this.columnVisSig, key);
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Impresión
+  // ──────────────────────────────────────────────────────────────────────────────
   async printTableAsPdf(): Promise<void> {
     if (!this.printArea) return;
 
     await this.pdfPrintService.printElementAsPdf(this.printArea, {
       filename: 'espacios.pdf',
-      preset: 'compact', // 'compact' reduce paddings en celdas
-      orientation: 'portrait', // o 'landscape' si la tabla es muy ancha
+      preset: 'compact',
+      orientation: 'portrait',
       format: 'a4',
-      margins: [5, 5, 5, 5], // mm
+      margins: [5, 5, 5, 5],
     });
-  }
-
-  getVisibleColumns() {
-    return this.headerListPlaces.filter(
-      (col) => this.columnVisibility[col.key]
-    );
-  }
-
-  // Método para actualizar las columnas visibles cuando se hace toggle
-  toggleColumn(key: string): void {
-    this.columnVisibility[key] = !this.columnVisibility[key];
-    this.displayedColumns = this.generalService.updateDisplayedColumns(
-      this.headerListPlaces,
-      this.columnVisibility
-    );
   }
 }

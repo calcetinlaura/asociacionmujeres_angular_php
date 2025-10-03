@@ -3,7 +3,9 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  EventEmitter,
   Input,
+  Output,
 } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
@@ -46,6 +48,8 @@ export class ModalShowCreditorComponent {
     this.prepareData();
     this.cdr.markForCheck(); // asegura CD con OnPush
   }
+  @Output() openInvoice = new EventEmitter<number>();
+
   get item(): CreditorWithInvoices {
     return this._item;
   }
@@ -128,5 +132,8 @@ export class ModalShowCreditorComponent {
       amount: this.totalAmountByYear.get(year) ?? 0,
     }));
     return rows.sort((a, b) => Number(b.year) - Number(a.year));
+  }
+  onOpenInvoice(id: number) {
+    if (id) this.openInvoice.emit(id);
   }
 }

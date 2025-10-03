@@ -1,7 +1,9 @@
-<ui-modal
+<app-ui-modal
   [(open)]="isOpen"
   [variant]="action"
   (openChange)="!$event && onCloseModal()"
+  [canGoBack]="canGoBack"
+  (back)="back.emit()"
 >
   <app-modal-router
     [item]="item"
@@ -11,6 +13,8 @@
     (closeRequested)="onCloseModal()"
     (openMacroevent)="openMacroevent.emit($event)"
     (openEvent)="openEvent.emit($event)"
+    (openProject)="openProject.emit($event)"
+    (openInvoice)="openInvoice.emit($event)"
     (confirmDelete)="onConfirmDelete($event)"
     (sendFormBookData)="sendFormBookData.emit($event)"
     (sendFormEventData)="sendFormEventData.emit($event)"
@@ -28,4 +32,4 @@
     (sendFormProjectData)="sendFormProjectData.emit($event)"
     (sendFormPodcastData)="sendFormPodcastData.emit($event)"
   />
-</ui-modal>
+</app-ui-modal>

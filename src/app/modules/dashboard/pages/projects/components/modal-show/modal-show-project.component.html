@@ -43,11 +43,33 @@
   <table class="w-full -collapse tableProjects my-4">
     @for (event of item.events; track event; let pIndex = $index) {
     <tbody>
-      <tr class="hover:bg-gray-50 cursor-pointer">
+      <tr
+        class="hover:bg-gray-50 cursor-pointer"
+        (click)="onOpenEvent(event.id)"
+      >
+        <td>
+          @if (event.img) {
+          <img
+            [src]="event.img | itemImage : typeEvent"
+            [alt]="event.title"
+            class="object-cover w-full h-full transition-transform duration-300 ease-out group-hover:scale-[1.03]"
+          />
+          }
+        </td>
         <td class="p-2 w-auto text-[14px]">
           {{ event.title }}
         </td>
-
+        <td>
+          @if (event.placeData?.name) {
+          <p class="text-[12px] text-gray-600">
+            {{ event.placeData?.name }}
+          </p>
+          } @if (event.town) {
+          <p class="text-[12px] text-gray-600">
+            {{ event.town }}
+          </p>
+          }
+        </td>
         <td>
           @if (event.start) {
           <p class="text-[12px] text-gray-600">
@@ -125,6 +147,7 @@
         [showCreditor]="true"
         [showTotals]="true"
         totalLabel="TOTAL"
+        (rowClick)="onOpenInvoice($event)"
       />
     </div>
     }

@@ -54,8 +54,10 @@
         <app-invoices-table
           [invoices]="year.value"
           [showCreditor]="false"
+          [showCif]="false"
           [showTotals]="true"
           totalLabel="TOTAL"
+          (rowClick)="onOpenInvoice($event)"
         />
       </div>
       }

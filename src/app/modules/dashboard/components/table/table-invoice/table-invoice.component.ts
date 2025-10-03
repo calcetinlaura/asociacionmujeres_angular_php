@@ -36,7 +36,7 @@ export class TableInvoicesComponent {
   @Input() showTotals = true;
   @Input() totalLabel = 'TOTAL';
 
-  @Output() rowClick? = new EventEmitter<InvoiceModelFullData>();
+  @Output() rowClick = new EventEmitter<number>();
 
   total = computed(() =>
     this._invoices().reduce(
@@ -48,7 +48,8 @@ export class TableInvoicesComponent {
   trackByInvoice = (_: number, inv: InvoiceModelFullData) =>
     inv.id ?? inv.number_invoice;
 
-  onRowClick(inv: InvoiceModelFullData) {
-    this.rowClick!.emit(inv);
+  onRowClick(invId: number) {
+    console.log('ID INVOICE TABLA', invId);
+    this.rowClick!.emit(invId);
   }
 }

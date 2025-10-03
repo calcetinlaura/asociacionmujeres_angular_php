@@ -25,7 +25,7 @@
       ></app-icon-action>
       <app-column-menu
         [columns]="headerListRecipes"
-        [visibility]="columnVisibility"
+        [visibility]="columnVisSig()"
         (toggle)="toggleColumn($event)"
       />
     </div>
@@ -42,9 +42,9 @@
       [typeSection]="typeSection"
       [typeModal]="typeModal"
       [headerColumns]="getVisibleColumns()"
-      [columnVisibility]="columnVisibility"
+      [columnVisibility]="columnVisSig()"
+      [displayedColumns]="displayedColumnsSig()"
       (openModal)="onOpenModal($event)"
-      [displayedColumns]="displayedColumns"
     />
   </div>
   }@else{
@@ -55,13 +55,12 @@
 </div>
 
 <!-- Modal -->
-@if (isModalVisible) {
-<app-modal
-  [item]="item"
+<app-modal-shell
+  [visible]="isModalVisible"
   [typeModal]="typeModal"
   [action]="currentModalAction"
-  (closeModal)="onCloseModal()"
+  [item]="item"
+  (close)="onCloseModal()"
   (confirmDelete)="onDelete($event)"
   (sendFormRecipeData)="sendFormRecipe($event)"
-></app-modal>
-}
+/>

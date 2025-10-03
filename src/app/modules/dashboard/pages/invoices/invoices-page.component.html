@@ -71,7 +71,7 @@
         [typeSection]="typeSection"
         [typeModal]="typeModal"
         [headerColumns]="getVisibleColumns()"
-        [columnVisibility]="columnVisibility"
+        [columnVisibility]="columnVisSig()"
         (openModal)="onOpenModal($event)"
         [topHeader]="60"
         [printExcludeColumns]="['invoice_pdf', 'proof_pdf']"
@@ -100,7 +100,7 @@
       />
       <app-column-menu
         [columns]="headerListInvoices"
-        [visibility]="columnVisibility"
+        [visibility]="columnVisSig()"
         (toggle)="toggleColumn($event)"
       />
     </div>
@@ -109,13 +109,12 @@
 </div>
 
 <!-- Modal -->
-@if (isModalVisible) {
-<app-modal
-  [item]="item"
+<app-modal-shell
+  [visible]="isModalVisible"
   [typeModal]="typeModal"
   [action]="currentModalAction"
-  (closeModal)="onCloseModal()"
+  [item]="item"
+  (close)="onCloseModal()"
   (confirmDelete)="onDelete($event)"
   (sendFormInvoiceData)="sendFormInvoice($event)"
-></app-modal>
-}
+/>

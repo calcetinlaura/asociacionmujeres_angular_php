@@ -2,9 +2,11 @@ import { CommonModule } from '@angular/common';
 import {
   Component,
   ElementRef,
+  EventEmitter,
   inject,
   Input,
   OnChanges,
+  Output,
   SimpleChanges,
   ViewChild,
 } from '@angular/core';
@@ -40,6 +42,9 @@ export class ModalShowSubsidyComponent implements OnChanges {
   private invoicesService = inject(InvoicesService);
 
   @Input() item!: SubsidyModelFullData;
+  @Output() openProject = new EventEmitter<number>();
+  @Output() openInvoice = new EventEmitter<number>();
+
   @ViewChild('pdfArea', { static: false }) pdfArea!: ElementRef<HTMLElement>;
 
   typeModal: TypeList = TypeList.Subsidies;
@@ -85,5 +90,11 @@ export class ModalShowSubsidyComponent implements OnChanges {
           }
         },
       });
+  }
+  onOpenInvoice(id: number) {
+    if (id) this.openInvoice.emit(id);
+  }
+  onOpenProject(id: number) {
+    if (id) this.openProject.emit(id);
   }
 }

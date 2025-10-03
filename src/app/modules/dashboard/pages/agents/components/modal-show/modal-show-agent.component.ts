@@ -8,7 +8,7 @@ import {
   SimpleChanges,
   inject,
 } from '@angular/core';
-import { AgentModel } from 'src/app/core/interfaces/agent.interface';
+import { AgentsModelFullData } from 'src/app/core/interfaces/agent.interface';
 import { EventModelFullData } from 'src/app/core/interfaces/event.interface';
 import { TypeList } from 'src/app/core/models/general.model';
 import { EventsService } from 'src/app/core/services/events.services';
@@ -46,7 +46,7 @@ type SortOrder = 'asc' | 'desc';
 export class ModalShowAgentComponent implements OnChanges {
   private readonly eventsService = inject(EventsService);
 
-  @Input() item!: AgentModel;
+  @Input() item!: AgentsModelFullData;
 
   // Filtros opcionales que puedes pasar desde el padre
   @Input() role?: AgentRole;

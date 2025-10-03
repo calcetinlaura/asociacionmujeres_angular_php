@@ -14,7 +14,7 @@ import { TypeActionModal } from 'src/app/core/models/general.model';
 import { BodyScrollLockService } from 'src/app/shared/services/body-scroll-lock.service';
 
 @Component({
-  selector: 'ui-modal',
+  selector: 'app-ui-modal',
   standalone: true,
   imports: [NgClass, CdkTrapFocus],
   templateUrl: './ui-modal.component.html',
@@ -25,6 +25,9 @@ export class UiModalComponent implements OnChanges {
   @Output() openChange = new EventEmitter<boolean>();
   @Output() opened = new EventEmitter<void>();
   @Output() closed = new EventEmitter<void>();
+
+  @Input() canGoBack = false;
+  @Output() back = new EventEmitter<void>();
 
   @Input() size: null | 'sm' | 'md' | 'lg' | 'xl' | 'full' = 'xl';
   @Input() closeOnBackdrop = true;
@@ -95,5 +98,8 @@ export class UiModalComponent implements OnChanges {
   close() {
     this.open = false;
     this.openChange.emit(false);
+  }
+  onBack() {
+    this.back.emit();
   }
 }

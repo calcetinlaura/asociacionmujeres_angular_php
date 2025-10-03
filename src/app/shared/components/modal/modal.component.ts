@@ -15,6 +15,7 @@ export class ModalComponent {
   @Input() typeModal!: TypeList;
   @Input() typePage?: TypeList;
   @Input() action: TypeActionModal = TypeActionModal.Show;
+  @Input() canGoBack = false; // 👈 nuevo
 
   // 🔹 Control interno de apertura (el componente se crea con *ngIf)
   isOpen = true;
@@ -23,6 +24,9 @@ export class ModalComponent {
   @Output() closeModal = new EventEmitter<boolean>();
   @Output() openMacroevent = new EventEmitter<number>();
   @Output() openEvent = new EventEmitter<number>();
+  @Output() openInvoice = new EventEmitter<number>();
+  @Output() openProject = new EventEmitter<number>();
+  @Output() back = new EventEmitter<void>();
   @Output() confirmDelete = new EventEmitter<{
     type: TypeList;
     id: number;
@@ -93,6 +97,9 @@ export class ModalComponent {
   onCloseModal() {
     this.isOpen = false;
     this.closeModal.emit(true);
+  }
+  onBack() {
+    this.back.emit();
   }
   onConfirmDelete(payload: { type: TypeList; id: number; item?: any }) {
     // Reemite hacia el padre y cierra

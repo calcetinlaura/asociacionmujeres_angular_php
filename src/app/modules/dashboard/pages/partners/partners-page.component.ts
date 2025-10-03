@@ -3,15 +3,19 @@ import {
   Component,
   DestroyRef,
   ElementRef,
-  inject,
   OnInit,
+  Signal,
   ViewChild,
+  WritableSignal,
+  computed,
+  inject,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
 import { tap } from 'rxjs';
+
 import { PartnersFacade } from 'src/app/application/partners.facade';
 import {
   ColumnModel,
@@ -24,13 +28,12 @@ import {
   TypeList,
 } from 'src/app/core/models/general.model';
 import { PartnersService } from 'src/app/core/services/partners.services';
+
 import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
 import { FiltersComponent } from 'src/app/modules/landing/components/filters/filters.component';
 import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
 import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
 import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
-import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
-import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
@@ -39,12 +42,18 @@ import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.co
 import { ColumnMenuComponent } from '../../components/table/column-menu.component';
 import { TableComponent } from '../../components/table/table.component';
 
+// 🧩 nuevo shell (sustituye a <app-modal>)
+import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
+// 🧩 store de visibilidad de columnas (signals)
+import { ColumnVisibilityStore } from '../../components/table/column-visibility.store';
+// ModalService para abrir/cerrar (ya lo usabas)
+import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
+
 @Component({
   selector: 'app-partners-page',
   standalone: true,
   imports: [
     DashboardHeaderComponent,
-    ModalComponent,
     ButtonIconComponent,
     ReactiveFormsModule,
     InputSearchComponent,
@@ -57,19 +66,23 @@ import { TableComponent } from '../../components/table/table.component';
     CommonModule,
     StickyZoneComponent,
     ColumnMenuComponent,
+    ModalShellComponent, // 👈 usamos el shell
   ],
   templateUrl: './partners-page.component.html',
 })
 export class PartnersPageComponent implements OnInit {
+  // Services
   private readonly destroyRef = inject(DestroyRef);
   private readonly modalService = inject(ModalService);
-  readonly partnersFacade = inject(PartnersFacade);
   private readonly partnersService = inject(PartnersService);
   private readonly generalService = inject(GeneralService);
   private readonly pdfPrintService = inject(PdfPrintService);
+  private readonly colStore = inject(ColumnVisibilityStore);
 
-  columnVisibility: Record<string, boolean> = {};
-  displayedColumns: string[] = [];
+  // Facade (pública para template)
+  readonly partnersFacade = inject(PartnersFacade);
+
+  // Columnas (config)
   headerListPartners: ColumnModel[] = [
     { title: 'Imagen', key: 'img', sortable: false },
     {
@@ -134,21 +147,28 @@ export class PartnersPageComponent implements OnInit {
     },
   ];
 
+  // ✅ signals para visibilidad de columnas
+  columnVisSig!: WritableSignal<Record<string, boolean>>;
+  displayedColumnsSig!: Signal<string[]>;
+
+  // Datos
   partners: PartnerModel[] = [];
   filteredPartners: PartnerModel[] = [];
   filters: Filter[] = [];
   selectedFilter: number | null = null;
 
+  // Modal
   isModalVisible = false;
   number = 0;
-
   item: PartnerModel | null = null;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
-  searchForm!: FormGroup;
 
   currentYear = this.generalService.currentYear;
   typeModal = TypeList.Partners;
   typeSection = TypeList.Partners;
+
+  // Form
+  searchForm!: FormGroup;
 
   @ViewChild(InputSearchComponent)
   private inputSearchComponent!: InputSearchComponent;
@@ -156,33 +176,41 @@ export class PartnersPageComponent implements OnInit {
   @ViewChild('printArea', { static: false })
   printArea!: ElementRef<HTMLElement>;
 
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Lifecycle
+  // ──────────────────────────────────────────────────────────────────────────────
   ngOnInit(): void {
-    // Columnas visibles iniciales
-    this.columnVisibility = this.generalService.setColumnVisibility(
+    // 1) Inicializa visibilidad con clave única por tabla
+    this.columnVisSig = this.colStore.init(
+      'partners-table',
       this.headerListPartners,
-      [''] // Coloca las columnas que deseas ocultar aquí
+      []
+    );
+    // 2) Derivada con keys visibles
+    this.displayedColumnsSig = computed(() =>
+      this.colStore.displayedColumns(
+        this.headerListPartners,
+        this.columnVisSig()
+      )
     );
 
-    // Actualiza las columnas visibles según el estado de visibilidad
-    this.displayedColumns = this.generalService.updateDisplayedColumns(
-      this.headerListPartners,
-      this.columnVisibility
-    );
     this.filters = [
       { code: '', name: 'Histórico' },
       ...this.generalService.getYearFilters(1995, this.currentYear),
     ];
 
+    // Modal on/off
     this.modalService.modalVisibility$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((isVisible) => (this.isModalVisible = isVisible))
+        tap((v) => (this.isModalVisible = v))
       )
       .subscribe();
 
+    // Filtro por año inicial
     this.filterSelected(this.currentYear.toString());
 
-    // Estado de socias desde la fachada
+    // Estado desde fachada
     this.partnersFacade.filteredPartners$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
@@ -191,6 +219,9 @@ export class PartnersPageComponent implements OnInit {
       .subscribe();
   }
 
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Filtros / búsqueda
+  // ──────────────────────────────────────────────────────────────────────────────
   filterSelected(filter: string): void {
     this.selectedFilter = filter === '' ? null : Number(filter);
 
@@ -207,6 +238,9 @@ export class PartnersPageComponent implements OnInit {
     this.partnersFacade.applyFilterWord(keyword);
   }
 
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Modal
+  // ──────────────────────────────────────────────────────────────────────────────
   addNewPartnerModal(): void {
     this.openModal(this.typeModal, TypeActionModal.Create, null);
   }
@@ -227,14 +261,23 @@ export class PartnersPageComponent implements OnInit {
     this.currentModalAction = action;
     this.item = partner;
     this.typeModal = typeModal;
-    this.partnersFacade.clearSelectedPartner();
+
+    // 🔑 limpiar seleccionado SOLO en Create (para evitar abrir vacío al ver/editar)
+    if (typeModal === TypeList.Partners && action === TypeActionModal.Create) {
+      this.partnersFacade.clearSelectedPartner();
+    }
+
     this.modalService.openModal();
   }
 
   onCloseModal(): void {
     this.modalService.closeModal();
+    this.item = null; // 🔥 limpieza de referencia
   }
 
+  // ──────────────────────────────────────────────────────────────────────────────
+  // CRUD
+  // ──────────────────────────────────────────────────────────────────────────────
   onDelete({ type, id }: { type: TypeList; id: number }) {
     const actions: Partial<Record<TypeList, (id: number) => void>> = {
       [TypeList.Partners]: (x) => this.partnersFacade.deletePartner(x),
@@ -255,53 +298,49 @@ export class PartnersPageComponent implements OnInit {
       .subscribe();
   }
 
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Tabla helpers
+  // ──────────────────────────────────────────────────────────────────────────────
   private updatePartnerState(partners: PartnerModel[] | null): void {
     if (!partners) return;
 
     this.partners = this.partnersService.sortPartnersById(partners).map((p) => {
       const cuotas = normalizeCuotas(p.cuotas);
-
       const paidYears = cuotas.filter((c) => c.paid).map((c) => c.year);
-      const years = paidYears.length; // nº de cuotas pagadas
-      const lastCuotaPaid = paidYears.includes(this.currentYear); // ¿pagó el año actual?
+      const years = paidYears.length;
+      const lastCuotaPaid = paidYears.includes(this.currentYear);
       const lastPaidYear = paidYears.length ? Math.max(...paidYears) : null;
 
-      return {
-        ...p,
-        years,
-        lastCuotaPaid,
-        lastPaidYear, // lo usas si quieres mostrarlo en tabla/filtros
-      };
+      return { ...p, years, lastCuotaPaid, lastPaidYear };
     });
 
     this.filteredPartners = [...this.partners];
     this.number = this.partnersService.countPartners(partners);
   }
 
+  getVisibleColumns() {
+    return this.colStore.visibleColumnModels(
+      this.headerListPartners,
+      this.columnVisSig()
+    );
+  }
+
+  toggleColumn(key: string): void {
+    this.colStore.toggle('partners-table', this.columnVisSig, key);
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Impresión
+  // ──────────────────────────────────────────────────────────────────────────────
   async printTableAsPdf(): Promise<void> {
     if (!this.printArea) return;
 
     await this.pdfPrintService.printElementAsPdf(this.printArea, {
-      filename: 'facturas.pdf',
-      preset: 'compact', // 'compact' reduce paddings en celdas
-      orientation: 'landscape', // o 'landscape' si la tabla es muy ancha
+      filename: 'partners.pdf',
+      preset: 'compact',
+      orientation: 'landscape',
       format: 'a4',
-      margins: [5, 5, 5, 5], // mm
+      margins: [5, 5, 5, 5],
     });
-  }
-
-  getVisibleColumns() {
-    return this.headerListPartners.filter(
-      (col) => this.columnVisibility[col.key]
-    );
-  }
-
-  // Método para actualizar las columnas visibles cuando se hace toggle
-  toggleColumn(key: string): void {
-    this.columnVisibility[key] = !this.columnVisibility[key];
-    this.displayedColumns = this.generalService.updateDisplayedColumns(
-      this.headerListPartners,
-      this.columnVisibility
-    );
   }
 }

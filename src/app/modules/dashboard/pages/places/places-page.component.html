@@ -21,7 +21,7 @@
       ></app-icon-action>
       <app-column-menu
         [columns]="headerListPlaces"
-        [visibility]="columnVisibility"
+        [visibility]="columnVisSig()"
         (toggle)="toggleColumn($event)"
       />
     </div>
@@ -38,9 +38,9 @@
       [typeSection]="typeSection"
       [typeModal]="typeModal"
       [headerColumns]="getVisibleColumns()"
-      [columnVisibility]="columnVisibility"
+      [columnVisibility]="columnVisSig()"
       (openModal)="onOpenModal($event)"
-      [displayedColumns]="displayedColumns"
+      [displayedColumns]="displayedColumnsSig()"
       [topHeader]="210"
     />
   </div>
@@ -53,12 +53,13 @@
 
 <!-- Modal -->
 @if (isModalVisible) {
-<app-modal
-  [item]="item"
+<app-modal-shell
+  [visible]="isModalVisible"
   [typeModal]="typeModal"
   [action]="currentModalAction"
-  (closeModal)="onCloseModal()"
+  [item]="item"
+  (close)="onCloseModal()"
   (confirmDelete)="onDelete($event)"
   (sendFormPlaceData)="sendFormPlace($event)"
-></app-modal>
+/>
 }

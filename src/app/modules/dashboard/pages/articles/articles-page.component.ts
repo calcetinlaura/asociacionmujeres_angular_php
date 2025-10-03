@@ -3,15 +3,19 @@ import {
   Component,
   DestroyRef,
   ElementRef,
-  inject,
   OnInit,
+  Signal,
   ViewChild,
+  WritableSignal,
+  computed,
+  inject,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
 import { tap } from 'rxjs';
+
 import { ArticlesFacade } from 'src/app/application/articles.facade';
 import { ArticleModel } from 'src/app/core/interfaces/article.interface';
 import {
@@ -20,49 +24,57 @@ import {
 } from 'src/app/core/interfaces/column.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { ArticlesService } from 'src/app/core/services/articles.services';
+
 import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
 import { TableComponent } from 'src/app/modules/dashboard/components/table/table.component';
 import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
 import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
 import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
-import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
-import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
-import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
+
 import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.component';
 import { ColumnMenuComponent } from '../../components/table/column-menu.component';
+import { ColumnVisibilityStore } from '../../components/table/column-visibility.store';
+
+// 👇 Shell de modales unificado
+import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
+import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
 
 @Component({
   selector: 'app-articles-page',
   standalone: true,
   imports: [
+    // UI
     DashboardHeaderComponent,
-    ModalComponent,
-    ButtonIconComponent,
-    ReactiveFormsModule,
-    InputSearchComponent,
     SpinnerLoadingComponent,
+    StickyZoneComponent,
     TableComponent,
+    ButtonIconComponent,
     IconActionComponent,
+    InputSearchComponent,
+    ColumnMenuComponent,
+    ModalShellComponent,
+    // Angular
+    CommonModule,
+    ReactiveFormsModule,
     MatMenuModule,
     MatCheckboxModule,
-    CommonModule,
-    StickyZoneComponent,
-    ColumnMenuComponent,
   ],
   templateUrl: './articles-page.component.html',
 })
 export class ArticlesPageComponent implements OnInit {
+  // Servicios
   private readonly destroyRef = inject(DestroyRef);
   private readonly modalService = inject(ModalService);
-  readonly articlesFacade = inject(ArticlesFacade);
   private readonly articlesService = inject(ArticlesService);
-  private readonly generalService = inject(GeneralService);
   private readonly pdfPrintService = inject(PdfPrintService);
+  private readonly colStore = inject(ColumnVisibilityStore);
 
-  columnVisibility: Record<string, boolean> = {};
-  displayedColumns: string[] = [];
+  // Facade (pública para template con async pipe si la usas)
+  readonly articlesFacade = inject(ArticlesFacade);
+
+  // Cabecera de tabla
   headerListArticles: ColumnModel[] = [
     { title: 'Portada', key: 'img', sortable: false, width: ColumnWidth.XS },
     { title: 'Título', key: 'title', sortable: true },
@@ -77,51 +89,65 @@ export class ArticlesPageComponent implements OnInit {
     },
   ];
 
+  // ✅ Signals de visibilidad de columnas
+  columnVisSig!: WritableSignal<Record<string, boolean>>;
+  displayedColumnsSig!: Signal<string[]>;
+
+  // Datos
   articles: ArticleModel[] = [];
   filteredArticles: ArticleModel[] = [];
-  isModalVisible = false;
   number = 0;
 
+  // Modal
+  isModalVisible = false;
   item: ArticleModel | null = null;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
+  typeModal: TypeList = TypeList.Articles;
+  typeSection: TypeList = TypeList.Articles;
+
+  // Form
   searchForm!: FormGroup;
 
-  typeModal = TypeList.Articles;
-  typeSection = TypeList.Articles;
-
+  // Refs
   @ViewChild('printArea', { static: false })
   printArea!: ElementRef<HTMLElement>;
 
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Lifecycle
+  // ──────────────────────────────────────────────────────────────────────────────
   ngOnInit(): void {
-    // Columnas visibles iniciales
-    this.columnVisibility = this.generalService.setColumnVisibility(
+    // Columnas visibles (persistentes por clave)
+    this.columnVisSig = this.colStore.init(
+      'articles-table',
       this.headerListArticles,
-      [''] // Coloca las columnas que deseas ocultar aquí
+      [] // ocultas por defecto
+    );
+    this.displayedColumnsSig = computed(() =>
+      this.colStore.displayedColumns(
+        this.headerListArticles,
+        this.columnVisSig()
+      )
     );
 
-    // Actualiza las columnas visibles según el estado de visibilidad
-    this.displayedColumns = this.generalService.updateDisplayedColumns(
-      this.headerListArticles,
-      this.columnVisibility
-    );
+    // Visibilidad modal
     this.modalService.modalVisibility$
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((isVisible) => (this.isModalVisible = isVisible))
-      )
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(tap((v) => (this.isModalVisible = v)))
       .subscribe();
 
+    // Carga inicial
     this.loadAllArticles();
   }
 
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Carga / búsqueda
+  // ──────────────────────────────────────────────────────────────────────────────
   loadAllArticles(): void {
     this.articlesFacade.loadAllArticles();
     this.articlesFacade.filteredArticles$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((articles) => {
-          this.updateArticleState(articles);
-        })
+        tap((articles) => this.updateArticleState(articles))
       )
       .subscribe();
   }
@@ -130,8 +156,11 @@ export class ArticlesPageComponent implements OnInit {
     this.articlesFacade.applyFilterWord(keyword);
   }
 
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Modal
+  // ──────────────────────────────────────────────────────────────────────────────
   addNewArticleModal(): void {
-    this.openModal(this.typeModal, TypeActionModal.Create, null);
+    this.openModal(TypeList.Articles, TypeActionModal.Create, null);
   }
 
   onOpenModal(event: {
@@ -150,14 +179,23 @@ export class ArticlesPageComponent implements OnInit {
     this.currentModalAction = action;
     this.item = article;
     this.typeModal = typeModal;
-    this.articlesFacade.clearSelectedArticle();
+
+    // 🧹 Limpiar seleccionado SOLO en Create
+    if (typeModal === TypeList.Articles && action === TypeActionModal.Create) {
+      this.articlesFacade.clearSelectedArticle();
+    }
+
     this.modalService.openModal();
   }
 
   onCloseModal(): void {
     this.modalService.closeModal();
+    this.item = null; // evitar arrastrar estado
   }
 
+  // ──────────────────────────────────────────────────────────────────────────────
+  // CRUD
+  // ──────────────────────────────────────────────────────────────────────────────
   onDelete({ type, id }: { type: TypeList; id: number }) {
     const actions: Partial<Record<TypeList, (id: number) => void>> = {
       [TypeList.Articles]: (x) => this.articlesFacade.deleteArticle(x),
@@ -178,6 +216,9 @@ export class ArticlesPageComponent implements OnInit {
       .subscribe();
   }
 
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Tabla helpers
+  // ──────────────────────────────────────────────────────────────────────────────
   private updateArticleState(articles: ArticleModel[] | null): void {
     if (!articles) return;
 
@@ -186,29 +227,29 @@ export class ArticlesPageComponent implements OnInit {
     this.number = this.articlesService.countArticles(articles);
   }
 
+  getVisibleColumns(): ColumnModel[] {
+    return this.colStore.visibleColumnModels(
+      this.headerListArticles,
+      this.columnVisSig()
+    );
+  }
+
+  toggleColumn(key: string): void {
+    this.colStore.toggle('articles-table', this.columnVisSig, key);
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Impresión
+  // ──────────────────────────────────────────────────────────────────────────────
   async printTableAsPdf(): Promise<void> {
     if (!this.printArea) return;
 
     await this.pdfPrintService.printElementAsPdf(this.printArea, {
       filename: 'articulos.pdf',
-      preset: 'compact', // 'compact' reduce paddings en celdas
-      orientation: 'portrait', // o 'landscape' si la tabla es muy ancha
+      preset: 'compact',
+      orientation: 'portrait',
       format: 'a4',
-      margins: [5, 5, 5, 5], // mm
+      margins: [5, 5, 5, 5],
     });
-  }
-
-  getVisibleColumns() {
-    return this.headerListArticles.filter(
-      (col) => this.columnVisibility[col.key]
-    );
-  }
-  // Método para actualizar las columnas visibles cuando se hace toggle
-  toggleColumn(key: string): void {
-    this.columnVisibility[key] = !this.columnVisibility[key];
-    this.displayedColumns = this.generalService.updateDisplayedColumns(
-      this.headerListArticles,
-      this.columnVisibility
-    );
   }
 }

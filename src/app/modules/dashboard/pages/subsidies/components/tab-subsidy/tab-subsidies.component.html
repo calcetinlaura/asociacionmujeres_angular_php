@@ -345,7 +345,7 @@
         [typeModal]="typeList.Invoices"
         [data]="filteredInvoices"
         [headerColumns]="getVisibleColumns()"
-        [columnVisibility]="columnVisibility"
+        [columnVisibility]="columnVisSig()"
         (openModal)="
           openModal.emit({
             typeModal: typeList.Invoices,

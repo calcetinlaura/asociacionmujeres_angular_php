@@ -1,4 +1,4 @@
-<ui-modal
+<app-ui-modal
   [open]="open"
   (openChange)="openChange.emit($event)"
   [showClose]="false"
@@ -17,4 +17,4 @@
     @if(safeSrc){
     <iframe [src]="safeSrc" class="w-full h-full"></iframe>}
   </div>
-</ui-modal>
+</app-ui-modal>

@@ -13,14 +13,38 @@
     [style.padding]="panelClass === 'pdf-panel' ? '0' : null"
     (click)="$event.stopPropagation()"
   >
-    @if (showClose) {
+    <!-- Header de control -->
     <div
-      class="absolute top-3 right-6 block text-gray-500 cursor-pointer hover:text-black"
-      (click)="close()"
+      class="absolute top-3 left-6 right-6 flex items-center justify-between"
     >
-      <i class="uil uil-multiply iconClose"></i>
+      <!-- ← Back -->
+      @if (canGoBack) {
+      <button
+        type="button"
+        class="p-2 rounded hover:bg-gray-100 text-gray-500 hover:text-black focus:outline-none focus:ring"
+        (click)="onBack()"
+        aria-label="Volver"
+      >
+        <i class="uil uil-arrow-left iconBack"></i>
+      </button>
+      } @else {
+      <!-- Mantén el espacio para que el botón de cerrar no “salte” -->
+      <span class="w-9 h-9 inline-block"></span>
+      }
+
+      <!-- Cerrar -->
+      @if (showClose) {
+      <button
+        type="button"
+        class="p-2 rounded hover:bg-gray-100 text-gray-500 hover:text-black focus:outline-none focus:ring"
+        (click)="close()"
+        aria-label="Cerrar"
+      >
+        <i class="uil uil-multiply iconClose"></i>
+      </button>
+      }
     </div>
-    }
+
     <section class="flex-1 min-h-0 p-0 overflow-auto">
       <ng-content></ng-content>
     </section>

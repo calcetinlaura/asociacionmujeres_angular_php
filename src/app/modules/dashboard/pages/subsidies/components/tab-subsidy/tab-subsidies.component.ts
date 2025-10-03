@@ -8,13 +8,17 @@ import {
   OnChanges,
   OnInit,
   Output,
+  Signal,
   SimpleChanges,
   ViewChild,
+  WritableSignal,
+  computed,
   inject,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatIconModule } from '@angular/material/icon';
 import { catchError, of, tap } from 'rxjs';
+
 import {
   ColumnModel,
   ColumnWidth,
@@ -23,14 +27,17 @@ import { InvoiceModelFullData } from 'src/app/core/interfaces/invoice.interface'
 import { ProjectModelFullData } from 'src/app/core/interfaces/project.interface';
 import { SubsidyModelFullData } from 'src/app/core/interfaces/subsidy.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
+
 import { InvoicesService } from 'src/app/core/services/invoices.services';
 import { SubsidiesService } from 'src/app/core/services/subsidies.services';
+
 import { PdfPrintComponent } from 'src/app/modules/dashboard/components/pdf-print/pdf-print.component';
+import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
 import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
 import { TextEditorComponent } from 'src/app/shared/components/text/text-editor/text-editor.component';
 import { EurosFormatPipe } from 'src/app/shared/pipe/eurosFormat.pipe';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
-import { ButtonIconComponent } from '../../../../../../shared/components/buttons/button-icon/button-icon.component';
+import { ColumnVisibilityStore } from '../../../../components/table/column-visibility.store';
 import { TableComponent } from '../../../../components/table/table.component';
 
 @Component({
@@ -54,6 +61,8 @@ export class ModalShowSubsidyComponent implements OnChanges, OnInit {
   private invoicesService = inject(InvoicesService);
   private destroyRef = inject(DestroyRef);
   private readonly generalService = inject(GeneralService);
+  private readonly colStore = inject(ColumnVisibilityStore);
+
   @ViewChild('pdfArea', { static: false }) pdfArea!: ElementRef<HTMLElement>;
 
   @Input() item!: SubsidyModelFullData;
@@ -64,20 +73,23 @@ export class ModalShowSubsidyComponent implements OnChanges, OnInit {
     action: TypeActionModal;
     item: any;
   }>();
-  columnVisibility: Record<string, boolean> = {};
-  displayedColumns: string[] = [];
+
+  // Signals columnas (clave dinámica por subvención/año)
+  columnVisSig!: WritableSignal<Record<string, boolean>>;
+  displayedColumnsSig!: Signal<string[]>;
+
   itemInvoice?: InvoiceModelFullData;
   typeList = TypeList;
   typeModal: TypeList = TypeList.Subsidies;
+
   filteredInvoices: InvoiceModelFullData[] = [];
-  number_invoices: number = 0;
+  number_invoices = 0;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
   loading = true;
-  amount_association = 0;
+
   nameMovement = this.subsidiesService.movementMap;
   nameSubsidy = this.subsidiesService.subsidiesMap;
   typeActionModal = TypeActionModal;
-  isModalVisible = false;
 
   private previousKey: string | null = null;
 
@@ -208,23 +220,15 @@ export class ModalShowSubsidyComponent implements OnChanges, OnInit {
   ];
 
   ngOnInit(): void {
-    // Columnas visibles iniciales
-    this.columnVisibility = this.generalService.setColumnVisibility(
-      this.headerListInvoices,
-      ['date_payment', 'date_accounting'] // Coloca las columnas que deseas ocultar aquí
-    );
-
-    // Actualiza las columnas visibles según el estado de visibilidad
-    this.displayedColumns = this.generalService.updateDisplayedColumns(
-      this.headerListInvoices,
-      this.columnVisibility
-    );
+    // Clave genérica por si aún no hay item
+    this.initColumnSignals('subsidy-invoices:default');
   }
+
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['item']) {
       const newItem = changes['item'].currentValue as SubsidyModelFullData;
-
       const key = newItem?.name + '_' + newItem?.year;
+
       if (
         key &&
         key !== this.previousKey &&
@@ -234,22 +238,39 @@ export class ModalShowSubsidyComponent implements OnChanges, OnInit {
         newItem.year !== 0
       ) {
         this.previousKey = key;
+
+        // Re-inicializa señales con clave por subvención/año
+        this.initColumnSignals(
+          `subsidy-invoices:${newItem.name}_${newItem.year}`
+        );
+
         this.load();
       }
     }
   }
 
-  // ✅ Convierte "1.234,56", "123,45", "123.45", "€ 123,45" a number
+  private initColumnSignals(key: string) {
+    this.columnVisSig = this.colStore.init(key, this.headerListInvoices, [
+      'date_payment',
+      'date_accounting',
+    ]);
+    this.displayedColumnsSig = computed(() =>
+      this.colStore.displayedColumns(
+        this.headerListInvoices,
+        this.columnVisSig()
+      )
+    );
+  }
+
+  // Normalizador numérico
   private toNumber(value: any): number {
     if (value == null || value === '') return 0;
     if (typeof value === 'number' && isFinite(value)) return value;
-
     const s = String(value)
       .trim()
-      .replace(/[\s€]/g, '') // quita espacios y símbolo €
-      .replace(/\.(?=\d{3}(?:[.,]|$))/g, '') // quita separadores de miles con punto
-      .replace(/,(?=\d{2}(?:\D|$))/g, '.'); // coma decimal → punto (europeo)
-
+      .replace(/[\s€]/g, '')
+      .replace(/\.(?=\d{3}(?:[.,]|$))/g, '')
+      .replace(/,(?=\d{2}(?:\D|$))/g, '.');
     const n = Number(s);
     return isFinite(n) ? n : 0;
   }
@@ -263,8 +284,7 @@ export class ModalShowSubsidyComponent implements OnChanges, OnInit {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((invoices: InvoiceModelFullData[]) => {
-          // 🔧 Normaliza campos numéricos una sola vez
-          this.filteredInvoices = invoices
+          this.filteredInvoices = (invoices ?? [])
             .map((inv) => ({
               ...inv,
               amount: this.toNumber(inv.amount),
@@ -279,11 +299,10 @@ export class ModalShowSubsidyComponent implements OnChanges, OnInit {
               const tb = b?.date_invoice
                 ? new Date(b.date_invoice).getTime()
                 : Number.POSITIVE_INFINITY;
-              return ta - tb; // más alejado (antiguo) primero
+              return ta - tb;
             });
 
           this.number_invoices = this.filteredInvoices.length;
-
           this.loading = false;
         }),
         catchError((err) => {
@@ -308,26 +327,26 @@ export class ModalShowSubsidyComponent implements OnChanges, OnInit {
     this.openModal.emit({ typeModal, action, item });
   }
 
+  // Columnas (vía store)
   getVisibleColumns() {
-    return this.headerListInvoices.filter(
-      (col) => this.columnVisibility[col.key]
-    );
-  }
-  // Método para actualizar las columnas visibles cuando se hace toggle
-  toggleColumn(key: string): void {
-    this.columnVisibility[key] = !this.columnVisibility[key];
-
-    this.displayedColumns = this.generalService.updateDisplayedColumns(
+    return this.colStore.visibleColumnModels(
       this.headerListInvoices,
-      this.columnVisibility
+      this.columnVisSig()
     );
   }
+  toggleColumn(key: string): void {
+    this.colStore.toggle(
+      `subsidy-invoices:${this.previousKey ?? 'default'}`,
+      this.columnVisSig,
+      key
+    );
+  }
+
   downloadFilteredPdfs(includeProof: boolean = true): void {
     const data = this.filteredInvoices || [];
-
     this.invoicesService
       .downloadInvoicesZipFromData(data, {
-        includeProof, // true: invoice+proof | false: solo invoice
+        includeProof,
         filename: includeProof ? 'documentos.zip' : 'facturas.zip',
       })
       .subscribe({

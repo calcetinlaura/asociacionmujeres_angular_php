@@ -26,7 +26,7 @@
       ></app-icon-action>
       <app-column-menu
         [columns]="headerListSubsidies"
-        [visibility]="columnVisibility"
+        [visibility]="columnVisSig()"
         (toggle)="toggleColumn($event)"
       />
     </div>
@@ -37,17 +37,6 @@
   @if (subsidiesFacade.isLoading$ | async) {
   <app-spinner-loading />
   }@else { @if (showAllSubsidies) {
-  <!--   <div class="pb-4" #printArea>
-    <h2 class="only-on-pdf print-title">Listado subvenciones</h2>
-    <app-table
-      [data]="filteredSubsidies"
-      [headerColumns]="getVisibleColumns()"
-      [columnVisibility]="columnVisibility"
-      [typeSection]="typeModal"
-      [typeModal]="typeModal"
-      (openModal)="onOpenModal($event)"
-    ></app-table>
-  </div> -->
   <div #printArea>
     <h2 class="only-on-pdf print-title">Listado subvenciones</h2>
     @for (group of (groupedByYear | keyvalue : sortYearsDesc); track group.key)
@@ -58,7 +47,7 @@
         <app-table
           [data]="group.value"
           [headerColumns]="getVisibleColumns()"
-          [columnVisibility]="columnVisibility"
+          [columnVisibility]="columnVisSig()"
           [typeSection]="typeModal"
           [typeModal]="typeModal"
           (openModal)="onOpenModal($event)"
@@ -93,15 +82,19 @@
 
 <!-- Modal -->
 @if (isModalVisible) {
-<app-modal
-  [item]="item"
+<app-modal-shell
+  [visible]="isModalVisible"
   [typeModal]="typeModal"
-  [typePage]="typePage"
   [action]="currentModalAction"
-  (closeModal)="onCloseModal()"
+  [item]="item"
+  [canGoBack]="canGoBack"
+  (back)="onBackModal()"
+  (close)="onCloseModal()"
   (confirmDelete)="onDelete($event)"
   (sendFormSubsidyData)="sendFormSubsidy($event)"
   (sendFormProjectData)="sendFormProject($event)"
   (sendFormInvoiceData)="sendFormInvoice($event)"
-></app-modal>
+  (openProject)="onOpenProject($event)"
+  (openInvoice)="onOpenInvoice($event)"
+/>
 }

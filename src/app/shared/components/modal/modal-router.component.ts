@@ -91,6 +91,8 @@ export class ModalRouterComponent {
   @Output() closeRequested = new EventEmitter<void>();
   @Output() openMacroevent = new EventEmitter<number>();
   @Output() openEvent = new EventEmitter<number>();
+  @Output() openInvoice = new EventEmitter<number>();
+  @Output() openProject = new EventEmitter<number>();
   @Output() confirmDelete = new EventEmitter<{
     type: TypeList;
     id: number;
@@ -169,10 +171,16 @@ export class ModalRouterComponent {
   onOpenMacroeventFromChild(id: number) {
     if (id) this.openMacroevent.emit(id);
   }
-  onOpenEventFromMacro(id: number) {
+
+  onOpenEventFromFather(id: number) {
     if (id) this.openEvent.emit(id);
   }
-
+  onOpenInvoiceFromFather(id: number) {
+    if (id) this.openInvoice.emit(id);
+  }
+  onOpenProjectFromFather(id: number) {
+    if (id) this.openProject.emit(id);
+  }
   // ✅ Único punto para confirmar borrado y cerrar la modal
   onConfirmDelete(idItem: number) {
     if (!idItem) {

@@ -3,15 +3,19 @@ import {
   Component,
   DestroyRef,
   ElementRef,
-  inject,
   OnInit,
+  Signal,
   ViewChild,
+  WritableSignal,
+  computed,
+  inject,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
 import { tap } from 'rxjs';
+
 import { MacroeventsFacade } from 'src/app/application/macroevents.facade';
 import {
   ColumnModel,
@@ -26,58 +30,63 @@ import {
 } from 'src/app/core/models/general.model';
 import { EventsService } from 'src/app/core/services/events.services';
 import { MacroeventsService } from 'src/app/core/services/macroevents.services';
+
 import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
 import { TableComponent } from 'src/app/modules/dashboard/components/table/table.component';
 import { FiltersComponent } from 'src/app/modules/landing/components/filters/filters.component';
 import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
 import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
 import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
-import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
-import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
 import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.component';
 import { ColumnMenuComponent } from '../../components/table/column-menu.component';
+import { ColumnVisibilityStore } from '../../components/table/column-visibility.store';
 
-type ModalState = {
-  typeModal: TypeList;
-  action: TypeActionModal;
-  item: MacroeventModelFullData | EventModelFullData | null;
-};
+import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
+import { ModalNavService } from 'src/app/shared/components/modal/services/modal-nav.service';
+import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
 
 @Component({
   selector: 'app-macroevents-page',
   standalone: true,
   imports: [
+    // UI
     DashboardHeaderComponent,
-    ModalComponent,
-    ButtonIconComponent,
-    ReactiveFormsModule,
-    InputSearchComponent,
     SpinnerLoadingComponent,
+    StickyZoneComponent,
     TableComponent,
     FiltersComponent,
+    ButtonIconComponent,
+    IconActionComponent,
+    InputSearchComponent,
+    ColumnMenuComponent,
+    ModalShellComponent,
+    // Angular
+    CommonModule,
+    ReactiveFormsModule,
     MatMenuModule,
     MatCheckboxModule,
-    IconActionComponent,
-    CommonModule,
-    StickyZoneComponent,
-    ColumnMenuComponent,
   ],
   templateUrl: './macroevents-page.component.html',
 })
 export class MacroeventsPageComponent implements OnInit {
-  private readonly eventsService = inject(EventsService);
+  // Services / facades
   private readonly destroyRef = inject(DestroyRef);
   private readonly modalService = inject(ModalService);
+  private readonly pdfPrintService = inject(PdfPrintService);
+  private readonly generalService = inject(GeneralService);
+
   readonly macroeventsFacade = inject(MacroeventsFacade);
   private readonly macroeventsService = inject(MacroeventsService);
-  private readonly generalService = inject(GeneralService);
-  private readonly pdfPrintService = inject(PdfPrintService);
+  private readonly eventsService = inject(EventsService);
+  private readonly modalNav = inject(
+    ModalNavService<EventModelFullData | MacroeventModelFullData>
+  );
+  private readonly colStore = inject(ColumnVisibilityStore);
 
-  columnVisibility: Record<string, boolean> = {};
-  displayedColumns: string[] = [];
+  // Table columns (definición)
   headerListMacroevents: ColumnModel[] = [
     { title: 'Cartel', key: 'img', sortable: false },
     { title: 'Título', key: 'title', sortable: true },
@@ -94,47 +103,61 @@ export class MacroeventsPageComponent implements OnInit {
     { title: 'Municipio', key: 'town', sortable: true, width: ColumnWidth.SM },
   ];
 
+  // ✅ Signals de columnas (persistentes)
+  columnVisSig!: WritableSignal<Record<string, boolean>>;
+  displayedColumnsSig!: Signal<string[]>;
+
+  // Data
   macroevents: MacroeventModelFullData[] = [];
   filteredMacroevents: MacroeventModelFullData[] = [];
-  filters: Filter[] = [];
-  selectedFilter: number | null = null;
-
-  isModalVisible = false;
   number = 0;
 
+  // Filters
+  filters: Filter[] = [];
+  selectedFilter: number | null = null;
+  currentYear = this.generalService.currentYear;
+
+  // Modal
+  isModalVisible = false;
+  typeModal: TypeList = TypeList.Macroevents;
+  typeSection: TypeList = TypeList.Macroevents;
   item: MacroeventModelFullData | EventModelFullData | null = null;
-  modalHistory: ModalState[] = [];
   currentModalAction: TypeActionModal = TypeActionModal.Create;
+
+  // Forms
   searchForm!: FormGroup;
 
-  currentYear = this.generalService.currentYear;
-  typeModal = TypeList.Macroevents;
-  typeSection = TypeList.Macroevents;
-
+  // Refs
   @ViewChild(InputSearchComponent)
   private inputSearchComponent!: InputSearchComponent;
 
   @ViewChild('printArea', { static: false })
   printArea!: ElementRef<HTMLElement>;
 
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Lifecycle
+  // ──────────────────────────────────────────────────────────────────────────────
   ngOnInit(): void {
-    // Columnas visibles iniciales
-    this.columnVisibility = this.generalService.setColumnVisibility(
+    // Columnas visibles (persistentes por clave única)
+    this.columnVisSig = this.colStore.init(
+      'macroevents-table',
       this.headerListMacroevents,
-      ['town'] // Coloca las columnas que deseas ocultar aquí
+      ['town'] // ocultas por defecto
+    );
+    this.displayedColumnsSig = computed(() =>
+      this.colStore.displayedColumns(
+        this.headerListMacroevents,
+        this.columnVisSig()
+      )
     );
 
-    // Actualiza las columnas visibles según el estado de visibilidad
-    this.displayedColumns = this.generalService.updateDisplayedColumns(
-      this.headerListMacroevents,
-      this.columnVisibility
-    );
-
+    // Filtros de años (+ histórico)
     this.filters = [
       { code: '', name: 'Histórico' },
       ...this.generalService.getYearFilters(2018, this.currentYear),
     ];
 
+    // Visibilidad modal
     this.modalService.modalVisibility$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
@@ -142,9 +165,10 @@ export class MacroeventsPageComponent implements OnInit {
       )
       .subscribe();
 
+    // Cargar por defecto el año actual
     this.filterSelected(this.currentYear.toString());
 
-    // Estado de macreoeventos desde la fachada
+    // Estado desde fachada
     this.macroeventsFacade.filteredMacroevents$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
@@ -153,9 +177,11 @@ export class MacroeventsPageComponent implements OnInit {
       .subscribe();
   }
 
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Filtering / search
+  // ──────────────────────────────────────────────────────────────────────────────
   filterSelected(filter: string): void {
     this.selectedFilter = filter === '' ? null : Number(filter);
-
     this.generalService.clearSearchInput(this.inputSearchComponent);
 
     if (!filter) {
@@ -169,25 +195,24 @@ export class MacroeventsPageComponent implements OnInit {
     this.macroeventsFacade.applyFilterWord(keyword);
   }
 
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Modal open/close + navigation
+  // ──────────────────────────────────────────────────────────────────────────────
   addNewMacroeventModal(): void {
-    this.openModal(this.typeModal, TypeActionModal.Create, null);
+    this.openModal(TypeList.Macroevents, TypeActionModal.Create, null);
   }
 
-  onOpenModal(macroevent: {
+  onOpenModal(payload: {
     typeModal: TypeList;
     action: TypeActionModal;
     item?: MacroeventModelFullData;
   }): void {
-    this.openModal(
-      macroevent.typeModal,
-      macroevent.action,
-      macroevent.item ?? null
-    );
+    this.openModal(payload.typeModal, payload.action, payload.item ?? null);
   }
 
-  onOpenEvent(eventId: number) {
-    // Guarda estado actual para el botón “volver”
-    this.modalHistory.push({
+  onOpenEvent(eventId: number): void {
+    // Guarda estado actual para "volver"
+    this.modalNav.push({
       typeModal: this.typeModal,
       action: this.currentModalAction,
       item: this.item,
@@ -213,6 +238,7 @@ export class MacroeventsPageComponent implements OnInit {
     this.item = item;
     this.typeModal = typeModal;
 
+    // Limpiar seleccionado sólo en CREATE de macroeventos
     if (
       typeModal === TypeList.Macroevents &&
       action === TypeActionModal.Create
@@ -223,23 +249,35 @@ export class MacroeventsPageComponent implements OnInit {
     this.modalService.openModal();
   }
 
+  // Flecha "volver"
+  onBackModal(): void {
+    const prev = this.modalNav.pop();
+    if (!prev) return;
+    this.currentModalAction = prev.action;
+    this.item = prev.item;
+    this.typeModal = prev.typeModal;
+  }
+
   onCloseModal(): void {
     this.modalService.closeModal();
     this.item = null;
-    this.modalHistory = []; // 🔑 limpiar el stack al cerrar del todo
+    this.modalNav.clear(); // reset del stack al cerrar totalmente
   }
 
-  onDelete({ type, id }: { type: TypeList; id: number }) {
+  // ──────────────────────────────────────────────────────────────────────────────
+  // CRUD helpers
+  // ──────────────────────────────────────────────────────────────────────────────
+  onDelete({ type, id }: { type: TypeList; id: number }): void {
     const actions: Partial<Record<TypeList, (id: number) => void>> = {
       [TypeList.Macroevents]: (x) => this.macroeventsFacade.deleteMacroevent(x),
     };
     actions[type]?.(id);
   }
 
-  sendFormMacroevent(macroevent: { itemId: number; formData: FormData }): void {
-    const request$ = macroevent.itemId
-      ? this.macroeventsFacade.editMacroevent(macroevent.formData)
-      : this.macroeventsFacade.addMacroevent(macroevent.formData);
+  sendFormMacroevent(payload: { itemId: number; formData: FormData }): void {
+    const request$ = payload.itemId
+      ? this.macroeventsFacade.editMacroevent(payload.formData)
+      : this.macroeventsFacade.addMacroevent(payload.formData);
 
     request$
       .pipe(
@@ -249,6 +287,9 @@ export class MacroeventsPageComponent implements OnInit {
       .subscribe();
   }
 
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Table helpers
+  // ──────────────────────────────────────────────────────────────────────────────
   private updateMacroeventState(
     macroevents: MacroeventModelFullData[] | null
   ): void {
@@ -259,38 +300,34 @@ export class MacroeventsPageComponent implements OnInit {
     this.number = this.macroeventsService.countMacroevents(macroevents);
   }
 
+  getVisibleColumns(): ColumnModel[] {
+    return this.colStore.visibleColumnModels(
+      this.headerListMacroevents,
+      this.columnVisSig()
+    );
+  }
+
+  toggleColumn(key: string): void {
+    this.colStore.toggle('macroevents-table', this.columnVisSig, key);
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Printing
+  // ──────────────────────────────────────────────────────────────────────────────
   async printTableAsPdf(): Promise<void> {
     if (!this.printArea) return;
 
     await this.pdfPrintService.printElementAsPdf(this.printArea, {
-      filename: 'facturas.pdf',
-      preset: 'compact', // 'compact' reduce paddings en celdas
-      orientation: 'portrait', // o 'landscape' si la tabla es muy ancha
+      filename: 'macroeventos.pdf',
+      preset: 'compact',
+      orientation: 'portrait',
       format: 'a4',
       margins: [5, 5, 5, 5], // mm
     });
   }
 
-  getVisibleColumns() {
-    return this.headerListMacroevents.filter(
-      (col) => this.columnVisibility[col.key]
-    );
-  }
-
-  // Método para actualizar las columnas visibles cuando se hace toggle
-  toggleColumn(key: string): void {
-    this.columnVisibility[key] = !this.columnVisibility[key];
-    this.displayedColumns = this.generalService.updateDisplayedColumns(
-      this.headerListMacroevents,
-      this.columnVisibility
-    );
-  }
-
-  onBackModal(): void {
-    const prev = this.modalHistory.pop();
-    if (!prev) return;
-    this.currentModalAction = prev.action;
-    this.item = prev.item;
-    this.typeModal = prev.typeModal;
+  // Para el template
+  get canGoBack(): boolean {
+    return this.modalNav.canGoBack();
   }
 }

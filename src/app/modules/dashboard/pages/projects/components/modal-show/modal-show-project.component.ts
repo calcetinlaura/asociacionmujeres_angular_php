@@ -1,5 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, inject, Input, ViewChild } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  EventEmitter,
+  inject,
+  Input,
+  Output,
+  ViewChild,
+} from '@angular/core';
 import { Options } from 'html2pdf.js';
 import { tap } from 'rxjs';
 import { EventModelFullData } from 'src/app/core/interfaces/event.interface';
@@ -12,6 +20,7 @@ import { TextBackgroundComponent } from 'src/app/shared/components/text/text-bac
 import { TextEditorComponent } from 'src/app/shared/components/text/text-editor/text-editor.component';
 import { TextTitleComponent } from 'src/app/shared/components/text/text-title/text-title.component';
 import { EurosFormatPipe } from '../../../../../../shared/pipe/eurosFormat.pipe';
+import { ItemImagePipe } from '../../../../../../shared/pipe/item-img.pipe';
 
 @Component({
   selector: 'app-modal-show-project',
@@ -23,6 +32,7 @@ import { EurosFormatPipe } from '../../../../../../shared/pipe/eurosFormat.pipe'
     IconActionComponent,
     TableInvoicesComponent,
     TextBackgroundComponent,
+    ItemImagePipe,
   ],
   templateUrl: './modal-show-project.component.html',
   styleUrls: ['./modal-show-project.component.css'],
@@ -30,8 +40,11 @@ import { EurosFormatPipe } from '../../../../../../shared/pipe/eurosFormat.pipe'
 export class ModalShowProjectComponent {
   private readonly eventsService = inject(EventsService);
   @Input() item!: ProjectModelFullData;
-  @ViewChild('pdfArea', { static: false }) pdfArea!: ElementRef<HTMLElement>;
+  @Output() openEvent = new EventEmitter<number>();
+  @Output() openInvoice = new EventEmitter<number>();
 
+  @ViewChild('pdfArea', { static: false }) pdfArea!: ElementRef<HTMLElement>;
+  readonly typeEvent = TypeList.Events;
   typeModal: TypeList = TypeList.Projects;
   datesEquals = false;
   eventsOfMacro: EventModelFullData[] = [];
@@ -85,5 +98,12 @@ export class ModalShowProjectComponent {
     };
 
     await html2pdf().from(element).set(opt).save();
+  }
+  onOpenEvent(id: number) {
+    if (id) this.openEvent.emit(id);
+  }
+  onOpenInvoice(id: number) {
+    console.log('ID INVOICE MODAL', id);
+    if (id) this.openInvoice.emit(id);
   }
 }

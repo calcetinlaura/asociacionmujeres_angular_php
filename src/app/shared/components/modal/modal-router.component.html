@@ -36,7 +36,7 @@
 @case (TypeList.Macroevents) { @if (action === TypeActionModal.Show) {
 <app-modal-show-macroevent
   [item]="item"
-  (openEvent)="onOpenEventFromMacro($event)"
+  (openEvent)="onOpenEventFromFather($event)"
 />
 } @else {
 <app-form-macroevent
@@ -87,7 +87,11 @@
 
 <!-- SUBSIDIES -->
 @case (TypeList.Subsidies) { @if (action === TypeActionModal.Show) {
-<app-modal-show-subsidy [item]="item" />
+<app-modal-show-subsidy
+  [item]="item"
+  (openInvoice)="onOpenInvoiceFromFather($event)"
+  (openProject)="onOpenProjectFromFather($event)"
+/>
 } @else {
 <app-form-subsidy
   [itemId]="item?.id"
@@ -97,7 +101,10 @@
 
 <!-- CREDITORS -->
 @case (TypeList.Creditors) { @if (action === TypeActionModal.Show) {
-<app-modal-show-creditor [item]="item" />
+<app-modal-show-creditor
+  [item]="item"
+  (openInvoice)="onOpenInvoiceFromFather($event)"
+/>
 } @else {
 <app-form-creditor
   [itemId]="item?.id"
@@ -107,7 +114,10 @@
 
 <!-- AGENTS -->
 @case (TypeList.Agents) { @if (action === TypeActionModal.Show) {
-<app-modal-show-agent [item]="item" />
+<app-modal-show-agent
+  [item]="item"
+  (openEvent)="onOpenEventFromFather($event)"
+/>
 } @else {
 <app-form-agent
   [itemId]="item?.id"
@@ -147,7 +157,11 @@
 
 <!-- PROJECTS -->
 @case (TypeList.Projects) { @if (action === TypeActionModal.Show) {
-<app-modal-show-project [item]="item" />
+<app-modal-show-project
+  [item]="item"
+  (openEvent)="onOpenEventFromFather($event)"
+  (openInvoice)="onOpenInvoiceFromFather($event)"
+/>
 } @else {
 <app-form-project
   [itemId]="item?.id"

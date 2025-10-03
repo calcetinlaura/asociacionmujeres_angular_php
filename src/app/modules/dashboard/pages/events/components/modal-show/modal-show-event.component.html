@@ -36,7 +36,7 @@
     <div class="lg:w-3/5 flex flex-col justify-between gap-y-4">
       @if (item.category){
       <div class="flex gap-x-2 flex-wrap">
-        @for (category of item.category; track category) {
+        @for (category of item.category; track (category + '-' + $index)) {
         <app-text-background
           [text]="category | dictTranslate : dictType.Categories"
           colorBack="#C1E6DD"
@@ -85,7 +85,8 @@
         Pases
       </p>
       <div class="pl-6 flex flex-col gap-y-4">
-        @for (func of item.periodicEvents; track func) {
+        @for (func of item.periodicEvents; track (func?.id ?? (func.start + '-'
+        + (func.time_start ?? '') + '-' + $index))) {
         <div class="flex sm:flex-row gap-x-4 items-center">
           <p
             class="text-[9px] md:text-[12px] px-[6px] pt-1 pb-[3px] rounded-[4px] border-[1px] border-lilaOscuro"
@@ -110,7 +111,8 @@
         >
           Público recomendado
         </div>
-        @for (badge of (item.audience | audienceBadges); track badge) {
+        @for (badge of (item.audience | audienceBadges); track (badge + '-' +
+        $index)) {
         <app-text-background
           [text]="badge"
           colorBack="#bed8f7"
@@ -127,7 +129,8 @@
         Precio
       </p>
       <div class="pl-6 flex flex-col gap-y-4">
-        @for (ticket of item.ticket_prices; track ticket) {
+        @for (ticket of item.ticket_prices; track (ticket.type + '-' +
+        ticket.price + '-' + $index)){
         <div class="flex sm:flex-row gap-x-4 items-center">
           <p
             class="text-[9px] md:text-[12px] px-[6px] pt-1 pb-[3px] rounded-[4px] border-[1px] border-lilaClaro"
@@ -160,7 +163,8 @@
           Organiza
         </div>
         <div class="flex flex-col justify-center">
-          @for (organizer of item.organizer; track organizer) {
+          @for (organizer of item.organizer; track (organizer?.id ??
+          (organizer.name + '-' + $index))) {
           <p class="text-[10px] font-bold pl-3">{{ organizer.name }}</p>
           }
         </div>
@@ -174,7 +178,8 @@
         </div>
 
         <div class="flex flex-col justify-center">
-          @for (colab of item.collaborator; track colab) {
+          @for (colab of item.collaborator; track (colab?.id ?? (colab.name +
+          '-' + $index))) {
           <p class="text-[10px] font-bold pl-3">{{ colab.name }}</p>
           }
         </div>
@@ -188,7 +193,8 @@
         </div>
 
         <div class="flex flex-col justify-center">
-          @for (sponsor of item.sponsor; track sponsor) {
+          @for (sponsor of item.sponsor; track (sponsor?.id ?? (sponsor.name +
+          '-' + $index))) {
           <p class="text-[10px] font-bold pl-3">{{ sponsor.name }}</p>
           }
         </div>

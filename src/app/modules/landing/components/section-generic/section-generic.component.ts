@@ -15,6 +15,7 @@ import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { EventsService } from 'src/app/core/services/events.services';
 import { MacroeventsService } from 'src/app/core/services/macroevents.services';
 import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
+import { ModalNavService } from 'src/app/shared/components/modal/services/modal-nav.service';
 import { CardPlayerComponent } from '../cards/card-events/card-events.component';
 import { CardComponent } from '../cards/card/card.component';
 
@@ -30,6 +31,9 @@ export class SectionGenericComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly modalNav = inject(
+    ModalNavService<EventModelFullData | MacroeventModelFullData>
+  );
 
   @Input() data: any[] = [];
   @Input() total?: number = 0;
@@ -99,10 +103,11 @@ export class SectionGenericComponent implements OnInit {
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { [key]: item.id },
-      queryParamsHandling: 'merge', // conserva ?year, etc.
+      queryParamsHandling: 'merge',
     });
 
     this.selectedItem = item;
+    this.selectedTypeModal = this.typeSection;
     this.selectedActionModal = TypeActionModal.Show;
     this.showModalView = true;
   }
@@ -111,26 +116,26 @@ export class SectionGenericComponent implements OnInit {
     const key = this.getQueryKey();
     this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: { [key]: null }, // elimina el query param
+      queryParams: { [key]: null },
       queryParamsHandling: 'merge',
     });
 
     this.showModalView = false;
-    this.selectedItem = '';
+    this.selectedItem = null;
+    this.modalNav.clear(); // 🔑 limpia la pila al cerrar completamente
   }
-  // 🚪 Abrir por id (cuando viene en la URL o cambias entre ids)
+
   private openById(id: number) {
-    // 1) Busca primero en los datos que ya tienes
     const local = this.data?.find((x) => x?.id === id);
     if (local) {
       this.selectedItem = local;
       this.selectedTypeModal = this.typeSection;
       this.selectedActionModal = TypeActionModal.Show;
       this.showModalView = true;
+      this.modalNav.clear(); // entrada directa, sin “volver”
       return;
     }
 
-    // 2) Si no está, pide al backend según el tipo de sección
     switch (this.typeSection) {
       case TypeList.Events:
         this.eventsService.getEventById(id).subscribe({
@@ -139,6 +144,7 @@ export class SectionGenericComponent implements OnInit {
             this.selectedTypeModal = TypeList.Events;
             this.selectedActionModal = TypeActionModal.Show;
             this.showModalView = true;
+            this.modalNav.clear();
           },
           error: (err) => console.error('Error cargando evento', err),
         });
@@ -152,33 +158,60 @@ export class SectionGenericComponent implements OnInit {
 
   private closeModalOnly() {
     this.showModalView = false;
-    this.selectedItem = '';
+    this.selectedItem = null;
+    this.modalNav.clear();
   }
 
+  // 🔁 Abrir Macroevento desde un Evento (con “volver”)
   onOpenMacroevent(macroeventId: number) {
+    // Guarda el estado actual
+    this.modalNav.push({
+      typeModal: this.selectedTypeModal,
+      action: this.selectedActionModal,
+      item: this.selectedItem,
+    });
+
     this.macroeventsService.getMacroeventById(macroeventId).subscribe({
-      next: (macroevent: MacroeventModelFullData) => {
-        this.selectedItem = macroevent;
-        this.selectedTypeModal = TypeList.Macroevents; // 👉 Esto es clave
+      next: (macro: MacroeventModelFullData) => {
+        this.selectedItem = macro;
+        this.selectedTypeModal = TypeList.Macroevents;
         this.selectedActionModal = TypeActionModal.Show;
-        this.showModalView = true;
+        // modal ya está abierta
       },
-      error: (err) => {
-        console.error('Error cargando macroevento', err);
-      },
+      error: (err) => console.error('Error cargando macroevento', err),
     });
   }
+
+  // 🔁 Abrir Evento desde un Macroevento (con “volver”)
   onOpenEvent(eventId: number) {
+    // Guarda el estado actual
+    this.modalNav.push({
+      typeModal: this.selectedTypeModal,
+      action: this.selectedActionModal,
+      item: this.selectedItem,
+    });
+
     this.eventsService.getEventById(eventId).subscribe({
       next: (event: EventModelFullData) => {
         this.selectedItem = event;
-        this.selectedTypeModal = TypeList.Events; // 👉 Esto es clave
+        this.selectedTypeModal = TypeList.Events;
         this.selectedActionModal = TypeActionModal.Show;
-        this.showModalView = true;
       },
-      error: (err) => {
-        console.error('Error cargando evento', err);
-      },
+      error: (err) => console.error('Error cargando evento', err),
     });
+  }
+
+  // ⬅️ Volver al paso anterior de la pila
+  onBackModal(): void {
+    const prev = this.modalNav.pop();
+    if (!prev) return;
+    this.selectedActionModal = prev.action;
+    this.selectedItem = prev.item;
+    this.selectedTypeModal = prev.typeModal;
+  }
+
+  // Para el template
+  get canGoBack(): boolean {
+    return this.modalNav.canGoBack();
   }
 }

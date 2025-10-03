@@ -26,7 +26,7 @@
       ></app-icon-action>
       <app-column-menu
         [columns]="headerListProjects"
-        [visibility]="columnVisibility"
+        [visibility]="columnVisSig()"
         (toggle)="toggleColumn($event)"
       />
     </div>
@@ -43,9 +43,9 @@
       [typeSection]="typeSection"
       [typeModal]="typeModal"
       [headerColumns]="getVisibleColumns()"
-      [columnVisibility]="columnVisibility"
+      [columnVisibility]="columnVisSig()"
       (openModal)="onOpenModal($event)"
-      [displayedColumns]="displayedColumns"
+      [displayedColumns]="displayedColumnsSig()"
     />
   </div>
   }@else{
@@ -56,13 +56,16 @@
 </div>
 
 <!-- Modal -->
-@if (isModalVisible) {
-<app-modal
-  [item]="item"
+<app-modal-shell
+  [visible]="isModalVisible"
   [typeModal]="typeModal"
   [action]="currentModalAction"
-  (closeModal)="onCloseModal()"
+  [item]="item"
+  [canGoBack]="canGoBack"
+  (back)="onBackModal()"
+  (close)="onCloseModal()"
   (confirmDelete)="onDelete($event)"
   (sendFormProjectData)="sendFormProject($event)"
-></app-modal>
-}
+  (openEvent)="onOpenEvent($event)"
+  (openInvoice)="onOpenInvoice($event)"
+/>

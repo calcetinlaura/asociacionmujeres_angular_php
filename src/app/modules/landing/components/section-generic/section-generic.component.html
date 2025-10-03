@@ -33,5 +33,7 @@
   (closeModal)="onCloseModal()"
   (openMacroevent)="onOpenMacroevent($event)"
   (openEvent)="onOpenEvent($event)"
+  [canGoBack]="canGoBack"
+  (back)="onBackModal()"
 ></app-modal>
 }
