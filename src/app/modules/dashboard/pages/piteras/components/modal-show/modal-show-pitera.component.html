@@ -3,6 +3,14 @@
     <div class="inline-block border-b border-[#1C1C3A] pb-4 mb-8">
       <app-text-title [text]="item.title + ' nº ' + item.publication_number" />
       <app-text-subtitle [text]="'Marzo ' + item.year.toString()" />
+      @if(!isDashboard){
+      <app-social-media-share
+        [url]="
+          'https://asociaciondemujerescallosadesegura.com/piteras/' + item.id
+        "
+        [title]="item.title"
+      ></app-social-media-share
+      >}
     </div>
   </div>
   <div class="flex gap-x-24">

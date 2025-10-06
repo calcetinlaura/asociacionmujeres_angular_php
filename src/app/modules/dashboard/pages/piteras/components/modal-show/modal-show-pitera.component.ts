@@ -4,6 +4,7 @@ import { TypeList } from 'src/app/core/models/general.model';
 import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
 import { ImageZoomOverlayComponent } from 'src/app/shared/components/image-zoom-overlay/image-zoom-overlay.component';
 import { ModalPdfComponent } from 'src/app/shared/components/modal/pages/modal-pdf/modal-pdf.component';
+import { SocialMediaShareComponent } from 'src/app/shared/components/social-media/social-media-share.component';
 import { TextBackgroundComponent } from 'src/app/shared/components/text/text-background/text-background.component';
 import { TextEditorComponent } from 'src/app/shared/components/text/text-editor/text-editor.component';
 import { TextSubTitleComponent } from 'src/app/shared/components/text/text-subTitle/text-subtitle.component';
@@ -21,11 +22,13 @@ import { ItemImagePipe } from '../../../../../../shared/pipe/item-img.pipe';
     ButtonIconComponent,
     ModalPdfComponent,
     ImageZoomOverlayComponent,
+    SocialMediaShareComponent,
   ],
   templateUrl: './modal-show-pitera.component.html',
 })
 export class ModalShowPiteraComponent {
   @Input() item!: PiteraModel;
+  @Input() isDashboard = false;
   typeModal: TypeList = TypeList.Piteras;
   showPdf = false;
   selectedPdf: string | null = null;

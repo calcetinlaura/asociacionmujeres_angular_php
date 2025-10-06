@@ -28,6 +28,7 @@ import { ItemImagePipe } from '../../../../../../shared/pipe/item-img.pipe';
 })
 export class ModalShowPodcastComponent {
   @Input() item!: PodcastModel;
+  @Input() isDashboard = false;
   typeModal: TypeList = TypeList.Podcasts;
   showZoom = false;
   openZoom() {

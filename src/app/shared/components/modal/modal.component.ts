@@ -15,7 +15,8 @@ export class ModalComponent {
   @Input() typeModal!: TypeList;
   @Input() typePage?: TypeList;
   @Input() action: TypeActionModal = TypeActionModal.Show;
-  @Input() canGoBack = false; // 👈 nuevo
+  @Input() canGoBack = false;
+  @Input() isDashboard = false;
 
   // 🔹 Control interno de apertura (el componente se crea con *ngIf)
   isOpen = true;

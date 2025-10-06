@@ -5,6 +5,14 @@
     >
       <app-text-title [text]="item.title" />
       <app-text-subtitle [text]="item.director" />
+      @if(!isDashboard){
+      <app-social-media-share
+        [url]="
+          'https://asociaciondemujerescallosadesegura.com/movies/' + item.id
+        "
+        [title]="item.title"
+      ></app-social-media-share
+      >}
     </div>
   </div>
   <div class="flex flex-col-reverse gap-y-8 lg:flex-row lg:gap-x-24 lg:gap-y-0">

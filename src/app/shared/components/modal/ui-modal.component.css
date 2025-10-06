@@ -79,10 +79,10 @@
     max-height: 95%;
   }
   .modal_body > section {
-    padding: 8% 8% 6% 8%;
+    padding: 2% 8% 6% 8%;
   }
   .iconClose {
-    font-size: 28px;
+    font-size: 20px;
   }
 }
 @media (max-width: 480px) {

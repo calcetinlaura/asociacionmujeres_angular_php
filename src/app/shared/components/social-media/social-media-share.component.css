@@ -21,3 +21,21 @@
   background-color: rgba(203, 141, 217, 0.32);
   border: none;
 }
+/* Media Queries para dispositivos más pequeños */
+/* Ordenador pequeño */
+@media (max-width: 1200px) {
+}
+/* Tablet */
+@media (max-width: 1024px) {
+}
+/* Móvil */
+@media (max-width: 768px) {
+  .share-icons button {
+    width: 25px;
+    height: 25px;
+    font-size: 14px;
+  }
+}
+/* Móvil pequeño */
+@media (max-width: 480px) {
+}

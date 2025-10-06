@@ -41,6 +41,7 @@ import { ItemImagePipe } from '../../../../../../shared/pipe/item-img.pipe';
 })
 export class ModalShowEventComponent {
   @Input() item!: EventModelFullData;
+  @Input() isDashboard = false;
   @Output() openMacroevent = new EventEmitter<number>();
   typeModal: TypeList = TypeList.Events;
   enumStatusEnum = EnumStatusEvent;

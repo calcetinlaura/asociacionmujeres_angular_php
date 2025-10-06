@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
-import { map } from 'rxjs';
+import { Component, inject, OnInit } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { distinctUntilChanged, EMPTY, map, switchMap, tap } from 'rxjs';
 import { EventsFacade } from 'src/app/application/events.facade';
 import { EventModel } from 'src/app/core/interfaces/event.interface';
 import { Filter, TypeList } from 'src/app/core/models/general.model';
@@ -29,6 +30,8 @@ import { CalendarComponent } from './components/calendar/calendar.component';
 export class EventsPageLandingComponent implements OnInit {
   readonly eventsFacade = inject(EventsFacade);
   private readonly eventsService = inject(EventsService);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly generalService = inject(GeneralService);
 
   filters: Filter[] = [];
@@ -55,6 +58,27 @@ export class EventsPageLandingComponent implements OnInit {
       'Agenda'
     );
     this.loadEvents(this.currentYear);
+    this.route.paramMap
+      .pipe(
+        map((pm) => pm.get('id')),
+        distinctUntilChanged(),
+        switchMap((id) => {
+          if (!id) {
+            // Sin :id -> listado normal. El hijo cerrará la modal al no ver :id
+            return EMPTY;
+          }
+          const numericId = Number(id);
+          return this.eventsService.getEventById(numericId).pipe(
+            tap((event) => {
+              const year = new Date(event.start).getFullYear();
+              if (!isNaN(year) && year !== this.selectedFilter) {
+                this.loadEvents(year); // activa filtros y listas de ese año
+              }
+            })
+          );
+        })
+      )
+      .subscribe();
   }
 
   loadEvents(year: number): void {

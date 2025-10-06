@@ -1,7 +1,12 @@
 <?php
+header('Content-Type: text/html; charset=UTF-8');
+header('Vary: User-Agent');
+header('Cache-Control: no-cache, no-store, must-revalidate');
+header('Pragma: no-cache');
+header('Expires: 0');
 // share-event.php — genera metatags OG para compartir un evento
 
-header('Content-Type: text/html; charset=UTF-8');
+
 
 $id = intval($_GET['id'] ?? 0);
 if ($id <= 0) { http_response_code(404); echo 'Not found'; exit; }
@@ -70,10 +75,7 @@ $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
 $isBot = preg_match('/(facebookexternalhit|Facebot|WhatsApp|Twitterbot|Slackbot|TelegramBot|Discordbot|LinkedInBot|Pinterest|Googlebot|SkypeUriPreview|Applebot)/i', $ua);
 
 // Si NO es bot → redirige a la SPA
-if (!$isBot) {
-  header('Location: ' . $url, true, 302);
-  exit;
-}
+if (!$isBot) { header('Location: ' . $url, true, 302); exit; }
 ?>
 <!doctype html>
 <html lang="es">

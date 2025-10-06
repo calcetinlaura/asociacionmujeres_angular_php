@@ -15,6 +15,7 @@ import { ModalComponent } from 'src/app/shared/components/modal/modal.component'
       [typePage]="k"
       [action]="action"
       [canGoBack]="canGoBack"
+      [isDashboard]="isDashboard"
       (back)="back.emit()"
       (closeModal)="close.emit()"
       (confirmDelete)="confirmDelete.emit($event)"
@@ -36,6 +37,7 @@ export class ModalShellComponent<T> {
   @Input({ required: true }) action!: TypeActionModal;
   @Input() item: T | null = null;
   @Input() canGoBack = false;
+  @Input() isDashboard = true;
 
   @Output() back = new EventEmitter<void>();
   @Output() close = new EventEmitter<void>();

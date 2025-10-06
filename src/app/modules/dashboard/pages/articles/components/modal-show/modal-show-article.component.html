@@ -2,6 +2,14 @@
   <div class="mb-4">
     <app-text-title [text]="item.title" />
     <app-text-subtitle [text]="item.date" />
+    @if(!isDashboard){
+    <app-social-media-share
+      [url]="
+        'https://asociaciondemujerescallosadesegura.com/articles/' + item.id
+      "
+      [title]="item.title"
+    ></app-social-media-share
+    >}
     <app-text-editor [text]="item.description" />
   </div>
 </div>

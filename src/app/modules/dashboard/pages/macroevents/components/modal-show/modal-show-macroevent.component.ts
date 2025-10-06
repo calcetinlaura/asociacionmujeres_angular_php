@@ -27,6 +27,7 @@ import { ItemImagePipe } from '../../../../../../shared/pipe/item-img.pipe';
 export class ModalShowMacroeventComponent implements OnInit {
   @Input() item?: MacroeventModelFullData;
   @Output() openEvent = new EventEmitter<number>();
+  @Input() isDashboard = false;
   typeModal: TypeList = TypeList.Macroevents;
   typeEvent: TypeList = TypeList.Events;
   datesEquals = false;

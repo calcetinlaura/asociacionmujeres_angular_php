@@ -4,12 +4,15 @@
   RewriteBase /
 
   # 0) Primero intenta index.html (Angular); si no, index.php
-
   DirectoryIndex index.html index.php
 
-
-
+  # A) (Opcional/Compat) /share/events/:id -> share-event.php
   RewriteRule ^share/events/([0-9]+)/?$ share-event.php?id=$1 [L,QSA]
+
+  # B) BOTS de previsualización: /events/:id -> share-event.php (metatags OG)
+  # ⚠️ OJO: sin Googlebot ni Applebot para no bloquear SEO con noindex.
+  RewriteCond %{HTTP_USER_AGENT} (facebookexternalhit|Facebot|WhatsApp|Twitterbot|Slackbot|TelegramBot|Discordbot|LinkedInBot|Pinterest|SkypeUriPreview) [NC]
+  RewriteRule ^events/([0-9]+)/?$ share-event.php?id=$1 [L,QSA]
 
   # 1) Si piden un archivo o carpeta real, entrégalo tal cual
   RewriteCond %{REQUEST_FILENAME} -f [OR]

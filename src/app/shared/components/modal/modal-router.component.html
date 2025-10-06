@@ -10,7 +10,7 @@
 
 <!-- BOOKS -->
 @case (TypeList.Books) { @if (action === TypeActionModal.Show) {
-<app-modal-show-book [item]="item" />
+<app-modal-show-book [item]="item" [isDashboard]="isDashboard" />
 } @else {
 <app-form-book
   [itemId]="item?.id"
@@ -22,6 +22,7 @@
 @case (TypeList.Events) { @if (action === TypeActionModal.Show) {
 <app-modal-show-event
   [item]="item"
+  [isDashboard]="isDashboard"
   (openMacroevent)="onOpenMacroeventFromChild($event)"
 />
 } @else {
@@ -36,6 +37,7 @@
 @case (TypeList.Macroevents) { @if (action === TypeActionModal.Show) {
 <app-modal-show-macroevent
   [item]="item"
+  [isDashboard]="isDashboard"
   (openEvent)="onOpenEventFromFather($event)"
 />
 } @else {
@@ -47,7 +49,11 @@
 
 <!-- MOVIES -->
 @case (TypeList.Movies) { @if (action === TypeActionModal.Show) {
-<app-modal-show-movie [item]="item" (close)="onClose()" />
+<app-modal-show-movie
+  [item]="item"
+  [isDashboard]="isDashboard"
+  (close)="onClose()"
+/>
 } @else {
 <app-form-movie
   [itemId]="item?.id"
@@ -57,7 +63,7 @@
 
 <!-- RECIPES -->
 @case (TypeList.Recipes) { @if (action === TypeActionModal.Show) {
-<app-modal-show-recipe [item]="item" />
+<app-modal-show-recipe [item]="item" [isDashboard]="isDashboard" />
 } @else {
 <app-form-recipe
   [itemId]="item?.id"
@@ -67,7 +73,7 @@
 
 <!-- PITERAS -->
 @case (TypeList.Piteras) { @if (action === TypeActionModal.Show) {
-<app-modal-show-pitera [item]="item" />
+<app-modal-show-pitera [item]="item" [isDashboard]="isDashboard" />
 } @else {
 <app-form-pitera
   [itemId]="item?.id"
@@ -137,7 +143,7 @@
 
 <!-- PODCASTS -->
 @case (TypeList.Podcasts) { @if (action === TypeActionModal.Show) {
-<app-modal-show-podcast [item]="item" />
+<app-modal-show-podcast [item]="item" [isDashboard]="isDashboard" />
 } @else {
 <app-form-podcast
   [itemId]="item?.id"
@@ -147,7 +153,7 @@
 
 <!-- ARTICLES -->
 @case (TypeList.Articles) { @if (action === TypeActionModal.Show) {
-<app-modal-show-article [item]="item" />
+<app-modal-show-article [item]="item" [isDashboard]="isDashboard" />
 } @else {
 <app-form-article
   [itemId]="item?.id"
@@ -171,8 +177,7 @@
 
 <!-- PARTNERS -->
 @case (TypeList.Partners) { @if (action === TypeActionModal.Show) {
-<app-modal-show-partner [item]="item" />
-} @else {
+<app-modal-show-partner [item]="item" /> } @else {
 <app-form-partner
   [itemId]="item?.id"
   (submitForm)="sendFormPartnerData.emit($event)"

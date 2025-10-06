@@ -86,6 +86,7 @@ export class ModalRouterComponent {
   @Input() typeModal!: TypeList;
   @Input() typePage?: TypeList;
   @Input() action!: TypeActionModal;
+  @Input() isDashboard = false;
 
   // eventos hacia fuera
   @Output() closeRequested = new EventEmitter<void>();
