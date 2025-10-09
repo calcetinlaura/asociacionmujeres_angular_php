@@ -3,10 +3,10 @@
   (openChange)="openChange.emit($event)"
   [showClose]="false"
   [panelClass]="'pdf-panel'"
-  [size]="'full'"
+  size="full"
   [variant]="null"
 >
-  <div class="relative w-full h-full">
+  <div class="relative w-full h-[100dvh]">
     <button
       class="absolute top-2 right-2 bg-gray-200 rounded-full p-2 z-10"
       (click)="close()"
@@ -14,7 +14,25 @@
     >
       ✕
     </button>
-    @if(safeSrc){
-    <iframe [src]="safeSrc" class="w-full h-full"></iframe>}
+    @if (safeSrc && !isIOS) {
+    <iframe
+      [src]="safeSrc"
+      class="block w-full h-[100dvh]"
+      loading="eager"
+    ></iframe>
+    } @else if (rawUrl) {
+    <div
+      class="w-full h-[100dvh] flex items-center justify-center p-6 text-center"
+    >
+      <p class="mb-4">Tu dispositivo no puede mostrar el PDF incrustado.</p>
+      <a
+        class="underline font-medium"
+        [href]="rawUrl"
+        target="_blank"
+        rel="noopener"
+        >Abrir el PDF en otra pestaña</a
+      >
+    </div>
+    }
   </div>
 </app-ui-modal>

@@ -1,11 +1,19 @@
 <!-- ✅ Si es DELETE, usa una única modal genérica -->
-@if (action === TypeActionModal.Delete) {
+@if (showInlineDelete) {
+<app-modal-delete
+  [item]="deleteCandidate"
+  [typeModal]="TypeList.Events"
+  (confirmDelete)="onConfirmDeleteEvent($event)"
+  (closeModal)="onCancelDelete()"
+/>
+} @if (action === TypeActionModal.Delete) {
 <app-modal-delete
   [item]="item"
   [typeModal]="typeModal"
   (confirmDelete)="onConfirmDelete($event)"
   (closeModal)="onClose()"
 />
+
 } @else { @switch (typeModal) {
 
 <!-- BOOKS -->
@@ -46,7 +54,18 @@
   (submitForm)="sendFormMacroeventData.emit($event)"
 />
 } }
-
+<!-- MULTIEVENTS -->
+@case ( TypeList.MultiEvents) {
+<app-modal-multievent
+  [events]="item?.events ?? item"
+  [date]="item?.date ?? null"
+  [isDashboard]="isDashboard"
+  (openEvent)="onOpenEventFromFather($event)"
+  (remove)="removeEvent.emit($event)"
+  (view)="viewEvent.emit($event)"
+  (edit)="editEvent.emit($event)"
+/>
+}
 <!-- MOVIES -->
 @case (TypeList.Movies) { @if (action === TypeActionModal.Show) {
 <app-modal-show-movie
@@ -73,7 +92,11 @@
 
 <!-- PITERAS -->
 @case (TypeList.Piteras) { @if (action === TypeActionModal.Show) {
-<app-modal-show-pitera [item]="item" [isDashboard]="isDashboard" />
+<app-modal-show-pitera
+  [item]="item"
+  [isDashboard]="isDashboard"
+  (openPdfReq)="onOpenPdf($event)"
+/>
 } @else {
 <app-form-pitera
   [itemId]="item?.id"
@@ -83,7 +106,7 @@
 
 <!-- INVOICES -->
 @case (TypeList.Invoices) { @if (action === TypeActionModal.Show) {
-<app-modal-show-invoice [item]="item" />
+<app-modal-show-invoice [item]="item" (openPdfReq)="onOpenPdf($event)" />
 } @else {
 <app-form-invoice
   [itemId]="item?.id"

@@ -22,11 +22,14 @@
   selectedFilter) {
   <div class="w-full">
     <app-calendar
-      class="block w-full"
       [events]="events"
-      [filterYear]="selectedFilter!"
-    >
-    </app-calendar>
+      [filterYear]="selectedFilter"
+      [isDashboard]="true"
+      (createAtDate)="onCreateEventAtDate($event)"
+      (viewEvent)="onOpenEvent($event)"
+      (editEvent)="onEditEvent($event)"
+      (deleteEvent)="onDeleteEvent($event)"
+    ></app-calendar>
   </div>
   } @else {
   <div class="text-center text-gray-600 my-12 text-lg">
@@ -34,3 +37,17 @@
   </div>
   } } }
 </div>
+
+<!-- Modal de ficha de evento -->
+<app-modal-shell
+  [visible]="isModalVisible"
+  [typeModal]="typeModal"
+  [action]="currentModalAction"
+  [item]="item"
+  [canGoBack]="canGoBack"
+  (back)="onBackModal()"
+  (close)="onCloseModal()"
+  (openEvent)="onOpenEvent($event)"
+  (confirmDelete)="onDeleteEvent($event)"
+  (sendFormEventData)="sendFormEvent($event)"
+/>

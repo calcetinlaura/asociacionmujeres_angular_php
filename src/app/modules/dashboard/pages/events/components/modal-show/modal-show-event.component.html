@@ -1,3 +1,16 @@
+<!-- SPINNER OVERLAY ACCESIBLE -->
+@if (loading) {
+<div
+  class="fixed inset-0 z-[60] bg-white/70 backdrop-blur-sm flex items-center justify-center"
+>
+  <div
+    class="h-10 w-10 rounded-full border-4 border-gray-300 border-t-transparent animate-spin"
+    role="status"
+    aria-live="polite"
+    aria-label="Cargando evento"
+  ></div>
+</div>
+}
 <div>
   <div class="text-center">
     <div
@@ -18,7 +31,7 @@
         [url]="
           'https://asociaciondemujerescallosadesegura.com/events/' + item.id
         "
-        [title]="item.title"
+        [title]="item.title!"
       ></app-social-media-share
       >}
     </div>
@@ -272,7 +285,7 @@
 <app-image-zoom-overlay
   [open]="showZoom"
   [src]="(item.img ? item.img : '') | itemImage : typeModal"
-  [alt]="item.title"
+  [alt]="item.title!"
   [maxScale]="5"
   [minScale]="1"
   [caption]="item.title"

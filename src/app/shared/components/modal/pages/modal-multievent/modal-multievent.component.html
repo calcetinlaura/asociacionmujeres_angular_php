@@ -1,66 +1,138 @@
-<app-ui-modal
-  [open]="open"
-  (openChange)="openChange.emit($event)"
-  size="xl"
-  [hasActions]="false"
-  [closeOnBackdrop]="true"
-  [closeOnEscape]="true"
->
-  <h2 class="text-center text-xl mb-8 uppercase font-semibold">
-    Programación <br />
-    eventos
-  </h2>
-  <div class="flex flex-col gap-y-4">
-    @for (event of events; track event.id ?? $index) {
-    <div (click)="onSelect(event)" class="cursor-pointer flex gap-x-4">
-      <div class="w-[180px] h-[180px] overflow-hidden">
-        <img
-          appImgBroken
-          [src]="(event.img ? event.img : '') | itemImage : typeModal"
-          [alt]="event.title"
-          class="object-cover rounded w-full h-full"
-        />
-      </div>
-
-      <div
-        class="flex flex-1 flex-col gap-y-2 justify-center bg-gray-100 w-full p-4"
-      >
-        <div class="text-lg font-bold">
-          {{ event.title }}
-        </div>
-
-        @if (event.placeData?.name) {
-        <div>
-          <p class="text-xs md:text-lg">
-            {{ event.placeData?.name }} | {{ event.town }}
-          </p>
-          @if (event.salaData?.name) {
-          <p class="text-xs md:text-lg text-gray-500">
-            {{ event.salaData?.name }} -
-            {{
-              event.salaData?.room_location
-                | filterTransformCode : "roomLocationPlaces"
-            }}
-          </p>
-          }
-        </div>
-        }
-
-        <app-text-background
-          [text]="event.start | date : 'EEEE dd MMMM yyyy'"
-        ></app-text-background>
-
-        @if (event.time_start && event.time_start !== '00:00:00') {
-        <div>
-          <p
-            class="inline-block text-[9px] md:text-[12px] px-[6px] pt-1 pb-[3px] rounded-[4px] border border-lilaClaro"
-          >
-            {{ event.time_start.slice(0, 5) + " h" }}
-          </p>
-        </div>
-        }
-      </div>
-    </div>
+<div class="text-center">
+  <div class="inline-block border-b border-[#1C1C3A] mb-4 md:mb-8 text-center">
+    <app-text-title [text]="'Programación eventos'" />
+    @if (!isDashboard) {
+    <app-social-media-share [url]="getShareUrl()" [title]="shareTitle" />
     }
   </div>
-</app-ui-modal>
+</div>
+
+@if (isDashboard) {
+<div class="flex justify-center mb-8">
+  <app-button-icon
+    [buttonText]="'Añadir evento ese día'"
+    [iconClass]="'uil-plus'"
+    (click)="onAddClick()"
+  />
+</div>
+}
+
+<!-- Lista -->
+<div class="flex flex-col gap-y-4">
+  @for (event of events; track event.id ?? $index) {
+  <div
+    class="group flex w-full gap-4 cursor-pointer rounded-xl p-2 border border-transparent transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-md hover:border-lilaOscuro/15 hover:bg-lilaClaro/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lilaOscuro/40"
+    (click)="onOpenEvent(event.id!)"
+    tabindex="0"
+    (keyup.enter)="onOpenEvent(event.id!)"
+  >
+    <!-- Imagen -->
+    <div
+      class="w-[100px] h-auto overflow-hidden flex-shrink-0 rounded-lg flex items-center"
+    >
+      <img
+        appImgBroken
+        [src]="(event.img ? event.img : '') | itemImage : typeModal"
+        [alt]="event.title"
+        class="object-cover w-full h-auto transition-transform duration-300 ease-out group-hover:scale-[1.03]"
+      />
+    </div>
+
+    <!-- Contenido -->
+    <div
+      class="flex-1 py-2 px-3 rounded-lg shadow-sm bg-white/70 transition-all duration-300 ease-out group-hover:bg-white group-hover:shadow-md"
+    >
+      <p class="text-[12px] font-semibold tracking-wide">
+        {{ event.title }}
+      </p>
+
+      @if (event.start) {
+      <p class="text-[12px] text-gray-600 mt-1">
+        {{ event.start | date : "EEEE dd MMMM" : "" : "es-ES" | titlecase }}
+        | {{ event.time_start?.slice(0, 5) }}h
+      </p>
+
+      <div class="flex gap-x-2 flex-wrap justify-start my-2">
+        @for (category of event.category; track category) {
+        <p class="categories">
+          {{ category | dictTranslate : dictType.Categories }}
+        </p>
+        }
+      </div>
+      } @if (event.placeData?.name) {
+      <p class="text-[12px] text-gray-600 pt-2">
+        {{ event.placeData?.name }}
+      </p>
+      @if (event.salaData?.name) {
+      <p class="text-xs md:text-[10px] text-gray-500 mb-2">
+        {{ event.salaData?.name }}
+        -
+        {{
+          event.salaData?.room_location
+            | filterTransformCode : "roomLocationPlaces"
+        }}
+      </p>
+      } } @if (event.town) {
+      <p class="text-xs md:text-[10px] text-gray-600">
+        @if (event.placeData?.address) {
+        <span>{{ event.placeData?.address }}, </span> }
+        {{ event.town }}
+      </p>
+      }
+
+      <!-- Acciones dashboard -->
+      @if (isDashboard) {
+      <div class="mt-3 flex gap-2">
+        <app-icon-action
+          [icon]="'uil-eye'"
+          [tooltip]="'Ver'"
+          (click)="onViewClick($event, event.id!)"
+        />
+        <app-icon-action
+          [icon]="'uil-edit'"
+          [tooltip]="'Editar'"
+          (click)="onEditClick($event, event.id!)"
+        />
+        <app-icon-action
+          [icon]="'uil-trash-alt'"
+          [tooltip]="'Eliminar'"
+          (click)="onRemoveClick($event, event.id!)"
+        />
+      </div>
+      }
+    </div>
+  </div>
+  }
+</div>
+@if (isConfirmOpen) {
+<div
+  id="confirm-overlay"
+  class="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4"
+  (click)="cancelRemove()"
+>
+  <div
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="confirm-title"
+    aria-describedby="confirm-desc"
+    class="w-full max-w-md rounded-2xl bg-white shadow-xl p-6"
+    (click)="$event.stopPropagation()"
+    tabindex="-1"
+  >
+    <h3
+      id="confirm-title"
+      class="text-base font-semibold text-gray-900 text-center"
+    >
+      ¿Eliminar evento?
+    </h3>
+    <p id="confirm-desc" class="mt-2 text-sm text-gray-600 text-center">
+      Esta acción no se puede deshacer. Confirma si quieres eliminarlo.
+    </p>
+
+    <div class="mt-6 flex items-center justify-center gap-3">
+      <button (click)="cancelRemove()" class="button-cancel">Cancelar</button>
+      <button (click)="confirmRemove()" class="button-delete">Aceptar</button>
+    </div>
+  </div>
+</div>
+}

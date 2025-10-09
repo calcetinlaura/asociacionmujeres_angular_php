@@ -17,9 +17,9 @@
 .modal_body {
   position: relative;
   box-sizing: border-box;
-  width: auto;
-  max-width: min(96vw, 56rem);
-  max-height: calc(100dvh - 4rem);
+  width: var(--modal-w, auto);
+  max-width: var(--modal-max-w, min(96vw, 56rem));
+  max-height: var(--modal-max-h, calc(100dvh - 4rem));
   min-height: 0;
   display: flex;
   flex-direction: column;
@@ -38,19 +38,21 @@
   padding: 45px 64px;
 }
 .modal-DELETE {
-  width: 25%;
-  max-width: 25%;
+  --modal-w: 25%;
+  --modal-max-w: 25%;
 }
+
 .modal-SHOW {
-  width: 50%;
-  max-width: 50%;
-  background-color: #f6f0ff;
+  --modal-w: 50%;
+  --modal-max-w: 50%;
+  background-color: #f6f0ff; /* lo mantienes */
 }
+
 .modal-CREATE,
 .modal-EDIT,
 .modal-DUPLICATE {
-  width: 60%;
-  max-width: 60%;
+  --modal-w: 60%;
+  --modal-max-w: 60%;
 }
 
 .iconClose {
@@ -59,12 +61,21 @@
 .iconBack {
   font-size: 24px;
 }
+:host ::ng-deep .pdf-panel {
+  width: 100vw !important;
+  height: 100dvh !important;
+  max-width: none !important;
+  max-height: none !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+}
+
 /* Media Queries */
 @media (max-width: 1200px) {
   .modal_body {
-    width: 90%;
-    max-width: 90%;
-    max-height: 90%;
+    --modal-w: 90vw;
+    --modal-max-w: 90vw;
+    --modal-max-h: 90vh;
   }
   .modal_body > section {
     padding: 4% 6%;
@@ -74,9 +85,9 @@
 }
 @media (max-width: 768px) {
   .modal_body {
-    width: 95%;
-    max-width: 95%;
-    max-height: 95%;
+    --modal-w: 95vw;
+    --modal-max-w: 95vw;
+    --modal-max-h: 90vh;
   }
   .modal_body > section {
     padding: 2% 8% 6% 8%;
@@ -87,43 +98,11 @@
 }
 @media (max-width: 480px) {
   .modal_body {
-    width: 95%;
-    max-width: 95%;
-    max-height: 95%;
+    --modal-w: 95vw;
+    --modal-max-w: 95vw;
+    --modal-max-h: 80vh;
   }
   .modal_body > section {
     padding: 10% 8% 6% 8%;
   }
-}
-/* PDF a casi pantalla completa */
-.modal_body.pdf-panel {
-  width: 96vw !important;
-  max-width: 96vw !important;
-  height: 92vh !important; /* puedes cambiar a 92dvh si prefieres */
-  max-height: 92vh !important;
-  padding: 0 !important;
-  border-radius: 12px;
-  background: #fff;
-  overflow: hidden; /* el scroll irá dentro */
-  box-sizing: border-box;
-}
-
-.modal_body.pdf-panel > section {
-  flex: 1 1 auto;
-  min-height: 0;
-  height: 100% !important;
-  width: 100% !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  overflow: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-.modal_body.pdf-panel iframe,
-.modal_body.pdf-panel embed,
-.modal_body.pdf-panel object {
-  display: block;
-  width: 100% !important;
-  height: 100% !important;
-  border: 0;
 }

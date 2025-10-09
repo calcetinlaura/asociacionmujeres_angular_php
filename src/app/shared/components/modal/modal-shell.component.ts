@@ -23,6 +23,9 @@ import { ModalComponent } from 'src/app/shared/components/modal/modal.component'
       (openMacroevent)="openMacroevent.emit($event)"
       (openProject)="openProject.emit($event)"
       (openInvoice)="openInvoice.emit($event)"
+      (viewEvent)="viewEvent.emit($event)"
+      (editEvent)="editEvent.emit($event)"
+      (removeEvent)="removeEvent.emit($event)"
       (sendFormEventData)="sendFormEventData.emit($event)"
       (sendFormMacroeventData)="sendFormMacroeventData.emit($event)"
       (sendFormBookData)="sendFormBookData.emit($event)"
@@ -46,6 +49,10 @@ export class ModalShellComponent<T> {
   @Output() openMacroevent = new EventEmitter<number>();
   @Output() openInvoice = new EventEmitter<number>();
   @Output() openProject = new EventEmitter<number>();
+  @Output() openPdf = new EventEmitter<number>();
+  @Output() viewEvent = new EventEmitter<number>();
+  @Output() editEvent = new EventEmitter<number>();
+  @Output() removeEvent = new EventEmitter<number>();
   @Output() sendFormEventData = new EventEmitter<any>();
   @Output() sendFormMacroeventData = new EventEmitter<any>();
   @Output() sendFormBookData = new EventEmitter<any>();

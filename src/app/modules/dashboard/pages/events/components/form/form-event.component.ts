@@ -423,6 +423,14 @@ export class FormEventComponent implements OnInit, OnChanges {
         this.resetAudienceForm();
         this.titleForm = 'Registrar evento';
         this.buttonAction = 'Guardar';
+        // ⬇️⬇️ AÑADE ESTO: aplicar el borrador si existe (solo en CREATE)
+        this.eventsFacade.draftEvent$.pipe(take(1)).subscribe((draft) => {
+          if (draft) this.applyDraft(draft);
+          this.setEventTypePeriod('single');
+          this.eventsFacade.draftEvent$.pipe(take(1)).subscribe((draft) => {
+            if (draft) this.applyDraft(draft);
+          });
+        });
       }
     }
 
@@ -1747,5 +1755,35 @@ export class FormEventComponent implements OnInit, OnChanges {
     if (e['restrictionOtherTextRequired'])
       return 'Describe la “Otra restricción”.';
     return 'Completa la sección de Público.';
+  }
+  private applyDraft(draft: Partial<EventModelFullData>): void {
+    // Forzamos modo "single"
+    this.setEventTypePeriod('single');
+
+    // Fecha del draft → dispara la carga anual por tu suscripción a 'start'
+    if (draft.start) {
+      const startIso = draft.start.slice(0, 10);
+      this.formEvent.patchValue({ start: startIso }, { emitEvent: true });
+
+      const year = this.generalService.getYearFromDate(startIso);
+
+      this.loadYearlyData(year).pipe(take(1)).subscribe();
+      this.generalService.enableInputControls(this.formEvent, [
+        'project_id',
+        'macroevent_id',
+      ]);
+    }
+
+    // Hora opcional
+    if (draft.time_start) {
+      this.formEvent.patchValue(
+        { time_start: draft.time_start },
+        { emitEvent: false }
+      );
+    }
+
+    // Limpia el draft tras usarlo
+    this.eventsFacade.clearDraft();
+    this.cdr.markForCheck();
   }
 }

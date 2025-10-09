@@ -1,14 +1,31 @@
 <div class="flex flex-col mx-3 md:mx-8 mt-4">
-  <app-filters [filters]="filters" (filterClicked)="filterSelected($event)">
+  <app-filters
+    [filters]="filters"
+    [loadFirstFilter]="selectedFilter"
+    [loadFilters]="false"
+    (filterClicked)="filterSelected($event)"
+  >
   </app-filters>
 
-  @if (eventsFacade.isLoading$ | async) {
+  @let loading = (eventsFacade.isLoading$ | async) ?? false; @let yearEvents =
+  (eventsByYear$ | async) ?? []; @let list = (eventsNonRepeated$ | async) ?? [];
+  @if (loading) {
   <div class="mt-24"><app-spinner-loading /></div>
-  } @else { @if (eventsAll$ | async; as all) { @if ((all?.length ?? 0) > 0 &&
-  selectedFilter) {
-  <app-calendar [events]="all" [filterYear]="selectedFilter!"></app-calendar>
-  } } @if (eventsNonRepeated$ | async; as list) { @if ((list?.length ?? 0) > 0)
-  {
+  } @else {
+
+  <!-- Calendario solo si hay datos del año (y tienes año seleccionado) -->
+  @if (yearEvents.length > 0 && filterYearForCalendar !== null) {
+  <app-calendar
+    [events]="yearEvents"
+    [filterYear]="filterYearForCalendar"
+    [isDashboard]="isDashboard"
+    [deepLinkMultiDate]="deepLinkMultiDate"
+  >
+  </app-calendar>
+  }
+
+  <!-- Lista inferior (no-repeated) o no-results -->
+  @if (list.length > 0) {
   <app-section-generic
     [typeSection]="typeList.Events"
     [typeModal]="typeList.Events"
@@ -17,5 +34,5 @@
   />
   } @else {
   <app-no-results [text]="'eventos' | lowercase" />
-  } } }
+  } }
 </div>

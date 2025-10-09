@@ -7,6 +7,15 @@
 .imagen {
   width: 100%;
 }
+.categories {
+  border-radius: 16px;
+  font-weight: 500;
+  padding: 2px 8px 2px 8px;
+  width: max-content;
+  text-transform: uppercase;
+  background-color: #c1e6dd;
+  font-size: 9px;
+}
 /* Media Queries para dispositivos más pequeños */
 /* Ordenador pequeño */
 @media (max-width: 1200px) {

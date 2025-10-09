@@ -29,7 +29,7 @@ export class UiModalComponent implements OnChanges {
   @Input() canGoBack = false;
   @Output() back = new EventEmitter<void>();
 
-  @Input() size: null | 'sm' | 'md' | 'lg' | 'xl' | 'full' = 'xl';
+  @Input() size: null | 'sm' | 'md' | 'lg' | 'xl' | 'full' = null;
   @Input() closeOnBackdrop = true;
   @Input() closeOnEscape = true;
   @Input() lockScroll = true;
@@ -50,11 +50,9 @@ export class UiModalComponent implements OnChanges {
       case 'md':
         return 'max-w-md';
       case 'lg':
-        return 'max-w-2xl';
-      case 'xl':
-        return 'max-w-4xl';
+      case 'xl': // nada: lo gobernamos con variables
       case 'full':
-        return 'w-[96vw] max-w-[96vw] h-[96vh]';
+        return '';
       default:
         return 'max-w-2xl';
     }
@@ -68,7 +66,7 @@ export class UiModalComponent implements OnChanges {
   }
 
   get variantClass(): string {
-    return this.variant ? `modal-${this.variant}` : '';
+    return this.variant && this.size == null ? `modal-${this.variant}` : '';
   }
 
   ngOnChanges(ch: SimpleChanges) {

@@ -12,6 +12,7 @@ export interface EventModel {
   time_start?: string;
   time_end?: string;
   description?: string;
+  category?: CategoryCode[] | [];
   audience?: AudienceDTO;
   online_link?: string;
   province: string;
@@ -115,7 +116,6 @@ export const statusEvent: Filter[] = [
 ];
 
 export interface EventModelFullData extends EventModel {
-  category?: CategoryCode[] | [];
   placeData?: PlaceModel;
   salaData?: SalaModel;
   organizer?: AgentAutocompleteModel[];

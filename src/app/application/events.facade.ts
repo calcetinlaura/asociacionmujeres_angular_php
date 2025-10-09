@@ -53,7 +53,10 @@ export class EventsFacade extends LoadableFacade {
   readonly selectedEvent$ = this.selectedEventSubject.asObservable();
 
   private current: CurrentFilter = { kind: 'none' };
-
+  // Draft para prefijar valores en el form de creación/edición
+  private readonly draftEventSubject =
+    new BehaviorSubject<Partial<EventModelFullData> | null>(null);
+  readonly draftEvent$ = this.draftEventSubject.asObservable();
   // ================= CARGA =================
 
   /** Carga “all” y “latest” en paralelo y deja “latest” como visible por defecto. */
@@ -270,5 +273,18 @@ export class EventsFacade extends LoadableFacade {
         : this.eventsNonRepeteatedSubject.getValue();
 
     this.visibleEventsSubject.next(source ?? null);
+  }
+  prefill(draft: Partial<EventModelFullData>): void {
+    this.draftEventSubject.next(draft);
+  }
+
+  /** Atajo: prefija solo la fecha (YYYY-MM-DD). */
+  prefillDate(iso: string): void {
+    this.prefill({ start: iso });
+  }
+
+  /** Limpia el borrador tras ser consumido por el formulario. */
+  clearDraft(): void {
+    this.draftEventSubject.next(null);
   }
 }

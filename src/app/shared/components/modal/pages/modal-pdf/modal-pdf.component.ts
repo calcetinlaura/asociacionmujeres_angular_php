@@ -1,4 +1,5 @@
 import {
+  ChangeDetectionStrategy,
   Component,
   EventEmitter,
   Input,
@@ -12,9 +13,10 @@ import { UiModalComponent } from 'src/app/shared/components/modal/ui-modal.compo
 
 @Component({
   selector: 'app-modal-pdf',
-  templateUrl: './modal-pdf.component.html',
   standalone: true,
   imports: [UiModalComponent],
+  templateUrl: './modal-pdf.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ModalPdfComponent implements OnChanges {
   @Input() open = false;
@@ -27,6 +29,12 @@ export class ModalPdfComponent implements OnChanges {
 
   safeSrc: SafeResourceUrl | null = null;
 
+  // 👇 Añade estas dos propiedades
+  rawUrl: string | null = null;
+  isIOS =
+    typeof navigator !== 'undefined' &&
+    /iPad|iPhone|iPod/.test(navigator.userAgent);
+
   constructor(private sanitizer: DomSanitizer) {}
 
   ngOnChanges(_: SimpleChanges): void {
@@ -36,6 +44,7 @@ export class ModalPdfComponent implements OnChanges {
       this.type,
       this.basePath
     );
+    this.rawUrl = full; // 👈 para el fallback del template
     const withParams = full ? this.addViewerParams(full) : null;
     this.safeSrc = withParams
       ? this.sanitizer.bypassSecurityTrustResourceUrl(withParams)
@@ -43,7 +52,6 @@ export class ModalPdfComponent implements OnChanges {
   }
 
   private addViewerParams(url: string): string {
-    // Chrome/Edge suelen respetar #zoom=page-width; otros aceptan view=FitH
     const sep = url.includes('#') ? '&' : '#';
     return `${url}${sep}zoom=page-width&view=FitH&pagemode=none`;
   }

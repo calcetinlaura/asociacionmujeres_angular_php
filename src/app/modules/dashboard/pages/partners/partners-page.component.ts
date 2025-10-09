@@ -139,6 +139,13 @@ export class PartnersPageComponent implements OnInit {
       textAlign: 'center',
     },
     {
+      title: 'Último método pago',
+      key: 'lastMethodPaid',
+      sortable: true,
+      width: ColumnWidth.XS,
+      textAlign: 'center',
+    },
+    {
       title: 'Tiempo socia',
       key: 'years',
       sortable: true,
@@ -306,18 +313,47 @@ export class PartnersPageComponent implements OnInit {
 
     this.partners = this.partnersService.sortPartnersById(partners).map((p) => {
       const cuotas = normalizeCuotas(p.cuotas);
+
+      // años pagados y últimos
       const paidYears = cuotas.filter((c) => c.paid).map((c) => c.year);
       const years = paidYears.length;
       const lastCuotaPaid = paidYears.includes(this.currentYear);
       const lastPaidYear = paidYears.length ? Math.max(...paidYears) : null;
 
-      return { ...p, years, lastCuotaPaid, lastPaidYear };
+      // 👇 NUEVO: método de pago de la última cuota pagada
+      const lastPaidCuota = lastPaidYear
+        ? cuotas.find((c) => c.year === lastPaidYear && c.paid)
+        : undefined;
+
+      const lastMethodPaid = this.mapPaymentMethodLabel(
+        lastPaidCuota?.method_payment ?? null
+      );
+
+      return {
+        ...p,
+        years,
+        lastCuotaPaid,
+        lastPaidYear,
+        lastMethodPaid, // 👈 esta clave coincide con la columna 'Último método pago'
+      };
     });
 
     this.filteredPartners = [...this.partners];
     this.number = this.partnersService.countPartners(partners);
   }
 
+  private mapPaymentMethodLabel(
+    method?: 'cash' | 'domiciliation' | null
+  ): string {
+    switch (method) {
+      case 'cash':
+        return 'Efectivo';
+      case 'domiciliation':
+        return 'Domiciliación';
+      default:
+        return '-';
+    }
+  }
   getVisibleColumns() {
     return this.colStore.visibleColumnModels(
       this.headerListPartners,

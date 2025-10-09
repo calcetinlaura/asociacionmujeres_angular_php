@@ -1,10 +1,20 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  EventEmitter,
+  Input,
+  Output,
+  inject,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { finalize } from 'rxjs/operators';
 import {
   EnumStatusEvent,
   EventModelFullData,
 } from 'src/app/core/interfaces/event.interface';
 import { TypeList } from 'src/app/core/models/general.model';
+import { EventsService } from 'src/app/core/services/events.services';
 import { ImageZoomOverlayComponent } from 'src/app/shared/components/image-zoom-overlay/image-zoom-overlay.component';
 import { MapComponent } from 'src/app/shared/components/map/map.component';
 import { SocialMediaShareComponent } from 'src/app/shared/components/social-media/social-media-share.component';
@@ -12,13 +22,13 @@ import { TextBackgroundComponent } from 'src/app/shared/components/text/text-bac
 import { TextEditorComponent } from 'src/app/shared/components/text/text-editor/text-editor.component';
 import { TextSubTitleComponent } from 'src/app/shared/components/text/text-subTitle/text-subtitle.component';
 import { TextTitleComponent } from 'src/app/shared/components/text/text-title/text-title.component';
-import { AudienceBadgesPipe } from '../../../../../../shared/pipe/audience-badges.pipe';
+import { AudienceBadgesPipe } from 'src/app/shared/pipe/audience-badges.pipe';
 import {
   DictTranslatePipe,
   DictType,
-} from '../../../../../../shared/pipe/dict-translate.pipe';
-import { FilterTransformCodePipe } from '../../../../../../shared/pipe/filterTransformCode.pipe';
-import { ItemImagePipe } from '../../../../../../shared/pipe/item-img.pipe';
+} from 'src/app/shared/pipe/dict-translate.pipe';
+import { FilterTransformCodePipe } from 'src/app/shared/pipe/filterTransformCode.pipe';
+import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
 
 @Component({
   selector: 'app-modal-show-event',
@@ -40,18 +50,38 @@ import { ItemImagePipe } from '../../../../../../shared/pipe/item-img.pipe';
   styleUrls: ['./modal-show-event.component.css'],
 })
 export class ModalShowEventComponent {
-  @Input() item!: EventModelFullData;
+  private readonly eventsService = inject(EventsService);
+  private readonly destroyRef = inject(DestroyRef);
+
+  @Input() item!: Partial<EventModelFullData> & { id: number };
   @Input() isDashboard = false;
   @Output() openMacroevent = new EventEmitter<number>();
+
+  loading = false;
   typeModal: TypeList = TypeList.Events;
   enumStatusEnum = EnumStatusEvent;
   dictType = DictType;
   showZoom = false;
 
-  onOpenMacroevent(macroeventId: number) {
-    if (macroeventId) {
-      this.openMacroevent.emit(macroeventId);
+  ngOnChanges() {
+    // Si viene parcial, completa datos mostrando spinner
+    if (this.item?.id && (!this.item.title || !this.item.start)) {
+      this.loading = true;
+      this.eventsService
+        .getEventById(this.item.id)
+        .pipe(
+          takeUntilDestroyed(this.destroyRef),
+          finalize(() => (this.loading = false))
+        )
+        .subscribe({
+          next: (ev) => (this.item = ev),
+          error: () => {},
+        });
     }
+  }
+
+  onOpenMacroevent(macroeventId: number) {
+    if (macroeventId) this.openMacroevent.emit(macroeventId);
   }
   openZoom() {
     this.showZoom = true;

@@ -16,6 +16,10 @@
     (openEvent)="openEvent.emit($event)"
     (openProject)="openProject.emit($event)"
     (openInvoice)="openInvoice.emit($event)"
+    (openPdf)="onOpenPdfFromRouter($event)"
+    (viewEvent)="viewEvent.emit($event)"
+    (editEvent)="editEvent.emit($event)"
+    (removeEvent)="removeEvent.emit($event)"
     (confirmDelete)="onConfirmDelete($event)"
     (sendFormBookData)="sendFormBookData.emit($event)"
     (sendFormEventData)="sendFormEventData.emit($event)"
@@ -34,3 +38,10 @@
     (sendFormPodcastData)="sendFormPodcastData.emit($event)"
   />
 </app-ui-modal>
+<app-modal-pdf
+  [(open)]="pdfState.open"
+  [pdfUrl]="pdfState.url"
+  [year]="pdfState.year"
+  [type]="pdfState.type"
+>
+</app-modal-pdf>

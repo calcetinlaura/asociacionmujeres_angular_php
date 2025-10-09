@@ -7,6 +7,11 @@ import { SocialMediaShareComponent } from 'src/app/shared/components/social-medi
 import { TextEditorComponent } from 'src/app/shared/components/text/text-editor/text-editor.component';
 import { TextSubTitleComponent } from 'src/app/shared/components/text/text-subTitle/text-subtitle.component';
 import { TextTitleComponent } from 'src/app/shared/components/text/text-title/text-title.component';
+import {
+  DictTranslatePipe,
+  DictType,
+} from '../../../../../../shared/pipe/dict-translate.pipe';
+import { FilterTransformCodePipe } from '../../../../../../shared/pipe/filterTransformCode.pipe';
 import { ItemImagePipe } from '../../../../../../shared/pipe/item-img.pipe';
 
 @Component({
@@ -20,6 +25,8 @@ import { ItemImagePipe } from '../../../../../../shared/pipe/item-img.pipe';
     SocialMediaShareComponent,
     TitleCasePipe,
     ImageZoomOverlayComponent,
+    DictTranslatePipe,
+    FilterTransformCodePipe,
   ],
   templateUrl: './modal-show-macroevent.component.html',
   styleUrls: ['./modal-show-macroevent.component.css'],
@@ -32,6 +39,7 @@ export class ModalShowMacroeventComponent implements OnInit {
   typeEvent: TypeList = TypeList.Events;
   datesEquals = false;
   showZoom = false;
+  dictType = DictType;
 
   ngOnInit(): void {
     if (!this.item) return;
@@ -41,7 +49,6 @@ export class ModalShowMacroeventComponent implements OnInit {
     }
   }
   onOpenEvent(macroeventId: number) {
-    console.log('DENTRO MACROEVENTO A EVENTO');
     if (macroeventId) {
       this.openEvent.emit(macroeventId);
     }

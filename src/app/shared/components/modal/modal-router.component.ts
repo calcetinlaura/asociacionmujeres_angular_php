@@ -38,6 +38,7 @@ import { ModalShowSubsidyComponent } from 'src/app/modules/dashboard/pages/subsi
 
 // Delete genérico
 import { ModalDeleteComponent } from './pages/modal-delete/modal-delete.component';
+import { ModalMultiEventComponent } from './pages/modal-multievent/modal-multievent.component';
 
 @Component({
   selector: 'app-modal-router',
@@ -78,6 +79,7 @@ import { ModalDeleteComponent } from './pages/modal-delete/modal-delete.componen
     ModalShowSubsidyComponent,
     // delete (genérico)
     ModalDeleteComponent,
+    ModalMultiEventComponent,
   ],
   templateUrl: './modal-router.component.html',
 })
@@ -94,6 +96,14 @@ export class ModalRouterComponent {
   @Output() openEvent = new EventEmitter<number>();
   @Output() openInvoice = new EventEmitter<number>();
   @Output() openProject = new EventEmitter<number>();
+  @Output() openPdf = new EventEmitter<{
+    url: string;
+    year: number | null;
+    type: TypeList;
+  }>();
+  @Output() viewEvent = new EventEmitter<number>();
+  @Output() editEvent = new EventEmitter<number>();
+  @Output() removeEvent = new EventEmitter<number>();
   @Output() confirmDelete = new EventEmitter<{
     type: TypeList;
     id: number;
@@ -164,6 +174,8 @@ export class ModalRouterComponent {
 
   TypeActionModal = TypeActionModal;
   TypeList = TypeList;
+  showInlineDelete = false;
+  deleteCandidate: any = null;
 
   onClose() {
     this.closeRequested.emit();
@@ -182,6 +194,9 @@ export class ModalRouterComponent {
   onOpenProjectFromFather(id: number) {
     if (id) this.openProject.emit(id);
   }
+  onOpenPdf(e: { url: string; year: number | null; type: TypeList }) {
+    this.openPdf.emit(e);
+  }
   // ✅ Único punto para confirmar borrado y cerrar la modal
   onConfirmDelete(idItem: number) {
     if (!idItem) {
@@ -195,5 +210,22 @@ export class ModalRouterComponent {
       item: this.item,
     });
     this.onClose();
+  } // Llamado desde (requestDelete) de MultiEvent
+  onRequestDelete(ev: any) {
+    this.deleteCandidate = ev; // guarda el evento a borrar
+    this.showInlineDelete = true; // abre modal de confirmación
+  }
+
+  // Confirmación desde <app-modal-delete>
+  onConfirmDeleteEvent(id: number) {
+    this.removeEvent.emit(id); // ⬆️ reenvía a padre SÓLO al confirmar
+    this.showInlineDelete = false;
+    this.deleteCandidate = null;
+  }
+
+  // Cancelación/cierre de la confirmación
+  onCancelDelete() {
+    this.showInlineDelete = false;
+    this.deleteCandidate = null;
   }
 }

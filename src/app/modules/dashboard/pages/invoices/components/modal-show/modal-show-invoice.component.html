@@ -4,7 +4,7 @@
     <div
       class="w-full h-full"
       [class.cursor-pointer]="!!item.invoice_pdf"
-      (click)="openPdfModal('invoice')"
+      (click)="openPdf('invoice')"
       (keydown)="onPreviewKeydown($event, 'invoice')"
       tabindex="0"
       role="button"
@@ -41,7 +41,7 @@
     <div
       class="w-full h-full"
       [class.cursor-pointer]="!!item.proof_pdf"
-      (click)="openPdfModal('proof')"
+      (click)="openPdf('proof')"
       (keydown)="onPreviewKeydown($event, 'proof')"
       tabindex="0"
       role="button"
@@ -131,11 +131,3 @@
     <app-text-background [text]="item.subsidy_name"></app-text-background>
   </div>
 </div>
-
-<app-modal-pdf
-  [(open)]="showPdf"
-  [pdfUrl]="selectedPdf ?? ''"
-  [year]="item.date_invoice | date : 'yyyy'"
-  [type]="typeModal"
-  (openChange)="onPdfOpenChange($event)"
-></app-modal-pdf>

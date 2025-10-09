@@ -6,16 +6,34 @@
     [attr.aria-modal]="true"
     class="modal_body"
     [ngClass]="[sizeClass, variantClass, panelClass]"
-    [style.width]="panelClass === 'pdf-panel' ? '96vw' : null"
-    [style.maxWidth]="panelClass === 'pdf-panel' ? '96vw' : null"
-    [style.height]="panelClass === 'pdf-panel' ? '92vh' : null"
-    [style.maxHeight]="panelClass === 'pdf-panel' ? '92vh' : null"
-    [style.padding]="panelClass === 'pdf-panel' ? '0' : null"
+    [style.--modal-w]="
+      isPdfPanel
+        ? '96vw 96vh'
+        : size === 'full'
+        ? '80vw'
+        : size === 'xl'
+        ? '60vw'
+        : size === 'lg'
+        ? '30vw'
+        : null
+    "
+    [style.--modal-max-w]="
+      isPdfPanel
+        ? '96vw 96vh'
+        : size === 'full'
+        ? '80vw'
+        : size === 'xl'
+        ? '60vw'
+        : size === 'lg'
+        ? '30vw'
+        : null
+    "
+    [style.--modal-max-h]="isPdfPanel ? '92vh' : null"
     (click)="$event.stopPropagation()"
   >
     <!-- Header de control -->
     <div
-      class="absolute top:1 md:top-3 left-2 right-2 md:left-6 md:right-6 flex items-center justify-between"
+      class="absolute top-1 md:top-3 left-2 right-2 md:left-6 md:right-6 flex items-center justify-between"
     >
       <!-- ← Back -->
       @if (canGoBack) {
