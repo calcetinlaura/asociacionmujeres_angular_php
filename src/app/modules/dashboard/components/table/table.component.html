@@ -517,39 +517,11 @@
         *matCellDef="let element"
         [attr.data-print]="printIncludeActions ? '1' : '0'"
       >
-        <app-icon-action
-          [icon]="'uil-eye'"
-          [tooltip]="'Ver'"
-          (click)="onOpenModal(typeModal, typeActionModal.Show, element)"
-        ></app-icon-action>
-        <app-icon-action
-          [icon]="'uil-edit'"
-          [tooltip]="'Editar'"
-          (click)="onOpenModal(typeModal, typeActionModal.Edit, element)"
-        ></app-icon-action>
-        @if (typeSection === TypeList.Events) {
-        <app-icon-action
-          [icon]="'uil-copy'"
-          [tooltip]="'Duplicar'"
-          (click)="onOpenModal(typeModal, typeActionModal.Duplicate, element)"
-        ></app-icon-action>
-        } @if (typeSection === TypeList.Events || typeSection ===
-        TypeList.Macroevents || typeSection === TypeList.Books || typeSection
-        === TypeList.Movies || typeSection === TypeList.Recipes || typeSection
-        === TypeList.Piteras || typeSection === TypeList.Podcasts|| typeSection
-        === TypeList.Articles || typeSection === TypeList.Partners ||
-        typeSection === TypeList.Agents ){
-        <app-icon-action
-          [icon]="'uil-image-redo'"
-          [tooltip]="'Descargar imagen'"
-          (click)="downloadImg(element)"
-        ></app-icon-action>
-        }
-        <app-icon-action
-          [icon]="'uil-trash-alt'"
-          [tooltip]="'Eliminar'"
-          (click)="onOpenModal(typeModal, typeActionModal.Delete, element)"
-        ></app-icon-action>
+        <app-action-bar
+          [id]="element.id"
+          [actions]="actionsForSection"
+          (action)="handleAction($event, element)"
+        />
       </td>
       <td
         mat-footer-cell

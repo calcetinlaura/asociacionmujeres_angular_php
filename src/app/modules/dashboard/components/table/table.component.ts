@@ -20,7 +20,11 @@ import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { ColumnModel } from 'src/app/core/interfaces/column.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { SubsidiesService } from 'src/app/core/services/subsidies.services';
-import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
+import {
+  ActionBarComponent,
+  ActionItem,
+  ActionPayload,
+} from 'src/app/shared/components/action-bar/action-bar.component';
 import { AgePipe } from 'src/app/shared/pipe/caculate_age.pipe';
 import { EurosFormatPipe } from 'src/app/shared/pipe/eurosFormat.pipe';
 import { FilterTransformCodePipe } from 'src/app/shared/pipe/filterTransformCode.pipe';
@@ -40,7 +44,6 @@ import { CircleIndicatorComponent } from '../circle-indicator/circle-indicator.c
   imports: [
     CommonModule,
     DatePipe,
-    IconActionComponent,
     MatTableModule,
     MatSortModule,
     MatIconModule,
@@ -59,6 +62,7 @@ import { CircleIndicatorComponent } from '../circle-indicator/circle-indicator.c
     ItemImagePipe,
     DictTranslatePipe,
     AudienceBadgesPipe,
+    ActionBarComponent,
   ],
   providers: [ItemImagePipe],
   selector: 'app-table',
@@ -94,6 +98,36 @@ export class TableComponent {
   searchKeywordFilter = new FormControl();
   TypeList = TypeList;
   dictType = DictType;
+  readonly baseActions: ActionItem[] = [
+    { icon: 'uil-eye', tooltip: 'Ver', type: 'view' },
+    { icon: 'uil-edit', tooltip: 'Editar', type: 'edit' },
+  ];
+
+  readonly actionsEvents: ActionItem[] = [
+    ...this.baseActions,
+    { icon: 'uil-copy', tooltip: 'Duplicar', type: 'duplicate' },
+    {
+      icon: 'uil-image-redo',
+      tooltip: 'Descargar imagen',
+      type: 'download-image',
+    },
+    { icon: 'uil-trash-alt', tooltip: 'Eliminar', type: 'remove' },
+  ];
+
+  readonly actionsWithImage: ActionItem[] = [
+    ...this.baseActions,
+    {
+      icon: 'uil-image-redo',
+      tooltip: 'Descargar imagen',
+      type: 'download-image',
+    },
+    { icon: 'uil-trash-alt', tooltip: 'Eliminar', type: 'remove' },
+  ];
+
+  readonly actionsBasic: ActionItem[] = [
+    ...this.baseActions,
+    { icon: 'uil-trash-alt', tooltip: 'Eliminar', type: 'remove' },
+  ];
 
   @ViewChild(MatSort) sort!: MatSort;
 
@@ -304,6 +338,53 @@ export class TableComponent {
       document.body.appendChild(a);
       a.click();
       a.remove();
+    }
+  }
+  get actionsForSection(): ActionItem[] {
+    switch (this.typeSection) {
+      case TypeList.Events:
+        return this.actionsEvents;
+      case TypeList.Macroevents:
+      case TypeList.Books:
+      case TypeList.Movies:
+      case TypeList.Recipes:
+      case TypeList.Piteras:
+      case TypeList.Podcasts:
+      case TypeList.Articles:
+      case TypeList.Partners:
+      case TypeList.Agents:
+        return this.actionsWithImage;
+      case TypeList.Places:
+      case TypeList.Projects:
+      case TypeList.Invoices:
+      case TypeList.Subsidies:
+        return this.actionsBasic;
+      default:
+        return this.actionsBasic;
+    }
+  }
+
+  handleAction(ev: ActionPayload, element: any) {
+    switch (ev.type) {
+      case 'view':
+        this.onOpenModal(this.typeModal, this.typeActionModal.Show, element);
+        break;
+      case 'edit':
+        this.onOpenModal(this.typeModal, this.typeActionModal.Edit, element);
+        break;
+      case 'duplicate':
+        this.onOpenModal(
+          this.typeModal,
+          this.typeActionModal.Duplicate,
+          element
+        );
+        break;
+      case 'download-image':
+        this.downloadImg(element);
+        break;
+      case 'remove':
+        this.onOpenModal(this.typeModal, this.typeActionModal.Delete, element);
+        break;
     }
   }
 }

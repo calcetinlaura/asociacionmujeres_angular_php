@@ -19,48 +19,11 @@
         }
       </h1>
       <div class="flex gap-x-4 justify-center">
-        <app-icon-action
-          [icon]="'uil-eye'"
-          [tooltip]="'Ver'"
-          (click)="
-            openModal.emit({
-              typeModal: typeList.Subsidies,
-              action: typeActionModal.Show,
-              item: item
-            })
-          "
-        ></app-icon-action>
-        <app-icon-action
-          [icon]="'uil-edit'"
-          [tooltip]="'Editar'"
-          (click)="
-            openModal.emit({
-              typeModal: typeList.Subsidies,
-              action: typeActionModal.Edit,
-              item: item
-            })
-          "
-        ></app-icon-action>
-        <app-icon-action
-          [icon]="'uil-trash-alt'"
-          [tooltip]="'Eliminar'"
-          (click)="
-            openModal.emit({
-              typeModal: typeList.Subsidies,
-              action: typeActionModal.Delete,
-              item: item
-            })
-          "
-        ></app-icon-action>
-        <app-icon-action
-          [icon]="'uil-print'"
-          [tooltip]="'Imprimir tabla'"
-          (click)="printer.print()"
-        ></app-icon-action>
-        <app-icon-action
-          [icon]="'uil-folder-download'"
-          [tooltip]="'Descargar facturas y justificantes'"
-          (click)="this.downloadFilteredPdfs(true)"
+        <app-action-bar
+          [id]="item.id!"
+          [actions]="actionsSubsidy"
+          (action)="handleSubsidyAction($event, item, printer)"
+          class="print:hidden"
         />
       </div>
     </div>

@@ -86,9 +86,8 @@
       @if (isDashboard) {
       <app-action-bar
         [id]="event.id!"
-        (view)="viewById($event)"
-        (edit)="editById($event)"
-        (remove)="removeById($event)"
+        [actions]="actionsForSection"
+        (action)="handleAction($event, event)"
       />
       }
     </div>

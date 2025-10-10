@@ -32,11 +32,15 @@ import { InvoicesService } from 'src/app/core/services/invoices.services';
 import { SubsidiesService } from 'src/app/core/services/subsidies.services';
 
 import { PdfPrintComponent } from 'src/app/modules/dashboard/components/pdf-print/pdf-print.component';
+import {
+  ActionBarComponent,
+  ActionItem,
+  ActionPayload,
+} from 'src/app/shared/components/action-bar/action-bar.component';
 import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
 import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
 import { TextEditorComponent } from 'src/app/shared/components/text/text-editor/text-editor.component';
 import { EurosFormatPipe } from 'src/app/shared/pipe/eurosFormat.pipe';
-import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { ColumnVisibilityStore } from '../../../../components/table/column-visibility.store';
 import { TableComponent } from '../../../../components/table/table.component';
 
@@ -52,6 +56,7 @@ import { TableComponent } from '../../../../components/table/table.component';
     TableComponent,
     ButtonIconComponent,
     PdfPrintComponent,
+    ActionBarComponent,
   ],
   templateUrl: './tab-subsidies.component.html',
   styleUrls: ['./tab-subsidies.component.css'],
@@ -60,7 +65,6 @@ export class ModalShowSubsidyComponent implements OnChanges, OnInit {
   private subsidiesService = inject(SubsidiesService);
   private invoicesService = inject(InvoicesService);
   private destroyRef = inject(DestroyRef);
-  private readonly generalService = inject(GeneralService);
   private readonly colStore = inject(ColumnVisibilityStore);
 
   @ViewChild('pdfArea', { static: false }) pdfArea!: ElementRef<HTMLElement>;
@@ -359,5 +363,50 @@ export class ModalShowSubsidyComponent implements OnChanges, OnInit {
           }
         },
       });
+  }
+  readonly actionsSubsidy = [
+    { icon: 'uil-eye', tooltip: 'Ver', type: 'view' },
+    { icon: 'uil-edit', tooltip: 'Editar', type: 'edit' },
+    { icon: 'uil-trash-alt', tooltip: 'Eliminar', type: 'remove' },
+    { icon: 'uil-print', tooltip: 'Imprimir tabla', type: 'print' },
+    {
+      icon: 'uil-folder-download',
+      tooltip: 'Descargar facturas y justificantes',
+      type: 'download-pdfs',
+    },
+  ] satisfies ReadonlyArray<ActionItem>;
+
+  handleSubsidyAction(ev: ActionPayload, item: any, printer: any) {
+    switch (ev.type) {
+      case 'view':
+        this.openModal.emit({
+          typeModal: this.typeList.Subsidies,
+          action: this.typeActionModal.Show,
+          item,
+        });
+        break;
+      case 'edit':
+        this.openModal.emit({
+          typeModal: this.typeList.Subsidies,
+          action: this.typeActionModal.Edit,
+          item,
+        });
+        break;
+      case 'remove':
+        this.openModal.emit({
+          typeModal: this.typeList.Subsidies,
+          action: this.typeActionModal.Delete,
+          item,
+        });
+        break;
+      case 'print':
+        printer?.print();
+        break;
+      case 'download-pdfs':
+        this.downloadFilteredPdfs(true);
+        break;
+      default:
+        return; // ignora otras acciones si no aplican
+    }
   }
 }

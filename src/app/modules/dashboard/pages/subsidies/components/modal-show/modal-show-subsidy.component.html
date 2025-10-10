@@ -9,7 +9,9 @@
     <div
       class="inline-block border-b border-[#1C1C3A] pb-4 mb-4 md:pb-4 md:mb-8"
     >
-      <app-text-title [text]="item.name + ' ' + item.year" />
+      <app-text-title
+        [text]="(item.name | i18nSelect : nameSubsidy) + ' ' + item.year"
+      />
       <div class="flex gap-x-4 justify-center" data-html2canvas-ignore="true">
         <app-icon-action
           [icon]="'uil-print'"

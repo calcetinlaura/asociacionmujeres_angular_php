@@ -28,7 +28,11 @@ import {
   pickShareDate,
 } from 'src/app/shared/utils/share-url.util';
 import { environments } from 'src/environments/environments';
-import { ActionBarComponent } from '../../../action-bar/action-bar.component';
+import {
+  ActionBarComponent,
+  ActionItem,
+  ActionPayload,
+} from '../../../action-bar/action-bar.component';
 import { ButtonIconComponent } from '../../../buttons/button-icon/button-icon.component';
 import { SocialMediaShareComponent } from '../../../social-media/social-media-share.component';
 import { TextTitleComponent } from '../../../text/text-title/text-title.component';
@@ -149,5 +153,30 @@ export class ModalMultiEventComponent {
   @HostListener('document:keydown.escape', ['$event'])
   handleEscape(_: KeyboardEvent) {
     if (this.isConfirmOpen) this.closeConfirm();
+  }
+
+  readonly actionsForSection: ActionItem[] = [
+    { icon: 'uil-eye', tooltip: 'Ver', type: 'view' },
+    { icon: 'uil-edit', tooltip: 'Editar', type: 'edit' },
+    { icon: 'uil-trash-alt', tooltip: 'Eliminar', type: 'remove' },
+  ];
+
+  handleAction(ev: ActionPayload, element: any) {
+    switch (ev.type) {
+      case 'view':
+        this.view.emit(ev.id);
+        break;
+      case 'edit':
+        this.edit.emit(ev.id);
+        break;
+      case 'remove':
+        this.removeById(ev.id);
+        break; // abre confirmación
+      // si quisieras soportar más:
+      case 'duplicate':
+        /* ... */ break;
+      case 'download-image':
+        /* ... */ break;
+    }
   }
 }

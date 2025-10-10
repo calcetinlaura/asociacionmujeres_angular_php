@@ -15,6 +15,7 @@ import { ProjectModelFullData } from 'src/app/core/interfaces/project.interface'
 import { SubsidyModelFullData } from 'src/app/core/interfaces/subsidy.interface';
 import { TypeList } from 'src/app/core/models/general.model';
 import { InvoicesService } from 'src/app/core/services/invoices.services';
+import { SubsidiesService } from 'src/app/core/services/subsidies.services';
 import { PdfPrintComponent } from 'src/app/modules/dashboard/components/pdf-print/pdf-print.component';
 import { TableInvoicesComponent } from 'src/app/modules/dashboard/components/table/table-invoice/table-invoice.component';
 import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
@@ -40,10 +41,12 @@ import { EurosFormatPipe } from 'src/app/shared/pipe/eurosFormat.pipe';
 })
 export class ModalShowSubsidyComponent implements OnChanges {
   private invoicesService = inject(InvoicesService);
+  private subsidiesService = inject(SubsidiesService);
 
   @Input() item!: SubsidyModelFullData;
   @Output() openProject = new EventEmitter<number>();
   @Output() openInvoice = new EventEmitter<number>();
+  nameSubsidy = this.subsidiesService.subsidiesMap;
 
   @ViewChild('pdfArea', { static: false }) pdfArea!: ElementRef<HTMLElement>;
 
