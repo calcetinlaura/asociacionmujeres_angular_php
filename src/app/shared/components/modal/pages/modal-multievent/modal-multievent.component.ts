@@ -54,7 +54,7 @@ export class ModalMultiEventComponent {
 
   // 🔹 Salidas para que el shell/parent gestione acciones
   @Output() openEvent = new EventEmitter<number>();
-  @Output() addAtDate = new EventEmitter<string>(); // YYYY-MM-DD
+  @Output() addEvent = new EventEmitter<string>(); // YYYY-MM-DD
   @Output() view = new EventEmitter<number>();
   @Output() edit = new EventEmitter<number>();
   @Output() remove = new EventEmitter<number>();
@@ -126,11 +126,11 @@ export class ModalMultiEventComponent {
     if (eventId) this.openEvent.emit(eventId);
   }
 
-  // Acciones dashboard
   onAddClick() {
-    const iso = this.toIso(this.date);
-    if (iso) this.addAtDate.emit(iso);
+    const iso = this.isoFromContext(); // usa date o, si no, el start del primer evento
+    if (iso) this.addEvent.emit(iso);
   }
+
   onViewClick(e: MouseEvent, id: number) {
     e.stopPropagation();
     this.view.emit(id);

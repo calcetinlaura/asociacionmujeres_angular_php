@@ -41,6 +41,7 @@ export class ModalComponent {
   @Output() viewEvent = new EventEmitter<number>();
   @Output() editEvent = new EventEmitter<number>();
   @Output() removeEvent = new EventEmitter<number>();
+  @Output() addEvent = new EventEmitter<string>();
   @Output() back = new EventEmitter<void>();
   @Output() confirmDelete = new EventEmitter<{
     type: TypeList;

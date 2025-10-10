@@ -104,6 +104,7 @@ export class ModalRouterComponent {
   @Output() viewEvent = new EventEmitter<number>();
   @Output() editEvent = new EventEmitter<number>();
   @Output() removeEvent = new EventEmitter<number>();
+  @Output() addEvent = new EventEmitter<string>();
   @Output() confirmDelete = new EventEmitter<{
     type: TypeList;
     id: number;

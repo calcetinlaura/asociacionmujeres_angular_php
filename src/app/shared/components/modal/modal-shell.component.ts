@@ -26,6 +26,7 @@ import { ModalComponent } from 'src/app/shared/components/modal/modal.component'
       (viewEvent)="viewEvent.emit($event)"
       (editEvent)="editEvent.emit($event)"
       (removeEvent)="removeEvent.emit($event)"
+      (addEvent)="addEvent.emit($event)"
       (sendFormEventData)="sendFormEventData.emit($event)"
       (sendFormMacroeventData)="sendFormMacroeventData.emit($event)"
       (sendFormBookData)="sendFormBookData.emit($event)"
@@ -53,6 +54,7 @@ export class ModalShellComponent<T> {
   @Output() viewEvent = new EventEmitter<number>();
   @Output() editEvent = new EventEmitter<number>();
   @Output() removeEvent = new EventEmitter<number>();
+  @Output() addEvent = new EventEmitter<string>();
   @Output() sendFormEventData = new EventEmitter<any>();
   @Output() sendFormMacroeventData = new EventEmitter<any>();
   @Output() sendFormBookData = new EventEmitter<any>();

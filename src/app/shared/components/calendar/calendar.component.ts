@@ -40,7 +40,7 @@ export class CalendarComponent implements OnChanges {
   @Input() deepLinkMultiDate: string | null = null;
 
   /** Salidas hacia el padre (EventsPage) */
-  @Output() createAtDate = new EventEmitter<string>(); // ISO YYYY-MM-DD
+  @Output() createEvent = new EventEmitter<string>(); // ISO YYYY-MM-DD
   @Output() viewEvent = new EventEmitter<number>();
   @Output() editEvent = new EventEmitter<number>();
   @Output() deleteEvent = new EventEmitter<number>();
@@ -252,7 +252,7 @@ export class CalendarComponent implements OnChanges {
     if (this.isDashboard) {
       if (cell.events.length === 0) {
         // Crear directamente en Dashboard
-        this.createAtDate.emit(iso);
+        this.createEvent.emit(iso);
         return;
       }
       // Dashboard: abrir MultiEvents sin tocar URL
@@ -419,5 +419,8 @@ export class CalendarComponent implements OnChanges {
       if (!isNaN(d.getTime())) return d.getFullYear();
     }
     return this.filterYear ?? this.currentYear;
+  }
+  addEventFromMultievent(iso: string) {
+    this.createEvent.emit(iso);
   }
 }
