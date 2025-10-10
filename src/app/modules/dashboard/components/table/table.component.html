@@ -116,6 +116,7 @@
         @case (column.key === 'img') {
         <img
           appImgBroken
+          loading="lazy"
           [src]="element[column.key] | itemImage : typeSection"
           alt=""
           class="cover"

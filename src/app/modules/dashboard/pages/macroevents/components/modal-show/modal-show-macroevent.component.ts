@@ -7,6 +7,8 @@ import { SocialMediaShareComponent } from 'src/app/shared/components/social-medi
 import { TextEditorComponent } from 'src/app/shared/components/text/text-editor/text-editor.component';
 import { TextSubTitleComponent } from 'src/app/shared/components/text/text-subTitle/text-subtitle.component';
 import { TextTitleComponent } from 'src/app/shared/components/text/text-title/text-title.component';
+import { buildShareUrl } from 'src/app/shared/utils/share-url.util';
+import { environments } from 'src/environments/environments';
 import {
   DictTranslatePipe,
   DictType,
@@ -58,5 +60,17 @@ export class ModalShowMacroeventComponent implements OnInit {
   }
   closeZoom() {
     this.showZoom = false;
+  }
+  get shareTitle(): string {
+    return this.item?.title ?? 'Evento';
+  }
+
+  get shareUrl(): string {
+    return this.item?.id
+      ? buildShareUrl({
+          base: environments.publicBaseUrl,
+          path: `/macroevents/${this.item.id}`,
+        })
+      : '';
   }
 }

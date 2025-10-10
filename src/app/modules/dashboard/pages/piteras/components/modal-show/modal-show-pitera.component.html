@@ -17,6 +17,7 @@
     <div class="flex-1">
       <img
         appImgBroken
+        loading="lazy"
         [src]="(item.img ? item.img : '') | itemImage : typeModal"
         [alt]="item.title"
         class="imagen w-full"

@@ -8,7 +8,8 @@ import {
   ViewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { tap } from 'rxjs';
+import { ActivatedRoute } from '@angular/router';
+import { take, tap } from 'rxjs';
 import { RecipesFacade } from 'src/app/application/recipes.facade';
 import {
   categoryFilterRecipes,
@@ -38,6 +39,8 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
 })
 export class RecipesPageLandingComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
+  private readonly route = inject(ActivatedRoute);
+
   readonly recipesFacade = inject(RecipesFacade);
   private readonly recipesService = inject(RecipesService);
   private readonly generalService = inject(GeneralService);
@@ -57,14 +60,18 @@ export class RecipesPageLandingComponent implements OnInit {
   printArea!: ElementRef<HTMLElement>;
 
   ngOnInit(): void {
-    this.filters = [
-      // { code: 'NOVEDADES', name: 'Novedades' },
-      { code: '', name: 'Todas' },
-      ...categoryFilterRecipes,
-    ];
+    // 1) Filtros: "Todas" + categorías
+    this.filters = [{ code: '', name: 'Todas' }, ...categoryFilterRecipes];
 
-    this.filterSelected('');
+    // 2) Si vienes por /recipes/:id -> deduce categoría; si no, carga por defecto
+    const initialId = this.route.snapshot.paramMap.get('id');
+    if (initialId) {
+      this.handleDeepLinkById(Number(initialId));
+    } else {
+      this.filterSelected('');
+    }
 
+    // 3) Pintar cuando cambie el listado filtrado
     this.recipesFacade.filteredRecipes$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
@@ -73,10 +80,36 @@ export class RecipesPageLandingComponent implements OnInit {
       .subscribe();
   }
 
+  private handleDeepLinkById(id: number): void {
+    if (!Number.isFinite(id)) {
+      this.filterSelected('');
+      return;
+    }
+
+    // Carga la receta -> lee category (code) -> aplica filtro por categoría
+    // (usamos el service directo; si tu facade tiene loadRecipeById/selectedRecipe$, puedes replicar ese patrón)
+    this.recipesService
+      .getRecipeById(id)
+      .pipe(takeUntilDestroyed(this.destroyRef), take(1))
+      .subscribe({
+        next: (recipe) => {
+          const catCode = this.pickCategoryFilterCode(recipe);
+          if (catCode) {
+            this.selectedFilter = catCode; // marca botón
+            this.recipesFacade.loadRecipesByFilter(catCode); // filtra por categoría
+          } else {
+            this.filterSelected(''); // fallback: Todas
+          }
+        },
+        error: () => this.filterSelected(''),
+      });
+  }
+
+  // === Filtros ===
   filterSelected(filter: string): void {
     this.selectedFilter = filter;
-    this.generalService.clearSearchInput(this.inputSearchComponent);
-    // dispara la carga correspondiente en la fachada
+    this.generalService.clearSearchInput?.(this.inputSearchComponent);
+
     if (filter === '') {
       this.recipesFacade.loadAllRecipes();
     } else {
@@ -94,5 +127,12 @@ export class RecipesPageLandingComponent implements OnInit {
     this.filteredRecipes = [...this.recipes];
     this.number = this.recipesService.countRecipes(recipes);
     this.areThereResults = this.recipesService.hasResults(recipes);
+  }
+
+  // === Helpers ===
+  // Si tu BBDD guarda el code de categoría en `category`, basta con devolverlo.
+  private pickCategoryFilterCode(r: RecipeModel): string | null {
+    const code = (r as any)?.category; // p.ej. "POSTRES", "ENTRANTES", etc.
+    return code ? String(code) : null;
   }
 }

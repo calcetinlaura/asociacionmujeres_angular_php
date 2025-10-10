@@ -19,7 +19,7 @@
 
 <!-- Lista -->
 <div class="flex flex-col gap-y-4">
-  @for (event of events; track event.id ?? $index) {
+  @for (event of events; track trackByEventId($index, event)) {
   <div
     class="group flex w-full gap-4 cursor-pointer rounded-xl p-2 border border-transparent transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-md hover:border-lilaOscuro/15 hover:bg-lilaClaro/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lilaOscuro/40"
     (click)="onOpenEvent(event.id!)"
@@ -32,6 +32,8 @@
     >
       <img
         appImgBroken
+        loading="lazy"
+        decoding="async"
         [src]="(event.img ? event.img : '') | itemImage : typeModal"
         [alt]="event.title"
         class="object-cover w-full h-auto transition-transform duration-300 ease-out group-hover:scale-[1.03]"
@@ -48,12 +50,12 @@
 
       @if (event.start) {
       <p class="text-[12px] text-gray-600 mt-1">
-        {{ event.start | date : "EEEE dd MMMM" : "" : "es-ES" | titlecase }}
+        {{ event.start | date : "EEEE dd MMMM" : "" : appLocale | titlecase }}
         | {{ event.time_start?.slice(0, 5) }}h
       </p>
 
       <div class="flex gap-x-2 flex-wrap justify-start my-2">
-        @for (category of event.category; track category) {
+        @for (category of (event.category || []); track category) {
         <p class="categories">
           {{ category | dictTranslate : dictType.Categories }}
         </p>
@@ -82,57 +84,26 @@
 
       <!-- Acciones dashboard -->
       @if (isDashboard) {
-      <div class="mt-3 flex gap-2">
-        <app-icon-action
-          [icon]="'uil-eye'"
-          [tooltip]="'Ver'"
-          (click)="onViewClick($event, event.id!)"
-        />
-        <app-icon-action
-          [icon]="'uil-edit'"
-          [tooltip]="'Editar'"
-          (click)="onEditClick($event, event.id!)"
-        />
-        <app-icon-action
-          [icon]="'uil-trash-alt'"
-          [tooltip]="'Eliminar'"
-          (click)="onRemoveClick($event, event.id!)"
-        />
-      </div>
+      <app-action-bar
+        [id]="event.id!"
+        (view)="viewById($event)"
+        (edit)="editById($event)"
+        (remove)="removeById($event)"
+      />
       }
     </div>
   </div>
   }
 </div>
 @if (isConfirmOpen) {
-<div
-  id="confirm-overlay"
-  class="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4"
-  (click)="cancelRemove()"
->
-  <div
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="confirm-title"
-    aria-describedby="confirm-desc"
-    class="w-full max-w-md rounded-2xl bg-white shadow-xl p-6"
-    (click)="$event.stopPropagation()"
-    tabindex="-1"
-  >
-    <h3
-      id="confirm-title"
-      class="text-base font-semibold text-gray-900 text-center"
-    >
-      ¿Eliminar evento?
-    </h3>
-    <p id="confirm-desc" class="mt-2 text-sm text-gray-600 text-center">
-      Esta acción no se puede deshacer. Confirma si quieres eliminarlo.
-    </p>
-
-    <div class="mt-6 flex items-center justify-center gap-3">
-      <button (click)="cancelRemove()" class="button-cancel">Cancelar</button>
-      <button (click)="confirmRemove()" class="button-delete">Aceptar</button>
-    </div>
-  </div>
-</div>
+<app-confirm-dialog
+  [title]="'¿Eliminar evento?'"
+  [message]="
+    'Esta acción no se puede deshacer. Confirma si quieres eliminarlo.'
+  "
+  [closeOnBackdrop]="true"
+  [zIndex]="1200"
+  (confirm)="confirmRemove()"
+  (cancel)="cancelRemove()"
+/>
 }

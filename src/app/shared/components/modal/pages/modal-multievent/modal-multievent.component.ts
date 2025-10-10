@@ -1,9 +1,12 @@
 import { CommonModule } from '@angular/common';
 import {
+  ChangeDetectionStrategy,
   Component,
   EventEmitter,
   HostListener,
+  inject,
   Input,
+  LOCALE_ID,
   Output,
 } from '@angular/core';
 import { EventModelFullData } from 'src/app/core/interfaces/event.interface';
@@ -18,11 +21,18 @@ import {
 import { FilterTransformCodePipe } from 'src/app/shared/pipe/filterTransformCode.pipe';
 import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
 
+import {
+  buildShareTitle,
+  buildShareUrl,
+  localISODate,
+  pickShareDate,
+} from 'src/app/shared/utils/share-url.util';
 import { environments } from 'src/environments/environments';
+import { ActionBarComponent } from '../../../action-bar/action-bar.component';
 import { ButtonIconComponent } from '../../../buttons/button-icon/button-icon.component';
-import { IconActionComponent } from '../../../buttons/icon-action/icon-action.component';
 import { SocialMediaShareComponent } from '../../../social-media/social-media-share.component';
 import { TextTitleComponent } from '../../../text/text-title/text-title.component';
+import { ConfirmDialogComponent } from '../modal-confirm-dialog/modal-confirm-dialog';
 
 @Component({
   selector: 'app-modal-multievent',
@@ -38,113 +48,85 @@ import { TextTitleComponent } from '../../../text/text-title/text-title.componen
     ButtonIconComponent,
     SocialMediaShareComponent,
     TextTitleComponent,
-    IconActionComponent,
+    ConfirmDialogComponent,
+    ActionBarComponent,
   ],
   templateUrl: './modal-multievent.component.html',
   styleUrls: ['./modal-multievent.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ModalMultiEventComponent {
-  // 🔹 Entradas mínimas
+  private readonly locale = inject(LOCALE_ID);
+
   @Input() events: EventModelFullData[] = [];
   @Input() date: Date | null = null;
   @Input() isDashboard = false;
+  //Evita errores si te pasan events sin /:
+  @Input({ transform: (v: string) => (v?.startsWith('/') ? v : '/' + v) })
+  sharePath = '/events';
 
-  // 👉 Ruta base pública de la página de eventos (cámbiala si la tuya es otra)
-  @Input() sharePath = '/events';
-
-  // 🔹 Salidas para que el shell/parent gestione acciones
   @Output() openEvent = new EventEmitter<number>();
   @Output() addEvent = new EventEmitter<string>(); // YYYY-MM-DD
   @Output() view = new EventEmitter<number>();
   @Output() edit = new EventEmitter<number>();
   @Output() remove = new EventEmitter<number>();
 
-  // helpers
-  typeModal: TypeList = TypeList.Events;
-  dictType = DictType;
+  readonly typeModal: TypeList = TypeList.Events;
+  readonly dictType = DictType;
 
   // 🔸 Estado para confirmación
   isConfirmOpen = false;
   idToRemove: number | null = null;
+  shareTitle = '';
+  shareUrl = '';
+  readonly appLocale = this.locale;
 
-  // 👉 Título para compartir
-  get shareTitle(): string {
-    const displayDate =
-      this.date ??
-      (this.events?.length && this.events[0]?.start
-        ? new Date(this.events[0].start)
-        : null);
-
-    if (!displayDate) return 'Programación de eventos';
-
-    const formatted = displayDate.toLocaleDateString('es-ES', {
-      weekday: 'long',
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric',
-    });
-    return `Programación de eventos - ${formatted}`;
+  trackByEventId = (_: number, e: { id?: number | null }) => e.id ?? _;
+  ngOnChanges() {
+    const d = pickShareDate(this.date, this.events);
+    this.shareTitle = buildShareTitle(
+      'Programación de eventos',
+      d,
+      this.appLocale
+    );
+    this.shareUrl = d
+      ? buildShareUrl({
+          base: environments.publicBaseUrl,
+          path: this.sharePath,
+          params: { multiDate: localISODate(d) },
+        })
+      : '';
   }
 
-  // 👉 URL para compartir: SIEMPRE a la página de eventos con ?multiDate=YYYY-MM-DD
+  // URL para compartir: SIEMPRE a la página de eventos con ?multiDate=YYYY-MM-DD
   getShareUrl(): string {
-    const iso = this.isoFromContext();
-    if (!iso) return '';
-
-    // Usa SIEMPRE el dominio del environment, no el origin de la ventana
-    const origin = environments.publicBaseUrl; // p.ej. https://asociaciondemujerescallosadesegura.com
-    const base = origin.endsWith('/') ? origin.slice(0, -1) : origin;
-    const path = this.sharePath.startsWith('/')
-      ? this.sharePath
-      : `/${this.sharePath}`;
-
-    return `${base}${path}?multiDate=${iso}`;
-  }
-
-  // 👉 Enlace directo de WhatsApp (si además quieres botón propio)
-  getWhatsAppHref(): string {
-    const text = `${this.shareTitle} ${this.getShareUrl()}`;
-    return `https://wa.me/?text=${encodeURIComponent(text)}`;
-  }
-
-  // === privados ===
-  private toIso(d: Date | null): string | null {
-    return d ? d.toLocaleDateString('sv-SE') : null;
-  }
-
-  /** Toma el ISO del día: preferimos @Input date; si no, del primer evento. */
-  private isoFromContext(): string | null {
-    const byDate = this.toIso(this.date);
-    if (byDate) return byDate;
-
-    const fromEvent = this.events?.[0]?.start; // suele venir ya como YYYY-MM-DD
-    return fromEvent ?? null;
+    const d = pickShareDate(this.date, this.events);
+    return d
+      ? buildShareUrl({
+          base: environments.publicBaseUrl,
+          path: this.sharePath || '/events',
+          params: { multiDate: localISODate(d) },
+        })
+      : '';
   }
 
   // Navegar a Event (el router/shell abre el caso de evento)
   onOpenEvent(eventId: number) {
     if (eventId) this.openEvent.emit(eventId);
   }
-
-  onAddClick() {
-    const iso = this.isoFromContext(); // usa date o, si no, el start del primer evento
-    if (iso) this.addEvent.emit(iso);
-  }
-
-  onViewClick(e: MouseEvent, id: number) {
-    e.stopPropagation();
+  viewById(id: number) {
     this.view.emit(id);
   }
-  onEditClick(e: MouseEvent, id: number) {
-    e.stopPropagation();
+  editById(id: number) {
     this.edit.emit(id);
   }
-
-  // ✅ Confirmación antes de eliminar
-  onRemoveClick(e: MouseEvent, id: number) {
-    e.stopPropagation();
+  removeById(id: number) {
     this.isConfirmOpen = true;
     this.idToRemove = id;
+  }
+  onAddClick(): void {
+    const d = pickShareDate(this.date, this.events);
+    if (d) this.addEvent.emit(localISODate(d));
   }
 
   confirmRemove() {

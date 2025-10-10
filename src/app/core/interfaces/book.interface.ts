@@ -11,7 +11,7 @@ export interface BookModel {
 }
 
 export type GenderBooks =
-  | 'ENSAY0'
+  | 'ENSAYO'
   | 'NOVEDADES'
   | 'MASCULINIDADES'
   | 'MATERNIDAD'

@@ -9,8 +9,13 @@ import { TextSubTitleComponent } from 'src/app/shared/components/text/text-subTi
 import { TextTitleComponent } from 'src/app/shared/components/text/text-title/text-title.component';
 import { ItemImagePipe } from '../../../../../../shared/pipe/item-img.pipe';
 
+// 👇 añade estos imports
+import { buildShareUrl } from 'src/app/shared/utils/share-url.util';
+import { environments } from 'src/environments/environments';
+
 @Component({
   selector: 'app-modal-show-book',
+  standalone: true,
   imports: [
     TextBackgroundComponent,
     TextTitleComponent,
@@ -25,12 +30,32 @@ import { ItemImagePipe } from '../../../../../../shared/pipe/item-img.pipe';
 export class ModalShowBookComponent {
   @Input() item!: BookModel;
   @Input() isDashboard = false;
+
   typeModal: TypeList = TypeList.Books;
   showZoom = false;
+
   openZoom() {
     this.showZoom = true;
   }
   closeZoom() {
     this.showZoom = false;
+  }
+
+  //  Título para compartir (puedes personalizarlo)
+  get shareTitle(): string {
+    // Ejemplos: solo título / "Título — Autor"
+    const base = this.item?.title ?? 'Libro';
+    const full = this.item?.author ? `${base} — ${this.item.author}` : base;
+    return full;
+  }
+
+  //  URL compartible: /books/:id#book-:id + (opcional) parámetro de filtro
+  get shareUrl(): string {
+    return this.item?.id
+      ? buildShareUrl({
+          base: environments.publicBaseUrl,
+          path: `/books/${this.item.id}`,
+        })
+      : '';
   }
 }

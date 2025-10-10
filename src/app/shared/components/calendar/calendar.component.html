@@ -85,6 +85,7 @@
             <img
               class="object-cover w-full h-full cursor-pointer"
               appImgBroken
+              loading="lazy"
               [src]="(event.img ? event.img : '') | itemImage : typeList.Events"
               [alt]="event.title || ''"
             />

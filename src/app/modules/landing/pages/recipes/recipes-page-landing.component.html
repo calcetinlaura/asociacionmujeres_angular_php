@@ -1,5 +1,10 @@
 <div class="flex flex-col mx-3 md:mx-8 mt-4">
-  <app-filters [filters]="filters" (filterClicked)="filterSelected($event)" />
+  <app-filters
+    [filters]="filters"
+    [loadFirstFilter]="selectedFilter"
+    [loadFilters]="false"
+    (filterClicked)="filterSelected($event)"
+  />
   <app-input-search (onDebounce)="applyFilterWord($event)" class="my-8" />
   @if (recipesFacade.isLoading$ | async) {
   <app-spinner-loading />

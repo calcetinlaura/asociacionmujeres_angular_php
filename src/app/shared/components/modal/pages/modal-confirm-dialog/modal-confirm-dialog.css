@@ -1,0 +1,18 @@
+button {
+  padding: 10px 15px;
+  width: 150px;
+  border-radius: 10px;
+  gap: 30px;
+  font-size: 1rem;
+}
+.button-cancel {
+  background-color: white;
+  border: 1px solid gray;
+  margin-right: 20px;
+  color: gray;
+}
+.button-delete {
+  background-color: #f24848 !important;
+  color: white !important;
+  border: none;
+}

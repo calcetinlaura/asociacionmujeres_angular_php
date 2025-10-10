@@ -2,6 +2,7 @@
   <div class="cover">
     <img
       appImgBroken
+      loading="lazy"
       [src]="item.img | itemImage : type"
       alt=""
       class="cover_image"
@@ -24,7 +25,7 @@
       {{ item.title }}
     </div>
     <div class="flex gap-x-2 flex-wrap justify-center">
-      @for (category of item.category; track category) {
+      @for (category of (item.category || []); track category) {
       <p class="categories">
         {{ category | dictTranslate : dictType.Categories }}
       </p>

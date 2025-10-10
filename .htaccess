@@ -6,26 +6,30 @@
   # 0) Primero intenta index.html (Angular); si no, index.php
   DirectoryIndex index.html index.php
 
-  # A) (Opcional/Compat) /share/events/:id -> share-event.php
-  RewriteRule ^share/events/([0-9]+)/?$ share-event.php?id=$1 [L,QSA]
+  # A) Compat opcional: /share/{type}/{id} -> share.php
+  RewriteRule ^share/(events|books|movies|recipes|macroevents)/([0-9]+)/?$ share.php?type=$1&id=$2 [L,QSA]
 
-  # B) BOTS de previsualización: /events/:id -> share-event.php (metatags OG)
-  # ⚠️ OJO: sin Googlebot ni Applebot para no bloquear SEO con noindex.
+  # B) BOTS de previsualización (NO Google/Apple) SOLO GET/HEAD
+  RewriteCond %{REQUEST_METHOD} ^(GET|HEAD)$
   RewriteCond %{HTTP_USER_AGENT} (facebookexternalhit|Facebot|WhatsApp|Twitterbot|Slackbot|TelegramBot|Discordbot|LinkedInBot|Pinterest|SkypeUriPreview) [NC]
-  RewriteRule ^events/([0-9]+)/?$ share-event.php?id=$1 [L,QSA]
+  RewriteRule ^events/([0-9]+)/?$        share.php?type=events&id=$1        [L,QSA]
+  RewriteRule ^books/([0-9]+)/?$         share.php?type=books&id=$1         [L,QSA]
+  RewriteRule ^movies/([0-9]+)/?$        share.php?type=movies&id=$1        [L,QSA]
+  RewriteRule ^recipes/([0-9]+)/?$       share.php?type=recipes&id=$1       [L,QSA]
+  RewriteRule ^macroevents/([0-9]+)/?$   share.php?type=macroevents&id=$1   [L,QSA]
 
   # 1) Si piden un archivo o carpeta real, entrégalo tal cual
   RewriteCond %{REQUEST_FILENAME} -f [OR]
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
 
-  # 2) No tocar peticiones a PHP ni a tu backend
+  # 2) No tocar peticiones a PHP ni a backend/uploads/config
   RewriteRule ^(.+\.php)$ - [L]
   RewriteCond %{REQUEST_URI} ^/backend/ [OR]
   RewriteCond %{REQUEST_URI} ^/uploads/ [OR]
   RewriteCond %{REQUEST_URI} ^/config/
   RewriteRule ^ - [L]
 
-  # 3) Todo lo demás -> index.html (para que Angular pinte la ruta)
+  # 3) Todo lo demás -> index.html (routing Angular)
   RewriteRule . /index.html [L]
 </IfModule>

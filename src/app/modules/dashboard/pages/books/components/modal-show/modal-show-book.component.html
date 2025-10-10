@@ -6,12 +6,8 @@
       <app-text-title [text]="item.title" />
       <app-text-subtitle [text]="item.author" />
       @if(!isDashboard){
-      <app-social-media-share
-        [url]="
-          'https://asociaciondemujerescallosadesegura.com/books/' + item.id
-        "
-        [title]="item.title"
-      ></app-social-media-share
+      <app-social-media-share [url]="shareUrl" [title]="shareTitle">
+        ></app-social-media-share
       >}
     </div>
   </div>
@@ -19,6 +15,7 @@
     <div class="flex-1">
       <img
         appImgBroken
+        loading="lazy"
         [src]="(item.img ? item.img : '') | itemImage : typeModal"
         [alt]="item.title"
         class="imagen"

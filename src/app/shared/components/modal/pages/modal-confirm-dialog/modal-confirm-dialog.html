@@ -1,0 +1,42 @@
+<div
+  class="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4"
+  [style.zIndex]="zIndex"
+  (click)="closeOnBackdrop ? cancel.emit() : null"
+  role="presentation"
+>
+  <div
+    #panel
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-labelledby]="titleId"
+    [attr.aria-describedby]="descId"
+    class="w-full max-w-md rounded-2xl bg-white shadow-xl p-6 outline-none"
+    (click)="$event.stopPropagation()"
+    tabindex="-1"
+  >
+    <h3
+      [id]="titleId"
+      class="text-base font-semibold text-gray-900 text-center"
+    >
+      {{ title }}
+    </h3>
+
+    <p [id]="descId" class="mt-2 text-sm text-gray-600 text-center">
+      {{ message }}
+    </p>
+
+    <div class="mt-6 flex items-center justify-center gap-3">
+      <button
+        #cancelBtn
+        (click)="cancel.emit()"
+        class="button-cancel"
+        autofocus
+      >
+        {{ cancelText }}
+      </button>
+      <button (click)="confirm.emit()" class="button-delete">
+        {{ confirmText }}
+      </button>
+    </div>
+  </div>
+</div>

@@ -8,7 +8,8 @@ import {
   ViewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { tap } from 'rxjs';
+import { ActivatedRoute } from '@angular/router';
+import { take, tap } from 'rxjs';
 import { MoviesFacade } from 'src/app/application/movies.facade';
 import {
   genderFilterMovies,
@@ -38,6 +39,8 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
 })
 export class MoviesPageLandingComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
+  private readonly route = inject(ActivatedRoute);
+
   readonly moviesFacade = inject(MoviesFacade);
   private readonly moviesService = inject(MoviesService);
   private readonly generalService = inject(GeneralService);
@@ -57,10 +60,18 @@ export class MoviesPageLandingComponent implements OnInit {
   printArea!: ElementRef<HTMLElement>;
 
   ngOnInit(): void {
+    // 1) Filtros: "Todos" + géneros
     this.filters = [{ code: '', name: 'Todos' }, ...genderFilterMovies];
 
-    this.filterSelected('');
+    // 2) Si vienes por /movies/:id -> deduce género; si no hay id: por defecto
+    const initialId = this.route.snapshot.paramMap.get('id');
+    if (initialId) {
+      this.handleDeepLinkById(Number(initialId));
+    } else {
+      this.filterSelected('');
+    }
 
+    // 3) Pintar cuando cambie el listado filtrado
     this.moviesFacade.filteredMovies$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
@@ -69,9 +80,36 @@ export class MoviesPageLandingComponent implements OnInit {
       .subscribe();
   }
 
+  private handleDeepLinkById(id: number): void {
+    if (!Number.isFinite(id)) {
+      this.filterSelected('');
+      return;
+    }
+
+    // Carga la película -> lee gender (code) -> aplica filtro por género
+    // (usamos el service directo para no requerir cambios en la facade)
+    this.moviesService
+      .getMovieById(id)
+      .pipe(takeUntilDestroyed(this.destroyRef), take(1))
+      .subscribe({
+        next: (movie) => {
+          const genreCode = this.pickGenreFilterCode(movie);
+          if (genreCode) {
+            this.selectedFilter = genreCode; // marca el botón
+            this.moviesFacade.loadMoviesByFilter(genreCode); // filtra por género
+          } else {
+            this.filterSelected(''); // fallback: Todos
+          }
+        },
+        error: () => this.filterSelected(''),
+      });
+  }
+
+  // === Filtros ===
   filterSelected(filter: string): void {
     this.selectedFilter = filter;
-    this.generalService.clearSearchInput(this.inputSearchComponent);
+    this.generalService.clearSearchInput?.(this.inputSearchComponent);
+
     if (filter === '') {
       this.moviesFacade.loadAllMovies();
     } else {
@@ -89,5 +127,11 @@ export class MoviesPageLandingComponent implements OnInit {
     this.filteredMovies = [...this.movies];
     this.number = this.moviesService.countMovies(movies);
     this.areThereResults = this.moviesService.hasResults(movies);
+  }
+
+  // === Helpers ===
+  private pickGenreFilterCode(m: MovieModel): string | null {
+    const code = (m as any)?.gender; // en tu BBDD siempre es el code
+    return code ? String(code) : null;
   }
 }

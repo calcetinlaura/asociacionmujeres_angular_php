@@ -29,6 +29,8 @@ import {
 } from 'src/app/shared/pipe/dict-translate.pipe';
 import { FilterTransformCodePipe } from 'src/app/shared/pipe/filterTransformCode.pipe';
 import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
+import { buildShareUrl } from 'src/app/shared/utils/share-url.util';
+import { environments } from 'src/environments/environments';
 
 @Component({
   selector: 'app-modal-show-event',
@@ -88,5 +90,18 @@ export class ModalShowEventComponent {
   }
   closeZoom() {
     this.showZoom = false;
+  }
+
+  get shareTitle(): string {
+    return this.item?.title ?? 'Evento';
+  }
+
+  get shareUrl(): string {
+    return this.item?.id
+      ? buildShareUrl({
+          base: environments.publicBaseUrl,
+          path: `/events/${this.item.id}`,
+        })
+      : '';
   }
 }
