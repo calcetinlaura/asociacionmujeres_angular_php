@@ -1,35 +1,38 @@
-# --- Angular SPA + PHP ---
+# --- Angular SPA + PHP (sin bucles) ---
+Options -MultiViews
+
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
 
-  # 0) Primero intenta index.html (Angular); si no, index.php
-  DirectoryIndex index.html index.php
+  # 0) Sirve la home sin inventar redirecciones
+  RewriteRule ^$ index.html [L]
 
-  # A) Compat opcional: /share/{type}/{id} -> share.php
-  RewriteRule ^share/(events|books|movies|recipes|macroevents)/([0-9]+)/?$ share.php?type=$1&id=$2 [L,QSA]
+  # 0bis) No tocar explícitamente index.html ni share.php (evita bucles)
+  RewriteRule ^index\.html$ - [L]
+  RewriteRule ^share\.php$ - [L]
 
-  # B) BOTS de previsualización (NO Google/Apple) SOLO GET/HEAD
+  # A) Compat: /share/{type}/{id} -> share.php (añade aquí tus tipos)
+  RewriteRule ^share/(events|books|movies|recipes|macroevents|piteras|podcasts)/([0-9]+)/?$ share.php?type=$1&id=$2 [L,QSA]
+
+  # B) BOTS de previsualización (GET/HEAD) -> share.php
   RewriteCond %{REQUEST_METHOD} ^(GET|HEAD)$
   RewriteCond %{HTTP_USER_AGENT} (facebookexternalhit|Facebot|WhatsApp|Twitterbot|Slackbot|TelegramBot|Discordbot|LinkedInBot|Pinterest|SkypeUriPreview) [NC]
-  RewriteRule ^events/([0-9]+)/?$        share.php?type=events&id=$1        [L,QSA]
-  RewriteRule ^books/([0-9]+)/?$         share.php?type=books&id=$1         [L,QSA]
-  RewriteRule ^movies/([0-9]+)/?$        share.php?type=movies&id=$1        [L,QSA]
-  RewriteRule ^recipes/([0-9]+)/?$       share.php?type=recipes&id=$1       [L,QSA]
-  RewriteRule ^macroevents/([0-9]+)/?$   share.php?type=macroevents&id=$1   [L,QSA]
+  RewriteRule ^(events|books|movies|recipes|macroevents|piteras|podcasts)/([0-9]+)(?:/.*)?$ share.php?type=$1&id=$2 [L,QSA]
 
-  # 1) Si piden un archivo o carpeta real, entrégalo tal cual
+  # 1) Deja pasar archivos reales y rutas estáticas (ajusta si usas otras)
   RewriteCond %{REQUEST_FILENAME} -f [OR]
-  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteCond %{REQUEST_URI} ^/(assets|backend|uploads|config|api)(/|$)
   RewriteRule ^ - [L]
 
-  # 2) No tocar peticiones a PHP ni a backend/uploads/config
+  # 2) No tocar peticiones directas a PHP
   RewriteRule ^(.+\.php)$ - [L]
-  RewriteCond %{REQUEST_URI} ^/backend/ [OR]
-  RewriteCond %{REQUEST_URI} ^/uploads/ [OR]
-  RewriteCond %{REQUEST_URI} ^/config/
-  RewriteRule ^ - [L]
 
-  # 3) Todo lo demás -> index.html (routing Angular)
-  RewriteRule . /index.html [L]
+  # 3) SPA para humanos en secciones conocidas (interno, sin redirect)
+  RewriteCond %{REQUEST_METHOD} ^(GET|HEAD)$
+  RewriteCond %{HTTP_USER_AGENT} !(facebookexternalhit|Facebot|WhatsApp|Twitterbot|Slackbot|TelegramBot|Discordbot|LinkedInBot|Pinterest|SkypeUriPreview) [NC]
+  RewriteRule ^(events|books|movies|recipes|macroevents|piteras|podcasts)(/.*)?$ index.html [L]
+
+  # 4) Fallback general -> index.html (interno, sin redirect)
+  RewriteRule . index.html [L]
 </IfModule>

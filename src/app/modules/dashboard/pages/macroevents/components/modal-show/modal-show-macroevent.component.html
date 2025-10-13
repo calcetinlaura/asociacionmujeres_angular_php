@@ -1,132 +1,155 @@
-<div>
-  <div class="text-center">
-    <div
-      class="inline-block border-b border-[#1C1C3A] pb-4 mb-4 md:pb-4 md:mb-8"
-    >
-      <app-text-title [text]="item!.title" />
-      <div class="flex flex-col sm:flex-row gap-4 my-4">
-        @if (datesEquals) { @if (item!.start) {
-        <app-text-subtitle
-          [text]="
-            item!.start | date : 'EEEE dd MMMM' : '' : 'es-ES' | titlecase
-          "
-        ></app-text-subtitle>
-        } } @else { @if (item!.start && item!.end) {
-        <app-text-subtitle
-          [text]="
-            (item!.start | date : 'EEEE dd MMM ' : '' : 'es-ES' | titlecase) +
-            ' - ' +
-            (item!.end | date : 'EEEE dd MMM yyyy ' : '' : 'es-ES' | titlecase)
-          "
-        ></app-text-subtitle>
-        } }
-      </div>
-      @if(!isDashboard){
-      <app-social-media-share [url]="shareUrl" [title]="shareTitle" />}
-    </div>
+<!-- modal-show-macroevent.component.html -->
+<div class="p-4">
+  <!-- SKELETON mientras carga o si aún no hay item -->
+  @if (!item || item.loading) {
+  <div class="animate-pulse space-y-4">
+    <div class="h-6 w-2/3 bg-gray-200 rounded"></div>
+    <div class="h-4 w-1/2 bg-gray-200 rounded"></div>
+    <div class="h-48 w-full bg-gray-200 rounded"></div>
+    <div class="h-4 w-full bg-gray-200 rounded"></div>
+    <div class="h-4 w-5/6 bg-gray-200 rounded"></div>
   </div>
-  <div class="flex flex-col-reverse gap-y-8 lg:flex-row lg:gap-x-24 lg:gap-y-0">
-    <div class="lg:w-2/5">
-      <img
-        appImgBroken
-        loading="lazy"
-        [src]="(item!.img ? item!.img : '') | itemImage : typeModal"
-        [alt]="item!.title"
-        class="imagen"
-        (click)="openZoom()"
-      />
-    </div>
-    <div class="flex flex-col justify-between lg:w-3/5">
-      <div>
-        <div>
-          @if (item!.description) {
-          <app-text-editor [text]="item!.description"></app-text-editor>
-          }
+  } @else {
+  <div>
+    <div class="text-center">
+      <div
+        class="inline-block border-b border-[#1C1C3A] pb-4 mb-4 md:pb-4 md:mb-8"
+      >
+        <app-text-title [text]="item?.title || 'Macroevento'" />
+        <div class="flex flex-col sm:flex-row gap-4 my-4">
+          @if (datesEquals) { @if (item?.start) {
+          <app-text-subtitle
+            [text]="
+              item?.start | date : 'EEEE dd MMMM' : '' : 'es-ES' | titlecase
+            "
+          >
+          </app-text-subtitle>
+          } } @else { @if (item?.start && item?.end) {
+          <app-text-subtitle
+            [text]="
+              (item?.start | date : 'EEEE dd MMM' : '' : 'es-ES' | titlecase) +
+              ' - ' +
+              (item?.end | date : 'EEEE dd MMM yyyy' : '' : 'es-ES' | titlecase)
+            "
+          >
+          </app-text-subtitle>
+          } }
         </div>
-        @if (item!.events && item!.events.length > 0) {
-        <div class="mt-6 flex flex-1">
-          <div class="flex flex-col gap-1 mt-2 w-full">
-            @for (event of item!.events; track event) {
-            <div
-              class="group flex w-full gap-4 cursor-pointer rounded-xl p-2 border border-transparent transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-md hover:border-lilaOscuro/15 hover:bg-lilaClaro/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lilaOscuro/40"
-              (click)="onOpenEvent(event.id)"
-              tabindex="0"
-              (keyup.enter)="onOpenEvent(event.id)"
-            >
-              <div
-                class="w-28 h-auto overflow-hidden flex-shrink-0 rounded-lg flex items-center"
-              >
-                @if (event.img) {
-                <img
-                  [src]="event.img | itemImage : typeEvent"
-                  [alt]="event.title"
-                  class="object-cover w-full h-autor transition-transform duration-300 ease-out group-hover:scale-[1.03]"
-                />
-                }
-              </div>
-
-              <div
-                class="flex-1 py-2 px-3 rounded-lg shadow-sm bg-white/70 transition-all duration-300 ease-out group-hover:bg-white group-hover:shadow-md"
-              >
-                <p class="text-[12px] font-semibold tracking-wide">
-                  {{ event.title }}
-                </p>
-
-                @if (event.start) {
-                <p class="text-[11px] text-gray-600 mt-1">
-                  {{
-                    event.start
-                      | date : "EEEE dd MMMM" : "" : "es-ES"
-                      | titlecase
-                  }}
-                  | {{ event.time_start?.slice(0, 5) }}h
-                </p>
-                }
-                <div class="flex gap-x-2 flex-wrap justify-start my-2">
-                  @for (category of (event.category || []); track category) {
-                  <p class="categories">
-                    {{ category | dictTranslate : dictType.Categories }}
-                  </p>
-                  }
-                </div>
-                @if (event.placeData?.name) {
-                <p class="text-[10px] text-gray-600">
-                  {{ event.placeData?.name }}
-                </p>
-                } @if (event.salaData?.name) {
-                <p class="text-xs md:text-[9px] text-gray-500 mb-2">
-                  {{ event.salaData?.name }} -
-                  {{
-                    event.salaData?.room_location
-                      | filterTransformCode : "roomLocationPlaces"
-                  }}
-                </p>
-                } @if (event.town) {
-                <p class="text-xs md:text-[9px] text-gray-600">
-                  @if (event.placeData?.address) {
-                  <span>{{ event.placeData?.address }}, </span> }
-                  {{ event.town }}
-                </p>
-                }
-              </div>
-            </div>
-            }
-          </div>
-        </div>
+        @if (!isDashboard) {
+        <app-social-media-share [url]="shareUrl" [title]="shareTitle" />
         }
       </div>
     </div>
+
+    <div
+      class="flex flex-col-reverse gap-y-8 lg:flex-row lg:gap-x-24 lg:gap-y-0"
+    >
+      <div class="lg:w-2/5">
+        @if (item?.img) {
+        <img
+          appImgBroken
+          loading="lazy"
+          decoding="async"
+          [src]="item?.img || '' | itemImage : typeModal"
+          [alt]="item?.title || ''"
+          class="imagen"
+          (click)="openZoom()"
+        />
+        }
+      </div>
+
+      <div class="flex flex-col justify-between lg:w-3/5">
+        <div>
+          @if (item?.description) {
+          <app-text-editor [text]="item?.description"></app-text-editor>
+          } @if ((item?.events?.length ?? 0) > 0) {
+          <div class="mt-6 flex flex-1">
+            <div class="flex flex-col gap-1 mt-2 w-full">
+              @for (event of item!.events; track trackById($index, event)) {
+              <div
+                class="group flex w-full gap-4 cursor-pointer rounded-xl p-2 border border-transparent transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-md hover:border-lilaOscuro/15 hover:bg-lilaClaro/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lilaOscuro/40"
+                (click)="onOpenEvent(event.id)"
+                tabindex="0"
+                (keyup.enter)="onOpenEvent(event.id)"
+              >
+                <div
+                  class="w-28 h-auto overflow-hidden flex-shrink-0 rounded-lg flex items-center"
+                >
+                  @if (event?.img) {
+                  <img
+                    [src]="event.img | itemImage : typeEvent"
+                    [alt]="event?.title || ''"
+                    class="object-cover w-full h-autor transition-transform duration-300 ease-out group-hover:scale-[1.03]"
+                  />
+                  }
+                </div>
+
+                <div
+                  class="flex-1 py-2 px-3 rounded-lg shadow-sm bg-white/70 transition-all duration-300 ease-out group-hover:bg-white group-hover:shadow-md"
+                >
+                  <p class="text-[12px] font-semibold tracking-wide">
+                    {{ event?.title }}
+                  </p>
+
+                  @if (event?.start) {
+                  <p class="text-[11px] text-gray-600 mt-1">
+                    {{
+                      event.start
+                        | date : "EEEE dd MMMM" : "" : "es-ES"
+                        | titlecase
+                    }}
+                    | {{ event?.time_start?.slice(0, 5) }}h
+                  </p>
+                  }
+
+                  <div class="flex gap-x-2 flex-wrap justify-start my-2">
+                    @for (category of (event?.category || []); track category) {
+                    <p class="categories">
+                      {{ category | dictTranslate : dictType.Categories }}
+                    </p>
+                    }
+                  </div>
+
+                  @if (event?.placeData?.name) {
+                  <p class="text-[10px] text-gray-600">
+                    {{ event.placeData?.name }}
+                  </p>
+                  } @if (event?.salaData?.name) {
+                  <p class="text-xs md:text-[9px] text-gray-500 mb-2">
+                    {{ event.salaData?.name }} -
+                    {{
+                      event.salaData?.room_location
+                        | filterTransformCode : "roomLocationPlaces"
+                    }}
+                  </p>
+                  } @if (event?.town) {
+                  <p class="text-xs md:text-[9px] text-gray-600">
+                    @if (event?.placeData?.address) {
+                    <span>{{ event.placeData?.address }}, </span> }
+                    {{ event.town }}
+                  </p>
+                  }
+                </div>
+              </div>
+              }
+            </div>
+          </div>
+          }
+        </div>
+      </div>
+    </div>
   </div>
+  }
 </div>
 
 @if (showZoom) {
 <app-image-zoom-overlay
   [open]="showZoom"
-  [src]="(item!.img ? item!.img : '') | itemImage : typeModal"
-  [alt]="item!.title"
+  [src]="item?.img || '' | itemImage : typeModal"
+  [alt]="item?.title || ''"
   [maxScale]="5"
   [minScale]="1"
-  [caption]="item!.title"
+  [caption]="item?.title || ''"
   (closed)="closeZoom()"
 ></app-image-zoom-overlay>
 }

@@ -2,22 +2,24 @@ export function buildShareUrl(opts: {
   base: string; // environments.publicBaseUrl
   path: string; // '/events', '/books/123', etc.
   params?: Record<string, string | number | boolean | null | undefined>;
-  fragment?: string; // 'event-123', 'book-45', etc.
 }): string {
-  const base = opts.base.replace(/\/+$/, '');
-  const path = opts.path.startsWith('/') ? opts.path : '/' + opts.path;
+  // 1) Limpia cualquier hash que venga en base o path
+  const base = opts.base.replace(/\/+$/, '').split('#')[0];
+  const rawPath = opts.path.startsWith('/') ? opts.path : '/' + opts.path;
+  const path = rawPath.split('#')[0];
 
+  // 2) Ordena las claves de params para URLs estables
   const usp = new URLSearchParams();
   if (opts.params) {
-    Object.entries(opts.params).forEach(([k, v]) => {
+    for (const k of Object.keys(opts.params).sort()) {
+      const v = opts.params[k];
       if (v !== null && v !== undefined && v !== false && v !== '') {
         usp.set(k, String(v));
       }
-    });
+    }
   }
   const qs = usp.toString();
-  const hash = opts.fragment ? `#${opts.fragment}` : '';
-  return `${base}${path}${qs ? '?' + qs : ''}${hash}`;
+  return `${base}${path}${qs ? '?' + qs : ''}`;
 }
 
 // (Opcional) helper para fechas locales sin líos de timezone

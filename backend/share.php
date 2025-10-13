@@ -49,7 +49,7 @@ function basename_safe($f){ $b = basename((string)$f); return str_replace(['..',
 $type = $_GET['type'] ?? '';
 $id   = intval($_GET['id'] ?? 0);
 
-$valid = ['events','books','movies','recipes','macroevents'];
+$valid = ['events','books','movies','recipes','macroevents','piteras','podcasts'];
 if (!in_array($type,$valid,true) || $id<=0){ http_response_code(404); exit('Not found'); }
 
 // --- Endpoints & URL canónica ---
@@ -59,6 +59,8 @@ $apiMap = [
   'movies'      => "$BASE/backend/movies.php/",
   'recipes'     => "$BASE/backend/recipes.php/",
   'macroevents' => "$BASE/backend/macroevents.php/",
+  'piteras'     => "$BASE/backend/piteras.php/",
+  'podcasts'    => "$BASE/backend/podcasts.php/",
 ];
 $canonUrl = "$BASE/$type/$id";
 
@@ -106,34 +108,34 @@ switch($type){
     break;
 
   case 'books':
-    $title = trim(($item['title'] ?? 'Libro') . (!empty($item['author']) ? ' — '.$item['author'] : ''));
-    $desc  = trim_text($item['description'] ?? '');
-    $img   = basename_safe($item['img'] ?? '');
-    if($img){
-      $image = $year ? "/uploads/img/BOOKS/$img" : "/uploads/img/BOOKS/$img";
-    }
-    if(!$image) $image = '/assets/img/default-book.jpg';
-    break;
+  $title = trim(($item['title'] ?? 'Libro') . (!empty($item['author']) ? ' — '.$item['author'] : ''));
+  $desc  = trim_text($item['description'] ?? '');
+  $img   = basename_safe($item['img'] ?? '');
+  if($img){
+    $image = "/uploads/img/BOOKS/$img";
+  }
+  if(!$image) $image = '/assets/img/default-book.jpg';
+  break;
 
-  case 'movies':
-    $title = trim(($item['title'] ?? 'Película') . (!empty($item['director']) ? ' — '.$item['director'] : ''));
-    $desc  = trim_text($item['description'] ?? '');
-    $img   = basename_safe($item['img'] ?? '');
-    if($img){
-      $image = $year ? "/uploads/img/MOVIES/$img" : "/uploads/img/MOVIES/$img";
-    }
-    if(!$image) $image = '/assets/img/default-movie.jpg';
-    break;
+case 'movies':
+  $title = trim(($item['title'] ?? 'Película') . (!empty($item['director']) ? ' — '.$item['director'] : ''));
+  $desc  = trim_text($item['description'] ?? '');
+  $img   = basename_safe($item['img'] ?? '');
+  if($img){
+    $image = "/uploads/img/MOVIES/$img";
+  }
+  if(!$image) $image = '/assets/img/default-movie.jpg';
+  break;
 
-  case 'recipes':
-    $title = trim(($item['title'] ?? 'Receta') . (!empty($item['owner']) ? ' — '.$item['owner'] : ''));
-    $desc  = trim_text($item['introduction'] ?? $item['recipe'] ?? '');
-    $img   = basename_safe($item['img'] ?? '');
-    if($img){
-      $image = $year ? "/uploads/img/RECIPES/$img" : "/uploads/img/RECIPES/$img";
-    }
-    if(!$image) $image = '/assets/img/default-recipe.jpg';
-    break;
+case 'recipes':
+  $title = trim(($item['title'] ?? 'Receta') . (!empty($item['owner']) ? ' — '.$item['owner'] : ''));
+  $desc  = trim_text($item['introduction'] ?? $item['recipe'] ?? $item['description'] ?? '');
+  $img   = basename_safe($item['img'] ?? '');
+  if($img){
+    $image = "/uploads/img/RECIPES/$img";
+  }
+  if(!$image) $image = '/assets/img/default-recipe.jpg';
+  break;
 
   case 'macroevents':
     // Título/desc
@@ -183,7 +185,29 @@ switch($type){
         'startDate'=>date(DATE_ATOM,$firstStart),
       ];
     }
-    break;
+    break;case 'podcasts':
+  // Título: "Título — Ponente/Autor/Host" si hay dato
+  $speaker = $item['speaker'] ?? $item['author'] ?? $item['owner'] ?? $item['host'] ?? '';
+  $title = trim(($item['title'] ?? 'Podcast') . ($speaker ? ' — '.$speaker : ''));
+  // Descripción: intenta summary/description
+  $desc  = trim_text($item['summary'] ?? $item['description'] ?? '');
+  // Imagen
+  $img   = basename_safe($item['img'] ?? $item['cover'] ?? '');
+  if($img){
+    $image = "/uploads/img/PODCASTS/$img";
+  }
+  if(!$image) $image = '/assets/img/default-podcast.jpg';
+  break;
+
+case 'piteras':
+  $title = $item['title'] ?? 'Piteras';
+  $desc  = trim_text($item['description'] ?? $item['subtitle'] ?? '');
+  $img   = basename_safe($item['img'] ?? $item['banner'] ?? '');
+  if($img){
+    $image = "/uploads/img/PITERAS/$img";
+  }
+  if(!$image) $image = '/assets/img/default-generic.jpg';
+  break;
 }
 
 // Imagen absoluta

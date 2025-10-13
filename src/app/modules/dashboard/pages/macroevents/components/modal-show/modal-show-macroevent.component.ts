@@ -1,5 +1,12 @@
+// modal-show-macroevent.component.ts
 import { CommonModule, TitleCasePipe } from '@angular/common';
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  EventEmitter,
+  Input,
+  Output,
+} from '@angular/core';
 import { MacroeventModelFullData } from 'src/app/core/interfaces/macroevent.interface';
 import { TypeList } from 'src/app/core/models/general.model';
 import { ImageZoomOverlayComponent } from 'src/app/shared/components/image-zoom-overlay/image-zoom-overlay.component';
@@ -7,17 +14,18 @@ import { SocialMediaShareComponent } from 'src/app/shared/components/social-medi
 import { TextEditorComponent } from 'src/app/shared/components/text/text-editor/text-editor.component';
 import { TextSubTitleComponent } from 'src/app/shared/components/text/text-subTitle/text-subtitle.component';
 import { TextTitleComponent } from 'src/app/shared/components/text/text-title/text-title.component';
-import { buildShareUrl } from 'src/app/shared/utils/share-url.util';
-import { environments } from 'src/environments/environments';
 import {
   DictTranslatePipe,
   DictType,
-} from '../../../../../../shared/pipe/dict-translate.pipe';
-import { FilterTransformCodePipe } from '../../../../../../shared/pipe/filterTransformCode.pipe';
-import { ItemImagePipe } from '../../../../../../shared/pipe/item-img.pipe';
+} from 'src/app/shared/pipe/dict-translate.pipe';
+import { FilterTransformCodePipe } from 'src/app/shared/pipe/filterTransformCode.pipe';
+import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
+import { buildShareUrl } from 'src/app/shared/utils/share-url.util';
+import { environments } from 'src/environments/environments';
 
 @Component({
   selector: 'app-modal-show-macroevent',
+  standalone: true,
   imports: [
     CommonModule,
     TextTitleComponent,
@@ -32,37 +40,55 @@ import { ItemImagePipe } from '../../../../../../shared/pipe/item-img.pipe';
   ],
   templateUrl: './modal-show-macroevent.component.html',
   styleUrls: ['./modal-show-macroevent.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ModalShowMacroeventComponent implements OnInit {
-  @Input() item?: MacroeventModelFullData;
-  @Output() openEvent = new EventEmitter<number>();
+export class ModalShowMacroeventComponent {
+  /** Ahora aceptamos item parcial y con flag loading */
+  @Input() item:
+    | (Partial<MacroeventModelFullData> & {
+        loading?: boolean;
+        events?: Array<any>;
+      })
+    | null = null;
+
   @Input() isDashboard = false;
-  typeModal: TypeList = TypeList.Macroevents;
-  typeEvent: TypeList = TypeList.Events;
-  datesEquals = false;
+  @Output() openEvent = new EventEmitter<number>();
+
+  readonly typeModal: TypeList = TypeList.Macroevents;
+  readonly typeEvent: TypeList = TypeList.Events;
+  readonly dictType = DictType;
+
   showZoom = false;
-  dictType = DictType;
 
-  ngOnInit(): void {
-    if (!this.item) return;
-
-    if (this.item.start && this.item.end && this.item.start === this.item.end) {
-      this.datesEquals = true;
-    }
-  }
-  onOpenEvent(macroeventId: number) {
-    if (macroeventId) {
-      this.openEvent.emit(macroeventId);
-    }
-  }
   openZoom() {
     this.showZoom = true;
   }
   closeZoom() {
     this.showZoom = false;
   }
+
+  onOpenEvent(eventId: number) {
+    if (eventId) this.openEvent.emit(eventId);
+  }
+
+  trackById = (_: number, ev: any) => ev?.id ?? _;
+
+  /** Fechas iguales (mismo día) con tolerancia a string/Date */
+  get datesEquals(): boolean {
+    const s = this.item?.start;
+    const e = this.item?.end ?? this.item?.start;
+    if (!s || !e) return false;
+    const d1 = new Date(s),
+      d2 = new Date(e);
+    return (
+      d1.getFullYear() === d2.getFullYear() &&
+      d1.getMonth() === d2.getMonth() &&
+      d1.getDate() === d2.getDate()
+    );
+  }
+
   get shareTitle(): string {
-    return this.item?.title ?? 'Evento';
+    return this.item?.title ?? 'Macroevento';
   }
 
   get shareUrl(): string {

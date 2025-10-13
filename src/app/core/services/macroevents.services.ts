@@ -1,79 +1,194 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, shareReplay, take, tap } from 'rxjs/operators';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { environments } from 'src/environments/environments';
 import { MacroeventModelFullData } from '../interfaces/macroevent.interface';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable({ providedIn: 'root' })
 export class MacroeventsService {
+  private readonly http = inject(HttpClient);
   private readonly generalService = inject(GeneralService);
-  private apiUrl: string = `${environments.api}/backend/macroevents.php`;
-  constructor(private http: HttpClient) {}
 
-  getMacroevents(): Observable<any> {
-    return this.http
-      .get(this.apiUrl)
-      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
-  }
-  getMacroeventsByYear(year: number): Observable<any> {
-    return this.http
-      .get(this.apiUrl, { params: { year: year } })
-      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
-  }
+  private readonly apiUrl = `${environments.api}/backend/macroevents.php`;
 
-  getMacroeventById(id: number): Observable<any> {
-    return this.http
-      .get(`${this.apiUrl}/${id}`)
-      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
-  }
+  // ===== CACHÉS =====
+  // Listas
+  private listAllReq$?: Observable<MacroeventModelFullData[]>;
+  private listAllVal?: MacroeventModelFullData[];
 
-  add(event: FormData): Observable<any> {
-    return this.http
-      .post(this.apiUrl, event)
-      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
-  }
+  private listByYearReq = new Map<
+    number,
+    Observable<MacroeventModelFullData[]>
+  >();
+  private listByYearVal = new Map<number, MacroeventModelFullData[]>();
 
-  edit(event: FormData): Observable<any> {
-    return this.http
-      .post(this.apiUrl, event)
-      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
-  }
+  // Detalle por id
+  private macroReq = new Map<number, Observable<MacroeventModelFullData>>();
+  private macroVal = new Map<number, MacroeventModelFullData>();
 
-  delete(id: number): Observable<any> {
-    return this.generalService.deleteOverride<any>(this.apiUrl, { id });
+  // ====== QUERIES ======
+  getMacroevents(): Observable<MacroeventModelFullData[]> {
+    if (!this.listAllReq$) {
+      this.listAllReq$ = this.http
+        .get<MacroeventModelFullData[]>(this.apiUrl)
+        .pipe(
+          shareReplay(1),
+          tap((list) => (this.listAllVal = list)),
+          catchError((err) => this.generalService.handleHttpError(err))
+        );
+    }
+    return this.listAllReq$;
   }
 
-  sortMacroeventsByTitle(
-    macroevents: MacroeventModelFullData[]
-  ): MacroeventModelFullData[] {
-    return macroevents.sort((a, b) =>
-      a.title.toLowerCase().localeCompare(b.title.toLowerCase())
+  getMacroeventsByYear(year: number): Observable<MacroeventModelFullData[]> {
+    if (!this.listByYearReq.has(year)) {
+      const req$ = this.http
+        .get<MacroeventModelFullData[]>(this.apiUrl, {
+          params: { year } as any,
+        })
+        .pipe(
+          shareReplay(1),
+          tap((list) => this.listByYearVal.set(year, list)),
+          catchError((err) => this.generalService.handleHttpError(err))
+        );
+      this.listByYearReq.set(year, req$);
+    }
+    return this.listByYearReq.get(year)!;
+  }
+
+  getMacroeventById(id: number): Observable<MacroeventModelFullData> {
+    if (!this.macroReq.has(id)) {
+      const req$ = this.http
+        .get<MacroeventModelFullData>(`${this.apiUrl}/${id}`)
+        .pipe(
+          shareReplay(1),
+          tap((m) => this.macroVal.set(id, m)),
+          catchError((err) => this.generalService.handleHttpError(err))
+        );
+      this.macroReq.set(id, req$);
+    }
+    return this.macroReq.get(id)!;
+  }
+
+  // ====== PREFETCH / PEEK ======
+  /** Dispara la carga en segundo plano (no rompe si falla) */
+  prefetchMacroevent(id: number): void {
+    this.getMacroeventById(id)
+      .pipe(take(1))
+      .subscribe({ error: () => {} });
+  }
+
+  prefetchMacroevents(): void {
+    this.getMacroevents()
+      .pipe(take(1))
+      .subscribe({ error: () => {} });
+  }
+
+  prefetchMacroeventsByYear(year: number): void {
+    this.getMacroeventsByYear(year)
+      .pipe(take(1))
+      .subscribe({ error: () => {} });
+  }
+
+  /** Lee de la caché sincronamente si ya está en memoria */
+  peekMacroevent(id: number): MacroeventModelFullData | null {
+    return this.macroVal.get(id) ?? null;
+  }
+
+  peekMacroevents(): MacroeventModelFullData[] | null {
+    return this.listAllVal ?? null;
+  }
+
+  peekMacroeventsByYear(year: number): MacroeventModelFullData[] | null {
+    return this.listByYearVal.get(year) ?? null;
+  }
+
+  // ====== COMMANDS (mutaciones) ======
+  add(form: FormData): Observable<any> {
+    return this.http.post(this.apiUrl, form).pipe(
+      tap((created: any) => {
+        // si tu backend devuelve el macro creado, podemos upsertear
+        if (created?.id) {
+          this.macroVal.set(created.id, created);
+        }
+        this.invalidateLists(); // invalida listados
+      }),
+      catchError((err) => this.generalService.handleHttpError(err))
     );
   }
 
-  sortMacroeventsByDate(
-    macroevents: MacroeventModelFullData[]
+  edit(form: FormData): Observable<any> {
+    return this.http.post(this.apiUrl, form).pipe(
+      tap((updated: any) => {
+        if (updated?.id) {
+          this.macroVal.set(updated.id, updated);
+        }
+        this.invalidateLists();
+      }),
+      catchError((err) => this.generalService.handleHttpError(err))
+    );
+  }
+
+  delete(id: number): Observable<any> {
+    return this.generalService.deleteOverride<any>(this.apiUrl, { id }).pipe(
+      tap(() => {
+        // limpia caché del item y de los listados
+        this.macroReq.delete(id);
+        this.macroVal.delete(id);
+        this.invalidateLists();
+      }),
+      catchError((err) => this.generalService.handleHttpError(err))
+    );
+  }
+
+  // ====== HELPERS DE ORDENACIÓN / ESTADO ======
+  sortMacroeventsByTitle(
+    list: MacroeventModelFullData[]
   ): MacroeventModelFullData[] {
-    return macroevents.sort(
+    return [...(list ?? [])].sort((a, b) =>
+      (a.title ?? '').toLowerCase().localeCompare((b.title ?? '').toLowerCase())
+    );
+    // se clona para no mutar caché externa
+  }
+
+  sortMacroeventsByDate(
+    list: MacroeventModelFullData[]
+  ): MacroeventModelFullData[] {
+    return [...(list ?? [])].sort(
       (a, b) => new Date(b.start).getTime() - new Date(a.start).getTime()
     );
   }
 
   sortMacroeventsById(
-    macroevents: MacroeventModelFullData[]
+    list: MacroeventModelFullData[]
   ): MacroeventModelFullData[] {
-    return macroevents.sort((a, b) => b.id - a.id);
+    return [...(list ?? [])].sort((a, b) => (b.id ?? 0) - (a.id ?? 0));
   }
 
-  hasResults(macroevents: MacroeventModelFullData[] | null): boolean {
-    return !!macroevents && macroevents.length > 0;
+  hasResults(list: MacroeventModelFullData[] | null): boolean {
+    return !!list && list.length > 0;
   }
 
-  countMacroevents(macroevents: MacroeventModelFullData[] | null): number {
-    return macroevents?.length ?? 0;
+  countMacroevents(list: MacroeventModelFullData[] | null): number {
+    return list?.length ?? 0;
+  }
+
+  // ====== CACHE MGMT ======
+  /** Invalida los listados (all + por año) para forzar recarga en la próxima suscripción */
+  private invalidateLists(): void {
+    this.listAllReq$ = undefined;
+    this.listAllVal = undefined;
+
+    this.listByYearReq.clear();
+    this.listByYearVal.clear();
+  }
+
+  /** Limpia toda la caché (items + listas) */
+  clearCache(): void {
+    this.invalidateLists();
+    this.macroReq.clear();
+    this.macroVal.clear();
   }
 }

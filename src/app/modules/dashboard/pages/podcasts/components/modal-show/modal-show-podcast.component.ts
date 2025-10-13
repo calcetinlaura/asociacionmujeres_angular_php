@@ -8,6 +8,8 @@ import { TextBackgroundComponent } from 'src/app/shared/components/text/text-bac
 import { TextEditorComponent } from 'src/app/shared/components/text/text-editor/text-editor.component';
 import { TextSubTitleComponent } from 'src/app/shared/components/text/text-subTitle/text-subtitle.component';
 import { TextTitleComponent } from 'src/app/shared/components/text/text-title/text-title.component';
+import { buildShareUrl } from 'src/app/shared/utils/share-url.util';
+import { environments } from 'src/environments/environments';
 import { HmsPipe } from '../../../../../../shared/pipe/dateTime_form.pipe';
 import { ItemImagePipe } from '../../../../../../shared/pipe/item-img.pipe';
 
@@ -36,5 +38,21 @@ export class ModalShowPodcastComponent {
   }
   closeZoom() {
     this.showZoom = false;
+  }
+  get shareTitle(): string {
+    const base = this.item?.title ?? 'Podcasts';
+    const full = this.item?.episode
+      ? `${base} — Episodio ${this.item.episode}`
+      : base;
+    return full;
+  }
+
+  get shareUrl(): string {
+    return this.item?.id
+      ? buildShareUrl({
+          base: environments.publicBaseUrl,
+          path: `/podcasts/${this.item.id}`,
+        })
+      : '';
   }
 }

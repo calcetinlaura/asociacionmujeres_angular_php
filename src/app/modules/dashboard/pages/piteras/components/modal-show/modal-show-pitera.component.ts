@@ -8,6 +8,8 @@ import { TextBackgroundComponent } from 'src/app/shared/components/text/text-bac
 import { TextEditorComponent } from 'src/app/shared/components/text/text-editor/text-editor.component';
 import { TextSubTitleComponent } from 'src/app/shared/components/text/text-subTitle/text-subtitle.component';
 import { TextTitleComponent } from 'src/app/shared/components/text/text-title/text-title.component';
+import { buildShareUrl } from 'src/app/shared/utils/share-url.util';
+import { environments } from 'src/environments/environments';
 import { ItemImagePipe } from '../../../../../../shared/pipe/item-img.pipe';
 
 @Component({
@@ -66,5 +68,21 @@ export class ModalShowPiteraComponent {
     if (file.includes('/'))
       return `${base}${this.typeFolder}/${encodeURI(file)}`;
     return `${base}${this.typeFolder}/${encodeURIComponent(file)}`;
+  }
+
+  //  Título para compartir (personalizable)
+  get shareTitle(): string {
+    const base = this.item?.title ?? 'Pitera';
+    const full = this.item?.year ? `${base} — ${this.item.year}` : base;
+    return full;
+  }
+
+  get shareUrl(): string {
+    return this.item?.id
+      ? buildShareUrl({
+          base: environments.publicBaseUrl,
+          path: `/piteras/${this.item.id}`,
+        })
+      : '';
   }
 }

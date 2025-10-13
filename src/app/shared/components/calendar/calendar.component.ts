@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import {
+  ChangeDetectorRef,
   Component,
   EventEmitter,
   Input,
@@ -9,16 +10,24 @@ import {
   inject,
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import {
   EventModel,
   EventModelFullData,
 } from 'src/app/core/interfaces/event.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { EventsService } from 'src/app/core/services/events.services';
+import { MacroeventsService } from 'src/app/core/services/macroevents.services';
 import { ImgBrokenDirective } from 'src/app/shared/directives/img-broken.directive';
 import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
 import { ModalShellComponent } from '../modal/modal-shell.component';
-
+type ShellState = {
+  visible: boolean;
+  typeModal: TypeList;
+  action: TypeActionModal;
+  item: any;
+  canGoBack: boolean;
+};
 @Component({
   selector: 'app-calendar',
   standalone: true,
@@ -32,6 +41,8 @@ import { ModalShellComponent } from '../modal/modal-shell.component';
   styleUrls: ['./calendar.component.css'],
 })
 export class CalendarComponent implements OnChanges {
+  private readonly macroeventsService = inject(MacroeventsService);
+
   @Input() events: (EventModel | EventModelFullData)[] = [];
   @Input() filterYear: number | null = null;
 
@@ -55,15 +66,6 @@ export class CalendarComponent implements OnChanges {
   currentYear: number = new Date().getFullYear();
   typeList = TypeList;
 
-  /** === Shell único (MultiEvents / Event) === */
-  shell = {
-    visible: false,
-    typeModal: TypeList.MultiEvents as TypeList,
-    action: TypeActionModal.Show as TypeActionModal,
-    item: null as any, // { events, date } o { id } para Event
-    canGoBack: false,
-  };
-
   /** Pantalla anterior (para volver de Event → MultiEvents) */
   private prevMulti: { events: any[]; date: Date } | null = null;
 
@@ -71,10 +73,19 @@ export class CalendarComponent implements OnChanges {
   private readonly eventsService = inject(EventsService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
-
+  // ➊ Secuencia para invalidar respuestas tardías
+  private macroLoadSeq = 0;
   /** Abrir multi cuando aún no hay datos/lista lista */
   private pendingMultiDate: string | null = null;
-
+  shell: ShellState = {
+    visible: false,
+    typeModal: TypeList.MultiEvents,
+    action: TypeActionModal.Show,
+    item: null,
+    canGoBack: false,
+  };
+  private readonly cdr = inject(ChangeDetectorRef);
+  private navStack: ShellState[] = [];
   ngOnChanges(changes: SimpleChanges): void {
     const filterYearChanged = changes['filterYear'];
     const eventsChanged = changes['events'];
@@ -297,6 +308,76 @@ export class CalendarComponent implements OnChanges {
   }
 
   /** Overlay +N */
+
+  handleCellClick(cell: {
+    date: Date | null;
+    events: (EventModel | EventModelFullData)[];
+  }): void {
+    this.openModalView(cell);
+  }
+
+  /** “openEvent” desde shell/router/multievent */
+  onOpenEvent(id: number) {
+    if (!id) return;
+
+    // Guarda “de dónde vienes” (Multi o Macro)
+    this.navStack.push({ ...this.shell });
+
+    this.shell = {
+      visible: true,
+      typeModal: TypeList.Events,
+      action: TypeActionModal.Show,
+      item: { id },
+      canGoBack: true, // <- siempre true al entrar a Event
+    };
+    // 🔸 NO tocamos URL aquí (lo hace la modal de Evento al compartir)
+  }
+  onOpenMacroevent(macroeventId: number) {
+    if (!macroeventId) return;
+
+    // Guarda pantalla actual para "volver"
+    this.navStack.push({ ...this.shell });
+
+    // 1) Abre shell YA con loading y, si tienes, pinta lista cacheada
+    const peek = this.eventsService.peekEventsByMacro(macroeventId) ?? [];
+    this.shell = {
+      visible: true,
+      typeModal: TypeList.Macroevents,
+      action: TypeActionModal.Show,
+      item: { id: macroeventId, events: peek, loading: true }, // 👈 importante
+      canGoBack: true,
+    };
+    this.cdr.markForCheck();
+
+    // 2) Deja que Angular pinte el skeleton en el siguiente frame
+    requestAnimationFrame(() => {
+      const macro$ = this.macroeventsService.getMacroeventById(macroeventId);
+      const events$ = this.eventsService.getEventsByMacroevent(macroeventId);
+
+      // Carga en paralelo
+      forkJoin({ macro: macro$, events: events$ }).subscribe({
+        next: ({ macro, events }) => {
+          this.shell = {
+            ...this.shell,
+            item: { ...macro, events, loading: false },
+          };
+          this.cdr.markForCheck();
+        },
+        error: () => {
+          this.shell = {
+            ...this.shell,
+            item: { id: macroeventId, events: [], loading: false, error: true },
+          };
+          this.cdr.markForCheck();
+        },
+      });
+    });
+
+    if (!this.isDashboard) {
+      this.setUrlQuery({ macroeventId, eventId: null, multiDate: null });
+    }
+  }
+
   openMultiEventModal(
     ev: MouseEvent,
     date: Date,
@@ -317,54 +398,42 @@ export class CalendarComponent implements OnChanges {
       this.setUrlQuery({ multiDate: this.toIsoDate(date), eventId: null });
     }
   }
-
-  handleCellClick(cell: {
-    date: Date | null;
-    events: (EventModel | EventModelFullData)[];
-  }): void {
-    this.openModalView(cell);
-  }
-
-  /** “openEvent” desde shell/router/multievent */
-  onOpenEvent(id: number) {
-    if (!id) return;
-    this.shell = {
-      visible: true,
-      typeModal: TypeList.Events,
-      action: TypeActionModal.Show,
-      item: { id },
-      canGoBack: !!this.prevMulti, // volver a Multi si venimos de ahí
-    };
-    // 🔸 NO tocamos URL aquí (lo hace la modal de Evento al compartir)
-  }
-
   onShellBack() {
-    if (this.shell.typeModal === TypeList.Events && this.prevMulti) {
-      this.shell = {
-        visible: true,
-        typeModal: TypeList.MultiEvents,
-        action: TypeActionModal.Show,
-        item: this.prevMulti,
-        canGoBack: false,
-      };
-      // Volvemos a dejar ?multiDate=...
+    if (this.navStack.length > 0) {
+      const prev = this.navStack.pop()!;
+      this.shell = { ...prev };
+
+      // (Opcional) sincroniza URL con la pantalla restaurada
       if (!this.isDashboard) {
-        this.setUrlQuery({
-          eventId: null,
-          multiDate: this.toIsoDate(this.prevMulti.date),
-        });
+        if (prev.typeModal === TypeList.MultiEvents && prev.item?.date) {
+          this.setUrlQuery({
+            multiDate: this.toIsoDate(prev.item.date),
+            eventId: null,
+            macroeventId: null,
+          });
+        } else if (prev.typeModal === TypeList.Macroevents && prev.item?.id) {
+          this.setUrlQuery({
+            macroeventId: prev.item.id,
+            eventId: null,
+            multiDate: null,
+          });
+        } else {
+          this.clearModalUrl();
+        }
       }
     } else {
-      this.shell.visible = false;
-      this.prevMulti = null;
-      this.clearModalUrl(); // limpia query params en público
+      this.onShellClose();
     }
   }
 
   onShellClose() {
+    // invalida cualquier respuesta asíncrona en vuelo
+    this.macroLoadSeq++;
+
     this.shell.visible = false;
     this.prevMulti = null;
-    this.clearModalUrl(); // limpia query params en público
+    this.navStack = [];
+    this.clearModalUrl();
   }
 
   /** Utils visuales */
@@ -409,7 +478,7 @@ export class CalendarComponent implements OnChanges {
   private clearModalUrl() {
     this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: { eventId: null, multiDate: null },
+      queryParams: { eventId: null, multiDate: null, macroeventId: null }, // <- añade macroeventId
       queryParamsHandling: 'merge',
     });
   }
