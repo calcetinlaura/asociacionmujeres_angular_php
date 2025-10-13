@@ -11,7 +11,7 @@ import { environments } from 'src/environments/environments';
 })
 export class BooksService {
   private readonly generalService = inject(GeneralService);
-  private apiUrl: string = `${environments.api}/backend/books.php`;
+  private readonly apiUrl: string = `${environments.api}/backend/books.php`;
   constructor(private http: HttpClient) {}
 
   getBooks(): Observable<any> {

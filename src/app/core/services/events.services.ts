@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, shareReplay, take, tap } from 'rxjs/operators';
 import {
   EventModel,
   EventModelFullData,
@@ -10,26 +10,27 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { environments } from 'src/environments/environments';
 import { AgentEventsQuery } from '../interfaces/agent.interface';
 
-// RxJS extras para caché/operadores
-import { shareReplay, take } from 'rxjs/operators';
-
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable({ providedIn: 'root' })
 export class EventsService {
   private readonly generalService = inject(GeneralService);
-  private apiUrl: string = `${environments.api}/backend/events.php`;
+  private readonly http = inject(HttpClient);
+  private readonly apiUrl = `${environments.api}/backend/events.php`;
 
-  // 🧠 Caché por id con TTL
+  // ====== CACHES ======
+
+  // 🔁 getEventById: caché con TTL (dedupe)
   private readonly CACHE_TTL_MS = 5 * 60 * 1000; // 5 min
   private eventByIdCache = new Map<
     number,
     { expiresAt: number; value$: Observable<EventModelFullData> }
   >();
 
-  constructor(private http: HttpClient) {}
+  // 📦 Eventos por macro: caché en memoria (request + valor materializado)
+  private byMacroReq = new Map<number, Observable<EventModel[]>>();
+  private byMacroVal = new Map<number, EventModel[]>();
 
-  // ---------- GETs ----------
+  // ====== GETs ======
+
   getEvents(): Observable<EventModel[]> {
     return this.http
       .get<EventModel[]>(this.apiUrl)
@@ -42,20 +43,51 @@ export class EventsService {
   ): Observable<EventModel[]> {
     return this.http
       .get<EventModel[]>(this.apiUrl, {
-        params: {
-          year: year.toString(),
-          periodic: periodic,
-        },
+        params: { year: String(year), periodic },
       })
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
+  /**
+   * ✅ getEventsByMacroevent con memoización (shareReplay) + cache de valor
+   * - No repite request si ya hay una en curso
+   * - Deja "peek" disponible para abrir modal al instante
+   */
   getEventsByMacroevent(macroeventId: number): Observable<EventModel[]> {
-    return this.http
-      .get<EventModel[]>(this.apiUrl, {
-        params: { macroevent_id: String(macroeventId) },
-      })
-      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
+    if (!this.byMacroReq.has(macroeventId)) {
+      const req$ = this.http
+        .get<EventModel[]>(this.apiUrl, {
+          params: { macroevent_id: String(macroeventId) },
+        })
+        .pipe(
+          shareReplay({ bufferSize: 1, refCount: false }),
+          tap((list) => this.byMacroVal.set(macroeventId, list)),
+          catchError((err) => this.generalService.handleHttpError(err))
+        );
+      this.byMacroReq.set(macroeventId, req$);
+    }
+    return this.byMacroReq.get(macroeventId)!;
+  }
+
+  /** 🔮 Dispara la carga en segundo plano para que llegue caliente a la modal */
+  prefetchEventsByMacro(macroeventId: number, _ttlMs?: number): void {
+    this.getEventsByMacroevent(macroeventId)
+      .pipe(take(1))
+      .subscribe({
+        next: () => {},
+        error: () => {},
+      });
+  }
+
+  /** 👀 Lee sincronamente si ya tenemos lista en memoria (para abrir modal ya) */
+  peekEventsByMacro(macroeventId: number): EventModel[] | null {
+    return this.byMacroVal.get(macroeventId) ?? null;
+  }
+
+  /** ❌ Invalidar caché por macro (llámalo tras altas/bajas/ediciones si procede) */
+  invalidateEventsByMacro(macroeventId: number): void {
+    this.byMacroReq.delete(macroeventId);
+    this.byMacroVal.delete(macroeventId);
   }
 
   getEventsByAgent(
@@ -81,10 +113,7 @@ export class EventsService {
   }
 
   /**
-   * 🏎️ getEventById con caché + deduplicación
-   * - No repite petición si ya hay una en curso o en caché válida.
-   * - TTL configurable con opts.ttlMs (por defecto 5 min).
-   * - Forzar refresh con opts.refresh = true.
+   * 🏎️ getEventById con caché + TTL + dedupe
    */
   getEventById(
     id: number,
@@ -96,11 +125,10 @@ export class EventsService {
 
     const cached = this.eventByIdCache.get(id);
     if (!refresh && cached && cached.expiresAt > now) {
-      return cached.value$; // ✅ usa caché
+      return cached.value$;
     }
 
-    // ⚠️ OJO: si tu backend NO soporta /events.php/{id}, cambia a:
-    // this.http.get<EventModelFullData>(this.apiUrl, { params: { id: String(id) } })
+    // Si tu backend no admite /{id}, cambia a params: { id }
     const req$ = this.http.get<EventModelFullData>(`${this.apiUrl}/${id}`).pipe(
       shareReplay({ bufferSize: 1, refCount: false }),
       catchError((err) => this.generalService.handleHttpError(err))
@@ -110,18 +138,14 @@ export class EventsService {
     return req$;
   }
 
-  /**
-   * 🔮 Prefetch: calienta la caché (ideal antes de abrir una modal)
-   */
+  /** 🔮 Prefetch por id */
   prefetchEventById(id: number, ttlMs?: number): void {
     this.getEventById(id, { ttlMs })
       .pipe(take(1))
       .subscribe({ next: () => {}, error: () => {} });
   }
 
-  /**
-   * 🧹 Limpia caché (todo o por id)
-   */
+  /** 🧹 Limpiar caché por id o todo */
   clearEventCache(id?: number): void {
     if (typeof id === 'number') this.eventByIdCache.delete(id);
     else this.eventByIdCache.clear();
@@ -129,13 +153,12 @@ export class EventsService {
 
   getEventsByPeriodicId(periodicId: string): Observable<EventModel[]> {
     return this.http
-      .get<EventModel[]>(this.apiUrl, {
-        params: { periodic_id: periodicId },
-      })
+      .get<EventModel[]>(this.apiUrl, { params: { periodic_id: periodicId } })
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
-  // ---------- POST/PUT ----------
+  // ====== POST/PUT ======
+
   add(event: FormData): Observable<any> {
     return this.http
       .post(this.apiUrl, event)
@@ -154,26 +177,24 @@ export class EventsService {
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
-  // ---------- DELETE ----------
+  // ====== DELETE ======
+
   delete(id: number): Observable<any> {
     return this.generalService
       .deleteOverride<any>(this.apiUrl, { id })
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
-  /**
-   * 🔧 Unifica borrado por periodic_id con keepId opcional
-   * (sustituye a los tres métodos duplicados)
-   */
+  /** Unificación de borrados por periodic_id */
   deleteByPeriodicId(periodicId: string, keepId?: number): Observable<void> {
     const payload: Record<string, string | number> = {
       periodic_id: periodicId,
     };
-    if (typeof keepId === 'number') payload['keep_id'] = keepId; // 👈 usar corchetes
+    if (typeof keepId === 'number') payload['keep_id'] = keepId;
     return this.generalService.deleteOverride<void>(this.apiUrl, payload);
   }
 
-  // ⚠️ Mantengo tus métodos previos por compatibilidad, pero delegan:
+  // Back-compat
   deleteEventsByPeriodicId(periodicId: string): Observable<void> {
     return this.deleteByPeriodicId(periodicId);
   }
@@ -190,10 +211,8 @@ export class EventsService {
     return this.deleteByPeriodicId(periodicId, keepId);
   }
 
-  // ---------- Utils ----------
-  /**
-   * Devuelven copia ordenada (no mutan).
-   */
+  // ====== Utils ======
+
   sortEventsByTitle<T extends { title: string }>(events: T[]): T[] {
     return [...events].sort((a, b) =>
       a.title.toLowerCase().localeCompare(b.title.toLowerCase())
@@ -208,7 +227,6 @@ export class EventsService {
 
   sortEventsById<T extends { id: number }>(events: T[]): T[] {
     return [...events].sort((a, b) => b.id - a.id);
-    // Si quieres ascendente: (a, b) => a.id - b.id
   }
 
   hasResults(events: EventModelFullData[] | null): boolean {

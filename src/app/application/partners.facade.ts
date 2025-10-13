@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, catchError, Observable, tap } from 'rxjs';
+import { BehaviorSubject, Observable } from 'rxjs';
+import { catchError, finalize, tap } from 'rxjs/operators';
 import { PartnerModel } from 'src/app/core/interfaces/partner.interface';
 import { PartnersService } from 'src/app/core/services/partners.services';
 import { includesNormalized, toSearchKey } from '../shared/utils/text.utils';
@@ -10,7 +11,7 @@ import { LoadableFacade } from './loadable.facade';
 export class PartnersFacade extends LoadableFacade {
   private readonly partnersService = inject(PartnersService);
 
-  // State propio
+  // Estado
   private readonly partnersSubject = new BehaviorSubject<PartnerModel[] | null>(
     null
   );
@@ -20,55 +21,92 @@ export class PartnersFacade extends LoadableFacade {
   private readonly selectedPartnerSubject =
     new BehaviorSubject<PartnerModel | null>(null);
 
+  // NEW: loaders separados
+  private readonly listLoadingSubject = new BehaviorSubject<boolean>(false);
+  private readonly itemLoadingSubject = new BehaviorSubject<boolean>(false);
+
   // Streams públicos
   readonly partners$ = this.partnersSubject.asObservable();
   readonly filteredPartners$ = this.filteredPartnersSubject.asObservable();
   readonly selectedPartner$ = this.selectedPartnerSubject.asObservable();
 
+  // NEW: usa estos en la UI
+  readonly isLoadingList$ = this.listLoadingSubject.asObservable();
+  readonly isLoadingItem$ = this.itemLoadingSubject.asObservable();
+
   private currentFilter: number | null = null;
 
+  // ─────────── LISTA → isLoadingList$
   loadAllPartners(): void {
     this.setCurrentFilter(null);
-    this.executeWithLoading(this.partnersService.getPartners(), (partners) =>
-      this.updatePartnerState(partners)
-    );
+    this.listLoadingSubject.next(true);
+    this.partnersService
+      .getPartners()
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        catchError((err) => this.generalService.handleHttpError(err)),
+        finalize(() => this.listLoadingSubject.next(false))
+      )
+      .subscribe((partners) => this.updatePartnerState(partners));
   }
 
   loadPartnersByYear(year: number): void {
     this.setCurrentFilter(year);
-    this.executeWithLoading(
-      this.partnersService.getPartnersByYear(year),
-      (partners) => this.updatePartnerState(partners)
-    );
+    this.listLoadingSubject.next(true);
+    this.partnersService
+      .getPartnersByYear(year)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        catchError((err) => this.generalService.handleHttpError(err)),
+        finalize(() => this.listLoadingSubject.next(false))
+      )
+      .subscribe((partners) => this.updatePartnerState(partners));
   }
 
+  // ─────────── ITEM → isLoadingItem$
   loadPartnerById(id: number): void {
-    this.executeWithLoading(
-      this.partnersService.getPartnerById(id),
-      (partner) => this.selectedPartnerSubject.next(partner)
-    );
+    this.itemLoadingSubject.next(true);
+    this.partnersService
+      .getPartnerById(id)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        catchError((err) => this.generalService.handleHttpError(err)),
+        finalize(() => this.itemLoadingSubject.next(false))
+      )
+      .subscribe((partner) => this.selectedPartnerSubject.next(partner));
   }
 
   addPartner(partner: FormData): Observable<any> {
-    return this.wrapWithLoading(this.partnersService.add(partner)).pipe(
+    this.itemLoadingSubject.next(true);
+    return this.partnersService.add(partner).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.reloadCurrentFilter()),
-      catchError((err) => this.generalService.handleHttpError(err))
+      catchError((err) => this.generalService.handleHttpError(err)),
+      finalize(() => this.itemLoadingSubject.next(false))
     );
   }
 
+  // Nota: si tu service necesita el id en la edición, pásalo ahí.
   editPartner(id: number, partner: FormData): Observable<any> {
-    return this.wrapWithLoading(this.partnersService.edit(partner)).pipe(
+    this.itemLoadingSubject.next(true);
+    return this.partnersService.edit(partner).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.reloadCurrentFilter()),
-      catchError((err) => this.generalService.handleHttpError(err))
+      catchError((err) => this.generalService.handleHttpError(err)),
+      finalize(() => this.itemLoadingSubject.next(false))
     );
   }
 
   deletePartner(id: number): void {
-    this.executeWithLoading(this.partnersService.delete(id), () =>
-      this.reloadCurrentFilter()
-    );
+    this.itemLoadingSubject.next(true);
+    this.partnersService
+      .delete(id)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        catchError((err) => this.generalService.handleHttpError(err)),
+        finalize(() => this.itemLoadingSubject.next(false))
+      )
+      .subscribe(() => this.reloadCurrentFilter());
   }
 
   clearSelectedPartner(): void {
@@ -77,12 +115,10 @@ export class PartnersFacade extends LoadableFacade {
 
   applyFilterWord(keyword: string): void {
     const all = this.partnersSubject.getValue();
-
     if (!all) {
       this.filteredPartnersSubject.next(all);
       return;
     }
-
     if (!toSearchKey(keyword)) {
       this.filteredPartnersSubject.next(all);
       return;
@@ -91,7 +127,6 @@ export class PartnersFacade extends LoadableFacade {
     const filtered = all.filter((partner) =>
       [partner.name].some((field) => includesNormalized(field, keyword))
     );
-
     this.filteredPartnersSubject.next(filtered);
   }
 

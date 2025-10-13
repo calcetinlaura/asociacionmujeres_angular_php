@@ -1,20 +1,16 @@
 import { CommonModule } from '@angular/common';
 import {
   Component,
-  computed,
   DestroyRef,
   ElementRef,
   inject,
   OnInit,
-  Signal,
   ViewChild,
-  WritableSignal,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
-import { tap } from 'rxjs';
+import { map, tap } from 'rxjs';
 
 import { CreditorsFacade } from 'src/app/application/creditors.facade';
 import {
@@ -25,7 +21,7 @@ import {
   categoryFilterCreditors,
   CreditorWithInvoices,
 } from 'src/app/core/interfaces/creditor.interface';
-import { InvoiceModelFullData } from 'src/app/core/interfaces/invoice.interface'; // 👈 asegúrate de la ruta
+import { InvoiceModelFullData } from 'src/app/core/interfaces/invoice.interface';
 import {
   Filter,
   TypeActionModal,
@@ -33,24 +29,22 @@ import {
 } from 'src/app/core/models/general.model';
 
 import { CreditorsService } from 'src/app/core/services/creditors.services';
-import { InvoicesService } from 'src/app/core/services/invoices.services'; // 👈 servicio de facturas
+import { InvoicesService } from 'src/app/core/services/invoices.services';
+import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
+
 import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
 import { TableComponent } from 'src/app/modules/dashboard/components/table/table.component';
 import { FiltersComponent } from 'src/app/modules/landing/components/filters/filters.component';
-import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
-import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
-import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
-import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
-import { GeneralService } from 'src/app/shared/services/generalService.service';
-import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
-
-import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.component';
-import { ColumnMenuComponent } from '../../components/table/column-menu.component';
-import { ColumnVisibilityStore } from '../../components/table/column-visibility.store';
-
 import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
 import { ModalNavService } from 'src/app/shared/components/modal/services/modal-nav.service';
 import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
+import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
+import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.component';
+
+// hooks reutilizables
+import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
+import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
+import { PageToolbarComponent } from '../../components/page-toolbar/page-toolbar.component';
 
 type CreditorsModalItem = CreditorWithInvoices | InvoiceModelFullData;
 
@@ -64,35 +58,26 @@ type CreditorsModalItem = CreditorWithInvoices | InvoiceModelFullData;
     StickyZoneComponent,
     TableComponent,
     FiltersComponent,
-    ButtonIconComponent,
-    IconActionComponent,
-    InputSearchComponent,
-    ColumnMenuComponent,
     ModalShellComponent,
+    PageToolbarComponent,
     // Angular
     CommonModule,
-    ReactiveFormsModule,
     MatMenuModule,
     MatCheckboxModule,
   ],
   templateUrl: './creditors-page.component.html',
 })
 export class CreditorsPageComponent implements OnInit {
-  // Servicios
+  // servicios
   private readonly destroyRef = inject(DestroyRef);
   private readonly modalService = inject(ModalService);
-  private readonly generalService = inject(GeneralService);
   private readonly pdfPrintService = inject(PdfPrintService);
-  private readonly colStore = inject(ColumnVisibilityStore);
-
-  readonly creditorsFacade = inject(CreditorsFacade);
   private readonly creditorsService = inject(CreditorsService);
   private readonly invoicesService = inject(InvoicesService);
-
-  // Navegación modal (stack para volver)
+  readonly creditorsFacade = inject(CreditorsFacade);
   private readonly modalNav = inject(ModalNavService<CreditorsModalItem>);
 
-  // Tabla
+  // tabla: definición columnas
   headerListCreditors: ColumnModel[] = [
     { title: 'Compañía', key: 'company', sortable: true },
     {
@@ -147,79 +132,53 @@ export class CreditorsPageComponent implements OnInit {
     },
   ];
 
-  // Signals para columnas
-  columnVisSig!: WritableSignal<Record<string, boolean>>;
-  displayedColumnsSig!: Signal<string[]>;
+  // ── Column visibility (hook)
+  readonly col = useColumnVisibility(
+    'creditors-table',
+    this.headerListCreditors
+  );
 
-  // Datos
-  creditors: CreditorWithInvoices[] = [];
-  filteredCreditors: CreditorWithInvoices[] = [];
+  readonly list = useEntityList<CreditorWithInvoices>({
+    filtered$: this.creditorsFacade.filteredCreditors$.pipe(
+      map((v) => v ?? [])
+    ),
+    sort: (arr) => this.creditorsService.sortCreditorsById(arr),
+    count: (arr) => this.creditorsService.countCreditors(arr),
+    // map: opcional si quisieras enriquecer cada fila antes del sort
+  });
+
+  // filtros
   filters: Filter[] = [];
   selectedFilter: string | null = null;
 
-  isModalVisible = false;
-  number = 0;
-
-  // Modal
+  // modal
+  readonly modalVisibleSig = toSignal(this.modalService.modalVisibility$, {
+    initialValue: false,
+  });
   item: CreditorsModalItem | null = null;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
   typeModal: TypeList = TypeList.Creditors;
   typeSection: TypeList = TypeList.Creditors;
 
-  // Form
-  searchForm!: FormGroup;
-
-  // Refs
-  @ViewChild(InputSearchComponent)
-  private inputSearchComponent!: InputSearchComponent;
-
+  // refs
   @ViewChild('printArea', { static: false })
   printArea!: ElementRef<HTMLElement>;
 
   // ──────────────────────────────────────────────────────────────────────────────
-  // Lifecycle
+  // lifecycle
   // ──────────────────────────────────────────────────────────────────────────────
   ngOnInit(): void {
-    // Persistencia de columnas con Signals
-    this.columnVisSig = this.colStore.init(
-      'creditors-table',
-      this.headerListCreditors,
-      [] // ocultas por defecto
-    );
-    this.displayedColumnsSig = computed(() =>
-      this.colStore.displayedColumns(
-        this.headerListCreditors,
-        this.columnVisSig()
-      )
-    );
-
-    // Filtros
     this.filters = [{ code: '', name: 'Todos' }, ...categoryFilterCreditors];
-
-    // Visibilidad modal
-    this.modalService.modalVisibility$
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .pipe(tap((isVisible) => (this.isModalVisible = isVisible)))
-      .subscribe();
-
-    // Carga inicial
+    // carga inicial
     this.filterSelected('');
-
-    // Estado desde facade
-    this.creditorsFacade.filteredCreditors$
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((creditors) => this.updateCreditorState(creditors))
-      )
-      .subscribe();
   }
 
   // ──────────────────────────────────────────────────────────────────────────────
-  // Filtros / búsqueda
+  // filtros / búsqueda
   // ──────────────────────────────────────────────────────────────────────────────
   filterSelected(filter: string): void {
     this.selectedFilter = filter;
-    this.generalService.clearSearchInput(this.inputSearchComponent);
+    this.creditorsFacade.applyFilterWord('');
 
     if (!filter) {
       this.creditorsFacade.loadAllCreditors();
@@ -233,7 +192,7 @@ export class CreditorsPageComponent implements OnInit {
   }
 
   // ──────────────────────────────────────────────────────────────────────────────
-  // Modal + navegación
+  // modal + navegación
   // ──────────────────────────────────────────────────────────────────────────────
   addNewCreditorModal(): void {
     this.openModal(TypeList.Creditors, TypeActionModal.Create, null);
@@ -256,7 +215,6 @@ export class CreditorsPageComponent implements OnInit {
     this.item = item;
     this.typeModal = typeModal;
 
-    // Limpiar seleccionado SOLO en CREATE de acreedores
     if (typeModal === TypeList.Creditors && action === TypeActionModal.Create) {
       this.creditorsFacade.clearSelectedCreditor();
     }
@@ -267,12 +225,11 @@ export class CreditorsPageComponent implements OnInit {
   onCloseModal(): void {
     this.modalService.closeModal();
     this.item = null;
-    this.modalNav.clear(); // reset navegación
+    this.modalNav.clear();
   }
 
-  // Abrir FACTURA desde la modal de acreedor
   onOpenInvoice(invoiceId: number): void {
-    // Guarda estado actual para "volver"
+    // guardar estado actual para "volver"
     this.modalNav.push({
       typeModal: this.typeModal,
       action: this.currentModalAction,
@@ -322,29 +279,7 @@ export class CreditorsPageComponent implements OnInit {
   }
 
   // ──────────────────────────────────────────────────────────────────────────────
-  // Estado tabla
-  // ──────────────────────────────────────────────────────────────────────────────
-  private updateCreditorState(creditors: CreditorWithInvoices[] | null): void {
-    if (!creditors) return;
-
-    this.creditors = this.creditorsService.sortCreditorsById(creditors);
-    this.filteredCreditors = [...this.creditors];
-    this.number = this.creditorsService.countCreditors(creditors);
-  }
-
-  getVisibleColumns() {
-    return this.colStore.visibleColumnModels(
-      this.headerListCreditors,
-      this.columnVisSig()
-    );
-  }
-
-  toggleColumn(key: string): void {
-    this.colStore.toggle('creditors-table', this.columnVisSig, key);
-  }
-
-  // ──────────────────────────────────────────────────────────────────────────────
-  // Impresión
+  // impresión
   // ──────────────────────────────────────────────────────────────────────────────
   async printTableAsPdf(): Promise<void> {
     if (!this.printArea) return;
@@ -358,7 +293,6 @@ export class CreditorsPageComponent implements OnInit {
     });
   }
 
-  // Para el template (botón volver del shell)
   get canGoBack(): boolean {
     return this.modalNav.canGoBack();
   }

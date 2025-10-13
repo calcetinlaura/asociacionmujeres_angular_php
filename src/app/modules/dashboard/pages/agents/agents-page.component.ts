@@ -4,17 +4,13 @@ import {
   DestroyRef,
   ElementRef,
   OnInit,
-  Signal,
   ViewChild,
-  WritableSignal,
-  computed,
   inject,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
-import { tap } from 'rxjs';
+import { map, tap } from 'rxjs';
 
 import { AgentsFacade } from 'src/app/application/agents.facade';
 import {
@@ -37,19 +33,20 @@ import { EventsService } from 'src/app/core/services/events.services';
 import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
 import { TableComponent } from 'src/app/modules/dashboard/components/table/table.component';
 import { FiltersComponent } from 'src/app/modules/landing/components/filters/filters.component';
-import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
-import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
-import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
-import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
 import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.component';
-import { ColumnMenuComponent } from '../../components/table/column-menu.component';
-import { ColumnVisibilityStore } from '../../components/table/column-visibility.store';
 
-// Nuevo shell de modal unificado
+import { PageToolbarComponent } from '../../components/page-toolbar/page-toolbar.component';
+// Shell de modal unificado
 import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
 import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
+
+// Hooks reutilizables
+import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
+import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
+
+// Toolbar reusable
 
 type ModalState = {
   typeModal: TypeList;
@@ -67,14 +64,10 @@ type ModalState = {
     StickyZoneComponent,
     TableComponent,
     FiltersComponent,
-    ButtonIconComponent,
-    IconActionComponent,
-    InputSearchComponent,
-    ColumnMenuComponent,
     ModalShellComponent,
+    PageToolbarComponent,
     // Angular
     CommonModule,
-    ReactiveFormsModule,
     MatMenuModule,
     MatCheckboxModule,
   ],
@@ -83,14 +76,13 @@ type ModalState = {
 export class AgentsPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly modalService = inject(ModalService);
-  readonly agentsFacade = inject(AgentsFacade);
   private readonly agentsService = inject(AgentsService);
-  private readonly generalService = inject(GeneralService);
   private readonly pdfPrintService = inject(PdfPrintService);
   private readonly eventsService = inject(EventsService);
-  private readonly colStore = inject(ColumnVisibilityStore);
+  // Facade
+  readonly agentsFacade = inject(AgentsFacade);
 
-  // Tabla: definición columnas
+  // Columnas
   headerListAgents: ColumnModel[] = [
     { title: 'Imagen', key: 'img', sortable: false },
     { title: 'Nombre', key: 'name', sortable: true },
@@ -127,19 +119,23 @@ export class AgentsPageComponent implements OnInit {
     },
   ];
 
-  // ✅ Signals de columnas (persistentes)
-  columnVisSig!: WritableSignal<Record<string, boolean>>;
-  displayedColumnsSig!: Signal<string[]>;
+  // ── Column visibility (hook)
+  readonly col = useColumnVisibility('agents-table', this.headerListAgents);
 
-  // Datos
-  agents: AgentsModelFullData[] = [];
-  filteredAgents: AgentsModelFullData[] = [];
+  readonly list = useEntityList<AgentsModelFullData>({
+    filtered$: this.agentsFacade.filteredAgents$.pipe(map((v) => v ?? [])),
+    sort: (arr) => this.agentsService.sortAgentsById(arr),
+    count: (arr) => this.agentsService.countAgents(arr),
+  });
+
+  // Filtros
   filters: Filter[] = [];
   selectedFilter: string | null = null;
 
   // Modal
-  isModalVisible = false;
-  number = 0;
+  readonly modalVisibleSig = toSignal(this.modalService.modalVisibility$, {
+    initialValue: false,
+  });
   item: AgentsModelFullData | EventModelFullData | null = null;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
   typeModal: TypeList = TypeList.Agents;
@@ -149,46 +145,18 @@ export class AgentsPageComponent implements OnInit {
   // Historial navegación modal (Agente ↔ Evento)
   modalHistory: ModalState[] = [];
 
-  // Form
-  searchForm!: FormGroup;
-
-  @ViewChild(InputSearchComponent)
-  private inputSearchComponent!: InputSearchComponent;
-
   @ViewChild('printArea', { static: false })
   printArea!: ElementRef<HTMLElement>;
 
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Lifecycle
+  // ──────────────────────────────────────────────────────────────────────────────
   ngOnInit(): void {
-    // Columnas visibles persistentes
-    this.columnVisSig = this.colStore.init(
-      'agents-table',
-      this.headerListAgents
-    );
-    this.displayedColumnsSig = computed(() =>
-      this.colStore.displayedColumns(this.headerListAgents, this.columnVisSig())
-    );
-
     // Filtros
     this.filters = [{ code: '', name: 'Todos' }, ...CategoryFilterAgents];
 
-    // Estado visibilidad modal
-    this.modalService.modalVisibility$
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((v) => (this.isModalVisible = v))
-      )
-      .subscribe();
-
     // Carga inicial
     this.filterSelected('');
-
-    // Estado de agentes
-    this.agentsFacade.filteredAgents$
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((agents) => this.updateAgentState(agents))
-      )
-      .subscribe();
   }
 
   // ──────────────────────────────────────────────────────────────────────────────
@@ -196,7 +164,9 @@ export class AgentsPageComponent implements OnInit {
   // ──────────────────────────────────────────────────────────────────────────────
   filterSelected(filter: string): void {
     this.selectedFilter = filter;
-    this.generalService.clearSearchInput(this.inputSearchComponent);
+    // Si usas InputSearchComponent en PageToolbar, no hay ref directa aquí;
+    // limpia el filtro de texto invocando el método de la facade si procede (opcional).
+    this.agentsFacade.applyFilterWord('');
 
     if (!filter) {
       this.agentsFacade.loadAllAgents();
@@ -229,7 +199,6 @@ export class AgentsPageComponent implements OnInit {
     this.currentModalAction = action;
     this.item = item;
 
-    // Limpiar seleccionado SOLO en Create de Agentes
     if (typeModal === TypeList.Agents && action === TypeActionModal.Create) {
       this.agentsFacade.clearSelectedAgent();
     }
@@ -267,7 +236,7 @@ export class AgentsPageComponent implements OnInit {
   onCloseModal(): void {
     this.modalService.closeModal();
     this.item = null;
-    this.modalHistory = []; // reset del stack
+    this.modalHistory = [];
   }
 
   // ──────────────────────────────────────────────────────────────────────────────
@@ -293,28 +262,6 @@ export class AgentsPageComponent implements OnInit {
       .subscribe();
   }
 
-  // ──────────────────────────────────────────────────────────────────────────────
-  // Tabla helpers
-  // ──────────────────────────────────────────────────────────────────────────────
-  private updateAgentState(agents: AgentsModelFullData[] | null): void {
-    if (!agents) return;
-    this.agents = this.agentsService.sortAgentsById(agents);
-    this.filteredAgents = [...this.agents];
-    this.number = this.agentsService.countAgents(agents);
-  }
-
-  getVisibleColumns() {
-    return this.colStore.visibleColumnModels(
-      this.headerListAgents,
-      this.columnVisSig()
-    );
-  }
-
-  toggleColumn(key: string): void {
-    this.colStore.toggle('agents-table', this.columnVisSig, key);
-  }
-
-  // ──────────────────────────────────────────────────────────────────────────────
   // Impresión
   // ──────────────────────────────────────────────────────────────────────────────
   async printTableAsPdf(): Promise<void> {
@@ -329,7 +276,6 @@ export class AgentsPageComponent implements OnInit {
     });
   }
 
-  // Para el shell (si quieres condicionar mostrar flecha)
   get canGoBack(): boolean {
     return this.modalHistory.length > 0;
   }

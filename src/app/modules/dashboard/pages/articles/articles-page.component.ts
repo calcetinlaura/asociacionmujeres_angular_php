@@ -4,17 +4,13 @@ import {
   DestroyRef,
   ElementRef,
   OnInit,
-  Signal,
   ViewChild,
-  WritableSignal,
-  computed,
   inject,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
-import { tap } from 'rxjs';
+import { map, tap } from 'rxjs';
 
 import { ArticlesFacade } from 'src/app/application/articles.facade';
 import { ArticleModel } from 'src/app/core/interfaces/article.interface';
@@ -27,17 +23,16 @@ import { ArticlesService } from 'src/app/core/services/articles.services';
 
 import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
 import { TableComponent } from 'src/app/modules/dashboard/components/table/table.component';
-import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
-import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
-import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
-
 import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.component';
-import { ColumnMenuComponent } from '../../components/table/column-menu.component';
-import { ColumnVisibilityStore } from '../../components/table/column-visibility.store';
 
-// 👇 Shell de modales unificado
+// Reutilizables
+import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
+import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
+import { PageToolbarComponent } from '../../components/page-toolbar/page-toolbar.component';
+
+// Modal shell + service
 import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
 import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
 
@@ -50,14 +45,10 @@ import { ModalService } from 'src/app/shared/components/modal/services/modal.ser
     SpinnerLoadingComponent,
     StickyZoneComponent,
     TableComponent,
-    ButtonIconComponent,
-    IconActionComponent,
-    InputSearchComponent,
-    ColumnMenuComponent,
     ModalShellComponent,
+    PageToolbarComponent,
     // Angular
     CommonModule,
-    ReactiveFormsModule,
     MatMenuModule,
     MatCheckboxModule,
   ],
@@ -69,9 +60,8 @@ export class ArticlesPageComponent implements OnInit {
   private readonly modalService = inject(ModalService);
   private readonly articlesService = inject(ArticlesService);
   private readonly pdfPrintService = inject(PdfPrintService);
-  private readonly colStore = inject(ColumnVisibilityStore);
 
-  // Facade (pública para template con async pipe si la usas)
+  // Facade
   readonly articlesFacade = inject(ArticlesFacade);
 
   // Cabecera de tabla
@@ -89,24 +79,23 @@ export class ArticlesPageComponent implements OnInit {
     },
   ];
 
-  // ✅ Signals de visibilidad de columnas
-  columnVisSig!: WritableSignal<Record<string, boolean>>;
-  displayedColumnsSig!: Signal<string[]>;
+  // Reutilizables
+  readonly col = useColumnVisibility('articles-table', this.headerListArticles);
 
-  // Datos
-  articles: ArticleModel[] = [];
-  filteredArticles: ArticleModel[] = [];
-  number = 0;
+  readonly list = useEntityList<ArticleModel>({
+    filtered$: this.articlesFacade.filteredArticles$.pipe(map((v) => v ?? [])),
+    sort: (arr) => this.articlesService.sortArticlesById(arr),
+    count: (arr) => this.articlesService.countArticles(arr),
+  });
 
   // Modal
-  isModalVisible = false;
+  readonly modalVisibleSig = toSignal(this.modalService.modalVisibility$, {
+    initialValue: false,
+  });
   item: ArticleModel | null = null;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
   typeModal: TypeList = TypeList.Articles;
   typeSection: TypeList = TypeList.Articles;
-
-  // Form
-  searchForm!: FormGroup;
 
   // Refs
   @ViewChild('printArea', { static: false })
@@ -116,45 +105,14 @@ export class ArticlesPageComponent implements OnInit {
   // Lifecycle
   // ──────────────────────────────────────────────────────────────────────────────
   ngOnInit(): void {
-    // Columnas visibles (persistentes por clave)
-    this.columnVisSig = this.colStore.init(
-      'articles-table',
-      this.headerListArticles,
-      [] // ocultas por defecto
-    );
-    this.displayedColumnsSig = computed(() =>
-      this.colStore.displayedColumns(
-        this.headerListArticles,
-        this.columnVisSig()
-      )
-    );
-
-    // Visibilidad modal
-    this.modalService.modalVisibility$
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .pipe(tap((v) => (this.isModalVisible = v)))
-      .subscribe();
-
-    // Carga inicial
-    this.loadAllArticles();
-  }
-
-  // ──────────────────────────────────────────────────────────────────────────────
-  // Carga / búsqueda
-  // ──────────────────────────────────────────────────────────────────────────────
-  loadAllArticles(): void {
     this.articlesFacade.loadAllArticles();
-    this.articlesFacade.filteredArticles$
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((articles) => this.updateArticleState(articles))
-      )
-      .subscribe();
   }
 
-  applyFilterWord(keyword: string): void {
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Búsqueda
+  // ──────────────────────────────────────────────────────────────────────────────
+  applyFilterWord = (keyword: string) =>
     this.articlesFacade.applyFilterWord(keyword);
-  }
 
   // ──────────────────────────────────────────────────────────────────────────────
   // Modal
@@ -180,7 +138,6 @@ export class ArticlesPageComponent implements OnInit {
     this.item = article;
     this.typeModal = typeModal;
 
-    // 🧹 Limpiar seleccionado SOLO en Create
     if (typeModal === TypeList.Articles && action === TypeActionModal.Create) {
       this.articlesFacade.clearSelectedArticle();
     }
@@ -190,7 +147,7 @@ export class ArticlesPageComponent implements OnInit {
 
   onCloseModal(): void {
     this.modalService.closeModal();
-    this.item = null; // evitar arrastrar estado
+    this.item = null;
   }
 
   // ──────────────────────────────────────────────────────────────────────────────
@@ -214,28 +171,6 @@ export class ArticlesPageComponent implements OnInit {
         tap(() => this.onCloseModal())
       )
       .subscribe();
-  }
-
-  // ──────────────────────────────────────────────────────────────────────────────
-  // Tabla helpers
-  // ──────────────────────────────────────────────────────────────────────────────
-  private updateArticleState(articles: ArticleModel[] | null): void {
-    if (!articles) return;
-
-    this.articles = this.articlesService.sortArticlesById(articles);
-    this.filteredArticles = [...this.articles];
-    this.number = this.articlesService.countArticles(articles);
-  }
-
-  getVisibleColumns(): ColumnModel[] {
-    return this.colStore.visibleColumnModels(
-      this.headerListArticles,
-      this.columnVisSig()
-    );
-  }
-
-  toggleColumn(key: string): void {
-    this.colStore.toggle('articles-table', this.columnVisSig, key);
   }
 
   // ──────────────────────────────────────────────────────────────────────────────

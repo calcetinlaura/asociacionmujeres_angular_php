@@ -2,63 +2,56 @@
   <app-dashboard-header
     [icon]="'uil-euro-circle'"
     [title]="'Subvenciones'"
-    [number]="number"
+    [number]="list.countSig()"
     [type]="'Subvenciones'"
   />
   <div class="flex flex-1 flex-col justify-start p-8 gap-y-8">
     <app-filters
       [filters]="filters"
+      [(selected)]="selectedFilter"
       (filterClicked)="filterSelected($event)"
-    ></app-filters>
+    />
     @if (showAllSubsidies) {
-    <div class="flex gap-x-4 items-center">
-      <app-button-icon
-        [buttonText]="'Añadir subveción'"
-        [iconClass]="'uil-plus'"
-        (addClicked)="addNewSubsidyModal()"
-      />
-      <app-input-search (onDebounce)="applyFilterWord($event)" class="flex-1" />
-
-      <app-icon-action
-        [icon]="'uil-print'"
-        [tooltip]="'Imprimir tabla'"
-        (click)="printTableAsPdf()"
-      ></app-icon-action>
-      <app-column-menu
-        [columns]="headerListSubsidies"
-        [visibility]="columnVisSig()"
-        (toggle)="toggleColumn($event)"
-      />
-    </div>
+    <app-page-toolbar
+      [columns]="headerListSubsidies"
+      [visibility]="col.columnVisSig"
+      [addText]="'Añadir subvención'"
+      (add)="addNewSubsidyModal()"
+      (search)="applyFilterWord($event)"
+      (print)="printTableAsPdf()"
+      (toggle)="col.toggleColumn($event)"
+    />
     }
   </div>
 </app-sticky-zone>
+
 <div class="flex flex-col px-8">
-  @if (subsidiesFacade.isLoading$ | async) {
+  @if (subsidiesFacade.isLoadingList$ | async) {
   <app-spinner-loading />
-  }@else { @if (showAllSubsidies) {
+  } @else { @if (showAllSubsidies) {
   <div #printArea>
     <h2 class="only-on-pdf print-title">Listado subvenciones</h2>
-    @for (group of (groupedByYear | keyvalue : sortYearsDesc); track group.key)
-    {
+
+    @for (group of (groupedByYearSig() | keyvalue : sortYearsDesc); track
+    group.key) {
     <div class="pb-4">
       <h3 class="year-title text-[14px] font-bold mb-4">Año {{ group.key }}</h3>
       <div class="pb-4 flex">
         <app-table
           [data]="group.value"
-          [headerColumns]="getVisibleColumns()"
-          [columnVisibility]="columnVisSig()"
           [typeSection]="typeModal"
           [typeModal]="typeModal"
+          [headerColumns]="col.getVisibleColumns()"
+          [columnVisibility]="col.columnVisSig()"
+          [displayedColumns]="col.displayedColumnsSig()"
           (openModal)="onOpenModal($event)"
-        ></app-table>
+        />
       </div>
     </div>
     }
   </div>
   <hr />
-
-  } @else { @if( visibleTabs.length > 0){
+  } @else { @if (visibleTabs.length > 0) {
   <mat-tab-group
     (selectedTabChange)="tabActive($event)"
     [selectedIndex]="selectedIndex"
@@ -69,7 +62,7 @@
         [item]="tab.item"
         [loadInvoices]="true"
         (openModal)="onOpenModal($event)"
-      ></app-tab-subsidy>
+      />
     </mat-tab>
     }
   </mat-tab-group>
@@ -77,24 +70,21 @@
   <div class="text-center text-gray-600 my-12 text-lg">
     No hay subvenciones registradas en este año.
   </div>
-  }}}
+  } } }
 </div>
 
-<!-- Modal -->
-@if (isModalVisible) {
 <app-modal-shell
-  [visible]="isModalVisible"
+  [visible]="modalVisibleSig()"
   [typeModal]="typeModal"
   [action]="currentModalAction"
   [item]="item"
-  [canGoBack]="canGoBack"
-  (back)="onBackModal()"
   (close)="onCloseModal()"
   (confirmDelete)="onDelete($event)"
+  [canGoBack]="canGoBack"
+  (back)="onBackModal()"
   (sendFormSubsidyData)="sendFormSubsidy($event)"
   (sendFormProjectData)="sendFormProject($event)"
   (sendFormInvoiceData)="sendFormInvoice($event)"
   (openProject)="onOpenProject($event)"
   (openInvoice)="onOpenInvoice($event)"
 />
-}

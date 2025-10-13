@@ -83,7 +83,7 @@
         <td class="p-2 w-1/2">
           <div>
             <p class="text-[13px] text-gray-800">
-              <span [innerHTML]="event.description"></span>
+              <span [innerHTML]="event.description | safeHtml"></span>
             </p>
           </div>
         </td>
@@ -93,7 +93,7 @@
     }
   </table>
   } @if (item.activities && item.activities.length > 0) {
-  <p class="text-[18px] font-normal mt-6 mb-4">Tareas</p>
+  <p class="text-[18px] font-normal mt-6 mb-4">Presupuesto - tareas</p>
   <table class="w-full -collapse tableProjects my-4">
     @for (activity of item.activities; track activity; let pIndex = $index) {
 
@@ -106,7 +106,7 @@
         <td class="p-2 w-1/2">
           <div>
             <p class="text-[13px] text-gray-800">
-              <span [innerHTML]="activity.observations"></span>
+              <span [innerHTML]="activity.observations | safeHtml"></span>
             </p>
             @if (activity.attendant) {
             <p class="text-[12px] text-gray-500 flex items-center gap-1 mt-1">

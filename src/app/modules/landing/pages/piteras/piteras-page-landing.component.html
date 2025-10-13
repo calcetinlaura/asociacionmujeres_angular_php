@@ -1,5 +1,5 @@
 <div class="flex flex-col mx-3 md:mx-8 mt-4">
-  @if (piterasFacade.isLoading$ | async) {
+  @if (piterasFacade.isLoadingList$ | async) {
   <app-spinner-loading />
   } @else {
   <app-section-generic

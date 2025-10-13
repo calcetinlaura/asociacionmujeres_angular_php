@@ -1,21 +1,27 @@
+import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-
 import { MatGridListModule } from '@angular/material/grid-list';
-import { filterPhotos } from 'src/app/core/models/general.model';
+import { Filter, filterPhotos } from 'src/app/core/models/general.model';
 import { FiltersComponent } from '../../components/filters/filters.component';
 
 @Component({
   selector: 'app-photos-page-landing',
-  imports: [MatGridListModule, FiltersComponent],
+  standalone: true,
+  imports: [CommonModule, MatGridListModule, FiltersComponent],
   templateUrl: './photos-page-landing.component.html',
-  providers: [],
 })
 export class PhotosPageLandingComponent implements OnInit {
   photos: { url: string; text: string }[] = [];
-  filterGenderPhotos = filterPhotos;
+
+  // Fuente de filtros (ya la tenías)
+  filterGenderPhotos: Filter[] = filterPhotos;
+
+  // Valor controlado por el padre para <app-filters>
+  selectedFilter: string | number | null = 'CONCENTRACIONES';
 
   ngOnInit(): void {
-    this.filterSelected('CONCENTRACIONES');
+    // Carga inicial
+    this.filterSelected(String(this.selectedFilter ?? 'CONCENTRACIONES'));
   }
 
   filterSelected(filter: string): void {

@@ -32,7 +32,7 @@ export class PodcastsPageLandingComponent implements OnInit {
   areThereResults = false;
   typeList = TypeList;
   number = 0;
-  selectedFilter = '';
+  selectedFilter: string | number = '';
 
   ngOnInit(): void {
     this.loadAllPodcasts();

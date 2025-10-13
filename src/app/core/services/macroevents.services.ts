@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { catchError, shareReplay, take, tap } from 'rxjs/operators';
+import { catchError, shareReplay, tap } from 'rxjs/operators';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { environments } from 'src/environments/environments';
 import { MacroeventModelFullData } from '../interfaces/macroevent.interface';
@@ -72,39 +72,6 @@ export class MacroeventsService {
     return this.macroReq.get(id)!;
   }
 
-  // ====== PREFETCH / PEEK ======
-  /** Dispara la carga en segundo plano (no rompe si falla) */
-  prefetchMacroevent(id: number): void {
-    this.getMacroeventById(id)
-      .pipe(take(1))
-      .subscribe({ error: () => {} });
-  }
-
-  prefetchMacroevents(): void {
-    this.getMacroevents()
-      .pipe(take(1))
-      .subscribe({ error: () => {} });
-  }
-
-  prefetchMacroeventsByYear(year: number): void {
-    this.getMacroeventsByYear(year)
-      .pipe(take(1))
-      .subscribe({ error: () => {} });
-  }
-
-  /** Lee de la caché sincronamente si ya está en memoria */
-  peekMacroevent(id: number): MacroeventModelFullData | null {
-    return this.macroVal.get(id) ?? null;
-  }
-
-  peekMacroevents(): MacroeventModelFullData[] | null {
-    return this.listAllVal ?? null;
-  }
-
-  peekMacroeventsByYear(year: number): MacroeventModelFullData[] | null {
-    return this.listByYearVal.get(year) ?? null;
-  }
-
   // ====== COMMANDS (mutaciones) ======
   add(form: FormData): Observable<any> {
     return this.http.post(this.apiUrl, form).pipe(
@@ -119,11 +86,19 @@ export class MacroeventsService {
     );
   }
 
+  private invalidateItem(id: number): void {
+    this.macroReq.delete(id);
+    this.macroVal.delete(id);
+  }
+
   edit(form: FormData): Observable<any> {
     return this.http.post(this.apiUrl, form).pipe(
       tap((updated: any) => {
         if (updated?.id) {
+          // Puedes mantener este upsert si quieres,
+          // pero lo importante es invalidar el observable cacheado:
           this.macroVal.set(updated.id, updated);
+          this.invalidateItem(updated.id); // 👈 clave
         }
         this.invalidateLists();
       }),
@@ -134,9 +109,7 @@ export class MacroeventsService {
   delete(id: number): Observable<any> {
     return this.generalService.deleteOverride<any>(this.apiUrl, { id }).pipe(
       tap(() => {
-        // limpia caché del item y de los listados
-        this.macroReq.delete(id);
-        this.macroVal.delete(id);
+        this.invalidateItem(id); // 👈 clave
         this.invalidateLists();
       }),
       catchError((err) => this.generalService.handleHttpError(err))

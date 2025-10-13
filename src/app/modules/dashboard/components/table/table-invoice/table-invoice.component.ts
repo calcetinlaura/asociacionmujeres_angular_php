@@ -10,11 +10,12 @@ import {
 } from '@angular/core';
 import { InvoiceModelFullData } from 'src/app/core/interfaces/invoice.interface';
 import { EurosFormatPipe } from '../../../../../shared/pipe/eurosFormat.pipe';
+import { SafeHtmlPipe } from '../../../../../shared/pipe/safe-html.pipe';
 
 @Component({
   selector: 'app-invoices-table',
   standalone: true,
-  imports: [CommonModule, EurosFormatPipe],
+  imports: [CommonModule, EurosFormatPipe, SafeHtmlPipe],
   templateUrl: './table-invoice.component.html',
   styleUrls: ['./table-invoice.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

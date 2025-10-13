@@ -31,6 +31,7 @@ import { FilterTransformCodePipe } from 'src/app/shared/pipe/filterTransformCode
 import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
 import { buildShareUrl } from 'src/app/shared/utils/share-url.util';
 import { environments } from 'src/environments/environments';
+import { SafeHtmlPipe } from '../../../../../../shared/pipe/safe-html.pipe';
 
 @Component({
   selector: 'app-modal-show-event',
@@ -47,6 +48,7 @@ import { environments } from 'src/environments/environments';
     DictTranslatePipe,
     AudienceBadgesPipe,
     ImageZoomOverlayComponent,
+    SafeHtmlPipe,
   ],
   templateUrl: './modal-show-event.component.html',
   styleUrls: ['./modal-show-event.component.css'],

@@ -4,13 +4,10 @@ import {
   DestroyRef,
   ElementRef,
   OnInit,
-  Signal,
   ViewChild,
-  WritableSignal,
-  computed,
   inject,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
@@ -34,17 +31,21 @@ import { MacroeventsService } from 'src/app/core/services/macroevents.services';
 import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
 import { TableComponent } from 'src/app/modules/dashboard/components/table/table.component';
 import { FiltersComponent } from 'src/app/modules/landing/components/filters/filters.component';
-import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
-import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
-import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
+
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
 
 import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.component';
-import { ColumnMenuComponent } from '../../components/table/column-menu.component';
-import { ColumnVisibilityStore } from '../../components/table/column-visibility.store';
 
+// ✅ Toolbar común
+import { PageToolbarComponent } from '../../components/page-toolbar/page-toolbar.component';
+
+// ✅ Hooks reutilizables
+import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
+import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
+
+// Shell modal + navegación
 import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
 import { ModalNavService } from 'src/app/shared/components/modal/services/modal-nav.service';
 import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
@@ -59,10 +60,7 @@ import { ModalService } from 'src/app/shared/components/modal/services/modal.ser
     StickyZoneComponent,
     TableComponent,
     FiltersComponent,
-    ButtonIconComponent,
-    IconActionComponent,
-    InputSearchComponent,
-    ColumnMenuComponent,
+    PageToolbarComponent,
     ModalShellComponent,
     // Angular
     CommonModule,
@@ -73,25 +71,18 @@ import { ModalService } from 'src/app/shared/components/modal/services/modal.ser
   templateUrl: './events-page.component.html',
 })
 export class EventsPageComponent implements OnInit {
-  // ── Inyección de servicios ───────────────────────────────────────────────────
+  // ── Servicios
   private readonly destroyRef = inject(DestroyRef);
   private readonly modalService = inject(ModalService);
   private readonly eventsService = inject(EventsService);
   private readonly macroeventsService = inject(MacroeventsService);
   private readonly generalService = inject(GeneralService);
   private readonly pdfPrintService = inject(PdfPrintService);
-  private readonly colStore = inject(ColumnVisibilityStore);
 
-  // Facade (pública para el template si usas async pipe)
+  // Facade pública (para isLoading$ en template)
   readonly eventsFacade = inject(EventsFacade);
-  readonly events$ = this.eventsFacade.visibleEvents$;
 
-  // Navegación entre modales (volver)
-  private readonly modalNav = inject(
-    ModalNavService<EventModelFullData | MacroeventModelFullData>
-  );
-
-  // ── Tabla: definición de columnas ────────────────────────────────────────────
+  // ── Columnas
   headerListEvents: ColumnModel[] = [
     { title: 'Cartel', key: 'img', sortable: false },
     { title: 'Título', key: 'title', sortable: true, width: ColumnWidth.XL },
@@ -173,72 +164,73 @@ export class EventsPageComponent implements OnInit {
     },
   ];
 
-  // ✅ Signals para visibilidad de columnas (persistentes)
-  columnVisSig!: WritableSignal<Record<string, boolean>>;
-  displayedColumnsSig!: Signal<string[]>;
+  // ── Column visibility (hook)
+  readonly col = useColumnVisibility('events-table', this.headerListEvents, [
+    'capacity',
+    'organizer',
+    'collaborator',
+    'sponsor',
+    'status',
+  ]);
 
-  // ── Filtros ──────────────────────────────────────────────────────────────────
+  // ── Lista de entidades (hook)
+  readonly list = useEntityList<EventModelFullData>({
+    filtered$: this.eventsFacade.visibleEvents$,
+    sort: (arr) => this.eventsService.sortEventsById(arr),
+    count: (arr) => this.eventsService.countEvents(arr),
+    // map opcional si necesitas proyectar 'espacioTable'
+    // map: (arr) => arr.map(e => ({ ...e, espacioTable: e?.place?.name ?? e?.space ?? '' }) as any),
+    initial: [],
+  });
+
+  // Filtros
   filters: Filter[] = [];
-  selectedFilter: number | null = null;
+  selectedFilter: string | number = '';
   currentYear = this.generalService.currentYear;
 
-  // ── Modal ────────────────────────────────────────────────────────────────────
-  isModalVisible = false;
+  // Modal
+  readonly modalVisibleSig = toSignal(this.modalService.modalVisibility$, {
+    initialValue: false,
+  });
   item: EventModelFullData | MacroeventModelFullData | null = null;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
   typeSection = TypeList.Events;
   typeModal = TypeList.Events;
+  modalKey = 0;
 
   // Form
   searchForm!: FormGroup;
 
   // Refs
-  @ViewChild(InputSearchComponent)
-  private inputSearchComponent!: InputSearchComponent;
-
   @ViewChild('printArea', { static: false })
   printArea!: ElementRef<HTMLElement>;
+
+  // Navegación modal (volver)
+  private readonly modalNav = inject(
+    ModalNavService<EventModelFullData | MacroeventModelFullData>
+  );
 
   // ──────────────────────────────────────────────────────────────────────────────
   // Lifecycle
   // ──────────────────────────────────────────────────────────────────────────────
   ngOnInit(): void {
-    // Columnas visibles con persistencia
-    this.columnVisSig = this.colStore.init(
-      'events-table',
-      this.headerListEvents,
-      ['capacity', 'organizer', 'collaborator', 'sponsor', 'status'] // ocultas por defecto
-    );
-    this.displayedColumnsSig = computed(() =>
-      this.colStore.displayedColumns(this.headerListEvents, this.columnVisSig())
-    );
-
-    // Filtros por año
     this.filters = [
       ...this.generalService.getYearFilters(2018, this.currentYear),
     ];
 
-    // Visibilidad modal
-    this.modalService.modalVisibility$
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .pipe(tap((isVisible) => (this.isModalVisible = isVisible)))
-      .subscribe();
-
     // Carga inicial
     this.filterSelected(this.currentYear.toString());
 
-    // Mantener viva la suscripción (si la UI usa events$ directamente, esto es opcional)
+    // Mantener viva la suscripción si hace falta
     this.eventsFacade.visibleEvents$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe();
   }
 
-  // ──────────────────────────────────────────────────────────────────────────────
-  // Filtros / búsqueda
-  // ──────────────────────────────────────────────────────────────────────────────
+  // ── Filtros / búsqueda
   filterSelected(filter: string): void {
     this.selectedFilter = Number(filter);
-    this.generalService.clearSearchInput(this.inputSearchComponent);
+    this.eventsFacade.applyFilterWord('');
     this.eventsFacade.loadNonRepeatedEventsByYear(Number(filter));
   }
 
@@ -246,9 +238,7 @@ export class EventsPageComponent implements OnInit {
     this.eventsFacade.applyFilterWord(keyword);
   }
 
-  // ──────────────────────────────────────────────────────────────────────────────
-  // Modal + navegación
-  // ──────────────────────────────────────────────────────────────────────────────
+  // ── Modal + navegación
   addNewEventModal(): void {
     this.openModal(TypeList.Events, TypeActionModal.Create, null);
   }
@@ -270,16 +260,15 @@ export class EventsPageComponent implements OnInit {
     this.item = item;
     this.typeModal = typeModal;
 
-    // 🧹 Limpia seleccionado SOLO en CREATE de eventos
     if (typeModal === TypeList.Events && action === TypeActionModal.Create) {
       this.eventsFacade.clearSelectedEvent();
     }
-
+    this.modalKey++;
     this.modalService.openModal();
   }
 
   onOpenEvent = (eventId: number) => {
-    // Guarda estado actual para "volver"
+    // Guardar estado actual
     this.modalNav.push({
       typeModal: this.typeModal,
       action: this.currentModalAction,
@@ -298,7 +287,6 @@ export class EventsPageComponent implements OnInit {
   };
 
   onOpenMacroevent(macroId: number) {
-    // Guarda estado actual para "volver"
     this.modalNav.push({
       typeModal: this.typeModal,
       action: this.currentModalAction,
@@ -327,12 +315,10 @@ export class EventsPageComponent implements OnInit {
   onCloseModal(): void {
     this.modalService.closeModal();
     this.item = null;
-    this.modalNav.clear(); // reset del stack al cerrar completamente
+    this.modalNav.clear();
   }
 
-  // ──────────────────────────────────────────────────────────────────────────────
-  // CRUD / borrar en lote si hay periodic_id
-  // ──────────────────────────────────────────────────────────────────────────────
+  // ── CRUD (borrado por periodic_id si aplica)
   onDelete({ type, id, item }: { type: TypeList; id: number; item?: any }) {
     const actions: Partial<Record<TypeList, (id: number, item?: any) => void>> =
       {
@@ -358,7 +344,7 @@ export class EventsPageComponent implements OnInit {
   }
 
   isEvent(item: unknown): item is EventModelFullData {
-    return !!item && typeof item === 'object' && 'periodic_id' in item!;
+    return !!item && typeof item === 'object' && 'periodic_id' in (item as any);
   }
 
   sendFormEvent(event: { itemId: number; formData: FormData }): void {
@@ -389,26 +375,9 @@ export class EventsPageComponent implements OnInit {
       .subscribe();
   }
 
-  // ──────────────────────────────────────────────────────────────────────────────
-  // Tabla: utilidades (signals)
-  // ──────────────────────────────────────────────────────────────────────────────
-  getVisibleColumns(): ColumnModel[] {
-    return this.colStore.visibleColumnModels(
-      this.headerListEvents,
-      this.columnVisSig()
-    );
-  }
-
-  toggleColumn(key: string): void {
-    this.colStore.toggle('events-table', this.columnVisSig, key);
-  }
-
-  // ──────────────────────────────────────────────────────────────────────────────
-  // Impresión
-  // ──────────────────────────────────────────────────────────────────────────────
+  // ── Impresión
   async printTableAsPdf(): Promise<void> {
     if (!this.printArea) return;
-
     await this.pdfPrintService.printElementAsPdf(this.printArea, {
       filename: 'eventos.pdf',
       preset: 'compact',
@@ -418,7 +387,6 @@ export class EventsPageComponent implements OnInit {
     });
   }
 
-  // Expuesto al template (si lo quieres mostrar/ocultar allí)
   get canGoBack(): boolean {
     return this.modalNav.canGoBack();
   }

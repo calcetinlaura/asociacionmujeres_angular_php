@@ -2,61 +2,52 @@
   <app-dashboard-header
     [icon]="'uil uil-book'"
     [title]="'Biblioteca'"
-    [number]="number"
+    [number]="list.countSig()"
     [type]="'libros'"
   />
   <div class="flex flex-col gap-y-10">
     <app-filters
       [filters]="filters"
+      [(selected)]="selectedFilter"
       (filterClicked)="filterSelected($event)"
-    ></app-filters>
-    <div class="flex gap-x-4 items-center">
-      <app-button-icon
-        [buttonText]="'Nuevo libro'"
-        [iconClass]="'uil-plus'"
-        (addClicked)="addNewBookModal()"
-      />
-      <app-input-search (onDebounce)="applyFilterWord($event)" class="flex-1" />
-
-      <app-icon-action
-        [icon]="'uil-print'"
-        [tooltip]="'Imprimir tabla'"
-        (click)="printTableAsPdf()"
-      ></app-icon-action>
-      <app-column-menu
-        [columns]="headerListBooks"
-        [visibility]="columnVisSig()"
-        (toggle)="toggleColumn($event)"
-      />
-    </div>
+    />
+    <app-page-toolbar
+      [columns]="headerListBooks"
+      [visibility]="col.columnVisSig"
+      [addText]="'Nuevo libro'"
+      (add)="addNewBookModal()"
+      (search)="applyFilterWord($event)"
+      (print)="printTableAsPdf()"
+      (toggle)="col.toggleColumn($event)"
+    />
   </div>
 </app-sticky-zone>
+
 <div class="flex flex-col px-8">
-  @if (booksFacade.isLoading$ | async) {
+  @if (booksFacade.isLoadingList$ | async) {
   <app-spinner-loading />
-  } @else {@if(filteredBooks.length > 0){
+  } @else { @if (list.processedSig().length > 0) {
   <div class="pb-4" #printArea>
     <h2 class="only-on-pdf print-title">Listado libros</h2>
     <app-table
-      [data]="filteredBooks"
+      [data]="list.processedSig()"
       [typeSection]="typeSection"
       [typeModal]="typeModal"
-      [headerColumns]="getVisibleColumns()"
-      [columnVisibility]="columnVisSig()"
-      [displayedColumns]="displayedColumnsSig()"
+      [headerColumns]="col.getVisibleColumns()"
+      [columnVisibility]="col.columnVisSig()"
+      [displayedColumns]="col.displayedColumnsSig()"
       (openModal)="onOpenModal($event)"
     />
   </div>
-  }@else{
+  } @else {
   <div class="text-center text-gray-600 my-12 text-lg">
     No hay libros registrados.
   </div>
   } }
 </div>
 
-<!-- Modal -->
 <app-modal-shell
-  [visible]="isModalVisible"
+  [visible]="modalVisibleSig()"
   [typeModal]="typeModal"
   [action]="currentModalAction"
   [item]="item"

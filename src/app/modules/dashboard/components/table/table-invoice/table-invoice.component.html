@@ -53,15 +53,15 @@
         </td>
         @if (showCif) {
         <td class="p-2 text-center">
-          <span [innerHTML]="invoice.creditor_cif"></span>
+          <span [innerHTML]="invoice.creditor_cif | safeHtml"></span>
         </td>
         } @if (showCreditor) {
         <td class="p-2">
-          <span [innerHTML]="invoice.creditor_company"></span><br />
+          <span [innerHTML]="invoice.creditor_company | safeHtml"></span><br />
           @if (invoice.creditor_company !== invoice.creditor_contact) {
           <span
             class="text-gray-400"
-            [innerHTML]="invoice.creditor_contact"
+            [innerHTML]="invoice.creditor_contact | safeHtml"
           ></span>
           }
         </td>

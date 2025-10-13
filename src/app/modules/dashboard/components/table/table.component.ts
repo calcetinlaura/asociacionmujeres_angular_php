@@ -37,6 +37,7 @@ import {
   DictTranslatePipe,
   DictType,
 } from '../../../../shared/pipe/dict-translate.pipe';
+import { SafeHtmlPipe } from '../../../../shared/pipe/safe-html.pipe';
 import { CircleIndicatorComponent } from '../circle-indicator/circle-indicator.component';
 
 @Component({
@@ -63,6 +64,7 @@ import { CircleIndicatorComponent } from '../circle-indicator/circle-indicator.c
     DictTranslatePipe,
     AudienceBadgesPipe,
     ActionBarComponent,
+    SafeHtmlPipe,
   ],
   providers: [ItemImagePipe],
   selector: 'app-table',

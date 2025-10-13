@@ -1,20 +1,17 @@
 import { CommonModule } from '@angular/common';
 import {
+  ChangeDetectionStrategy,
   Component,
-  computed,
   DestroyRef,
   ElementRef,
   inject,
   OnInit,
-  Signal,
   ViewChild,
-  WritableSignal,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
-import { tap } from 'rxjs';
+import { map } from 'rxjs';
 
 import { RecipesFacade } from 'src/app/application/recipes.facade';
 import {
@@ -35,22 +32,18 @@ import { RecipesService } from 'src/app/core/services/recipes.services';
 import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
 import { TableComponent } from 'src/app/modules/dashboard/components/table/table.component';
 import { FiltersComponent } from 'src/app/modules/landing/components/filters/filters.component';
-
-import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
-import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
-import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
-import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
-
 import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.component';
-import { ColumnMenuComponent } from '../../components/table/column-menu.component';
 
-// Nuevo: shell de modal reutilizable
+// Reutilizables
+import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
+import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
+import { PageToolbarComponent } from '../../components/page-toolbar/page-toolbar.component';
+
+// Modal shell + service
 import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
-// Nuevo: store de visibilidad de columnas (signals + persistencia)
 import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
-import { ColumnVisibilityStore } from '../../components/table/column-visibility.store';
 
 @Component({
   selector: 'app-recipes-page',
@@ -62,29 +55,24 @@ import { ColumnVisibilityStore } from '../../components/table/column-visibility.
     StickyZoneComponent,
     TableComponent,
     FiltersComponent,
-    ButtonIconComponent,
-    IconActionComponent,
-    InputSearchComponent,
-    ColumnMenuComponent,
     ModalShellComponent,
+    PageToolbarComponent,
     // Angular
     CommonModule,
-    ReactiveFormsModule,
     MatCheckboxModule,
     MatMenuModule,
   ],
   templateUrl: './recipes-page.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RecipesPageComponent implements OnInit {
   // Servicios
   private readonly destroyRef = inject(DestroyRef);
   private readonly modalService = inject(ModalService);
   private readonly recipesService = inject(RecipesService);
-  private readonly generalService = inject(GeneralService);
   private readonly pdfPrintService = inject(PdfPrintService);
-  private readonly colStore = inject(ColumnVisibilityStore);
 
-  // Facade (pública para async pipe si la usas)
+  // Facade
   readonly recipesFacade = inject(RecipesFacade);
 
   // Columnas
@@ -129,33 +117,30 @@ export class RecipesPageComponent implements OnInit {
     },
   ];
 
-  // Datos
-  recipes: RecipeModel[] = [];
-  filteredRecipes: RecipeModel[] = [];
-  number = 0;
+  // Reutilizables (columnas + lista)
+  readonly col = useColumnVisibility('recipes-table', this.headerListRecipes);
+
+  readonly list = useEntityList<RecipeModel>({
+    filtered$: this.recipesFacade.filteredRecipes$.pipe(map((v) => v ?? [])),
+    sort: (arr) => this.recipesService.sortRecipesById(arr),
+    count: (arr) => this.recipesService.countRecipes(arr),
+  });
 
   // Filtros
   filters: Filter[] = [];
-  selectedFilter = '';
+  selectedFilter: string | number = '';
 
   // Modal
-  isModalVisible = false;
+  readonly modalVisibleSig = toSignal(this.modalService.modalVisibility$, {
+    initialValue: false,
+  });
   item: RecipeModel | null = null;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
   typeModal = TypeList.Recipes;
   typeSection = TypeList.Recipes;
-
-  // Form
-  searchForm!: FormGroup;
-
-  // Signals para columnas
-  columnVisSig!: WritableSignal<Record<string, boolean>>;
-  displayedColumnsSig!: Signal<string[]>;
+  modalKey = 0; // fuerza remontaje del shell al reabrir
 
   // Refs
-  @ViewChild(InputSearchComponent)
-  private inputSearchComponent!: InputSearchComponent;
-
   @ViewChild('printArea', { static: false })
   printArea!: ElementRef<HTMLElement>;
 
@@ -163,46 +148,12 @@ export class RecipesPageComponent implements OnInit {
   // Lifecycle
   // ──────────────────────────────────────────────────────────────────────────────
   ngOnInit(): void {
-    // 1) Visibilidad de columnas persistente
-    this.columnVisSig = this.colStore.init(
-      'recipes-table', // clave única para esta tabla
-      this.headerListRecipes,
-      [] // columnas ocultas por defecto
-    );
-
-    // 2) Derivar las keys visibles para la tabla
-    this.displayedColumnsSig = computed(() =>
-      this.colStore.displayedColumns(
-        this.headerListRecipes,
-        this.columnVisSig()
-      )
-    );
-
-    // 3) Filtros
     this.filters = [
       { code: 'NOVEDADES', name: 'Novedades' },
       { code: '', name: 'Histórico' },
       ...categoryFilterRecipes,
     ];
-
-    // 4) Visibilidad de la modal
-    this.modalService.modalVisibility$
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((isVisible) => (this.isModalVisible = isVisible))
-      )
-      .subscribe();
-
-    // 5) Carga inicial
-    this.filterSelected('NOVEDADES');
-
-    // 6) Estado desde la facade
-    this.recipesFacade.filteredRecipes$
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((recipes) => this.updateRecipeState(recipes))
-      )
-      .subscribe();
+    this.filterSelected('NOVEDADES'); // carga inicial
   }
 
   // ──────────────────────────────────────────────────────────────────────────────
@@ -210,7 +161,9 @@ export class RecipesPageComponent implements OnInit {
   // ──────────────────────────────────────────────────────────────────────────────
   filterSelected(filter: string): void {
     this.selectedFilter = filter;
-    this.generalService.clearSearchInput(this.inputSearchComponent);
+
+    // reset de búsqueda de texto (el input está en PageToolbar)
+    this.recipesFacade.applyFilterWord('');
 
     if (!filter) {
       this.recipesFacade.loadAllRecipes();
@@ -219,22 +172,49 @@ export class RecipesPageComponent implements OnInit {
     }
   }
 
-  applyFilterWord(keyword: string): void {
+  applyFilterWord = (keyword: string) =>
     this.recipesFacade.applyFilterWord(keyword);
-  }
 
   // ──────────────────────────────────────────────────────────────────────────────
   // Modal
   // ──────────────────────────────────────────────────────────────────────────────
   addNewRecipeModal(): void {
-    this.openModal(TypeList.Recipes, TypeActionModal.Create, null);
+    this.onOpenModal({
+      typeModal: this.typeModal,
+      action: TypeActionModal.Create,
+    });
   }
 
   onOpenModal(event: {
     typeModal: TypeList;
     action: TypeActionModal;
-    item?: RecipeModel;
+    item?: RecipeModel | null;
   }): void {
+    // EDIT/SHOW → refresco por id para traer últimos cambios
+    if (
+      event.typeModal === TypeList.Recipes &&
+      event.action !== TypeActionModal.Create
+    ) {
+      const id = event.item?.id;
+      if (id) {
+        this.recipesService
+          .getRecipeById(id)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: (fresh) => {
+              this.modalKey++;
+              this.openModal(event.typeModal, event.action, fresh);
+            },
+            error: (err) => {
+              console.error('Error cargando receta', err);
+              this.modalKey++;
+              this.openModal(event.typeModal, event.action, event.item ?? null);
+            },
+          });
+        return;
+      }
+    }
+    this.modalKey++;
     this.openModal(event.typeModal, event.action, event.item ?? null);
   }
 
@@ -244,10 +224,13 @@ export class RecipesPageComponent implements OnInit {
     recipe: RecipeModel | null
   ): void {
     this.currentModalAction = action;
-    this.item = recipe;
     this.typeModal = typeModal;
 
-    // Limpiar el seleccionado SOLO en CREATE (evita abrir vacío al ver/editar)
+    // Clonado defensivo
+    this.item = recipe
+      ? structuredClone?.(recipe) ?? JSON.parse(JSON.stringify(recipe))
+      : null;
+
     if (typeModal === TypeList.Recipes && action === TypeActionModal.Create) {
       this.recipesFacade.clearSelectedRecipe();
     }
@@ -275,34 +258,9 @@ export class RecipesPageComponent implements OnInit {
       ? this.recipesFacade.editRecipe(event.formData)
       : this.recipesFacade.addRecipe(event.formData);
 
-    save$
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap(() => this.onCloseModal())
-      )
-      .subscribe();
-  }
-
-  // ──────────────────────────────────────────────────────────────────────────────
-  // Tabla helpers
-  // ──────────────────────────────────────────────────────────────────────────────
-  private updateRecipeState(recipes: RecipeModel[] | null): void {
-    if (!recipes) return;
-
-    this.recipes = this.recipesService.sortRecipesById(recipes);
-    this.filteredRecipes = [...this.recipes];
-    this.number = this.recipesService.countRecipes(recipes);
-  }
-
-  getVisibleColumns() {
-    return this.colStore.visibleColumnModels(
-      this.headerListRecipes,
-      this.columnVisSig()
-    );
-  }
-
-  toggleColumn(key: string): void {
-    this.colStore.toggle('recipes-table', this.columnVisSig, key);
+    save$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.onCloseModal();
+    });
   }
 
   // ──────────────────────────────────────────────────────────────────────────────

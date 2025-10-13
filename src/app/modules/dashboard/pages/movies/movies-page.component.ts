@@ -4,17 +4,12 @@ import {
   DestroyRef,
   ElementRef,
   OnInit,
-  Signal,
   ViewChild,
-  WritableSignal,
-  computed,
   inject,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
-import { tap } from 'rxjs';
 
 import { MoviesFacade } from 'src/app/application/movies.facade';
 import {
@@ -35,21 +30,20 @@ import { MoviesService } from 'src/app/core/services/movies.services';
 import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
 import { TableComponent } from 'src/app/modules/dashboard/components/table/table.component';
 import { FiltersComponent } from 'src/app/modules/landing/components/filters/filters.component';
-
-import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
-import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
-import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
-
 import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.component';
-import { ColumnMenuComponent } from '../../components/table/column-menu.component';
 
-// 👇 Importa el shell en lugar de usar <app-modal> directo
+// Reutilizables
+import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
+import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
+import { PageToolbarComponent } from '../../components/page-toolbar/page-toolbar.component';
+
+// Modal shell + service
+import { map } from 'rxjs';
 import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
 import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
-import { ColumnVisibilityStore } from '../../components/table/column-visibility.store';
 
 @Component({
   selector: 'app-movies-page',
@@ -61,14 +55,10 @@ import { ColumnVisibilityStore } from '../../components/table/column-visibility.
     StickyZoneComponent,
     TableComponent,
     FiltersComponent,
-    ButtonIconComponent,
-    IconActionComponent,
-    InputSearchComponent,
-    ColumnMenuComponent,
-    ModalShellComponent, // 👈 aquí
+    ModalShellComponent,
+    PageToolbarComponent,
     // Angular
     CommonModule,
-    ReactiveFormsModule,
     MatMenuModule,
     MatCheckboxModule,
   ],
@@ -81,12 +71,11 @@ export class MoviesPageComponent implements OnInit {
   private readonly moviesService = inject(MoviesService);
   private readonly generalService = inject(GeneralService);
   private readonly pdfPrintService = inject(PdfPrintService);
-  private readonly colStore = inject(ColumnVisibilityStore);
 
-  // Facade (pública para template con async pipe)
+  // Facade
   readonly moviesFacade = inject(MoviesFacade);
 
-  // Tabla
+  // Columnas
   headerListMovies: ColumnModel[] = [
     { title: 'Portada', key: 'img', sortable: false },
     { title: 'Título', key: 'title', sortable: true },
@@ -114,33 +103,31 @@ export class MoviesPageComponent implements OnInit {
     { title: 'Año compra', key: 'year', sortable: true, width: ColumnWidth.XS },
   ];
 
-  // Datos
-  movies: MovieModel[] = [];
-  filteredMovies: MovieModel[] = [];
-  number = 0;
+  // Reutilizables (columnas + lista)
+  readonly col = useColumnVisibility('movies-table', this.headerListMovies, [
+    'year',
+  ]);
+
+  readonly list = useEntityList<MovieModel>({
+    filtered$: this.moviesFacade.filteredMovies$.pipe(map((v) => v ?? [])), // puede emitir null → hook lo coalescea a []
+    sort: (arr) => this.moviesService.sortMoviesById(arr),
+    count: (arr) => this.moviesService.countMovies(arr),
+  });
 
   // Filtros
   filters: Filter[] = [];
-  selectedFilter = '';
+  selectedFilter: string | number = '';
 
   // Modal
-  isModalVisible = false;
+  readonly modalVisibleSig = toSignal(this.modalService.modalVisibility$, {
+    initialValue: false,
+  });
   item: MovieModel | null = null;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
   typeModal: TypeList = TypeList.Movies;
   typeSection: TypeList = TypeList.Movies;
 
-  // Form
-  searchForm!: FormGroup;
-
-  // signals
-  columnVisSig!: WritableSignal<Record<string, boolean>>;
-  displayedColumnsSig!: Signal<string[]>;
-
   // Refs
-  @ViewChild(InputSearchComponent)
-  private inputSearchComponent!: InputSearchComponent;
-
   @ViewChild('printArea', { static: false })
   printArea!: ElementRef<HTMLElement>;
 
@@ -148,39 +135,8 @@ export class MoviesPageComponent implements OnInit {
   // Lifecycle
   // ──────────────────────────────────────────────────────────────────────────────
   ngOnInit(): void {
-    // 1) inicializa la visibilidad con una clave única por tabla/página
-    this.columnVisSig = this.colStore.init(
-      'movies-table', // <- clave única (cambia por 'macroevents-table', etc.)
-      this.headerListMovies,
-      ['year'] // <- columnas ocultas por defecto
-    );
-
-    // 2) señal derivada para las columnas mostradas (keys)
-    this.displayedColumnsSig = computed(() =>
-      this.colStore.displayedColumns(this.headerListMovies, this.columnVisSig())
-    );
-
-    // Filtros
     this.filters = [{ code: '', name: 'Todos' }, ...genderFilterMovies];
-
-    // Modal visibilidad
-    this.modalService.modalVisibility$
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((isVisible) => (this.isModalVisible = isVisible))
-      )
-      .subscribe();
-
-    // Carga inicial
-    this.filterSelected('');
-
-    // Estado desde facade
-    this.moviesFacade.filteredMovies$
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((movies) => this.updateMovieState(movies))
-      )
-      .subscribe();
+    this.filterSelected(''); // carga inicial
   }
 
   // ──────────────────────────────────────────────────────────────────────────────
@@ -188,7 +144,9 @@ export class MoviesPageComponent implements OnInit {
   // ──────────────────────────────────────────────────────────────────────────────
   filterSelected(filter: string): void {
     this.selectedFilter = filter;
-    this.generalService.clearSearchInput(this.inputSearchComponent);
+
+    // resetear búsqueda de texto al cambiar filtro
+    this.moviesFacade.applyFilterWord('');
 
     if (!filter) {
       this.moviesFacade.loadAllMovies();
@@ -197,9 +155,8 @@ export class MoviesPageComponent implements OnInit {
     }
   }
 
-  applyFilterWord(keyword: string): void {
+  applyFilterWord = (keyword: string) =>
     this.moviesFacade.applyFilterWord(keyword);
-  }
 
   // ──────────────────────────────────────────────────────────────────────────────
   // Modal
@@ -225,7 +182,6 @@ export class MoviesPageComponent implements OnInit {
     this.item = movie;
     this.typeModal = typeModal;
 
-    // ⚠️ Importante: solo limpiar en CREATE para no abrir vacío en ver/editar
     if (typeModal === TypeList.Movies && action === TypeActionModal.Create) {
       this.moviesFacade.clearSelectedMovie();
     }
@@ -235,7 +191,7 @@ export class MoviesPageComponent implements OnInit {
 
   onCloseModal(): void {
     this.modalService.closeModal();
-    this.item = null; // limpiar referencia para evitar arrastrar estado
+    this.item = null;
   }
 
   // ──────────────────────────────────────────────────────────────────────────────
@@ -254,34 +210,8 @@ export class MoviesPageComponent implements OnInit {
       : this.moviesFacade.addMovie(event.formData);
 
     save$
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap(() => this.onCloseModal())
-      )
-      .subscribe();
-  }
-
-  // ──────────────────────────────────────────────────────────────────────────────
-  // Tabla helpers
-  // ──────────────────────────────────────────────────────────────────────────────
-  private updateMovieState(movies: MovieModel[] | null): void {
-    if (!movies) return;
-
-    this.movies = this.moviesService.sortMoviesById(movies);
-    this.filteredMovies = [...this.movies];
-    this.number = this.moviesService.countMovies(movies);
-  }
-
-  getVisibleColumns() {
-    return this.colStore.visibleColumnModels(
-      this.headerListMovies,
-      this.columnVisSig()
-    );
-  }
-
-  toggleColumn(key: string): void {
-    this.colStore.toggle('movies-table', this.columnVisSig, key);
-    // ya no necesitas recalcular nada manual: displayedColumnsSig() reacciona sola
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.onCloseModal());
   }
 
   // ──────────────────────────────────────────────────────────────────────────────

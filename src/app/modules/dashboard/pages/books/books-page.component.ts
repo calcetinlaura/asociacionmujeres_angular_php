@@ -4,17 +4,12 @@ import {
   DestroyRef,
   ElementRef,
   OnInit,
-  Signal,
   ViewChild,
-  WritableSignal,
-  computed,
   inject,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
-import { tap } from 'rxjs';
 
 import { BooksFacade } from 'src/app/application/books.facade';
 import {
@@ -36,22 +31,19 @@ import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/d
 import { TableComponent } from 'src/app/modules/dashboard/components/table/table.component';
 import { FiltersComponent } from 'src/app/modules/landing/components/filters/filters.component';
 
-import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
-import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
-import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
-import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
-
 import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.component';
-import { ColumnMenuComponent } from '../../components/table/column-menu.component';
 
-// Shell de modal (wrapper)
+// Reutilizables
+import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
+import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
+import { PageToolbarComponent } from '../../components/page-toolbar/page-toolbar.component';
+
+// Modal shell + service
+import { map } from 'rxjs';
 import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
 import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
-
-// Store de visibilidad de columnas con signals
-import { ColumnVisibilityStore } from '../../components/table/column-visibility.store';
 
 @Component({
   selector: 'app-books-page',
@@ -63,32 +55,25 @@ import { ColumnVisibilityStore } from '../../components/table/column-visibility.
     StickyZoneComponent,
     TableComponent,
     FiltersComponent,
-    ButtonIconComponent,
-    IconActionComponent,
-    InputSearchComponent,
-    ColumnMenuComponent,
-    ModalShellComponent, // 👈 usamos shell
+    ModalShellComponent,
+    PageToolbarComponent,
     // Angular
     CommonModule,
-    ReactiveFormsModule,
     MatMenuModule,
     MatCheckboxModule,
   ],
   templateUrl: './books-page.component.html',
 })
 export class BooksPageComponent implements OnInit {
-  // Servicios
   private readonly destroyRef = inject(DestroyRef);
   private readonly modalService = inject(ModalService);
   private readonly booksService = inject(BooksService);
-  private readonly generalService = inject(GeneralService);
   private readonly pdfPrintService = inject(PdfPrintService);
-  private readonly colStore = inject(ColumnVisibilityStore);
 
-  // Facade (pública para async pipes)
+  // Facade
   readonly booksFacade = inject(BooksFacade);
 
-  // Definición de columnas
+  // Columnas
   headerListBooks: ColumnModel[] = [
     { title: 'Portada', key: 'img', sortable: false },
     { title: 'Título', key: 'title', sortable: true },
@@ -115,33 +100,31 @@ export class BooksPageComponent implements OnInit {
     { title: 'Año compra', key: 'year', sortable: true, width: ColumnWidth.XS },
   ];
 
-  // Datos
-  books: BookModel[] = [];
-  filteredBooks: BookModel[] = [];
-  number = 0;
+  // Reutilizables (columnas + lista)
+  readonly col = useColumnVisibility('books-table', this.headerListBooks, [
+    'year',
+  ]);
+
+  readonly list = useEntityList<BookModel>({
+    filtered$: this.booksFacade.filteredBooks$.pipe(map((v) => v ?? [])),
+    sort: (arr) => this.booksService.sortBooksById(arr),
+    count: (arr) => this.booksService.countBooks(arr),
+  });
 
   // Filtros
   filters: Filter[] = [];
-  selectedFilter = '';
+  selectedFilter: string | number = '';
 
   // Modal
-  isModalVisible = false;
+  readonly modalVisibleSig = toSignal(this.modalService.modalVisibility$, {
+    initialValue: false,
+  });
   item: BookModel | null = null;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
   typeModal: TypeList = TypeList.Books;
   typeSection: TypeList = TypeList.Books;
 
-  // Form
-  searchForm!: FormGroup;
-
-  // Signals (visibilidad de columnas)
-  columnVisSig!: WritableSignal<Record<string, boolean>>;
-  displayedColumnsSig!: Signal<string[]>;
-
   // Refs
-  @ViewChild(InputSearchComponent)
-  private inputSearchComponent!: InputSearchComponent;
-
   @ViewChild('printArea', { static: false })
   printArea!: ElementRef<HTMLElement>;
 
@@ -149,42 +132,14 @@ export class BooksPageComponent implements OnInit {
   // Lifecycle
   // ──────────────────────────────────────────────────────────────────────────────
   ngOnInit(): void {
-    // Visibilidad de columnas (persistente por tabla)
-    this.columnVisSig = this.colStore.init(
-      'books-table', // clave única para esta tabla
-      this.headerListBooks,
-      ['year'] // columnas ocultas por defecto
-    );
-
-    this.displayedColumnsSig = computed(() =>
-      this.colStore.displayedColumns(this.headerListBooks, this.columnVisSig())
-    );
-
-    // Filtros
     this.filters = [
       { code: 'NOVEDADES', name: 'Novedades' },
       { code: '', name: 'Todos' },
       ...genderFilterBooks,
     ];
 
-    // Modal visibilidad
-    this.modalService.modalVisibility$
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((isVisible) => (this.isModalVisible = isVisible))
-      )
-      .subscribe();
-
-    // Carga inicial
+    // carga inicial
     this.filterSelected('');
-
-    // Estado desde la facade
-    this.booksFacade.filteredBooks$
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((books) => this.updateBookState(books))
-      )
-      .subscribe();
   }
 
   // ──────────────────────────────────────────────────────────────────────────────
@@ -193,7 +148,9 @@ export class BooksPageComponent implements OnInit {
   filterSelected(filter: string): void {
     this.selectedFilter = filter;
 
-    this.generalService.clearSearchInput(this.inputSearchComponent);
+    // Si usas InputSearchComponent en PageToolbar, no hay ref directa aquí;
+    // limpia el filtro de texto invocando el método de la facade si procede (opcional).
+    this.booksFacade.applyFilterWord(''); // reset búsqueda al cambiar filtro
 
     if (!filter) {
       this.booksFacade.loadAllBooks();
@@ -207,7 +164,7 @@ export class BooksPageComponent implements OnInit {
   }
 
   // ──────────────────────────────────────────────────────────────────────────────
-  // Modal
+  // Modal + navegación
   // ──────────────────────────────────────────────────────────────────────────────
   addNewBookModal(): void {
     this.openModal(TypeList.Books, TypeActionModal.Create, null);
@@ -230,7 +187,6 @@ export class BooksPageComponent implements OnInit {
     this.item = book;
     this.typeModal = typeModal;
 
-    // Importante: sólo limpiar en CREATE para no abrir vacío al ver/editar
     if (typeModal === TypeList.Books && action === TypeActionModal.Create) {
       this.booksFacade.clearSelectedBook();
     }
@@ -240,7 +196,7 @@ export class BooksPageComponent implements OnInit {
 
   onCloseModal(): void {
     this.modalService.closeModal();
-    this.item = null; // limpiar referencia para no arrastrar estado
+    this.item = null;
   }
 
   // ──────────────────────────────────────────────────────────────────────────────
@@ -259,36 +215,10 @@ export class BooksPageComponent implements OnInit {
       : this.booksFacade.addBook(event.formData);
 
     save$
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap(() => this.onCloseModal())
-      )
-      .subscribe();
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.onCloseModal());
   }
 
-  // ──────────────────────────────────────────────────────────────────────────────
-  // Tabla helpers
-  // ──────────────────────────────────────────────────────────────────────────────
-  private updateBookState(books: BookModel[] | null): void {
-    if (!books) return;
-
-    this.books = this.booksService.sortBooksById(books);
-    this.filteredBooks = [...this.books];
-    this.number = this.booksService.countBooks(books);
-  }
-
-  getVisibleColumns(): ColumnModel[] {
-    return this.colStore.visibleColumnModels(
-      this.headerListBooks,
-      this.columnVisSig()
-    );
-  }
-
-  toggleColumn(key: string): void {
-    this.colStore.toggle('books-table', this.columnVisSig, key);
-  }
-
-  // ──────────────────────────────────────────────────────────────────────────────
   // Impresión
   // ──────────────────────────────────────────────────────────────────────────────
   async printTableAsPdf(): Promise<void> {

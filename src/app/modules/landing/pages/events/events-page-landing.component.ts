@@ -44,7 +44,7 @@ export class EventsPageLandingComponent implements OnInit {
 
   filters: Filter[] = [];
   typeList = TypeList;
-  selectedFilter: string | number | undefined = undefined; // <- EL AÑO SELECCIONADO EN LOS FILTROS
+  selectedFilter: string | number = '';
   currentYear = this.generalService.currentYear;
   isDashboard = false;
 

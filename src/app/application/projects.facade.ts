@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, catchError, Observable, Subject, tap } from 'rxjs';
+import { BehaviorSubject, catchError, finalize, Observable, tap } from 'rxjs';
 import { ProjectModel } from 'src/app/core/interfaces/project.interface';
 import { ProjectsService } from 'src/app/core/services/projects.services';
 import { includesNormalized, toSearchKey } from '../shared/utils/text.utils';
@@ -10,7 +10,7 @@ import { LoadableFacade } from './loadable.facade';
 export class ProjectsFacade extends LoadableFacade {
   private readonly projectsService = inject(ProjectsService);
 
-  // State propio
+  // State
   private readonly projectsSubject = new BehaviorSubject<ProjectModel[] | null>(
     null
   );
@@ -20,9 +20,15 @@ export class ProjectsFacade extends LoadableFacade {
   private readonly selectedProjectSubject =
     new BehaviorSubject<ProjectModel | null>(null);
 
-  // Eventos (para notificar guardados/eliminados)
-  private readonly savedSubject = new Subject<ProjectModel>();
-  private readonly deletedSubject = new Subject<number>();
+  // Eventos
+  private readonly savedSubject = new BehaviorSubject<ProjectModel | null>(
+    null
+  );
+  private readonly deletedSubject = new BehaviorSubject<number | null>(null);
+
+  // NEW: loaders separados
+  private readonly listLoadingSubject = new BehaviorSubject<boolean>(false);
+  private readonly itemLoadingSubject = new BehaviorSubject<boolean>(false);
 
   // Streams públicos
   readonly projects$ = this.projectsSubject.asObservable();
@@ -31,68 +37,91 @@ export class ProjectsFacade extends LoadableFacade {
   readonly saved$ = this.savedSubject.asObservable();
   readonly deleted$ = this.deletedSubject.asObservable();
 
+  // NEW: para la UI
+  readonly isLoadingList$ = this.listLoadingSubject.asObservable();
+  readonly isLoadingItem$ = this.itemLoadingSubject.asObservable();
+
   private currentFilter: number | null = null;
 
+  // ───────── LISTA → isLoadingList$
   loadAllProjects(): void {
     this.setCurrentFilter(null);
-    this.executeWithLoading(this.projectsService.getProjects(), (projects) =>
-      this.updateProjectState(projects)
-    );
+    this.listLoadingSubject.next(true);
+    this.projectsService
+      .getProjects()
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        catchError((err) => this.generalService.handleHttpError(err)),
+        finalize(() => this.listLoadingSubject.next(false))
+      )
+      .subscribe((projects) => this.updateProjectState(projects));
   }
 
   loadProjectsByYear(year: number): void {
     this.setCurrentFilter(year);
-    this.executeWithLoading(
-      this.projectsService.getProjectsByYear(year),
-      (projects) => this.updateProjectState(projects)
-    );
+    this.listLoadingSubject.next(true);
+    this.projectsService
+      .getProjectsByYear(year)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        catchError((err) => this.generalService.handleHttpError(err)),
+        finalize(() => this.listLoadingSubject.next(false))
+      )
+      .subscribe((projects) => this.updateProjectState(projects));
   }
 
+  // ───────── ITEM → isLoadingItem$
   loadProjectById(id: number): void {
-    this.executeWithLoading(
-      this.projectsService.getProjectById(id),
-      (project) => this.selectedProjectSubject.next(project)
-    );
+    this.itemLoadingSubject.next(true);
+    this.projectsService
+      .getProjectById(id)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        catchError((err) => this.generalService.handleHttpError(err)),
+        finalize(() => this.itemLoadingSubject.next(false))
+      )
+      .subscribe((project) => this.selectedProjectSubject.next(project));
   }
 
   addProject(fd: FormData): Observable<ProjectModel> {
-    return this.wrapWithLoading(this.projectsService.add(fd)).pipe(
+    this.itemLoadingSubject.next(true);
+    return this.projectsService.add(fd).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap((project) => {
         this.savedSubject.next(project);
         this.reloadCurrentFilter();
       }),
-      catchError((err) => this.generalService.handleHttpError(err))
+      catchError((err) => this.generalService.handleHttpError(err)),
+      finalize(() => this.itemLoadingSubject.next(false))
     );
   }
 
   editProject(project: FormData): Observable<ProjectModel> {
-    return this.wrapWithLoading(this.projectsService.edit(project)).pipe(
+    this.itemLoadingSubject.next(true);
+    return this.projectsService.edit(project).pipe(
       takeUntilDestroyed(this.destroyRef),
-      tap((project) => {
-        this.savedSubject.next(project);
+      tap((p) => {
+        this.savedSubject.next(p);
         this.reloadCurrentFilter();
       }),
-      catchError((err) => this.generalService.handleHttpError(err))
+      catchError((err) => this.generalService.handleHttpError(err)),
+      finalize(() => this.itemLoadingSubject.next(false))
     );
   }
 
-  // deleteProject(id: number): Observable<number> {
-  //   return this.wrapWithLoading(this.projectsService.delete(id)).pipe(
-  //     takeUntilDestroyed(this.destroyRef),
-  //     tap(() => {
-  //       this.deletedSubject.next(id);
-  //       this.reloadCurrentFilter();
-  //     }),
-  //     map(() => id),
-  //     catchError((err) => this.generalService.handleHttpError(err))
-  //   );
-  // }
   deleteProject(id: number): void {
-    this.executeWithLoading(this.projectsService.delete(id), () => {
-      this.deletedSubject.next(id);
-      this.reloadCurrentFilter(); // recarga la lista
-    });
+    this.itemLoadingSubject.next(true);
+    this.projectsService
+      .delete(id)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        catchError((err) => this.generalService.handleHttpError(err)),
+        finalize(() => this.itemLoadingSubject.next(false))
+      )
+      .subscribe(() => {
+        this.deletedSubject.next(id);
+        this.reloadCurrentFilter();
+      });
   }
 
   clearSelectedProject(): void {
@@ -101,12 +130,10 @@ export class ProjectsFacade extends LoadableFacade {
 
   applyFilterWord(keyword: string): void {
     const all = this.projectsSubject.getValue();
-
     if (!all) {
       this.filteredProjectsSubject.next(all);
       return;
     }
-
     if (!toSearchKey(keyword)) {
       this.filteredProjectsSubject.next(all);
       return;
@@ -115,7 +142,6 @@ export class ProjectsFacade extends LoadableFacade {
     const filtered = all.filter((p) =>
       [p.title].some((field) => includesNormalized(field, keyword))
     );
-
     this.filteredProjectsSubject.next(filtered);
   }
 

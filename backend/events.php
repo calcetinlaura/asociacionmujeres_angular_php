@@ -773,287 +773,313 @@ $match = (isset($_GET['match']) && strtolower($_GET['match']) === 'all') ? 'all'
  /** ================================
  *  POST (CREATE / PATCH)
  *  ================================ */
-  case 'POST':
-    error_log("🔥 POST recibido:");
-    error_log(print_r($_POST, true));
-    error_reporting(E_ALL);
-    ini_set('display_errors', 1);
+case 'POST':
+  error_log("🔥 POST recibido:");
+  error_log(print_r($_POST, true));
+  error_reporting(E_ALL);
+  ini_set('display_errors', 1);
 
-    $data = $_POST;
+  $data = $_POST;
 
-    $isUpdate = false;
-    if (isset($data['_method']) && strtoupper($data['_method']) === 'PATCH') {
-      $isUpdate = true;
+  $isUpdate = false;
+  if (isset($data['_method']) && strtoupper($data['_method']) === 'PATCH') {
+    $isUpdate = true;
+  }
+  if (!$isUpdate && isset($data['_method'])) {
+    unset($data['_method']);
+  }
+
+  // Imagen
+  $hasNewUpload = isset($_FILES['img']) && is_array($_FILES['img']) && $_FILES['img']['error'] === UPLOAD_ERR_OK;
+  if ($hasNewUpload) {
+    $uploadedImg = procesarArchivoPorAnio($basePath, 'img', 'start', 'img');
+    $imgName     = $uploadedImg;
+  } else {
+    $imgName = $data['img'] ?? '';
+  }
+
+  $duplicateFromId = isset($data['duplicate_from_id']) && is_numeric($data['duplicate_from_id'])
+    ? (int)$data['duplicate_from_id'] : null;
+
+  if (
+    !$isUpdate && $duplicateFromId && !$hasNewUpload &&
+    !empty($imgName) && !empty($data['start'])
+  ) {
+    $dup = duplicarImagenEventoSiempre($connection, $basePath, $imgName, $data['start'], $duplicateFromId);
+    if ($dup) $imgName = $dup;
+  }
+
+  $yaEsCopia = strpos($imgName, '-copy-') !== false;
+  if (!$yaEsCopia && !empty($imgName) && !empty($data['start'])) {
+    $newYear = date('Y', strtotime($data['start']));
+    $srcYear = null;
+    if (!$srcYear && $duplicateFromId) {
+      $srcStmt = $connection->prepare("SELECT start FROM events WHERE id = ?");
+      $srcStmt->bind_param("i", $duplicateFromId);
+      $srcStmt->execute();
+      $srcRes = $srcStmt->get_result()->fetch_assoc();
+      if ($srcRes && !empty($srcRes['start'])) $srcYear = date('Y', strtotime($srcRes['start']));
     }
-    if (!$isUpdate && isset($data['_method'])) {
-      unset($data['_method']);
+    if ($srcYear && $srcYear !== $newYear) {
+      $basename = basename($imgName);
+      $srcPath  = rtrim($basePath, '/')."/{$srcYear}/".$basename;
+      $dstDir   = rtrim($basePath, '/')."/{$newYear}/";
+      $dstPath  = $dstDir.$basename;
+      if (!is_dir($dstDir)) @mkdir($dstDir, 0777, true);
+      if (is_file($srcPath) && !is_file($dstPath)) @copy($srcPath, $dstPath);
     }
+  }
 
-    // Imagen
-    $hasNewUpload = isset($_FILES['img']) && is_array($_FILES['img']) && $_FILES['img']['error'] === UPLOAD_ERR_OK;
-    if ($hasNewUpload) {
-      $uploadedImg = procesarArchivoPorAnio($basePath, 'img', 'start', 'img');
-      $imgName     = $uploadedImg;
-    } else {
-      $imgName = $data['img'] ?? '';
+  // Parseo
+  $periodic    = isset($data['periodic']) ? (int)filter_var($data['periodic'], FILTER_VALIDATE_BOOLEAN) : 0;
+  $periodicId  = $periodic ? ($data['periodic_id'] ?? '') : null;
+  $inscription = isset($data['inscription']) ? (int)filter_var($data['inscription'], FILTER_VALIDATE_BOOLEAN) : 0;
+  $capacity    = isset($data['capacity']) && is_numeric($data['capacity']) ? (int)$data['capacity'] : null;
+  $ticketPrices      = $data['ticket_prices'] ?? null;
+  $ticketPricesJson  = json_encode($ticketPrices ?: []);
+  $status = isset($data['status']) && $data['status'] !== '' ? (string)$data['status'] : 'EJECUCION';
+  $audience = '';
+  if (isset($data['audience'])) {
+    $audience = is_string($data['audience'])
+      ? $data['audience']
+      : json_encode($data['audience']);
+    // opcional: validación suave
+    if (json_decode($audience, true) === null && $audience !== 'null') {
+      $audience = ''; // si no es JSON válido, guardamos vacío
     }
+  }
+  // Categorías EN (usa whitelist por defecto)
+  $categories = normalizeCategories($data['category'] ?? null);
 
-    $duplicateFromId = isset($data['duplicate_from_id']) && is_numeric($data['duplicate_from_id'])
-      ? (int)$data['duplicate_from_id'] : null;
+  // Validación mínima
+  $campoFaltante = validarCamposRequeridos($data, ['title', 'start']);
+  if ($campoFaltante !== null) {
+    http_response_code(400);
+    echo json_encode(["message" => "El campo '$campoFaltante' es obligatorio."]);
+    exit();
+  }
 
-    if (
-      !$isUpdate && $duplicateFromId && !$hasNewUpload &&
-      !empty($imgName) && !empty($data['start'])
-    ) {
-      $dup = duplicarImagenEventoSiempre($connection, $basePath, $imgName, $data['start'], $duplicateFromId);
-      if ($dup) $imgName = $dup;
-    }
+  // Agents normalizados
+  $organizers    = normalizeAgentField($data['organizer']    ?? null);
+  $collaborators = normalizeAgentField($data['collaborator'] ?? null);
+  $sponsors      = normalizeAgentField($data['sponsor']      ?? null);
 
-    $yaEsCopia = strpos($imgName, '-copy-') !== false;
-    if (!$yaEsCopia && !empty($imgName) && !empty($data['start'])) {
-      $newYear = date('Y', strtotime($data['start']));
-      $srcYear = null;
-      if (!$srcYear && $duplicateFromId) {
-        $srcStmt = $connection->prepare("SELECT start FROM events WHERE id = ?");
-        $srcStmt->bind_param("i", $duplicateFromId);
-        $srcStmt->execute();
-        $srcRes = $srcStmt->get_result()->fetch_assoc();
-        if ($srcRes && !empty($srcRes['start'])) $srcYear = date('Y', strtotime($srcRes['start']));
+  // ID (para PATCH)
+  $id = isset($data['id']) ? (int)$data['id']
+      : (isset($_GET['id']) ? (int)$_GET['id']
+      : (is_numeric($resource) ? (int)$resource : null));
+
+  if ($isUpdate && !$id) {
+    http_response_code(400);
+    echo json_encode(["message" => "ID no válido para edición."]);
+    exit();
+  }
+
+  // Insert / Update
+  if ($isUpdate) {
+    // Cargar datos previos para tratar conversión single → periódico y conservar img
+    $stmt = $connection->prepare("SELECT img, periodic_id FROM events WHERE id = ?");
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+    $res   = $stmt->get_result();
+    $prev  = $res->fetch_assoc();
+    $oldImg = $prev['img'] ?? '';
+    if (empty($imgName)) $imgName = $oldImg;
+
+    // Si era single y ahora pasa a periódico, evitar arrastrar un 'end' multi-día
+    $becomesPeriodic = (empty($prev['periodic_id']) && $periodic === 1);
+    if ($becomesPeriodic) {
+      if (substr((string)$data['end'], 0, 10) !== substr((string)$data['start'], 0, 10)) {
+        $data['end'] = $data['start'];
       }
-      if ($srcYear && $srcYear !== $newYear) {
-        $basename = basename($imgName);
-        $srcPath  = rtrim($basePath, '/')."/{$srcYear}/".$basename;
-        $dstDir   = rtrim($basePath, '/')."/{$newYear}/";
-        $dstPath  = $dstDir.$basename;
-        if (!is_dir($dstDir)) @mkdir($dstDir, 0777, true);
-        if (is_file($srcPath) && !is_file($dstPath)) @copy($srcPath, $dstPath);
-      }
     }
 
-    // Parseo
-    $periodic    = isset($data['periodic']) ? (int)filter_var($data['periodic'], FILTER_VALIDATE_BOOLEAN) : 0;
-    $periodicId  = $periodic ? ($data['periodic_id'] ?? '') : null;
-    $inscription = isset($data['inscription']) ? (int)filter_var($data['inscription'], FILTER_VALIDATE_BOOLEAN) : 0;
-    $capacity    = isset($data['capacity']) && is_numeric($data['capacity']) ? (int)$data['capacity'] : null;
-    $ticketPrices      = $data['ticket_prices'] ?? null;
-    $ticketPricesJson  = json_encode($ticketPrices ?: []);
-    $status = isset($data['status']) && $data['status'] !== '' ? (string)$data['status'] : 'EJECUCION';
-    $audience = '';
-    if (isset($data['audience'])) {
-      $audience = is_string($data['audience'])
-        ? $data['audience']
-        : json_encode($data['audience']);
-      // opcional: validación suave
-      if (json_decode($audience, true) === null && $audience !== 'null') {
-        $audience = ''; // si no es JSON válido, guardamos vacío
-      }
+    $stmt = $connection->prepare("UPDATE events SET
+      macroevent_id=?, project_id=?, title=?, start=?, end=?, time_start=?, time_end=?, description=?, audience=?, province=?, town=?,
+      place_id=?, sala_id=?, capacity=?, access=?, ticket_prices=?, img=?, status=?, status_reason=?, inscription=?,
+      inscription_method=?, tickets_method=?, online_link=?, periodic=?, periodic_id=?
+      WHERE id=?");
+    $stmt->bind_param("iisssssssssiiisssssisssisi",
+      $data['macroevent_id'], $data['project_id'], $data['title'], $data['start'], $data['end'],
+      $data['time_start'], $data['time_end'], $data['description'], $audience, $data['province'], $data['town'],
+      $data['place_id'], $data['sala_id'], $capacity, $data['access'], $ticketPricesJson, $imgName,
+      $data['status'], $data['status_reason'], $inscription, $data['inscription_method'],
+      $data['tickets_method'], $data['online_link'], $periodic, $periodicId, $id
+    );
+    $stmt->execute();
+
+    // Reemplazar agentes
+    $stmtDel = $connection->prepare("DELETE FROM event_agents WHERE event_id = ?");
+    $stmtDel->bind_param("i", $id);
+    $stmtDel->execute();
+
+  } else {
+    $stmt = $connection->prepare("INSERT INTO events (
+      macroevent_id, project_id, title, start, end, time_start, time_end, description,
+      audience, province, town, place_id, sala_id, capacity, access, ticket_prices, img,
+      status, status_reason, inscription, inscription_method, tickets_method,
+      online_link, periodic, periodic_id
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt->bind_param("iisssssssssiiisssssisssis",
+      $data['macroevent_id'], $data['project_id'], $data['title'], $data['start'], $data['end'],
+      $data['time_start'], $data['time_end'], $data['description'], $audience, $data['province'], $data['town'],
+      $data['place_id'], $data['sala_id'], $capacity, $data['access'], $ticketPricesJson, $imgName,
+      $data['status'], $data['status_reason'], $inscription, $data['inscription_method'],
+      $data['tickets_method'], $data['online_link'], $periodic, $periodicId
+    );
+    $stmt->execute();
+    $id = $connection->insert_id;
+  }
+
+  // Agentes
+  insertAgents($connection, $id, $organizers,    'ORGANIZADOR');
+  insertAgents($connection, $id, $collaborators, 'COLABORADOR');
+  insertAgents($connection, $id, $sponsors,      'PATROCINADOR');
+
+  // Categorías (reemplazar en el principal)
+  replaceEventCategories($connection, $id, $categories);
+
+  // Si es periódico y NO mandan repeated_dates, sincroniza categorías al resto de pases existentes
+  if ($periodic && $periodicId && empty($data['repeated_dates'])) {
+    $stmtCats = $connection->prepare("SELECT id FROM events WHERE periodic_id = ?");
+    $stmtCats->bind_param("s", $periodicId);
+    $stmtCats->execute();
+    $resCats = $stmtCats->get_result();
+    while ($r = $resCats->fetch_assoc()) {
+      $eid = (int)$r['id'];
+      if ($eid === $id) continue;
+      replaceEventCategories($connection, $eid, $categories);
     }
-    // Categorías EN
-    global $CATEGORY_WHITELIST;
-    $categories = normalizeCategories($data['category'] ?? null, $CATEGORY_WHITELIST);
+  }
 
-    // Validación mínima
-    $campoFaltante = validarCamposRequeridos($data, ['title', 'start']);
-    if ($campoFaltante !== null) {
-      http_response_code(400);
-      echo json_encode(["message" => "El campo '$campoFaltante' es obligatorio."]);
-      exit();
-    }
+  // Periódicos (pases)
+  if ($periodic && $periodicId && isset($data['repeated_dates'])) {
+    $repeatedDates = json_decode($data['repeated_dates'], true) ?: [];
 
-    // Agents normalizados
-    $organizers    = normalizeAgentField($data['organizer']    ?? null);
-    $collaborators = normalizeAgentField($data['collaborator'] ?? null);
-    $sponsors      = normalizeAgentField($data['sponsor']      ?? null);
+    $normTime = function($t) {
+      if (!$t) return '00:00:00';
+      $p = explode(':', $t);
+      $h = str_pad((string)($p[0] ?? '0'), 2, '0', STR_PAD_LEFT);
+      $m = str_pad((string)($p[1] ?? '0'), 2, '0', STR_PAD_LEFT);
+      return "{$h}:{$m}:00";
+    };
 
-    // ID (para PATCH)
-    $id = isset($data['id']) ? (int)$data['id']
-        : (isset($_GET['id']) ? (int)$_GET['id']
-        : (is_numeric($resource) ? (int)$resource : null));
-
-    if ($isUpdate && !$id) {
-      http_response_code(400);
-      echo json_encode(["message" => "ID no válido para edición."]);
-      exit();
-    }
-
-    // Insert / Update
-    if ($isUpdate) {
-      $stmt = $connection->prepare("SELECT img FROM events WHERE id = ?");
-      $stmt->bind_param("i", $id);
-      $stmt->execute();
-      $res   = $stmt->get_result();
-      $prev  = $res->fetch_assoc();
-      $oldImg = $prev['img'] ?? '';
-      if (empty($imgName)) $imgName = $oldImg;
-
-      $stmt = $connection->prepare("UPDATE events SET
-        macroevent_id=?, project_id=?, title=?, start=?, end=?, time_start=?, time_end=?, description=?, audience=?, province=?, town=?,
-        place_id=?, sala_id=?, capacity=?, access=?, ticket_prices=?, img=?, status=?, status_reason=?, inscription=?,
-        inscription_method=?, tickets_method=?, online_link=?, periodic=?, periodic_id=?
-        WHERE id=?");
-      $stmt->bind_param("iisssssssssiiisssssisssisi",
-        $data['macroevent_id'], $data['project_id'], $data['title'], $data['start'], $data['end'],
-        $data['time_start'], $data['time_end'], $data['description'], $audience, $data['province'], $data['town'],
-        $data['place_id'], $data['sala_id'], $capacity, $data['access'], $ticketPricesJson, $imgName,
-        $data['status'], $data['status_reason'], $inscription, $data['inscription_method'],
-        $data['tickets_method'], $data['online_link'], $periodic, $periodicId, $id
-      );
-      $stmt->execute();
-
-      // Reemplazar agentes
-      $stmtDel = $connection->prepare("DELETE FROM event_agents WHERE event_id = ?");
-      $stmtDel->bind_param("i", $id);
-      $stmtDel->execute();
-
-    } else {
-      $stmt = $connection->prepare("INSERT INTO events (
-        macroevent_id, project_id, title, start, end, time_start, time_end, description,
-        audience, province, town, place_id, sala_id, capacity, access, ticket_prices, img,
-        status, status_reason, inscription, inscription_method, tickets_method,
-        online_link, periodic, periodic_id
-      ) VALUES (?, ?, ?, ?, ?, ?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-      $stmt->bind_param("iisssssssssiiisssssisssis",
-        $data['macroevent_id'], $data['project_id'], $data['title'], $data['start'], $data['end'],
-        $data['time_start'], $data['time_end'], $data['description'], $audience, $data['province'], $data['town'],
-        $data['place_id'], $data['sala_id'], $capacity, $data['access'], $ticketPricesJson, $imgName,
-        $data['status'], $data['status_reason'], $inscription, $data['inscription_method'],
-        $data['tickets_method'], $data['online_link'], $periodic, $periodicId
-      );
-      $stmt->execute();
-      $id = $connection->insert_id;
+    $stmt = $connection->prepare("SELECT id, start, end, time_start, time_end FROM events WHERE periodic_id = ?");
+    $stmt->bind_param("s", $periodicId);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $existingById  = [];
+    $existingByKey = [];
+    while ($row = $res->fetch_assoc()) {
+      $rid = (int)$row['id'];
+      $d   = substr($row['start'], 0, 10);
+      $ts  = $normTime($row['time_start'] ?? '');
+      $key = "{$d}|{$ts}";
+      $existingById[$rid]   = $row;
+      $existingByKey[$key]  = $row;
     }
 
-    // Agentes
-    insertAgents($connection, $id, $organizers,    'ORGANIZADOR');
-    insertAgents($connection, $id, $collaborators, 'COLABORADOR');
-    insertAgents($connection, $id, $sponsors,      'PATROCINADOR');
-
-    // Categorías (reemplazar)
-    replaceEventCategories($connection, $id, $categories);
-
-    // Periódicos (pases)
-    if ($periodic && $periodicId && isset($data['repeated_dates'])) {
-      $repeatedDates = json_decode($data['repeated_dates'], true) ?: [];
-
-      $normTime = function($t) {
-        if (!$t) return '00:00:00';
-        $p = explode(':', $t);
-        $h = str_pad((string)($p[0] ?? '0'), 2, '0', STR_PAD_LEFT);
-        $m = str_pad((string)($p[1] ?? '0'), 2, '0', STR_PAD_LEFT);
-        return "{$h}:{$m}:00";
-      };
-
-      $stmt = $connection->prepare("SELECT id, start, end, time_start, time_end FROM events WHERE periodic_id = ?");
-      $stmt->bind_param("s", $periodicId);
-      $stmt->execute();
-      $res = $stmt->get_result();
-      $existingById  = [];
-      $existingByKey = [];
-      while ($row = $res->fetch_assoc()) {
-        $rid = (int)$row['id'];
-        $d   = substr($row['start'], 0, 10);
-        $ts  = $normTime($row['time_start'] ?? '');
-        $key = "{$d}|{$ts}";
-        $existingById[$rid]   = $row;
-        $existingByKey[$key]  = $row;
-      }
-
-      $payloadRows = [];
-      foreach ($repeatedDates as $rd) {
-        $d = isset($rd['start']) ? substr($rd['start'], 0, 10) : null;
-        if (!$d) continue;
-        $e  = isset($rd['end']) ? substr($rd['end'], 0, 10) : $d;
-        $ts = $normTime($rd['time_start'] ?? '');
-        $te = $rd['time_end'] ?? '';
-        if ($te === '' || $te === '00:00' || $te === '00:00:00') {
-          if ($ts !== '00:00:00') {
-            [$hh,$mm] = explode(':', $ts);
-            $hh = (int)$hh + 3; if ($hh >= 24) $hh -= 24;
-            $te = sprintf('%02d:%02d:00', $hh, (int)$mm);
-          } else {
-            $te = '00:00:00';
-          }
+    $payloadRows = [];
+    foreach ($repeatedDates as $rd) {
+      $d = isset($rd['start']) ? substr($rd['start'], 0, 10) : null;
+      if (!$d) continue;
+      $e  = isset($rd['end']) ? substr($rd['end'], 0, 10) : $d;
+      $ts = $normTime($rd['time_start'] ?? '');
+      $te = $rd['time_end'] ?? '';
+      if ($te === '' || $te === '00:00' || $te === '00:00:00') {
+        if ($ts !== '00:00:00') {
+          [$hh,$mm] = explode(':', $ts);
+          $hh = (int)$hh + 3; if ($hh >= 24) $hh -= 24;
+          $te = sprintf('%02d:%02d:00', $hh, (int)$mm);
+        } else {
+          $te = '00:00:00';
         }
-        $payloadRows[] = [
-          'id'         => (isset($rd['id']) && is_numeric($rd['id'])) ? (int)$rd['id'] : null,
-          'start'      => $d,
-          'end'        => $e,
-          'time_start' => $ts,
-          'time_end'   => $te,
-        ];
       }
+      $payloadRows[] = [
+        'id'         => (isset($rd['id']) && is_numeric($rd['id'])) ? (int)$rd['id'] : null,
+        'start'      => $d,
+        'end'        => $e,
+        'time_start' => $ts,
+        'time_end'   => $te,
+      ];
+    }
 
-      $keptIds = [];
-      foreach ($payloadRows as $rd) {
-        $start      = $rd['start'];
-        $end        = $rd['end'];
-        $time_start = $rd['time_start'];
-        $time_end   = $rd['time_end'];
+    $keptIds = [];
+    foreach ($payloadRows as $rd) {
+      $start      = $rd['start'];
+      $end        = $rd['end'];
+      $time_start = $rd['time_start'];
+      $time_end   = $rd['time_end'];
 
-        if ($rd['id'] && isset($existingById[$rd['id']])) {
-          $eid = (int)$rd['id'];
-          $stmtUpdate = $connection->prepare("UPDATE events SET
-            macroevent_id=?, project_id=?, title=?, start=?, end=?, time_start=?, time_end=?, description=?, audience=?, province=?, town=?,
-            place_id=?, sala_id=?, capacity=?, access=?, ticket_prices=?, img=?, status=?, status_reason=?, inscription=?,
-            inscription_method=?, tickets_method=?, online_link=?, periodic=?, periodic_id=?
-            WHERE id=?");
-          $stmtUpdate->bind_param("iisssssssssiiisssssisssisi",
-            $data['macroevent_id'], $data['project_id'], $data['title'], $start, $end,
-            $time_start, $time_end, $data['description'], $audience, $data['province'], $data['town'],
-            $data['place_id'], $data['sala_id'], $capacity, $data['access'], $ticketPricesJson, $imgName,
-            $data['status'], $data['status_reason'], $inscription, $data['inscription_method'],
-            $data['tickets_method'], $data['online_link'], $periodic, $periodicId, $eid
-          );
-          $stmtUpdate->execute();
-          $keptIds[$eid] = true;
-          continue;
-        }
-
-        $key = "{$start}|{$time_start}";
-        if (isset($existingByKey[$key])) {
-          $eid = (int)$existingByKey[$key]['id'];
-          $stmtUpdate = $connection->prepare("UPDATE events SET
-            macroevent_id=?, project_id=?, title=?, start=?, end=?, time_start=?, time_end=?, description=?, audience=?,province=?, town=?,
-            place_id=?, sala_id=?, capacity=?, access=?, ticket_prices=?, img=?, status=?, status_reason=?, inscription=?,
-            inscription_method=?, tickets_method=?, online_link=?, periodic=?, periodic_id=?
-            WHERE id=?");
-          $stmtUpdate->bind_param("iisssssssssiiisssssisssisi",
-            $data['macroevent_id'], $data['project_id'], $data['title'], $start, $end,
-            $time_start, $time_end, $data['description'], $audience, $data['province'], $data['town'],
-            $data['place_id'], $data['sala_id'], $capacity, $data['access'], $ticketPricesJson, $imgName,
-            $data['status'], $data['status_reason'], $inscription, $data['inscription_method'],
-            $data['tickets_method'], $data['online_link'], $periodic, $periodicId, $eid
-          );
-          $stmtUpdate->execute();
-          $keptIds[$eid] = true;
-          continue;
-        }
-
-        // INSERT nuevo pase
-        $stmtInsert = $connection->prepare("INSERT INTO events (
-          macroevent_id, project_id, title, start, end, time_start, time_end, description,audience,
-          province, town, place_id, sala_id, capacity, access, ticket_prices, img,
-          status, status_reason, inscription, inscription_method, tickets_method,
-          online_link, periodic, periodic_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmtInsert->bind_param("iisssssssssiiisssssisssis",
+      // UPDATE por id existente en payload
+      if ($rd['id'] && isset($existingById[$rd['id']])) {
+        $eid = (int)$rd['id'];
+        $stmtUpdate = $connection->prepare("UPDATE events SET
+          macroevent_id=?, project_id=?, title=?, start=?, end=?, time_start=?, time_end=?, description=?, audience=?, province=?, town=?,
+          place_id=?, sala_id=?, capacity=?, access=?, ticket_prices=?, img=?, status=?, status_reason=?, inscription=?,
+          inscription_method=?, tickets_method=?, online_link=?, periodic=?, periodic_id=?
+          WHERE id=?");
+        $stmtUpdate->bind_param("iisssssssssiiisssssisssisi",
           $data['macroevent_id'], $data['project_id'], $data['title'], $start, $end,
           $time_start, $time_end, $data['description'], $audience, $data['province'], $data['town'],
           $data['place_id'], $data['sala_id'], $capacity, $data['access'], $ticketPricesJson, $imgName,
           $data['status'], $data['status_reason'], $inscription, $data['inscription_method'],
-          $data['tickets_method'], $data['online_link'], $periodic, $periodicId
+          $data['tickets_method'], $data['online_link'], $periodic, $periodicId, $eid
         );
-        $stmtInsert->execute();
-        $newId = $connection->insert_id;
-        $keptIds[$newId] = true;
-
-        // Copiar categorías del principal a los pases nuevos (coherencia)
-        replaceEventCategories($connection, $newId, $categories);
-
-        // Copiar agentes si te interesa (opcional)
+        $stmtUpdate->execute();
+        replaceEventCategories($connection, $eid, $categories);
+        $keptIds[$eid] = true;
+        continue;
       }
 
-      // Borrado diferido de pases que ya no están
+      // UPDATE por clave fecha|hora
+      $key = "{$start}|{$time_start}";
+      if (isset($existingByKey[$key])) {
+        $eid = (int)$existingByKey[$key]['id'];
+        $stmtUpdate = $connection->prepare("UPDATE events SET
+          macroevent_id=?, project_id=?, title=?, start=?, end=?, time_start=?, time_end=?, description=?, audience=?,province=?, town=?,
+          place_id=?, sala_id=?, capacity=?, access=?, ticket_prices=?, img=?, status=?, status_reason=?, inscription=?,
+          inscription_method=?, tickets_method=?, online_link=?, periodic=?, periodic_id=?
+          WHERE id=?");
+        $stmtUpdate->bind_param("iisssssssssiiisssssisssisi",
+          $data['macroevent_id'], $data['project_id'], $data['title'], $start, $end,
+          $time_start, $time_end, $data['description'], $audience, $data['province'], $data['town'],
+          $data['place_id'], $data['sala_id'], $capacity, $data['access'], $ticketPricesJson, $imgName,
+          $data['status'], $data['status_reason'], $inscription, $data['inscription_method'],
+          $data['tickets_method'], $data['online_link'], $periodic, $periodicId, $eid
+        );
+        $stmtUpdate->execute();
+        replaceEventCategories($connection, $eid, $categories);
+        $keptIds[$eid] = true;
+        continue;
+      }
+
+      // INSERT nuevo pase
+      $stmtInsert = $connection->prepare("INSERT INTO events (
+        macroevent_id, project_id, title, start, end, time_start, time_end, description,audience,
+        province, town, place_id, sala_id, capacity, access, ticket_prices, img,
+        status, status_reason, inscription, inscription_method, tickets_method,
+        online_link, periodic, periodic_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+      $stmtInsert->bind_param("iisssssssssiiisssssisssis",
+        $data['macroevent_id'], $data['project_id'], $data['title'], $start, $end,
+        $time_start, $time_end, $data['description'], $audience, $data['province'], $data['town'],
+        $data['place_id'], $data['sala_id'], $capacity, $data['access'], $ticketPricesJson, $imgName,
+        $data['status'], $data['status_reason'], $inscription, $data['inscription_method'],
+        $data['tickets_method'], $data['online_link'], $periodic, $periodicId
+      );
+      $stmtInsert->execute();
+      $newId = $connection->insert_id;
+      $keptIds[$newId] = true;
+
+      // Copiar categorías del principal a los pases nuevos
+      replaceEventCategories($connection, $newId, $categories);
+      // (Opcional: copiar agentes)
+    }
+
+    // Si no hay payloadRows, evitamos borrar en masa accidentalmente
+    if (!empty($payloadRows)) {
+      // Borrado diferido de pases que ya no están en el payload
       $stmt = $connection->prepare("SELECT id FROM events WHERE periodic_id = ?");
       $stmt->bind_param("s", $periodicId);
       $stmt->execute();
@@ -1066,32 +1092,34 @@ $match = (isset($_GET['match']) && strtolower($_GET['match']) === 'all') ? 'all'
         $stmtDel->execute();
       }
     }
+  }
 
-    // Si dejó de ser periódico, limpieza del grupo (manteniendo actual) — (igual que tenías)
-    if (!$periodic && $periodicId && $id) {
-      $stmt = $connection->prepare("DELETE FROM events WHERE periodic_id = ? AND id != ?");
-      $stmt->bind_param("si", $periodicId, $id);
-      $stmt->execute();
+  // Si dejó de ser periódico, limpieza del grupo (manteniendo actual)
+  if (!$periodic && $periodicId && $id) {
+    $stmt = $connection->prepare("DELETE FROM events WHERE periodic_id = ? AND id != ?");
+    $stmt->bind_param("si", $periodicId, $id);
+    $stmt->execute();
 
-      $stmt = $connection->prepare("SELECT COUNT(*) as count FROM events WHERE periodic_id = ?");
+    $stmt = $connection->prepare("SELECT COUNT(*) as count FROM events WHERE periodic_id = ?");
+    $stmt->bind_param("s", $periodicId);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $row = $res->fetch_assoc();
+
+    if ((int)$row['count'] === 0) {
+      $stmt = $connection->prepare("DELETE FROM periodic_groups WHERE id = ?");
       $stmt->bind_param("s", $periodicId);
-      $stmt->execute();
-      $res = $stmt->get_result();
-      $row = $res->fetch_assoc();
-
-      if ((int)$row['count'] === 0) {
-        $stmt = $connection->prepare("DELETE FROM periodic_groups WHERE id = ?");
-        $stmt->bind_param("s", $periodicId);
-        $stmt->execute();
-      }
-
-      $stmt = $connection->prepare("UPDATE events SET periodic_id = NULL WHERE id = ?");
-      $stmt->bind_param("i", $id);
       $stmt->execute();
     }
 
-    echo json_encode(["message" => $isUpdate ? "Evento actualizado" : "Evento creado"]);
-    break;
+    $stmt = $connection->prepare("UPDATE events SET periodic_id = NULL WHERE id = ?");
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+  }
+
+  echo json_encode(["message" => $isUpdate ? "Evento actualizado" : "Evento creado"]);
+  break;
+
 
 /** ================================
  *  DELETE

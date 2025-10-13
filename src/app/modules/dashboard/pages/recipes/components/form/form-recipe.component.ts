@@ -121,6 +121,8 @@ export class FormRecipeComponent {
       this.submitted = true;
       console.log('Formulario inválido', this.formRecipe.errors);
       return;
+    } else {
+      console.log('Formulario válido');
     }
 
     const rawValues = { ...this.formRecipe.getRawValue() } as any;

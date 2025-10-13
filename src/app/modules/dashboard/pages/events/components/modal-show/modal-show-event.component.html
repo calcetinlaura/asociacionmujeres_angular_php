@@ -210,9 +210,12 @@
       }
       <div>
         @if (item.inscription_method ) {
-        <p class="text-[12px]" [innerHTML]="item.inscription_method"></p>
+        <p
+          class="text-[12px]"
+          [innerHTML]="item.inscription_method | safeHtml"
+        ></p>
         }@if (item.tickets_method) {
-        <p class="text-[12px]" [innerHTML]="item.tickets_method"></p>
+        <p class="text-[12px]" [innerHTML]="item.tickets_method | safeHtml"></p>
         } @if (item.status === enumStatusEnum.CANCELADO) {
         <app-text-background
           [text]="'Evento ' + item.status"

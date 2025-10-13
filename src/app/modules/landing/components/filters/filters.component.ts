@@ -1,4 +1,5 @@
 import {
+  ChangeDetectionStrategy,
   Component,
   EventEmitter,
   Input,
@@ -15,44 +16,38 @@ import { ButtonFilterComponent } from 'src/app/shared/components/buttons/button-
   standalone: true,
   imports: [ButtonFilterComponent],
   templateUrl: './filters.component.html',
-  styleUrl: './filters.component.css',
+  styleUrls: ['./filters.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FiltersComponent implements OnInit, OnChanges {
-  @Output() filterClicked = new EventEmitter<string>();
+  /** Lista de filtros a pintar */
   @Input() filters: Filter[] = [];
-  @Input() loadFirstFilter?: string | number;
-  @Input() loadFilters? = true;
+  /** Valor controlado desde el padre */
+  @Input() selected: string | number | null = null;
+  /** Two-way binding opcional: [(selected)] */
+  @Output() selectedChange = new EventEmitter<string | number>();
+  /** Evento clásico para pedir al padre que cargue datos */
+  @Output() filterClicked = new EventEmitter<string>();
 
+  /** Selección mostrada (sólo UI). No auto-emite en ngOnInit. */
   selectedFilter: string | number = '';
 
   ngOnInit(): void {
-    if (this.loadFilters) {
-      if (this.loadFirstFilter !== undefined) {
-        this.selectedFilter = this.coerce(this.loadFirstFilter);
-        this.filterClicked.emit(String(this.selectedFilter)); // solo si loadFilters=true
-      } else if (this.filters.length > 0) {
-        this.selectedFilter = this.coerce(this.filters[0].code);
-        this.filterClicked.emit(String(this.selectedFilter));
-      }
-    } else {
-      // no emitimos; el padre controla
-      this.selectedFilter = this.coerce(this.loadFirstFilter);
-    }
+    this.selectedFilter = this.coerce(this.selected);
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    // Cuando el padre cambia el año (por URL/compartir), reflejarlo visualmente
-    if (changes['loadFirstFilter'] && !this.loadFilters) {
-      const next = this.coerce(changes['loadFirstFilter'].currentValue);
-      if (next !== this.selectedFilter) {
-        this.selectedFilter = next; // NO emitimos para evitar bucles
-      }
+    if (changes['selected']) {
+      this.selectedFilter = this.coerce(changes['selected'].currentValue);
     }
   }
 
   filterSelected(filter: string | number): void {
     if (this.selectedFilter === filter) return;
     this.selectedFilter = filter;
+    // two-way
+    this.selectedChange.emit(filter);
+    // notifica al padre para que cargue datos
     this.filterClicked.emit(String(filter));
   }
 

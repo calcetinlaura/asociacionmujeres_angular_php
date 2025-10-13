@@ -1,4 +1,3 @@
-// shared/modal/modal-shell.component.ts
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
@@ -8,11 +7,11 @@ import { ModalComponent } from 'src/app/shared/components/modal/modal.component'
   standalone: true,
   selector: 'app-modal-shell',
   imports: [CommonModule, ModalComponent],
-  template: ` @for (k of [typeModal]; track k) { @if (visible) {
+  template: ` @for (k of [renderKey]; track k) { @if (visible) {
     <app-modal
       [item]="item"
-      [typeModal]="k"
-      [typePage]="k"
+      [typeModal]="typeModal"
+      [typePage]="typeModal"
       [action]="action"
       [canGoBack]="canGoBack"
       [isDashboard]="isDashboard"
@@ -23,6 +22,7 @@ import { ModalComponent } from 'src/app/shared/components/modal/modal.component'
       (openMacroevent)="openMacroevent.emit($event)"
       (openProject)="openProject.emit($event)"
       (openInvoice)="openInvoice.emit($event)"
+      (openPdf)="openPdf.emit($event)"
       (viewEvent)="viewEvent.emit($event)"
       (editEvent)="editEvent.emit($event)"
       (removeEvent)="removeEvent.emit($event)"
@@ -32,6 +32,16 @@ import { ModalComponent } from 'src/app/shared/components/modal/modal.component'
       (sendFormBookData)="sendFormBookData.emit($event)"
       (sendFormMovieData)="sendFormMovieData.emit($event)"
       (sendFormAgentData)="sendFormAgentData.emit($event)"
+      (sendFormRecipeData)="sendFormRecipeData.emit($event)"
+      (sendFormPiteraData)="sendFormPiteraData.emit($event)"
+      (sendFormPartnerData)="sendFormPartnerData.emit($event)"
+      (sendFormInvoiceData)="sendFormInvoiceData.emit($event)"
+      (sendFormSubsidyData)="sendFormSubsidyData.emit($event)"
+      (sendFormCreditorData)="sendFormCreditorData.emit($event)"
+      (sendFormPlaceData)="sendFormPlaceData.emit($event)"
+      (sendFormArticleData)="sendFormArticleData.emit($event)"
+      (sendFormProjectData)="sendFormProjectData.emit($event)"
+      (sendFormPodcastData)="sendFormPodcastData.emit($event)"
     />
     } }`,
 })
@@ -42,6 +52,7 @@ export class ModalShellComponent<T> {
   @Input() item: T | null = null;
   @Input() canGoBack = false;
   @Input() isDashboard = true;
+  @Input() renderKey = 0;
 
   @Output() back = new EventEmitter<void>();
   @Output() close = new EventEmitter<void>();
@@ -50,7 +61,11 @@ export class ModalShellComponent<T> {
   @Output() openMacroevent = new EventEmitter<number>();
   @Output() openInvoice = new EventEmitter<number>();
   @Output() openProject = new EventEmitter<number>();
-  @Output() openPdf = new EventEmitter<number>();
+  @Output() openPdf = new EventEmitter<{
+    url: string;
+    year: number | null;
+    type: TypeList;
+  }>();
   @Output() viewEvent = new EventEmitter<number>();
   @Output() editEvent = new EventEmitter<number>();
   @Output() removeEvent = new EventEmitter<number>();

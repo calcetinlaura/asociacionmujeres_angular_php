@@ -3,18 +3,15 @@ import {
   Component,
   DestroyRef,
   ElementRef,
-  OnInit,
-  Signal,
-  ViewChild,
-  WritableSignal,
-  computed,
   inject,
+  OnInit,
+  ViewChild,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTabChangeEvent, MatTabsModule } from '@angular/material/tabs';
-import { combineLatest, tap } from 'rxjs';
+import { combineLatest, map, tap } from 'rxjs';
 
 import { InvoicesFacade } from 'src/app/application/invoices.facade';
 import {
@@ -31,40 +28,42 @@ import { InvoicesService } from 'src/app/core/services/invoices.services';
 
 import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
 import { FiltersComponent } from 'src/app/modules/landing/components/filters/filters.component';
-import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
-import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
-import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
-
 import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.component';
-import { ColumnMenuComponent } from '../../components/table/column-menu.component';
-import { ColumnVisibilityStore } from '../../components/table/column-visibility.store';
 import { TableComponent } from '../../components/table/table.component';
 
 import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
 import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
+
+// hooks reutilizables
+import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
+import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
+
+// toolbar común
+
+import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
+import { PageToolbarComponent } from '../../components/page-toolbar/page-toolbar.component';
 
 @Component({
   selector: 'app-invoices-page',
   standalone: true,
   imports: [
     CommonModule,
+    // UI
     DashboardHeaderComponent,
-    // ModalComponent ➜ sustituido por ModalShellComponent
-    ModalShellComponent,
-    ButtonIconComponent,
-    InputSearchComponent,
+    StickyZoneComponent,
     SpinnerLoadingComponent,
     TableComponent,
     FiltersComponent,
-    MatTabsModule,
+    ModalShellComponent,
+    PageToolbarComponent,
     IconActionComponent,
+    // Angular Material
+    MatTabsModule,
     MatMenuModule,
     MatCheckboxModule,
-    StickyZoneComponent,
-    ColumnMenuComponent,
   ],
   templateUrl: './invoices-page.component.html',
 })
@@ -75,9 +74,8 @@ export class InvoicesPageComponent implements OnInit {
   private readonly invoicesService = inject(InvoicesService);
   private readonly generalService = inject(GeneralService);
   private readonly pdfPrintService = inject(PdfPrintService);
-  private readonly colStore = inject(ColumnVisibilityStore);
 
-  // ── Tabla
+  // ── Definición columnas
   headerListInvoices: ColumnModel[] = [
     {
       title: 'FACT.',
@@ -203,112 +201,88 @@ export class InvoicesPageComponent implements OnInit {
     },
   ];
 
-  // ✅ Signals para visibilidad columnas
-  columnVisSig!: WritableSignal<Record<string, boolean>>;
-  displayedColumnsSig!: Signal<string[]>;
+  // ── Column visibility (hook)
+  readonly col = useColumnVisibility(
+    'invoices-table',
+    this.headerListInvoices,
+    ['date_payment', 'date_accounting']
+  );
 
-  // ── Datos
-  invoices: InvoiceModelFullData[] = [];
-  filteredInvoices: InvoiceModelFullData[] = [];
+  // ── Streams derivados para año y pestaña
+  readonly currentYear = this.generalService.currentYear;
+
+  private readonly byYear$ = combineLatest([
+    this.invoicesFacade.invoices$,
+    this.invoicesFacade.currentFilter$,
+  ]).pipe(
+    map(([invoices, selectedYear]) => {
+      const list = invoices ?? [];
+      if (!selectedYear) return list;
+      return list.filter((inv) =>
+        inv.date_invoice
+          ? new Date(inv.date_invoice).getFullYear().toString() === selectedYear
+          : false
+      );
+    })
+  );
+
+  // filtered$ aplicado por pestaña (tipo)
+  private readonly filtered$ = combineLatest([
+    this.byYear$,
+    this.invoicesFacade.tabFilter$,
+  ]).pipe(
+    map(([byYear, tab]) => {
+      if (!tab) return byYear;
+      return byYear.filter((inv) => inv.type_invoice === tab);
+    })
+  );
+
+  // ── Lista (hook): filtered → sort → count
+  readonly list = useEntityList<InvoiceModelFullData>({
+    filtered$: this.filtered$,
+    sort: (arr) => arr, // si tienes un método de ordenación, cámbialo aquí
+    count: (arr) => arr.length,
+  });
+
+  // ── hasInvoicesForYear (ignora pestaña)
+  readonly hasInvoicesForYearSig = toSignal(
+    this.byYear$.pipe(map((arr) => arr.length > 0)),
+    { initialValue: false }
+  );
+
+  // ── filtros de año
   filters: Filter[] = [];
-  selectedFilter: number | null = null;
+  selectedFilter: string | number = '';
 
-  isModalVisible = false;
-  hasInvoicesForYear = false;
-  number = 0;
-
-  // Modal
+  // ── modal
+  readonly modalVisibleSig = toSignal(this.modalService.modalVisibility$, {
+    initialValue: false,
+  });
   item: InvoiceModelFullData | null = null;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
   typeModal = TypeList.Invoices;
   typeSection = TypeList.Invoices;
 
-  // Tabs / filtros
-  currentFilterType: string | null = null;
-  currentTab: string | null = null;
+  // ── tabs
+  currentFilterType: 'INVOICE' | 'TICKET' | 'INCOME' | null = null;
   selectedIndex = 0;
-  currentYear = this.generalService.currentYear;
 
-  @ViewChild(InputSearchComponent)
-  private inputSearchComponent!: InputSearchComponent;
-
+  // refs
   @ViewChild('printArea', { static: false })
   printArea!: ElementRef<HTMLElement>;
 
   ngOnInit(): void {
-    // 1) Persistencia de columnas con signals
-    this.columnVisSig = this.colStore.init(
-      'invoices-table',
-      this.headerListInvoices,
-      ['date_payment', 'date_accounting'] // ocultas por defecto
-    );
-    this.displayedColumnsSig = computed(() =>
-      this.colStore.displayedColumns(
-        this.headerListInvoices,
-        this.columnVisSig()
-      )
-    );
-
-    // 2) Estado + filtros
     this.invoicesFacade.clearInvoices();
     this.filters = this.generalService.getYearFilters(2018, this.currentYear);
-
-    combineLatest([
-      this.invoicesFacade.invoices$,
-      this.invoicesFacade.currentFilter$,
-      this.invoicesFacade.tabFilter$,
-      this.invoicesFacade.isLoading$,
-    ])
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap(([invoices, selectedYear, tabFilter, loading]) => {
-          if (loading) return;
-
-          let invoicesForYear = invoices ?? [];
-          if (selectedYear) {
-            invoicesForYear = invoicesForYear.filter((inv) =>
-              inv.date_invoice
-                ? new Date(inv.date_invoice).getFullYear().toString() ===
-                  selectedYear
-                : false
-            );
-          }
-
-          this.hasInvoicesForYear = invoicesForYear.length > 0;
-
-          let filtered = invoicesForYear;
-          if (tabFilter) {
-            filtered = invoicesForYear.filter(
-              (inv) => inv.type_invoice === tabFilter
-            );
-          }
-
-          this.invoices = invoicesForYear;
-          this.filteredInvoices = filtered;
-          this.number = filtered.length;
-        })
-      )
-      .subscribe();
-
-    // 3) Visibilidad modal
-    this.modalService.modalVisibility$
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .pipe(tap((isVisible) => (this.isModalVisible = isVisible)))
-      .subscribe();
-
-    // 4) Carga inicial
+    // carga inicial
     this.filterSelected(this.currentYear.toString());
   }
 
   // ── Filtros / tabs / búsqueda
   filterSelected(filter: string): void {
     const year = parseInt(filter, 10);
-    this.selectedFilter = year;
-
-    this.generalService.clearSearchInput(this.inputSearchComponent);
-
+    // reset pestaña
     this.selectedIndex = 0;
-    this.currentTab = 'Contabilidad completa';
     this.currentFilterType = null;
     this.invoicesFacade.clearTabFilter();
 
@@ -317,9 +291,8 @@ export class InvoicesPageComponent implements OnInit {
   }
 
   tabActive(event: MatTabChangeEvent): void {
-    this.currentTab = event.tab.textLabel;
-
-    switch (this.currentTab) {
+    const label = event.tab.textLabel;
+    switch (label) {
       case 'Facturas':
         this.currentFilterType = 'INVOICE';
         break;
@@ -330,7 +303,7 @@ export class InvoicesPageComponent implements OnInit {
         this.currentFilterType = 'INCOME';
         break;
       default:
-        this.currentFilterType = null; // Contabilidad completa
+        this.currentFilterType = null;
         break;
     }
     this.invoicesFacade.setTabFilter(this.currentFilterType);
@@ -338,10 +311,6 @@ export class InvoicesPageComponent implements OnInit {
 
   applyFilterWord(keyword: string): void {
     this.invoicesFacade.applyFilterWord(keyword);
-  }
-
-  clearFilter(): void {
-    this.invoicesFacade.clearTabFilter();
   }
 
   // ── Modal
@@ -366,17 +335,15 @@ export class InvoicesPageComponent implements OnInit {
     this.typeModal = typeModal;
     this.item = item;
 
-    // ⚠️ Limpiar seleccionado SOLO en CREATE (no en show/edit)
     if (typeModal === TypeList.Invoices && action === TypeActionModal.Create) {
       this.invoicesFacade.clearSelectedInvoice();
     }
-
     this.modalService.openModal();
   }
 
   onCloseModal(): void {
     this.modalService.closeModal();
-    this.item = null; // evitar arrastrar estado
+    this.item = null;
   }
 
   // ── CRUD
@@ -418,7 +385,7 @@ export class InvoicesPageComponent implements OnInit {
   }
 
   downloadFilteredPdfs(includeProof: boolean = true): void {
-    const data = this.filteredInvoices || [];
+    const data = this.list.processedSig() || [];
     this.invoicesService
       .downloadInvoicesZipFromData(data, {
         includeProof,
@@ -434,17 +401,5 @@ export class InvoicesPageComponent implements OnInit {
           }
         },
       });
-  }
-
-  // ── Columnas (vía store)
-  getVisibleColumns() {
-    return this.colStore.visibleColumnModels(
-      this.headerListInvoices,
-      this.columnVisSig()
-    );
-  }
-
-  toggleColumn(key: string): void {
-    this.colStore.toggle('invoices-table', this.columnVisSig, key);
   }
 }

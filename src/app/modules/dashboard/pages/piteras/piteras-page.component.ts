@@ -4,17 +4,12 @@ import {
   DestroyRef,
   ElementRef,
   OnInit,
-  Signal,
   ViewChild,
-  WritableSignal,
-  computed,
   inject,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
-import { tap } from 'rxjs';
 
 import { PiterasFacade } from 'src/app/application/piteras.facade';
 import {
@@ -27,20 +22,19 @@ import { PiterasService } from 'src/app/core/services/piteras.services';
 
 import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
 import { TableComponent } from 'src/app/modules/dashboard/components/table/table.component';
-import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
-import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
-import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
-
 import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.component';
-import { ColumnMenuComponent } from '../../components/table/column-menu.component';
 
-// 🧩 nuevo shell de modales
+// Reutilizables
+import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
+import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
+import { PageToolbarComponent } from '../../components/page-toolbar/page-toolbar.component';
+
+// Modal shell + service
+import { map } from 'rxjs';
 import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
-// 🧩 store reutilizable de visibilidad de columnas (signals)
 import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
-import { ColumnVisibilityStore } from '../../components/table/column-visibility.store';
 
 @Component({
   selector: 'app-piteras-page',
@@ -51,14 +45,10 @@ import { ColumnVisibilityStore } from '../../components/table/column-visibility.
     SpinnerLoadingComponent,
     StickyZoneComponent,
     TableComponent,
-    ButtonIconComponent,
-    IconActionComponent,
-    InputSearchComponent,
-    ColumnMenuComponent,
-    ModalShellComponent, // ← usamos el shell en lugar de <app-modal>
+    ModalShellComponent,
+    PageToolbarComponent,
     // Angular
     CommonModule,
-    ReactiveFormsModule,
     MatMenuModule,
     MatCheckboxModule,
   ],
@@ -70,9 +60,8 @@ export class PiterasPageComponent implements OnInit {
   private readonly modalService = inject(ModalService);
   private readonly piterasService = inject(PiterasService);
   private readonly pdfPrintService = inject(PdfPrintService);
-  private readonly colStore = inject(ColumnVisibilityStore);
 
-  // Facade (pública para la plantilla)
+  // Facade
   readonly piterasFacade = inject(PiterasFacade);
 
   // Columnas
@@ -96,7 +85,7 @@ export class PiterasPageComponent implements OnInit {
     },
     { title: 'Temática', key: 'theme', sortable: true, textAlign: 'center' },
     {
-      title: 'Nº págines',
+      title: 'Nº páginas', // ← corregido
       key: 'pages',
       sortable: true,
       width: ColumnWidth.XS,
@@ -105,24 +94,23 @@ export class PiterasPageComponent implements OnInit {
     { title: 'Url', key: 'url', sortable: true, textAlign: 'center' },
   ];
 
-  // ✅ signals en lugar de estados sueltos
-  columnVisSig!: WritableSignal<Record<string, boolean>>;
-  displayedColumnsSig!: Signal<string[]>;
+  // Reutilizables (columnas + lista)
+  readonly col = useColumnVisibility('piteras-table', this.headerListPiteras);
 
-  // Datos
-  piteras: PiteraModel[] = [];
-  filteredPiteras: PiteraModel[] = [];
-  number = 0;
+  readonly list = useEntityList<PiteraModel>({
+    filtered$: this.piterasFacade.filteredPiteras$.pipe(map((v) => v ?? [])),
+    sort: (arr) => this.piterasService.sortPiterasByYear(arr),
+    count: (arr) => this.piterasService.countPiteras(arr),
+  });
 
   // Modal
-  isModalVisible = false;
+  readonly modalVisibleSig = toSignal(this.modalService.modalVisibility$, {
+    initialValue: false,
+  });
   item: PiteraModel | null = null;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
   typeModal: TypeList = TypeList.Piteras;
   typeSection: TypeList = TypeList.Piteras;
-
-  // Form
-  searchForm!: FormGroup;
 
   @ViewChild('printArea', { static: false })
   printArea!: ElementRef<HTMLElement>;
@@ -131,48 +119,18 @@ export class PiterasPageComponent implements OnInit {
   // Lifecycle
   // ──────────────────────────────────────────────────────────────────────────────
   ngOnInit(): void {
-    // 1) inicializa visibilidad (clave única por tabla)
-    this.columnVisSig = this.colStore.init(
-      'piteras-table',
-      this.headerListPiteras,
-      []
-    );
-    // 2) columnas mostradas (keys) derivadas
-    this.displayedColumnsSig = computed(() =>
-      this.colStore.displayedColumns(
-        this.headerListPiteras,
-        this.columnVisSig()
-      )
-    );
-
-    // Visibilidad de la modal
-    this.modalService.modalVisibility$
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((isVisible) => (this.isModalVisible = isVisible))
-      )
-      .subscribe();
-
-    // Carga inicial + estado
     this.loadAllPiteras();
   }
 
   // ──────────────────────────────────────────────────────────────────────────────
-  // Carga y filtros
+  // Carga y búsqueda
   // ──────────────────────────────────────────────────────────────────────────────
   loadAllPiteras(): void {
     this.piterasFacade.loadAllPiteras();
-    this.piterasFacade.filteredPiteras$
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((piteras) => this.updatePiteraState(piteras))
-      )
-      .subscribe();
   }
 
-  applyFilterWord(keyword: string): void {
+  applyFilterWord = (keyword: string) =>
     this.piterasFacade.applyFilterWord(keyword);
-  }
 
   // ──────────────────────────────────────────────────────────────────────────────
   // Modal
@@ -198,11 +156,10 @@ export class PiterasPageComponent implements OnInit {
     this.item = pitera;
     this.typeModal = typeModal;
 
-    // 🔑 sólo limpiar seleccionado en CREATE para no abrir vacío en ver/editar
+    // limpiar seleccionado SOLO en CREATE
     if (typeModal === TypeList.Piteras && action === TypeActionModal.Create) {
       this.piterasFacade.clearSelectedPitera();
     }
-
     this.modalService.openModal();
   }
 
@@ -226,33 +183,9 @@ export class PiterasPageComponent implements OnInit {
       ? this.piterasFacade.editPitera(event.formData)
       : this.piterasFacade.addPitera(event.formData);
 
-    save$
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap(() => this.onCloseModal())
-      )
-      .subscribe();
-  }
-
-  // ──────────────────────────────────────────────────────────────────────────────
-  // Tabla helpers
-  // ──────────────────────────────────────────────────────────────────────────────
-  private updatePiteraState(piteras: PiteraModel[] | null): void {
-    if (!piteras) return;
-    this.piteras = this.piterasService.sortPiterasByYear(piteras);
-    this.filteredPiteras = [...this.piteras];
-    this.number = this.piterasService.countPiteras(piteras);
-  }
-
-  getVisibleColumns() {
-    return this.colStore.visibleColumnModels(
-      this.headerListPiteras,
-      this.columnVisSig()
-    );
-  }
-
-  toggleColumn(key: string): void {
-    this.colStore.toggle('piteras-table', this.columnVisSig, key);
+    save$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.onCloseModal();
+    });
   }
 
   // ──────────────────────────────────────────────────────────────────────────────
@@ -268,10 +201,5 @@ export class PiterasPageComponent implements OnInit {
       format: 'a4',
       margins: [5, 5, 5, 5],
     });
-  }
-
-  // Si en tu shell enseñas “volver”, expón esto:
-  get canGoBack(): boolean {
-    return false; // no hay navegación entre modales aquí
   }
 }

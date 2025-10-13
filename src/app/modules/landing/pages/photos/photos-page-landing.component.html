@@ -1,8 +1,8 @@
 <div class="flex flex-col mx-3 md:mx-8 mt-4">
   <app-filters
     [filters]="filterGenderPhotos"
+    [(selected)]="selectedFilter"
     (filterClicked)="filterSelected($event)"
-    [loadFirstFilter]="'CONCENTRACIONES'"
   />
   <!-- Galería de imágenes con Grid -->
   <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4 mt-8">

@@ -3,56 +3,168 @@
   <app-dashboard-header
     [icon]="'uil uil-calculator'"
     [title]="'Contabilidad'"
-    [number]="number"
+    [number]="list.countSig()"
     [type]="'Movimientos'"
   />
   <div class="flex flex-1 flex-col justify-start">
     <app-filters
       [filters]="filters"
+      [(selected)]="selectedFilter"
       (filterClicked)="filterSelected($event)"
-    ></app-filters>
+    />
   </div>
 </app-sticky-zone>
 
 <!-- Zona principal -->
 <div class="flex flex-col px-8 items-center">
-  @if (invoicesFacade.isLoading$ | async) {
+  @if (invoicesFacade.isLoadingList$ | async) {
   <div class="flex justify-center items-center py-16">
     <app-spinner-loading />
   </div>
-  } @else { @if (hasInvoicesForYear) {
+  } @else { @if (hasInvoicesForYearSig()) {
   <mat-tab-group
     (selectedTabChange)="tabActive($event)"
     [selectedIndex]="selectedIndex"
   >
     <mat-tab label="Contabilidad completa">
       <div class="flex flex-col gap-y-8 py-8">
-        <ng-container *ngTemplateOutlet="invoiceToolbar"></ng-container>
-        <ng-container *ngTemplateOutlet="templateTableInvoice"></ng-container>
+        <app-page-toolbar
+          [addText]="'Añadir movimiento'"
+          [columns]="headerListInvoices"
+          [visibility]="col.columnVisSig"
+          (add)="addNewInvoiceModal()"
+          (search)="applyFilterWord($event)"
+          (print)="printTableAsPdf()"
+          (toggle)="col.toggleColumn($event)"
+        >
+          <!-- acciones extra -->
+          <app-icon-action
+            [icon]="'uil-folder-download'"
+            [tooltip]="'Descargar facturas'"
+            (click)="downloadFilteredPdfs(false)"
+          />
+        </app-page-toolbar>
+
+        <div class="pb-4" #printArea>
+          <h2 class="only-on-pdf print-title">Listado contabilidad</h2>
+          <app-table
+            [data]="list.processedSig()"
+            [typeSection]="typeSection"
+            [typeModal]="typeModal"
+            [headerColumns]="col.getVisibleColumns()"
+            [columnVisibility]="col.columnVisSig()"
+            [displayedColumns]="col.displayedColumnsSig()"
+            (openModal)="onOpenModal($event)"
+            [topHeader]="60"
+            [printExcludeColumns]="['invoice_pdf', 'proof_pdf']"
+          />
+        </div>
       </div>
     </mat-tab>
 
     <mat-tab label="Facturas">
       <div class="flex flex-col gap-y-8 py-8">
-        <ng-container *ngTemplateOutlet="invoiceToolbar"></ng-container>
-        <ng-container *ngTemplateOutlet="templateTableInvoice"></ng-container>
+        <app-page-toolbar
+          [addText]="'Añadir movimiento'"
+          [columns]="headerListInvoices"
+          [visibility]="col.columnVisSig"
+          (add)="addNewInvoiceModal()"
+          (search)="applyFilterWord($event)"
+          (print)="printTableAsPdf()"
+          (toggle)="col.toggleColumn($event)"
+        >
+          <app-icon-action
+            [icon]="'uil-folder-download'"
+            [tooltip]="'Descargar facturas'"
+            (click)="downloadFilteredPdfs(false)"
+          />
+        </app-page-toolbar>
+
+        <div class="pb-4" #printArea>
+          <h2 class="only-on-pdf print-title">Listado contabilidad</h2>
+          <app-table
+            [data]="list.processedSig()"
+            [typeSection]="typeSection"
+            [typeModal]="typeModal"
+            [headerColumns]="col.getVisibleColumns()"
+            [columnVisibility]="col.columnVisSig()"
+            [displayedColumns]="col.displayedColumnsSig()"
+            (openModal)="onOpenModal($event)"
+            [topHeader]="60"
+            [printExcludeColumns]="['invoice_pdf', 'proof_pdf']"
+          />
+        </div>
       </div>
     </mat-tab>
 
     <mat-tab label="Tickets">
       <div class="flex flex-col gap-y-8 py-8">
-        <ng-container *ngTemplateOutlet="invoiceToolbar"></ng-container>
-        <ng-container *ngTemplateOutlet="templateTableInvoice"></ng-container>
+        <app-page-toolbar
+          [addText]="'Añadir movimiento'"
+          [columns]="headerListInvoices"
+          [visibility]="col.columnVisSig"
+          (add)="addNewInvoiceModal()"
+          (search)="applyFilterWord($event)"
+          (print)="printTableAsPdf()"
+        >
+          <app-icon-action
+            [icon]="'uil-folder-download'"
+            [tooltip]="'Descargar tickets'"
+            (click)="downloadFilteredPdfs(false)"
+          />
+        </app-page-toolbar>
+
+        <div class="pb-4" #printArea>
+          <h2 class="only-on-pdf print-title">Listado contabilidad</h2>
+          <app-table
+            [data]="list.processedSig()"
+            [typeSection]="typeSection"
+            [typeModal]="typeModal"
+            [headerColumns]="col.getVisibleColumns()"
+            [columnVisibility]="col.columnVisSig()"
+            [displayedColumns]="col.displayedColumnsSig()"
+            (openModal)="onOpenModal($event)"
+            [topHeader]="60"
+            [printExcludeColumns]="['invoice_pdf', 'proof_pdf']"
+          />
+        </div>
       </div>
     </mat-tab>
 
     <mat-tab label="Ingresos">
       <div class="flex flex-col gap-y-8 py-8">
-        <ng-container *ngTemplateOutlet="invoiceToolbar"></ng-container>
-        <ng-container
-          *ngTemplateOutlet="templateTableInvoice"
-        ></ng-container></div
-    ></mat-tab>
+        <app-page-toolbar
+          [addText]="'Añadir movimiento'"
+          [columns]="headerListInvoices"
+          [visibility]="col.columnVisSig"
+          (add)="addNewInvoiceModal()"
+          (search)="applyFilterWord($event)"
+          (print)="printTableAsPdf()"
+          (toggle)="col.toggleColumn($event)"
+        >
+          <app-icon-action
+            [icon]="'uil-folder-download'"
+            [tooltip]="'Descargar ingresos'"
+            (click)="downloadFilteredPdfs(false)"
+          />
+        </app-page-toolbar>
+
+        <div class="pb-4" #printArea>
+          <h2 class="only-on-pdf print-title">Listado contabilidad</h2>
+          <app-table
+            [data]="list.processedSig()"
+            [typeSection]="typeSection"
+            [typeModal]="typeModal"
+            [headerColumns]="col.getVisibleColumns()"
+            [columnVisibility]="col.columnVisSig()"
+            [displayedColumns]="col.displayedColumnsSig()"
+            (openModal)="onOpenModal($event)"
+            [topHeader]="60"
+            [printExcludeColumns]="['invoice_pdf', 'proof_pdf']"
+          />
+        </div>
+      </div>
+    </mat-tab>
   </mat-tab-group>
   } @else {
   <div class="flex flex-col items-center justify-center py-16">
@@ -60,57 +172,12 @@
       No hay contabilidad registrada de ese año.
     </p>
   </div>
-  }
-
-  <!-- Plantilla de tabla -->
-  <ng-template #templateTableInvoice>
-    <div class="pb-4" #printArea>
-      <h2 class="only-on-pdf print-title">Listado contabilidad</h2>
-      <app-table
-        [data]="filteredInvoices"
-        [typeSection]="typeSection"
-        [typeModal]="typeModal"
-        [headerColumns]="getVisibleColumns()"
-        [columnVisibility]="columnVisSig()"
-        (openModal)="onOpenModal($event)"
-        [topHeader]="60"
-        [printExcludeColumns]="['invoice_pdf', 'proof_pdf']"
-      />
-    </div>
-  </ng-template>
-
-  <!-- Plantilla reutilizable para toolbar -->
-  <ng-template #invoiceToolbar>
-    <div class="flex gap-x-4">
-      <app-button-icon
-        [buttonText]="'Añadir movimiento'"
-        [iconClass]="'uil-plus'"
-        (addClicked)="addNewInvoiceModal()"
-      />
-      <app-input-search (onDebounce)="applyFilterWord($event)" class="flex-1" />
-      <app-icon-action
-        [icon]="'uil-folder-download'"
-        [tooltip]="'Descargar facturas'"
-        (click)="downloadFilteredPdfs(false)"
-      />
-      <app-icon-action
-        [icon]="'uil-print'"
-        [tooltip]="'Imprimir tabla'"
-        (click)="printTableAsPdf()"
-      />
-      <app-column-menu
-        [columns]="headerListInvoices"
-        [visibility]="columnVisSig()"
-        (toggle)="toggleColumn($event)"
-      />
-    </div>
-  </ng-template>
-  }
+  } }
 </div>
 
 <!-- Modal -->
 <app-modal-shell
-  [visible]="isModalVisible"
+  [visible]="modalVisibleSig()"
   [typeModal]="typeModal"
   [action]="currentModalAction"
   [item]="item"

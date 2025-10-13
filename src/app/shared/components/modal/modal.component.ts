@@ -36,8 +36,13 @@ export class ModalComponent {
   @Output() closeModal = new EventEmitter<boolean>();
   @Output() openMacroevent = new EventEmitter<number>();
   @Output() openEvent = new EventEmitter<number>();
-  @Output() openInvoice = new EventEmitter<number>();
   @Output() openProject = new EventEmitter<number>();
+  @Output() openInvoice = new EventEmitter<number>();
+  @Output() openPdf = new EventEmitter<{
+    url: string;
+    year: number | null;
+    type: TypeList;
+  }>();
   @Output() viewEvent = new EventEmitter<number>();
   @Output() editEvent = new EventEmitter<number>();
   @Output() removeEvent = new EventEmitter<number>();

@@ -27,6 +27,7 @@ import { MatCardModule } from '@angular/material/card';
 import townsData from 'data/towns.json';
 import { QuillModule } from 'ngx-quill';
 import {
+  debounceTime,
   filter,
   forkJoin,
   map,
@@ -72,13 +73,20 @@ import {
 } from 'src/app/shared/utils/validators.utils';
 import { AgentArrayControlComponent } from '../array-agents/array-agents.component';
 import { DateArrayControlComponent } from '../array-dates/array-dates.component';
-
 // ------------------------------------------------------
 // Helpers mínimos
 // ------------------------------------------------------
-function arrayNotEmpty(control: FormControl<CategoryCode[] | []>) {
-  const v = control.value || [];
-  return Array.isArray(v) && v.length > 0 ? null : { required: true };
+const arrayNotEmpty: ValidatorFn = (
+  control: AbstractControl<any, any>
+): ValidationErrors | null => {
+  const v = control.value as unknown;
+  const arr = Array.isArray(v) ? (v as unknown[]) : [];
+  return arr.length > 0 ? null : { required: true };
+};
+
+/** Aplica un validador solo si el evento NO es periódico */
+function singleOnly(v: ValidatorFn): ValidatorFn {
+  return (fg: AbstractControl) => (fg.get('periodic')?.value ? null : v(fg));
 }
 
 // --- Tipado del bloque de público
@@ -226,54 +234,58 @@ export class FormEventComponent implements OnInit, OnChanges {
   // ------------------------------------------------------
   formEvent = new FormGroup(
     {
-      title: new FormControl('', [Validators.required]),
-      start: new FormControl('', [
+      title: new FormControl<string>('', [Validators.required]),
+      start: new FormControl<string | null>(null, [
         Validators.required,
         dateBetween(this.minDate, this.maxDate),
       ]),
-      end: new FormControl('', [dateBetween(this.minDate, this.maxDate)]),
-      time_start: new FormControl(''),
-      time_end: new FormControl(''),
+      end: new FormControl<string | null>(null, [
+        dateBetween(this.minDate, this.maxDate),
+      ]),
+      time_start: new FormControl<string | null>(null),
+      time_end: new FormControl<string | null>(null),
       category: new FormControl<CategoryCode[]>([], {
         nonNullable: true,
-        validators: [Validators.required],
+        validators: [arrayNotEmpty],
       }),
-      description: new FormControl('', [Validators.maxLength(2000)]),
-      online_link: new FormControl(''),
-      province: new FormControl(''),
-      town: new FormControl(''),
+      description: new FormControl<string>('', [Validators.maxLength(2000)]),
+      online_link: new FormControl<string>(''),
+      province: new FormControl<string>(''),
+      town: new FormControl<string>(''),
       place_id: new FormControl<number | null>(null),
       sala_id: new FormControl<number | null>(null),
-      capacity: new FormControl(),
-      access: new FormControl('UNSPECIFIED'),
+      capacity: new FormControl<number | null>(null),
+      access: new FormControl<'FREE' | 'TICKETS' | 'UNSPECIFIED'>(
+        'UNSPECIFIED'
+      ),
       ticket_prices: new FormArray<FormGroup>([]),
-      tickets_method: new FormControl(''),
-      periodic: new FormControl(false),
-      periodic_id: new FormControl(''),
+      tickets_method: new FormControl<string>(''),
+      periodic: new FormControl<boolean>(false),
+      periodic_id: new FormControl<string>(''),
       repeated_dates: new FormArray<FormGroup>([], {
         validators: [uniqueDateTimeValidator],
       }),
-      img: new FormControl(''),
-      status: new FormControl(EnumStatusEvent.EJECUCION),
-      status_reason: new FormControl(''),
-      inscription: new FormControl(false),
-      inscription_method: new FormControl(''),
-      organizer: new FormArray([]),
-      collaborator: new FormArray([]),
-      sponsor: new FormArray([]),
+      img: new FormControl<string>(''),
+      status: new FormControl<EnumStatusEvent>(EnumStatusEvent.EJECUCION),
+      status_reason: new FormControl<string>(''),
+      inscription: new FormControl<boolean>(false),
+      inscription_method: new FormControl<string>(''),
+      organizer: new FormArray<FormGroup>([]),
+      collaborator: new FormArray<FormGroup>([]),
+      sponsor: new FormArray<FormGroup>([]),
       macroevent_id: new FormControl<number | null>({
         value: null,
         disabled: true,
-      }),
+      } as any),
       project_id: new FormControl<number | null>({
         value: null,
         disabled: true,
-      }),
+      } as any),
     },
     {
       validators: [
-        dateRangeValidator,
-        timeRangeValidator,
+        singleOnly(dateRangeValidator),
+        singleOnly(timeRangeValidator),
         periodicHasMultipleDatesValidator,
       ],
     }
@@ -350,11 +362,12 @@ export class FormEventComponent implements OnInit, OnChanges {
   ngOnInit(): void {
     this.isLoading = true;
 
-    // Suscripciones del audience (con teardown)
+    // ---- Suscripciones del audience (coherencia automática de flags)
+    // ALL PUBLIC
     this.audienceForm
       .get('allPublic')!
       .valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((v) => {
+      .subscribe((v: boolean) => {
         const ages = this.audienceForm.get('ages')!;
         const rest = this.audienceForm.get('restrictions')!;
         if (v) {
@@ -378,12 +391,18 @@ export class FormEventComponent implements OnInit, OnChanges {
             { emitEvent: false }
           );
           this.audienceForm.patchValue(
-            { hasRestriction: false },
+            { hasAgeRecommendation: false, hasRestriction: false },
             { emitEvent: false }
           );
+          this.audienceForm
+            .get('restrictions.otherText')!
+            .disable({ emitEvent: false });
         }
+        this.enforceAudienceValidation = true;
+        this.audienceForm.updateValueAndValidity({ emitEvent: false });
       });
 
+    // AGES
     this.audienceForm
       .get('ages')!
       .valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
@@ -391,29 +410,41 @@ export class FormEventComponent implements OnInit, OnChanges {
         const anyAge = Object.values(ages as Record<string, boolean>).some(
           Boolean
         );
-        if (anyAge && this.audienceForm.get('allPublic')!.value) {
-          this.audienceForm.patchValue(
-            { allPublic: false },
-            { emitEvent: false }
-          );
-        }
+        const patch: any = { allPublic: false, hasAgeRecommendation: anyAge };
+        if (anyAge) patch.hasRestriction = false;
+        this.audienceForm.patchValue(patch, { emitEvent: false });
+
+        this.enforceAudienceValidation = true;
+        this.audienceForm.updateValueAndValidity({ emitEvent: false });
       });
 
+    // RESTRICTIONS (grupo completo)
     this.audienceForm
-      .get('restrictions.other')!
+      .get('restrictions')!
       .valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((v) => {
+      .subscribe((r: any) => {
+        const anyR = !!r?.partnersOnly || !!r?.womenOnly || !!r?.other;
+
         const otherText = this.audienceForm.get('restrictions.otherText')!;
-        v
-          ? otherText.enable({ emitEvent: false })
-          : otherText.disable({ emitEvent: false });
-        if (!v) otherText.setValue('', { emitEvent: false });
+        if (r?.other) {
+          otherText.enable({ emitEvent: false });
+        } else {
+          otherText.disable({ emitEvent: false });
+          otherText.setValue('', { emitEvent: false });
+        }
+
+        const patch: any = { allPublic: false, hasRestriction: anyR };
+        if (anyR) patch.hasAgeRecommendation = false;
+        this.audienceForm.patchValue(patch, { emitEvent: false });
+
+        this.enforceAudienceValidation = true;
+        this.audienceForm.updateValueAndValidity({ emitEvent: false });
       });
 
-    // Carga inicial/duplicado
+    // ---- Carga inicial/duplicado
     if (this.itemId === 0 || !this.itemId) {
       if (this.item) {
-        this.populateFormWithEvent(this.item!).subscribe(() => {
+        this.populateFormWithEvent(this.item).subscribe(() => {
           this.isLoading = false;
         });
       } else {
@@ -423,13 +454,11 @@ export class FormEventComponent implements OnInit, OnChanges {
         this.resetAudienceForm();
         this.titleForm = 'Registrar evento';
         this.buttonAction = 'Guardar';
-        // ⬇️⬇️ AÑADE ESTO: aplicar el borrador si existe (solo en CREATE)
+        this.setEventTypePeriod('single');
+
+        // aplicar borrador si existe (solo CREATE)
         this.eventsFacade.draftEvent$.pipe(take(1)).subscribe((draft) => {
           if (draft) this.applyDraft(draft);
-          this.setEventTypePeriod('single');
-          this.eventsFacade.draftEvent$.pipe(take(1)).subscribe((draft) => {
-            if (draft) this.applyDraft(draft);
-          });
         });
       }
     }
@@ -540,20 +569,21 @@ export class FormEventComponent implements OnInit, OnChanges {
   // ------------------------------------------------------
   // Carga e hidratación
   // ------------------------------------------------------
-  private loadEventData(eventId: number): void {
-    this.eventsFacade.loadEventById(eventId);
+  private loadEventData(eventId: number | string): void {
+    const id = Number(eventId);
+
+    this.eventsFacade.clearSelectedEvent();
+    this.eventsFacade.loadEventById(id);
 
     this.eventsFacade.selectedEvent$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        filter(
-          (event): event is EventModelFullData =>
-            !!event && event.id === eventId
-        ),
-        tap(() => {
-          this.formEvent.reset();
-          this.resetAudienceForm();
-        }),
+        filter((e): e is EventModelFullData => !!e && e.id === id),
+        // Coalesce: nos quedamos con la última emisión tras un pequeño silencio.
+        // Así “ganará” la respuesta del servidor si llega después del cache.
+        // Puedes usar 250–500ms según tu backend.
+        // IMPORTANTE: importa debounceTime de 'rxjs'
+        debounceTime(300),
         switchMap((event) => this.populateFormWithEvent(event))
       )
       .subscribe(() => {
@@ -562,6 +592,7 @@ export class FormEventComponent implements OnInit, OnChanges {
   }
 
   private populateFormWithEvent(event: EventModelFullData): Observable<void> {
+    this.resetFormState();
     this.wasPeriodic = false;
     this.submitted = false;
     this.organizers.clear();
@@ -595,7 +626,6 @@ export class FormEventComponent implements OnInit, OnChanges {
             end: event.end,
             time_start: event.time_start,
             time_end: event.time_end,
-            category: (event.category ?? []) as CategoryCode[],
             description: event.description,
             province: event.province,
             town: event.town,
@@ -617,7 +647,18 @@ export class FormEventComponent implements OnInit, OnChanges {
           },
           { emitEvent: false }
         );
+        // limpia primero
+        this.categoryCtrl.setValue([], { emitEvent: false });
+        this.cdr.detectChanges(); // fuerza que los hijos pinten todo como inactivo
 
+        // y ahora pon la nueva del back (normalizada)
+        const normalized = this.normalizeCategory(event.category).filter((c) =>
+          this.category_list.some((k) => k.code === c)
+        ); // filtra códigos desconocidos
+
+        this.categoryCtrl.setValue([...normalized], { emitEvent: true });
+        this.categoryCtrl.updateValueAndValidity({ emitEvent: false });
+        this.cdr.detectChanges();
         this.eventTypePeriod = event.periodic ? 'periodic' : 'single';
         if (event.macroevent_id) this.eventTypeMacro = 'MACRO';
         if (event.project_id) this.eventTypeProject = 'PROJECT';
@@ -1048,7 +1089,7 @@ export class FormEventComponent implements OnInit, OnChanges {
     if (!file) {
       this.selectedImageFile = null;
       this.imageSrc = '';
-      this.formEvent.get('img')?.setValue(null);
+      this.formEvent.get('img')?.setValue(null as any);
       return;
     }
     const result = await this.generalService.handleFileSelection(file);
@@ -1123,26 +1164,29 @@ export class FormEventComponent implements OnInit, OnChanges {
 
   setEventTypeUbication(type: 'place' | 'online' | 'pending'): void {
     this.eventTypeUbication = type;
-    const onlineLinkControl = this.formEvent.get('online_link');
+    const onlineLinkControl = this.formEvent.get('online_link')!;
 
     if (type === 'online') {
-      this.formEvent.patchValue({
-        province: '',
-        town: '',
-        place_id: null,
-        sala_id: null,
-        capacity: null,
-      });
+      this.formEvent.patchValue(
+        {
+          province: '',
+          town: '',
+          place_id: null,
+          sala_id: null,
+          capacity: null,
+        },
+        { emitEvent: false }
+      );
 
-      onlineLinkControl?.setValidators([
+      onlineLinkControl.setValidators([
         Validators.required,
         Validators.pattern(/^https?:\/\/.+$/),
       ]);
     } else {
-      onlineLinkControl?.clearValidators();
-      onlineLinkControl?.setValue('');
+      onlineLinkControl.clearValidators();
+      onlineLinkControl.setValue('', { emitEvent: false });
     }
-    onlineLinkControl?.updateValueAndValidity();
+    onlineLinkControl.updateValueAndValidity({ emitEvent: false });
   }
 
   setEventTypeMacro(type: 'SINGLE' | 'MACRO'): void {
@@ -1355,7 +1399,6 @@ export class FormEventComponent implements OnInit, OnChanges {
 
       if (!rdRaw.length) {
         console.warn('Debe incluir al menos una fecha de pase');
-
         return;
       }
 
@@ -1538,12 +1581,12 @@ export class FormEventComponent implements OnInit, OnChanges {
       }
     };
 
-    // Campos simples
+    // Campos simples (normaliza HH:mm a HH:mm:ss)
     put('title', data.title ?? '');
     put('start', data.start ?? '');
     put('end', data.end ?? '');
-    put('time_start', data.time_start ?? '');
-    put('time_end', data.time_end ?? '');
+    put('time_start', this.normTime(data.time_start ?? ''));
+    put('time_end', this.normTime(data.time_end ?? ''));
     put('category', JSON.stringify(data.category ?? []));
     put('description', data.description ?? '');
     put('province', data.province ?? '');
@@ -1719,29 +1762,12 @@ export class FormEventComponent implements OnInit, OnChanges {
     if (!grp) return;
 
     const was = grp.get(key)!.value === true;
-    const next = !was;
-
     grp.setValue(
       { partnersOnly: false, womenOnly: false, other: false, otherText: '' },
       { emitEvent: false }
     );
-
-    grp.patchValue({ [key]: next } as any, { emitEvent: true });
-
-    const otherTextCtrl = grp.get('otherText')!;
-    if (key === 'other' && next) {
-      otherTextCtrl.enable({ emitEvent: false });
-    } else {
-      otherTextCtrl.disable({ emitEvent: false });
-      otherTextCtrl.setValue('', { emitEvent: false });
-    }
-
-    grp.markAsDirty();
-    grp.markAsTouched();
-    this.enforceAudienceValidation = true;
-    this.audienceForm.updateValueAndValidity({ emitEvent: false });
-
-    this.cdr.markForCheck();
+    grp.patchValue({ [key]: !was } as any, { emitEvent: true });
+    // El valueChanges del grupo ya se ocupa de hasRestriction y otherText
   }
 
   get audienceErrorMessage(): string | null {
@@ -1756,6 +1782,7 @@ export class FormEventComponent implements OnInit, OnChanges {
       return 'Describe la “Otra restricción”.';
     return 'Completa la sección de Público.';
   }
+
   private applyDraft(draft: Partial<EventModelFullData>): void {
     // Forzamos modo "single"
     this.setEventTypePeriod('single');
@@ -1785,5 +1812,77 @@ export class FormEventComponent implements OnInit, OnChanges {
     // Limpia el draft tras usarlo
     this.eventsFacade.clearDraft();
     this.cdr.markForCheck();
+  }
+  normalizeCategory(input: unknown): CategoryCode[] {
+    const valid = new Set(this.category_list.map((c) => String(c.code)));
+    const toCode = (x: unknown) => String(x).trim();
+
+    if (Array.isArray(input)) {
+      return input.map(toCode).filter((c) => valid.has(c)) as CategoryCode[];
+    }
+    if (typeof input === 'string') {
+      const s = input.trim();
+      if (!s) return [];
+      try {
+        const parsed = JSON.parse(s);
+        return Array.isArray(parsed)
+          ? (parsed.map(toCode).filter((c) => valid.has(c)) as CategoryCode[])
+          : valid.has(s)
+          ? [s as CategoryCode]
+          : [];
+      } catch {
+        return valid.has(s) ? [s as CategoryCode] : [];
+      }
+    }
+    return [];
+  }
+  private resetFormState(): void {
+    // Controles simples
+    this.formEvent.patchValue(
+      {
+        title: '',
+        start: null,
+        end: null,
+        time_start: null,
+        time_end: null,
+        category: [],
+        description: '',
+        online_link: '',
+        province: '',
+        town: '',
+        place_id: null,
+        sala_id: null,
+        capacity: null,
+        access: 'UNSPECIFIED',
+        tickets_method: '',
+        periodic: false,
+        periodic_id: '',
+        img: '',
+        status: EnumStatusEvent.EJECUCION,
+        status_reason: '',
+        inscription: false,
+        inscription_method: '',
+        macroevent_id: null,
+        project_id: null,
+      },
+      { emitEvent: false }
+    );
+
+    // Arrays
+    this.organizers.clear();
+    this.collaborators.clear();
+    this.sponsors.clear();
+    this.ticketPrices.clear();
+    this.repeatedDates.clear();
+
+    // UI flags
+    this.showOrganizers = false;
+    this.showCollaborators = false;
+    this.showSponsors = false;
+
+    // Público
+    this.resetAudienceForm();
+
+    this.cdr.detectChanges();
   }
 }

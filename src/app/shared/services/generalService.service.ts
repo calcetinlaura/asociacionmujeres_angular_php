@@ -83,8 +83,9 @@ export class GeneralService {
 
     return file;
   }
-  clearSearchInput(inputComponent?: { clearInput: () => void }): void {
-    inputComponent?.clearInput();
+  clearSearchInput(inputComponent?: unknown): void {
+    const fn = (inputComponent as any)?.clearInput;
+    if (typeof fn === 'function') fn.call(inputComponent);
   }
 
   /** Construye un FormData dinámico a partir de un objeto   */

@@ -48,10 +48,10 @@ export class BooksPageLandingComponent implements OnInit {
   books: BookModel[] = [];
   filteredBooks: BookModel[] = [];
   filters: Filter[] = [];
+  selectedFilter: string | number = '';
   areThereResults = false;
   typeList = TypeList;
   number = 0;
-  selectedFilter = '';
   currentYear = this.generalService.currentYear;
 
   @ViewChild(InputSearchComponent)

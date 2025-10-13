@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, catchError, Observable, tap } from 'rxjs';
+import { BehaviorSubject, catchError, finalize, Observable, tap } from 'rxjs';
 import { MovieModel } from 'src/app/core/interfaces/movie.interface';
 import { MoviesService } from 'src/app/core/services/movies.services';
 import { includesNormalized, toSearchKey } from '../shared/utils/text.utils';
@@ -10,7 +10,9 @@ import { LoadableFacade } from './loadable.facade';
 export class MoviesFacade extends LoadableFacade {
   private readonly moviesService = inject(MoviesService);
 
-  // State propio
+  // ─────────────────────────────────────────────
+  // State
+  // ─────────────────────────────────────────────
   private readonly moviesSubject = new BehaviorSubject<MovieModel[] | null>(
     null
   );
@@ -20,18 +22,37 @@ export class MoviesFacade extends LoadableFacade {
   private readonly selectedMovieSubject =
     new BehaviorSubject<MovieModel | null>(null);
 
-  // Streams públicos
+  // NEW: loaders separados
+  private readonly listLoadingSubject = new BehaviorSubject<boolean>(false);
+  private readonly itemLoadingSubject = new BehaviorSubject<boolean>(false);
+
+  // ─────────────────────────────────────────────
+  // Public streams
+  // ─────────────────────────────────────────────
   readonly movies$ = this.moviesSubject.asObservable();
   readonly filteredMovies$ = this.filteredMoviesSubject.asObservable();
   readonly selectedMovie$ = this.selectedMovieSubject.asObservable();
 
+  // NEW: usa estos en la UI
+  readonly isLoadingList$ = this.listLoadingSubject.asObservable();
+  readonly isLoadingItem$ = this.itemLoadingSubject.asObservable();
+
   private currentFilter: string | null = null;
 
+  // ─────────────────────────────────────────────
+  // Cargas de LISTA  → isLoadingList$
+  // ─────────────────────────────────────────────
   loadAllMovies(): void {
     this.setCurrentFilter(null);
-    this.executeWithLoading(this.moviesService.getMovies(), (movies) =>
-      this.updateMovieState(movies)
-    );
+    this.listLoadingSubject.next(true);
+    this.moviesService
+      .getMovies()
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        catchError((err) => this.generalService.handleHttpError(err)),
+        finalize(() => this.listLoadingSubject.next(false))
+      )
+      .subscribe((movies) => this.updateMovieState(movies));
   }
 
   loadMoviesByFilter(filter: string): void {
@@ -40,54 +61,91 @@ export class MoviesFacade extends LoadableFacade {
   }
 
   loadMoviesByLatest(): void {
-    this.executeWithLoading(this.moviesService.getMoviesByLatest(), (movies) =>
-      this.updateMovieState(movies)
-    );
+    this.listLoadingSubject.next(true);
+    this.moviesService
+      .getMoviesByLatest()
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        catchError((err) => this.generalService.handleHttpError(err)),
+        finalize(() => this.listLoadingSubject.next(false))
+      )
+      .subscribe((movies) => this.updateMovieState(movies));
   }
 
-  // Conservamos el método del service getMoviesByGender(...)
   loadMoviesByGender(gender: string): void {
-    this.executeWithLoading(
-      this.moviesService.getMoviesByGender(gender),
-      (movies) => this.updateMovieState(movies)
-    );
+    this.listLoadingSubject.next(true);
+    this.moviesService
+      .getMoviesByGender(gender)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        catchError((err) => this.generalService.handleHttpError(err)),
+        finalize(() => this.listLoadingSubject.next(false))
+      )
+      .subscribe((movies) => this.updateMovieState(movies));
   }
 
   loadMoviesByYear(year: number): void {
-    this.executeWithLoading(
-      this.moviesService.getMoviesByYear(year),
-      (movies) => this.updateMovieState(movies)
-    );
+    this.listLoadingSubject.next(true);
+    this.moviesService
+      .getMoviesByYear(year)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        catchError((err) => this.generalService.handleHttpError(err)),
+        finalize(() => this.listLoadingSubject.next(false))
+      )
+      .subscribe((movies) => this.updateMovieState(movies));
   }
 
+  // ─────────────────────────────────────────────
+  // Cargas/acciones de ITEM  → isLoadingItem$
+  // ─────────────────────────────────────────────
   loadMovieById(id: number): void {
-    this.executeWithLoading(this.moviesService.getMovieById(id), (movie) =>
-      this.selectedMovieSubject.next(movie)
-    );
+    this.itemLoadingSubject.next(true);
+    this.moviesService
+      .getMovieById(id)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        catchError((err) => this.generalService.handleHttpError(err)),
+        finalize(() => this.itemLoadingSubject.next(false))
+      )
+      .subscribe((movie) => this.selectedMovieSubject.next(movie));
   }
 
   addMovie(movie: FormData): Observable<FormData> {
-    return this.wrapWithLoading(this.moviesService.add(movie)).pipe(
+    this.itemLoadingSubject.next(true);
+    return this.moviesService.add(movie).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.reloadCurrentFilter()),
-      catchError((err) => this.generalService.handleHttpError(err))
+      catchError((err) => this.generalService.handleHttpError(err)),
+      finalize(() => this.itemLoadingSubject.next(false))
     );
   }
 
   editMovie(movie: FormData): Observable<FormData> {
-    return this.wrapWithLoading(this.moviesService.edit(movie)).pipe(
+    this.itemLoadingSubject.next(true);
+    return this.moviesService.edit(movie).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.reloadCurrentFilter()),
-      catchError((err) => this.generalService.handleHttpError(err))
+      catchError((err) => this.generalService.handleHttpError(err)),
+      finalize(() => this.itemLoadingSubject.next(false))
     );
   }
 
   deleteMovie(id: number): void {
-    this.executeWithLoading(this.moviesService.delete(id), () =>
-      this.reloadCurrentFilter()
-    );
+    this.itemLoadingSubject.next(true);
+    this.moviesService
+      .delete(id)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        catchError((err) => this.generalService.handleHttpError(err)),
+        finalize(() => this.itemLoadingSubject.next(false))
+      )
+      .subscribe(() => this.reloadCurrentFilter());
   }
 
+  // ─────────────────────────────────────────────
+  // Utilidades
+  // ─────────────────────────────────────────────
   clearSelectedMovie(): void {
     this.selectedMovieSubject.next(null);
   }

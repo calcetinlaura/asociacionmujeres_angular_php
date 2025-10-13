@@ -51,7 +51,7 @@ export class MoviesPageLandingComponent implements OnInit {
   areThereResults = false;
   typeList = TypeList;
   number = 0;
-  selectedFilter = '';
+  selectedFilter: string | number = '';
 
   @ViewChild(InputSearchComponent)
   private inputSearchComponent!: InputSearchComponent;

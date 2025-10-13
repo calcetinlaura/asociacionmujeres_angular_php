@@ -2,53 +2,45 @@
   <app-dashboard-header
     [icon]="'uil uil-pen'"
     [title]="'Proyectos'"
-    [number]="number"
+    [number]="list.countSig()"
     [type]="'Proyectos'"
   />
   <div class="flex flex-col gap-y-10">
     <app-filters
       [filters]="filters"
+      [(selected)]="selectedFilter"
       (filterClicked)="filterSelected($event)"
-      [loadFirstFilter]="currentYear"
-    ></app-filters>
-    <div class="flex gap-x-4 items-center">
-      <app-button-icon
-        [buttonText]="'Nuevo proyecto'"
-        [iconClass]="'uil-plus'"
-        (addClicked)="addNewProjectModal()"
-      />
-      <app-input-search (onDebounce)="applyFilterWord($event)" class="flex-1" />
-
-      <app-icon-action
-        [icon]="'uil-print'"
-        [tooltip]="'Imprimir tabla'"
-        (click)="printTableAsPdf()"
-      ></app-icon-action>
-      <app-column-menu
-        [columns]="headerListProjects"
-        [visibility]="columnVisSig()"
-        (toggle)="toggleColumn($event)"
-      />
-    </div>
+    />
+    <app-page-toolbar
+      [columns]="headerListProjects"
+      [visibility]="col.columnVisSig"
+      [addText]="'Nuevo proyecto'"
+      (add)="addNewProjectModal()"
+      (search)="applyFilterWord($event)"
+      (print)="printTableAsPdf()"
+      (toggle)="col.toggleColumn($event)"
+    >
+    </app-page-toolbar>
   </div>
 </app-sticky-zone>
+
 <div class="flex flex-col px-8">
-  @if (projectsFacade.isLoading$ | async){
+  @if (projectsFacade.isLoadingList$ | async) {
   <app-spinner-loading />
-  } @else {@if(filteredProjects.length > 0){
+  } @else { @if (list.processedSig().length > 0) {
   <div class="pb-4" #printArea>
     <h2 class="only-on-pdf print-title">Listado proyectos</h2>
     <app-table
-      [data]="filteredProjects"
+      [data]="list.processedSig()"
       [typeSection]="typeSection"
       [typeModal]="typeModal"
-      [headerColumns]="getVisibleColumns()"
-      [columnVisibility]="columnVisSig()"
+      [headerColumns]="col.getVisibleColumns()"
+      [columnVisibility]="col.columnVisSig()"
+      [displayedColumns]="col.displayedColumnsSig()"
       (openModal)="onOpenModal($event)"
-      [displayedColumns]="displayedColumnsSig()"
     />
   </div>
-  }@else{
+  } @else {
   <div class="text-center text-gray-600 my-12 text-lg">
     No hay proyectos registrados.
   </div>
@@ -57,15 +49,15 @@
 
 <!-- Modal -->
 <app-modal-shell
-  [visible]="isModalVisible"
+  [visible]="modalVisibleSig()"
   [typeModal]="typeModal"
   [action]="currentModalAction"
   [item]="item"
-  [canGoBack]="canGoBack"
-  (back)="onBackModal()"
   (close)="onCloseModal()"
   (confirmDelete)="onDelete($event)"
   (sendFormProjectData)="sendFormProject($event)"
+  [canGoBack]="canGoBack"
+  (back)="onBackModal()"
   (openEvent)="onOpenEvent($event)"
   (openInvoice)="onOpenInvoice($event)"
 />

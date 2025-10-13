@@ -13,7 +13,7 @@
         (click)="setSelectedMenuItem(item.title)"
         [routerLinkActiveOptions]="{ exact: true }"
       >
-        <div [innerHTML]="item.title"></div>
+        <div [innerHTML]="item.title | safeHtml"></div>
       </a>
       }
     </div>

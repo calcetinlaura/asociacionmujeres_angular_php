@@ -94,7 +94,7 @@
         } } @case (column.innerHTML === true) { @if( element[column.key] |
         hasValue){
         <div
-          [innerHTML]="element[column.key]"
+          [innerHTML]="element[column.key] | safeHtml"
           class="rich clamp-3 text-[11px] text-gray-600"
         ></div>
         } @else { <app-circle-indicator [item]="false"></app-circle-indicator>}

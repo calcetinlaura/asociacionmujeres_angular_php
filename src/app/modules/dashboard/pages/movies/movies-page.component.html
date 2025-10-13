@@ -2,51 +2,40 @@
   <app-dashboard-header
     [icon]="'uil uil-video'"
     [title]="'Filmoteca'"
-    [number]="number"
+    [number]="list.countSig()"
     [type]="'peliculas'"
   />
   <div class="flex flex-col gap-y-10">
     <app-filters
       [filters]="filters"
+      [(selected)]="selectedFilter"
       (filterClicked)="filterSelected($event)"
     ></app-filters>
-
-    <div class="flex gap-x-4 items-center">
-      <app-button-icon
-        [buttonText]="'Nueva película'"
-        [iconClass]="'uil-plus'"
-        (addClicked)="addNewMovieModal()"
-      />
-      <app-input-search (onDebounce)="applyFilterWord($event)" class="flex-1" />
-
-      <app-icon-action
-        [icon]="'uil-print'"
-        [tooltip]="'Imprimir tabla'"
-        (click)="printTableAsPdf()"
-      ></app-icon-action>
-
-      <app-column-menu
-        [columns]="headerListMovies"
-        [visibility]="columnVisSig()"
-        (toggle)="toggleColumn($event)"
-      />
-    </div>
+    <app-page-toolbar
+      [columns]="headerListMovies"
+      [visibility]="col.columnVisSig"
+      [addText]="'Nueva película'"
+      (add)="addNewMovieModal()"
+      (search)="applyFilterWord($event)"
+      (print)="printTableAsPdf()"
+      (toggle)="col.toggleColumn($event)"
+    />
   </div>
 </app-sticky-zone>
 
 <div class="flex flex-col px-8">
-  @if (moviesFacade.isLoading$ | async) {
+  @if (moviesFacade.isLoadingList$ | async) {
   <app-spinner-loading />
-  } @else { @if (filteredMovies.length > 0) {
+  } @else { @if (list.processedSig().length > 0) {
   <div class="pb-4" #printArea>
     <h2 class="only-on-pdf print-title">Listado películas</h2>
     <app-table
-      [data]="filteredMovies"
+      [data]="list.processedSig()"
       [typeSection]="typeSection"
       [typeModal]="typeModal"
-      [headerColumns]="getVisibleColumns()"
-      [columnVisibility]="columnVisSig()"
-      [displayedColumns]="displayedColumnsSig()"
+      [headerColumns]="col.getVisibleColumns()"
+      [columnVisibility]="col.columnVisSig()"
+      [displayedColumns]="col.displayedColumnsSig()"
       (openModal)="onOpenModal($event)"
     />
   </div>
@@ -57,9 +46,9 @@
   } }
 </div>
 
-<!-- Modal (via shell) -->
+<!-- Modal -->
 <app-modal-shell
-  [visible]="isModalVisible"
+  [visible]="modalVisibleSig()"
   [typeModal]="typeModal"
   [action]="currentModalAction"
   [item]="item"

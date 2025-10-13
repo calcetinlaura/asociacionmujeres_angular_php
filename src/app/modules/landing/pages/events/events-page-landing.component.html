@@ -1,8 +1,7 @@
 <div class="flex flex-col mx-3 md:mx-8 mt-4">
   <app-filters
     [filters]="filters"
-    [loadFirstFilter]="selectedFilter"
-    [loadFilters]="false"
+    [(selected)]="selectedFilter"
     (filterClicked)="filterSelected($event)"
   >
   </app-filters>

@@ -21,6 +21,7 @@ import { TextEditorComponent } from 'src/app/shared/components/text/text-editor/
 import { TextTitleComponent } from 'src/app/shared/components/text/text-title/text-title.component';
 import { EurosFormatPipe } from '../../../../../../shared/pipe/eurosFormat.pipe';
 import { ItemImagePipe } from '../../../../../../shared/pipe/item-img.pipe';
+import { SafeHtmlPipe } from '../../../../../../shared/pipe/safe-html.pipe';
 
 @Component({
   selector: 'app-modal-show-project',
@@ -33,6 +34,7 @@ import { ItemImagePipe } from '../../../../../../shared/pipe/item-img.pipe';
     TableInvoicesComponent,
     TextBackgroundComponent,
     ItemImagePipe,
+    SafeHtmlPipe,
   ],
   templateUrl: './modal-show-project.component.html',
   styleUrls: ['./modal-show-project.component.css'],
