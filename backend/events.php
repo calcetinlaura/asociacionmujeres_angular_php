@@ -221,68 +221,86 @@ if (!function_exists('duplicarImagenEventoSiempre')) {
 // ======= ENRICH ROW =======
 if (!function_exists('enrichEventRow')) {
   function enrichEventRow(array $row, mysqli $connection): array {
-    $row['macroeventData'] = (!empty($row['macroevent_id']) && !empty($row['macroevent_title'])) ? [
-      'id' => $row['macroevent_id'], 'title' => $row['macroevent_title']
-    ] : null;
+  $row['macroeventData'] = (!empty($row['macroevent_id']) && !empty($row['macroevent_title'])) ? [
+    'id' => $row['macroevent_id'], 'title' => $row['macroevent_title']
+  ] : null;
 
-    $row['projectData'] = (!empty($row['project_id']) && !empty($row['project_title'])) ? [
-      'id' => $row['project_id'], 'title' => $row['project_title']
-    ] : null;
+  $row['projectData'] = (!empty($row['project_id']) && !empty($row['project_title'])) ? [
+    'id' => $row['project_id'], 'title' => $row['project_title']
+  ] : null;
 
-    $row['placeData'] = !empty($row['place_id']) ? [
-      'id' => $row['place_id'],
-      'name' => $row['place_name'] ?? '',
-      'address' => $row['place_address'] ?? '',
-      'lat' => $row['place_lat'] ?? '',
-      'lon' => $row['place_lon'] ?? ''
-    ] : null;
+  $row['placeData'] = !empty($row['place_id']) ? [
+    'id' => $row['place_id'],
+    'name' => $row['place_name'] ?? '',
+    'address' => $row['place_address'] ?? '',
+    'lat' => $row['place_lat'] ?? '',
+    'lon' => $row['place_lon'] ?? ''
+  ] : null;
 
-    $row['salaData'] = !empty($row['sala_id']) ? [
-      'id' => $row['sala_id'],
-      'name' => $row['sala_name'] ?? '',
-      'room_location' => $row['sala_location'] ?? ''
-    ] : null;
+  $row['salaData'] = !empty($row['sala_id']) ? [
+    'id' => $row['sala_id'],
+    'name' => $row['sala_name'] ?? '',
+    'room_location' => $row['sala_location'] ?? ''
+  ] : null;
 
-    $row['organizer'] = [];
-    $row['collaborator'] = [];
-    $row['sponsor'] = [];
-    $row['ticket_prices'] = !empty($row['ticket_prices']) ? json_decode($row['ticket_prices'], true) : [];
+  $row['organizer'] = [];
+  $row['collaborator'] = [];
+  $row['sponsor'] = [];
+  $row['ticket_prices'] = !empty($row['ticket_prices']) ? json_decode($row['ticket_prices'], true) : [];
 
-    if (!empty($row['periodic_id'])) {
-      $stmt = $connection->prepare("
-        SELECT id, periodic_id, start, end, time_start, time_end
-        FROM events WHERE periodic_id = ? ORDER BY start ASC
-      ");
-      $stmt->bind_param("s", $row['periodic_id']);
-      $stmt->execute();
-      $row['periodicEvents'] = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-    } else {
-      $row['periodicEvents'] = null;
+  // Si es un pase (evento con periodic_id), fuerza end = start en el propio evento
+  if (!empty($row['periodic_id'])) {
+    if (!empty($row['start']) && !empty($row['end']) && $row['start'] !== $row['end']) {
+      $row['end'] = $row['start'];
     }
+  }
 
-    // Agents del evento
-    $stmtAgents = $connection->prepare("
-      SELECT ea.agent_id, ea.type, a.name
-      FROM event_agents ea
-      JOIN agents a ON ea.agent_id = a.id
-      WHERE ea.event_id = ?
+  if (!empty($row['periodic_id'])) {
+    $stmt = $connection->prepare("
+      SELECT id, periodic_id, start, end, time_start, time_end
+      FROM events
+      WHERE periodic_id = ?
+      ORDER BY start ASC
     ");
-    $stmtAgents->bind_param("i", $row['id']);
-    $stmtAgents->execute();
-    $resultAgents = $stmtAgents->get_result();
-    while ($agent = $resultAgents->fetch_assoc()) {
-      $agentData = ['id' => (int)$agent['agent_id'], 'name' => $agent['name']];
-      switch ($agent['type']) {
-        case 'ORGANIZADOR':  $row['organizer'][]    = $agentData; break;
-        case 'COLABORADOR':  $row['collaborator'][] = $agentData; break;
-        case 'PATROCINADOR': $row['sponsor'][]      = $agentData; break;
+    $stmt->bind_param("s", $row['periodic_id']);
+    $stmt->execute();
+    $row['periodicEvents'] = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+
+    // Fuerza end = start en TODOS los pases devueltos
+    foreach ($row['periodicEvents'] as &$pe) {
+      if (!empty($pe['start']) && !empty($pe['end']) && $pe['start'] !== $pe['end']) {
+        $pe['end'] = $pe['start'];
       }
     }
-
-    // Categorías (EN)
-    $row['category'] = fetchCategoriesForEvent($connection, (int)$row['id']);
-    return $row;
+    unset($pe); // buena práctica al usar referencias en foreach
+  } else {
+    $row['periodicEvents'] = null;
   }
+
+  // Agents del evento
+  $stmtAgents = $connection->prepare("
+    SELECT ea.agent_id, ea.type, a.name
+    FROM event_agents ea
+    JOIN agents a ON ea.agent_id = a.id
+    WHERE ea.event_id = ?
+  ");
+  $stmtAgents->bind_param("i", $row['id']);
+  $stmtAgents->execute();
+  $resultAgents = $stmtAgents->get_result();
+  while ($agent = $resultAgents->fetch_assoc()) {
+    $agentData = ['id' => (int)$agent['agent_id'], 'name' => $agent['name']];
+    switch ($agent['type']) {
+      case 'ORGANIZADOR':  $row['organizer'][]    = $agentData; break;
+      case 'COLABORADOR':  $row['collaborator'][] = $agentData; break;
+      case 'PATROCINADOR': $row['sponsor'][]      = $agentData; break;
+    }
+  }
+
+  // Categorías (EN)
+  $row['category'] = fetchCategoriesForEvent($connection, (int)$row['id']);
+  return $row;
+}
+
 }
 
 
@@ -1093,7 +1111,11 @@ case 'POST':
       }
     }
   }
-
+ if ($periodic && !empty($periodicId)) {
+    $normalize = $connection->prepare("UPDATE events SET `end` = `start` WHERE `periodic_id` = ?");
+    $normalize->bind_param("s", $periodicId);
+    $normalize->execute();
+  }
   // Si dejó de ser periódico, limpieza del grupo (manteniendo actual)
   if (!$periodic && $periodicId && $id) {
     $stmt = $connection->prepare("DELETE FROM events WHERE periodic_id = ? AND id != ?");

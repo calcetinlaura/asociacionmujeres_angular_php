@@ -13,7 +13,7 @@
         ></app-card-events>
       </li>
       }} @else{ @for (item of data; track item) {
-      <li [ngClass]="{ 'opacity-50 grayscale': item.isPast }">
+      <li>
         <app-card
           [item]="item"
           [type]="typeSection"

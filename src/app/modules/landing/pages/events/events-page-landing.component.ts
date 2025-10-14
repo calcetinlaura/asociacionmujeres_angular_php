@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, computed, inject, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
   BehaviorSubject,
@@ -19,6 +19,8 @@ import { NoResultsComponent } from 'src/app/modules/landing/components/no-result
 import { SectionGenericComponent } from 'src/app/modules/landing/components/section-generic/section-generic.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
+
+import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
 import { CalendarComponent } from '../../../../shared/components/calendar/calendar.component';
 
 @Component({
@@ -36,57 +38,99 @@ import { CalendarComponent } from '../../../../shared/components/calendar/calend
   styleUrls: ['./events-page-landing.component.css'],
 })
 export class EventsPageLandingComponent implements OnInit {
+  // -------- Inyecciones --------
   readonly eventsFacade = inject(EventsFacade);
   private readonly eventsService = inject(EventsService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly generalService = inject(GeneralService);
 
+  // -------- Estado UI --------
   filters: Filter[] = [];
   typeList = TypeList;
   selectedFilter: string | number = '';
   currentYear = this.generalService.currentYear;
   isDashboard = false;
-
   deepLinkMultiDate: string | null = null;
 
-  readonly eventsAll$ = this.eventsFacade.eventsAll$.pipe(
-    map((events) => this.eventsService.sortEventsByDate(events ?? []))
-  );
-  // Año seleccionado como stream (fuente única de verdad)
+  // Año seleccionado como stream (fuente única de verdad para filtrar)
   private selectedYear$ = new BehaviorSubject<number | null>(null);
 
-  // Base de datos visible (latest o all) ya ordenada
-  // ✅ Nuevo: base = ALL (incluye todos los pases)
-  readonly allBase$ = this.eventsFacade.eventsAll$.pipe(
-    map((list) => this.eventsService.sortEventsByDate(list ?? []))
-  );
+  // -------- Bases desde la fachada --------
+  // ALL (con repetidos) -> para calendario
+  private readonly allBase$ = this.eventsFacade.eventsAll$;
 
-  // ✅ Filtra por año sobre ALL
-  readonly eventsByYear$ = combineLatest([
+  // LATEST (sin repetidos) -> para la sección inferior
+  private readonly latestBase$ = this.eventsFacade.eventsNonRepeteatedSubject$;
+
+  // -------- Filtrado por año para cada base --------
+  private filterByYear(
+    events: EventModel[] = [],
+    year: number | null
+  ): EventModel[] {
+    if (!year) return events;
+    return events.filter((e: any) => {
+      const s = e?.start ? String(e.start).slice(0, 10) : '';
+      const end = e?.end ? String(e.end).slice(0, 10) : s;
+      if (!s) return false;
+      const sy = Number(s.slice(0, 4));
+      const ey = Number(end.slice(0, 4));
+      if (!Number.isFinite(sy) || !Number.isFinite(ey)) return false;
+      // hay solape si el rango [sy, ey] incluye el año
+      return sy <= year && year <= ey;
+    });
+  }
+
+  // ALL filtrado por año
+  private readonly allByYear$ = combineLatest([
     this.allBase$,
     this.selectedYear$,
   ]).pipe(
-    map(([events, year]) => {
-      if (!year) return events;
-      return events.filter((e: any) => {
-        const s = e?.start ? String(e.start).slice(0, 10) : '';
-        const end = e?.end ? String(e.end).slice(0, 10) : s;
-        if (!s) return false;
-        const sy = Number(s.slice(0, 4));
-        const ey = Number(end.slice(0, 4));
-        if (!Number.isFinite(sy) || !Number.isFinite(ey)) return false;
-        // hay solape si el rango [sy, ey] incluye el año
-        return sy <= year && year <= ey;
-      });
-    })
+    map(([list, year]) =>
+      this.filterByYear(this.eventsService.sortEventsByDate(list ?? []), year)
+    )
   );
 
-  // Si además quieres tu “no repetidos/enriquecidos” sobre el filtrado:
-  readonly eventsNonRepeated$ = this.eventsByYear$.pipe(
-    map((events) => this.processNonRepeated(events ?? []))
+  // LATEST filtrado por año
+  private readonly latestByYear$ = combineLatest([
+    this.latestBase$,
+    this.selectedYear$,
+  ]).pipe(
+    map(([list, year]) =>
+      this.filterByYear(this.eventsService.sortEventsByDate(list ?? []), year)
+    )
   );
 
+  // -------- Signals con useEntityList --------
+
+  // Calendario: usa ALL (repetidos)
+  readonly calendarList = useEntityList<EventModel>({
+    filtered$: this.allByYear$,
+    sort: (arr: EventModel[]) => this.eventsService.sortEventsByDate(arr),
+    count: (arr: EventModel[]) => arr.length,
+  });
+
+  // Sección: usa LATEST (no repetidos)
+  readonly sectionList = useEntityList<EventModel>({
+    filtered$: this.latestByYear$,
+    // ordena según año seleccionado (año actual: futuro→pasado; otros: dic→ene)
+    map: (arr: EventModel[]) =>
+      this.processNonRepeated(arr, this.filterYearForCalendar),
+    sort: (arr: EventModel[]) => arr,
+    count: (arr: EventModel[]) => arr.length,
+  });
+  readonly upcomingListSig = computed(() =>
+    this.sectionList.sortedSig().filter((e) => !e.isPast)
+  );
+  readonly pastListSig = computed(() =>
+    this.sectionList.sortedSig().filter((e) => e.isPast)
+  );
+  readonly upcomingCountSig = computed(() => this.upcomingListSig().length);
+  readonly pastCountSig = computed(() => this.pastListSig().length);
+
+  // ===================================================
+  // Ciclo de vida
+  // ===================================================
   ngOnInit(): void {
     this.filters = this.generalService.getYearFilters(
       2018,
@@ -159,6 +203,10 @@ export class EventsPageLandingComponent implements OnInit {
         }
       });
   }
+
+  // ===================================================
+  // Getters / API UI
+  // ===================================================
   get filterYearForCalendar(): number | null {
     // si por algún flujo selectedFilter fuese string, lo normalizamos
     const val =
@@ -168,11 +216,12 @@ export class EventsPageLandingComponent implements OnInit {
 
     return Number.isFinite(val) ? (val as number) : null;
   }
+
   // ——— API de filtros ———
   loadEvents(year: number): void {
     this.selectedFilter = year; // UI filtros
-    this.selectedYear$.next(year); // 👈 stream para filtrar listas
-    this.eventsFacade.loadYearBundle(year);
+    this.selectedYear$.next(year); // stream para filtrar listas
+    this.eventsFacade.loadYearBundle(year); // carga ALL + LATEST en paralelo
   }
 
   filterSelected(filter: string): void {
@@ -192,23 +241,50 @@ export class EventsPageLandingComponent implements OnInit {
     this.loadEvents(year);
   }
 
-  // ——— Helpers ———
-  private processNonRepeated(events: EventModel[]): EventModel[] {
-    const today = this.truncateTime(new Date());
-    const sorted = this.eventsService.sortEventsByDate(events);
+  // ===================================================
+  // Helpers
+  // ===================================================
+  private processNonRepeated(
+    events: EventModel[],
+    selectedYear: number | null
+  ): EventModel[] {
+    // Si no hay año seleccionado, nos comportamos como año actual por defecto
+    const targetYear = Number.isFinite(selectedYear as number)
+      ? (selectedYear as number)
+      : this.currentYear;
 
-    const enriched = sorted.map((e) => {
-      const start = new Date(e.start);
-      const isCurrentYear = start.getFullYear() === this.currentYear;
-      const isPast = isCurrentYear && this.truncateTime(start) < today;
-      return { ...e, isPast };
-    });
+    // Año actual: split FUTURO/HOY vs PASADO
+    if (targetYear === this.currentYear) {
+      const todayT = this.truncateTime(new Date()).getTime();
 
-    const futureOrToday: EventModel[] = [];
-    const past: EventModel[] = [];
-    for (const ev of enriched) (ev.isPast ? past : futureOrToday).push(ev);
+      const flagged = (events ?? []).map((e) => {
+        const t = this.truncateTime(new Date(e.start)).getTime();
+        const isPast = t < todayT;
+        return { ...e, isPast, __t: t } as EventModel & {
+          __t: number;
+          isPast: boolean;
+        };
+      });
 
-    return [...futureOrToday, ...past];
+      // FUTURO/HOY -> ascendente (más cercano primero)
+      const futureOrToday = flagged
+        .filter((e) => !e.isPast)
+        .sort((a, b) => a.__t - b.__t);
+
+      // PASADO -> descendente (lo más reciente primero)
+      const past = flagged
+        .filter((e) => e.isPast)
+        .sort((a, b) => b.__t - a.__t);
+
+      return [...futureOrToday, ...past].map(({ __t, ...rest }) => rest);
+    }
+
+    // Otros años: todo descendente (diciembre → enero) y sin estilo "past"
+    const sortedDesc = [...(events ?? [])]
+      .sort((a, b) => new Date(b.start).getTime() - new Date(a.start).getTime())
+      .map((e) => ({ ...e, isPast: false } as EventModel));
+
+    return sortedDesc;
   }
 
   private truncateTime(d: Date): Date {

@@ -83,7 +83,7 @@
             !isTypePeriodSelected
           ) ? 'true' : null"
       >
-        <h2 class="font-bold text-lilaText mt-4 uppercase">Tipo de evento</h2>
+        <h2 class="font-bold text-lilaText mt-4 uppercase">Fecha y hora</h2>
         <div class="flex justify-center gap-x-4 py-2">
           <app-button-select
             [buttonText]="'Evento individual'"
@@ -907,6 +907,129 @@
           (remove)="removeSponsor($event)"
         ></app-agent-array-control>
         }
+      </div>
+      <!-- INFORMACIÓN ÚTIL -->
+      <div class="border-2 pt-2 px-4 pb-6 mb-6">
+        <h2 class="font-bold text-lilaText mt-4 uppercase">Infomación útil</h2>
+
+        <div class="pt-6">
+          <div class="mb-10 flex gap-x-4 justify-center">
+            <app-button-icon
+              [buttonText]="'Añadir hora de apertura'"
+              [iconClass]="'uil-plus'"
+              (addClicked)="addOrganizer()"
+            ></app-button-icon>
+            <app-button-icon
+              [buttonText]="'Añadir información de aparcamiento'"
+              [iconClass]="'uil-plus'"
+              (addClicked)="addCollaborator()"
+            ></app-button-icon>
+            <app-button-icon
+              [buttonText]="'Añadir preguntas frecuentes'"
+              [iconClass]="'uil-plus'"
+              (addClicked)="addSponsor()"
+            ></app-button-icon>
+          </div>
+        </div>
+
+        @if (showOrganizers) {
+        <app-agent-array-control
+          [formArray]="organizers"
+          [agents]="agents"
+          [label]="'Organizador'"
+          (remove)="removeOrganizer($event)"
+        ></app-agent-array-control>
+        } @if (showCollaborators) {
+        <app-agent-array-control
+          [formArray]="collaborators"
+          [agents]="agents"
+          [label]="'Colaborador'"
+          (remove)="removeCollaborator($event)"
+        ></app-agent-array-control>
+        } @if (showSponsors) {
+        <app-agent-array-control
+          [formArray]="sponsors"
+          [agents]="agents"
+          [label]="'Patrocinador'"
+          (remove)="removeSponsor($event)"
+        ></app-agent-array-control>
+        }
+      </div>
+      <!-- COMUNICACIÓN -->
+      <div class="border-2 pt-2 px-4 pb-6 mb-6">
+        <h2 class="font-bold text-lilaText mt-4 uppercase">Comunicación</h2>
+
+        <div class="pt-6">
+          <div class="mb-10 flex gap-x-4 justify-center">
+            <app-button-icon
+              [buttonText]="'Añadir video'"
+              [iconClass]="'uil-plus'"
+              (addClicked)="addOrganizer()"
+            ></app-button-icon>
+            <app-button-icon
+              [buttonText]="'Añadir pagina web'"
+              [iconClass]="'uil-plus'"
+              (addClicked)="addCollaborator()"
+            ></app-button-icon>
+            <app-button-icon
+              [buttonText]="'Añadir redes sociales'"
+              [iconClass]="'uil-plus'"
+              (addClicked)="addSponsor()"
+            ></app-button-icon>
+          </div>
+        </div>
+
+        @if (showOrganizers) {
+        <app-agent-array-control
+          [formArray]="organizers"
+          [agents]="agents"
+          [label]="'Organizador'"
+          (remove)="removeOrganizer($event)"
+        ></app-agent-array-control>
+        } @if (showCollaborators) {
+        <app-agent-array-control
+          [formArray]="collaborators"
+          [agents]="agents"
+          [label]="'Colaborador'"
+          (remove)="removeCollaborator($event)"
+        ></app-agent-array-control>
+        } @if (showSponsors) {
+        <app-agent-array-control
+          [formArray]="sponsors"
+          [agents]="agents"
+          [label]="'Patrocinador'"
+          (remove)="removeSponsor($event)"
+        ></app-agent-array-control>
+        }
+      </div>
+      <!-- PUBLICACIÓN -->
+      <div class="border-2 pt-2 px-4 pb-6 mb-6">
+        <h2 class="font-bold text-lilaText mt-4 uppercase">Publicación</h2>
+        <div class="pt-6">
+          <div class="mb-10 flex gap-x-4 justify-center">
+            <app-button-select
+              [buttonText]="'Borrado'"
+              subText="Todo sigue según lo provisto"
+              [active]="eventTypeStatus === enumStatusEvent.EJECUCION"
+              (addClicked)="setEventTypeStatus(enumStatusEvent.EJECUCION)"
+              iconClass="uil-check-square"
+            />
+            <app-button-select
+              [buttonText]="'Publicar evento'"
+              subText="Todo sigue según lo provisto"
+              [active]="eventTypeStatus === enumStatusEvent.EJECUCION"
+              (addClicked)="setEventTypeStatus(enumStatusEvent.EJECUCION)"
+              iconClass="uil-check-square"
+            />
+            <app-button-select
+              [buttonText]="'Programar publicación evento'"
+              subText="Todo sigue según lo provisto"
+              [active]="eventTypeStatus === enumStatusEvent.EJECUCION"
+              (addClicked)="setEventTypeStatus(enumStatusEvent.EJECUCION)"
+              iconClass="uil-check-square"
+            />
+          </div>
+        </div>
       </div>
 
       @if (formEvent.invalid && submitted) {

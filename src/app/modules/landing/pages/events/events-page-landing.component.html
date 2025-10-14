@@ -6,14 +6,15 @@
   >
   </app-filters>
 
-  @let loading = (eventsFacade.isLoading$ | async) ?? false; @let yearEvents =
-  (eventsByYear$ | async) ?? []; @let list = (eventsNonRepeated$ | async) ?? [];
-  @if (loading) {
-  <div class="mt-24"><app-spinner-loading /></div>
-  } @else {
+  @let loading = (eventsFacade.isLoadingList$ | async) ?? false;
 
-  <!-- Calendario solo si hay datos del año (y tienes año seleccionado) -->
-  @if (yearEvents.length > 0 && filterYearForCalendar !== null) {
+  <!-- Calendario (ALL con repetidos) -->
+  @let yearEvents = calendarList.sortedSig();
+
+  <!-- Secciones (LATEST sin repetidos), separadas -->
+  @let upcoming = upcomingListSig(); @let past = pastListSig(); @if (loading) {
+  <div class="mt-24"><app-spinner-loading /></div>
+  } @else { @if (yearEvents.length > 0 && filterYearForCalendar !== null) {
   <app-calendar
     [events]="yearEvents"
     [filterYear]="filterYearForCalendar"
@@ -23,15 +24,26 @@
   </app-calendar>
   }
 
-  <!-- Lista inferior (no-repeated) o no-results -->
-  @if (list.length > 0) {
+  <!-- Próximos -->
+  @if (upcoming.length > 0) {
   <app-section-generic
     [typeSection]="typeList.Events"
     [typeModal]="typeList.Events"
-    [data]="list"
-    [total]="list.length"
+    [data]="upcoming"
+    [total]="upcomingCountSig()"
   />
-  } @else {
+  }
+
+  <!-- Pasados (solo año actual; estará vacío en otros años) -->
+  @if (past.length > 0) {
+  <p class="mt-6 mb-2 font-semibold">Eventos pasados</p>
+  <app-section-generic
+    [typeSection]="typeList.Events"
+    [typeModal]="typeList.Events"
+    [data]="past"
+    [total]="pastCountSig()"
+  />
+  } @else { @if (upcoming.length === 0) {
   <app-no-results [text]="'eventos' | lowercase" />
-  } }
+  } } }
 </div>
