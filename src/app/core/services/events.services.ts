@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { EMPTY, Observable } from 'rxjs';
 import { catchError, shareReplay, take, tap } from 'rxjs/operators';
 import {
   EventModel,
@@ -115,34 +115,20 @@ export class EventsService {
   /**
    * 🏎️ getEventById con caché + TTL + dedupe
    */
-  getEventById(
-    id: number,
-    opts?: { refresh?: boolean; ttlMs?: number }
-  ): Observable<EventModelFullData> {
-    const refresh = !!opts?.refresh;
-    const ttl = opts?.ttlMs ?? this.CACHE_TTL_MS;
-    const now = Date.now();
 
-    const cached = this.eventByIdCache.get(id);
-    if (!refresh && cached && cached.expiresAt > now) {
-      return cached.value$;
-    }
-
-    // Si tu backend no admite /{id}, cambia a params: { id }
-    const req$ = this.http.get<EventModelFullData>(`${this.apiUrl}/${id}`).pipe(
-      shareReplay({ bufferSize: 1, refCount: false }),
-      catchError((err) => this.generalService.handleHttpError(err))
-    );
-
-    this.eventByIdCache.set(id, { expiresAt: now + ttl, value$: req$ });
-    return req$;
+  getEventById(id: number): Observable<any> {
+    return this.http
+      .get(`${this.apiUrl}/${id}`)
+      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
-  /** 🔮 Prefetch por id */
-  prefetchEventById(id: number, ttlMs?: number): void {
-    this.getEventById(id, { ttlMs })
-      .pipe(take(1))
-      .subscribe({ next: () => {}, error: () => {} });
+  prefetchEventById(id: number): void {
+    this.getEventById(id)
+      .pipe(
+        take(1),
+        catchError(() => EMPTY)
+      )
+      .subscribe();
   }
 
   /** 🧹 Limpiar caché por id o todo */

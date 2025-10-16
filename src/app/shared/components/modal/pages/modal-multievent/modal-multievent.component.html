@@ -17,7 +17,6 @@
 </div>
 }
 
-<!-- Lista -->
 <div class="flex flex-col gap-y-4">
   @for (event of events; track trackByEventId($index, event)) {
   <div
@@ -26,7 +25,6 @@
     tabindex="0"
     (keyup.enter)="onOpenEvent(event.id!)"
   >
-    <!-- Imagen -->
     <div
       class="w-[100px] h-auto overflow-hidden flex-shrink-0 rounded-lg flex items-center"
     >
@@ -40,13 +38,10 @@
       />
     </div>
 
-    <!-- Contenido -->
     <div
       class="flex-1 py-2 px-3 rounded-lg shadow-sm bg-white/70 transition-all duration-300 ease-out group-hover:bg-white group-hover:shadow-md"
     >
-      <p class="text-[12px] font-semibold tracking-wide">
-        {{ event.title }}
-      </p>
+      <p class="text-[12px] font-semibold tracking-wide">{{ event.title }}</p>
 
       @if (event.start) {
       <p class="text-[12px] text-gray-600 mt-1">
@@ -62,13 +57,10 @@
         }
       </div>
       } @if (event.placeData?.name) {
-      <p class="text-[12px] text-gray-600 pt-2">
-        {{ event.placeData?.name }}
-      </p>
+      <p class="text-[12px] text-gray-600 pt-2">{{ event.placeData?.name }}</p>
       @if (event.salaData?.name) {
       <p class="text-xs md:text-[10px] text-gray-500 mb-2">
-        {{ event.salaData?.name }}
-        -
+        {{ event.salaData?.name }} -
         {{
           event.salaData?.room_location
             | filterTransformCode : "roomLocationPlaces"
@@ -77,13 +69,11 @@
       } } @if (event.town) {
       <p class="text-xs md:text-[10px] text-gray-600">
         @if (event.placeData?.address) {
-        <span>{{ event.placeData?.address }}, </span> }
+        <span>{{ event.placeData?.address }}, </span>
+        }
         {{ event.town }}
       </p>
-      }
-
-      <!-- Acciones dashboard -->
-      @if (isDashboard) {
+      } @if (isDashboard) {
       <app-action-bar
         [id]="event.id!"
         [actions]="actionsForSection"
@@ -94,7 +84,8 @@
   </div>
   }
 </div>
-@if (isConfirmOpen) {
+
+@if (isConfirmOpen && itemToDelete) {
 <app-confirm-dialog
   [title]="'¿Eliminar evento?'"
   [message]="

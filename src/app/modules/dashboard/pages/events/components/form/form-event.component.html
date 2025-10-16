@@ -17,9 +17,9 @@
     <div class="flex flex-col gap-y-4">
       <div class="flex justify-between gap-x-8 h-[420px]">
         <div class="flex flex-col flex-1 gap-y-4">
-          <div class="box-input gap-x-4">
+          <div class="flex flex-col gap-y-1">
             <label for="title">Título</label>
-            <div class="flex flex-col flex-1">
+            <div class="flex flex-col gap-y-2 w-full box-input text-left">
               <input
                 formControlName="title"
                 placeholder="Título del evento"
@@ -27,29 +27,44 @@
                 [ngClass]="{
                   'is-invalid': submitted && formEvent.get('title')?.invalid
                 }"
+                class="w-full"
               />
-              @if (submitted && formEvent.get('title')?.invalid) {
-              <div class="is-invalid-text">Campo requerido</div>
-              }
             </div>
-          </div>
-
-          <div class="box-input gap-x-4 flex-1 !items-start">
-            <label for="description">Descripción</label>
-            <quill-editor
-              formControlName="description"
-              [modules]="quillModules"
-              placeholder="Escribe aquí la descripción..."
-              class="ql-container-large text-sm focus:outline-none focus:ring focus:ring-blue-200 w-full"
-            />
+            @if (submitted && formEvent.get('title')?.invalid) {
+            <div class="is-invalid-text">Campo requerido</div>
+            }
+            <label for="description" class="mt-4">Descripción</label>
+            <div class="box-input gap-x-4 flex-1 !items-start">
+              <quill-editor
+                formControlName="description"
+                [modules]="quillModules"
+                placeholder="Escribe aquí la descripción..."
+                class="ql-container-small text-sm focus:outline-none focus:ring focus:ring-blue-200 w-full"
+              />
+            </div>
+            <label for="summary" class="mt-4"
+              >Resumen
+              <span class="text-[9px]">(Texto para redes sociales)</span></label
+            >
+            <!-- Resumen (corto) -->
+            <div class="box-input gap-x-4 flex-1 !items-start">
+              <textarea
+                formControlName="summary"
+                maxlength="300"
+                rows="3"
+                placeholder="Resumen breve del evento (máx. 300 caracteres visibles)"
+                class="ql-container-mini text-sm focus:outline-none focus:ring focus:ring-blue-200 w-full"
+              ></textarea>
+            </div>
+            <div class="text-right text-xs text-gray-500 mt-1">
+              {{ summaryLen() }} / 300
+            </div>
           </div>
         </div>
 
         <div class="w-72">
           <app-image-control
-            [previewImg]="
-              formEvent.get('img')?.value ? formEvent.get('img')?.value! : null
-            "
+            [previewImg]="formEvent.get('img')?.value || null"
             [entityId]="itemId"
             [type]="typeList"
             (imgSelected)="onImageSelected($event)"
@@ -77,11 +92,11 @@
             )
           }"
         [attr.aria-invalid]="submitted && (
-            formEvent.errors?.['periodicNeedsAtLeastTwoDates'] ||
-            formEvent.errors?.['invalidDateRange'] ||
-            formEvent.errors?.['invalidTimeRange'] ||
-            !isTypePeriodSelected
-          ) ? 'true' : null"
+              formEvent.errors?.['periodicNeedsAtLeastTwoDates'] ||
+              formEvent.errors?.['invalidDateRange'] ||
+              formEvent.errors?.['invalidTimeRange'] ||
+              !isTypePeriodSelected
+            ) ? 'true' : null"
       >
         <h2 class="font-bold text-lilaText mt-4 uppercase">Fecha y hora</h2>
         <div class="flex justify-center gap-x-4 py-2">
@@ -113,7 +128,7 @@
         <!-- Pase único -->
         @if (eventTypePeriod === 'single') {
         <div class="pt-4 px-4">
-          <p class="text-[15px] text-center mb-10 text-lilaText px-4">
+          <p class="text-[12px] text-center mb-10 text-lilaText px-4">
             Si el evento es de un solo día, no es necesario indicar una fecha de
             fin. Además, si no se especifica la hora de finalización, el sistema
             asignará automáticamente una duración de 3 horas a partir de la hora
@@ -128,7 +143,7 @@
                 for="start"
                 >Fecha Inicio</label
               >
-              <div class="flex-1">
+              <div class="flex-1 box-input">
                 <input
                   formControlName="start"
                   type="date"
@@ -159,7 +174,7 @@
                 for="end"
                 >Fecha Fin</label
               >
-              <div class="flex-1">
+              <div class="flex-1 box-input">
                 <input
                   formControlName="end"
                   type="date"
@@ -189,7 +204,7 @@
                 for="time_start"
                 >Hora Inicio</label
               >
-              <div class="flex-1">
+              <div class="flex-1 box-input">
                 <input
                   formControlName="time_start"
                   type="time"
@@ -207,7 +222,7 @@
                   for="time_end"
                   >Hora Fin</label
                 >
-                <div class="flex-1 flex flex-col">
+                <div class="flex-1 flex flex-col box-input">
                   <input
                     formControlName="time_end"
                     type="time"
@@ -271,7 +286,7 @@
         }"
       >
         <h2 class="font-bold text-lilaText my-4 uppercase">Categoría</h2>
-        <p class="text-[15px] text-center mb-10 text-lilaText px-4">
+        <p class="text-[12px] text-center mb-10 text-lilaText px-4">
           Un evento puede estar clasificado en más de una categoría.
         </p>
         <div class="grid grid-cols-5 gap-4 mx-16">
@@ -303,25 +318,25 @@
         <div class="flex justify-center gap-x-4 py-2">
           <app-button-select
             [buttonText]="'Lugar'"
-            [active]="eventTypeUbication === 'place'"
-            (addClicked)="setEventTypeUbication('place')"
+            [active]="eventTypeUbication === 'PLACE'"
+            (addClicked)="setEventTypeUbication('PLACE')"
             iconClass="uil-map-marker"
           />
           <app-button-select
             [buttonText]="'Evento online'"
-            [active]="eventTypeUbication === 'online'"
-            (addClicked)="setEventTypeUbication('online')"
+            [active]="eventTypeUbication === 'ONLINE'"
+            (addClicked)="setEventTypeUbication('ONLINE')"
             iconClass="uil-presentation-play"
           />
           <app-button-select
             [buttonText]="'Por anunciar'"
-            [active]="eventTypeUbication === 'pending'"
-            (addClicked)="setEventTypeUbication('pending')"
+            [active]="eventTypeUbication === 'PENDING'"
+            (addClicked)="setEventTypeUbication('PENDING')"
             iconClass="uil-megaphone"
           />
         </div>
 
-        @if (eventTypeUbication === 'place') {
+        @if (eventTypeUbication === 'PLACE') {
         <div class="flex flex-col px-4 pt-6 gap-y-4">
           <!-- Provincia -->
           <div class="box-input gap-x-4 flex flex-1">
@@ -403,25 +418,17 @@
             <input formControlName="capacity" type="number" min="0" />
           </div>
         </div>
-        } @if (eventTypeUbication === 'online') {
-        <div class="box-input gap-x-4 flex flex-1 items-center px-4 pt-6">
-          <label for="onlineLink">Enlace del evento online</label>
-          <div class="flex flex-col gap-y-2 flex-1">
-            <input
-              id="onlineLink"
-              type="url"
-              placeholder="https://..."
-              formControlName="online_link"
-              [ngClass]="{
-                'is-invalid': submitted && formEvent.get('online_link')?.invalid
-              }"
-              class="w-full"
-            />
-            @if (submitted && formEvent.get('online_link')?.invalid) {
-            <div class="is-invalid-text">Introduce un enlace válido</div>
-            }
-          </div>
-        </div>
+        } @if (eventTypeUbication === 'ONLINE') {
+        <app-link-item
+          [standalone]="true"
+          [urlCtrl]="onlineLinkCtrl"
+          [textCtrl]="onlineTitleCtrl"
+          [submitted]="submitted"
+          urlPlaceholder="https://..."
+          textLabel="Título"
+          textPlaceholder="Título de la página web"
+          [showRemove]="false"
+        />
         }
       </div>
 
@@ -447,7 +454,7 @@
 
         @if (eventTypeMacro === 'MACRO') {
         <div class="pt-4 px-4">
-          <p class="text-[15px] text-center mb-10 text-lilaText px-4">
+          <p class="text-[12px] text-center mb-10 text-lilaText px-4">
             Si el macroevento al que pertenece el evento no aparece se debe
             registar previamente el macroevento desde la sección de
             MACROEVENTOS.
@@ -503,7 +510,7 @@
 
         @if (eventTypeProject === 'PROJECT') {
         <div class="pt-4 px-4">
-          <p class="text-[15px] text-center mb-10 text-lilaText px-4">
+          <p class="text-[12px] text-center mb-10 text-lilaText px-4">
             Si el proyecto al que pertenece el evento no aparece se debe
             registrar previamente el proyecto desde la sección de PROYECTOS.
           </p>
@@ -542,9 +549,7 @@
       <div
         id="audienceSection"
         class="border-2 pt-2 px-4 pb-6 mb-6"
-        [ngClass]="{
-          'border-[red]': submitted && audienceErrorMessage
-        }"
+        [ngClass]="{ 'border-[red]': submitted && audienceErrorMessage }"
         [attr.aria-invalid]="
           submitted && !!audienceErrorMessage ? 'true' : null
         "
@@ -555,69 +560,71 @@
         <div class="flex gap-x-4 justify-center mb-2">
           <app-button-select
             role="button"
-            [attr.aria-pressed]="audienceForm.value.allPublic"
+            [attr.aria-pressed]="!!audienceForm.get('allPublic')?.value"
             [buttonText]="'Todos los públicos'"
             subText=""
-            [active]="!!audienceForm.value.allPublic"
+            [active]="!!audienceForm.get('allPublic')?.value"
             (addClicked)="selectAudiencePrimary('ALL')"
             iconClass="uil-user"
           />
           <app-button-select
             role="button"
-            [attr.aria-pressed]="audienceForm.value.hasAgeRecommendation"
+            [attr.aria-pressed]="
+              !!audienceForm.get('hasAgeRecommendation')?.value
+            "
             [buttonText]="'Hay una recomendación de edad'"
             subText=""
-            [active]="!!audienceForm.value.hasAgeRecommendation"
+            [active]="!!audienceForm.get('hasAgeRecommendation')?.value"
             (addClicked)="selectAudiencePrimary('AGE')"
             iconClass="uil-info-circle"
           />
           <app-button-select
             role="button"
-            [attr.aria-pressed]="audienceForm.value.hasRestriction"
+            [attr.aria-pressed]="!!audienceForm.get('hasRestriction')?.value"
             [buttonText]="'Hay alguna restricción'"
             subText=""
-            [active]="!!audienceForm.value.hasRestriction"
+            [active]="!!audienceForm.get('hasRestriction')?.value"
             (addClicked)="selectAudiencePrimary('RESTRICTION')"
             iconClass="uil-ban"
           />
         </div>
 
         <!-- Línea 2: rangos de edad -->
-        @if (audienceForm.value.hasAgeRecommendation) {
+        @if (audienceForm.get('hasAgeRecommendation')?.value) {
         <div class="mt-6">
           <div class="flex gap-x-4 justify-center mb-6">
             <app-button-select
               [buttonText]="'Bebés'"
               subText="0–3"
-              [active]="!!audienceForm.value.ages?.babies"
+              [active]="!!audienceForm.get('ages.babies')?.value"
               (addClicked)="toggleAudience('ages.babies')"
               iconClass="uil-baby-carriage"
             />
             <app-button-select
               [buttonText]="'Infantil'"
               subText="4–11"
-              [active]="!!audienceForm.value.ages?.kids"
+              [active]="!!audienceForm.get('ages.kids')?.value"
               (addClicked)="toggleAudience('ages.kids')"
               iconClass="uil-puzzle-piece"
             />
             <app-button-select
               [buttonText]="'Adolescentes'"
               subText="12–17"
-              [active]="!!audienceForm.value.ages?.teens"
+              [active]="!!audienceForm.get('ages.teens')?.value"
               (addClicked)="toggleAudience('ages.teens')"
               iconClass="uil-user"
             />
             <app-button-select
               [buttonText]="'Adultos'"
               subText="18+"
-              [active]="!!audienceForm.value.ages?.adults"
+              [active]="!!audienceForm.get('ages.adults')?.value"
               (addClicked)="toggleAudience('ages.adults')"
               iconClass="uil-18-plus"
             />
             <app-button-select
               [buttonText]="'Mayores'"
               subText="55+"
-              [active]="!!audienceForm.value.ages?.seniors"
+              [active]="!!audienceForm.get('ages.seniors')?.value"
               (addClicked)="toggleAudience('ages.seniors')"
               iconClass="uil-user-check"
             />
@@ -716,7 +723,7 @@
 
         @if (eventTypeAccess === 'TICKETS') {
         <div class="pt-4 px-4">
-          <p class="text-[15px] text-center mb-10 text-lilaText px-4">
+          <p class="text-[12px] text-center mb-10 text-lilaText px-4">
             Si el evento requiere de variedad de entradas, añade las diferentes
             categorías de público que mejor se adapten a tu evento (adultxs,
             niñxs, jubiladxs, socixs…) y especifica su precio. Para categorías
@@ -728,9 +735,8 @@
             <div [formGroupName]="i" class="box-input gap-x-4 pb-4">
               <label
                 class="py-2 px-4 rounded-xl text-sm text-lilaText bg-lilaMuyClaro"
+                >Tipo</label
               >
-                Tipo
-              </label>
               <input
                 formControlName="type"
                 type="text"
@@ -738,9 +744,8 @@
               />
               <label
                 class="py-2 px-4 rounded-xl text-sm text-lilaText bg-lilaMuyClaro"
+                >Precio</label
               >
-                Precio
-              </label>
               <input formControlName="price" type="number" placeholder="€" />
               <button
                 type="button"
@@ -769,27 +774,25 @@
         <div class="flex justify-center gap-x-4 py-2">
           <app-button-select
             [buttonText]="'Acceso ilimitado'"
-            [active]="eventTypeInscription === 'unlimited'"
-            (addClicked)="setEventTypeInscription('unlimited')"
+            [active]="eventTypeInscription === 'UNLIMITED'"
+            (addClicked)="setEventTypeInscription('UNLIMITED')"
             iconClass="uil-border-clear"
           />
           <app-button-select
             [buttonText]="'Requiere inscripción previa'"
-            [active]="eventTypeInscription === 'inscription'"
-            (addClicked)="setEventTypeInscription('inscription')"
+            [active]="eventTypeInscription === 'INSCRIPTION'"
+            (addClicked)="setEventTypeInscription('INSCRIPTION')"
             iconClass="uil-clipboard-notes"
           />
         </div>
 
-        @if (eventTypeInscription === 'inscription') {
+        @if (eventTypeInscription === 'INSCRIPTION') {
         <div class="box-input gap-x-4 pt-4 px-4">
           <label for="inscription_method">Medio de registro</label>
-          <quill-editor
+          <textarea
             formControlName="inscription_method"
-            [modules]="quillModules"
             placeholder="Escribe aquí..."
-            class="ql-container-small flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
-          />
+          ></textarea>
         </div>
         }
       </div>
@@ -811,13 +814,367 @@
       </div>
       }
 
+      <!-- GESTIÓN -->
+      <div class="border-2 pt-2 px-4 pb-6 mb-6">
+        <h2 class="font-bold text-lilaText mt-4 uppercase">Gestión</h2>
+
+        <div class="pt-6">
+          <div class="mb-10 flex gap-x-4 justify-center">
+            <app-button-icon
+              [buttonText]="'Añadir organizador'"
+              [iconClass]="'uil-plus'"
+              (addClicked)="addOrganizer()"
+            ></app-button-icon>
+            <app-button-icon
+              [buttonText]="'Añadir colaborador'"
+              [iconClass]="'uil-plus'"
+              (addClicked)="addCollaborator()"
+            ></app-button-icon>
+            <app-button-icon
+              [buttonText]="'Añadir patrocinador'"
+              [iconClass]="'uil-plus'"
+              (addClicked)="addSponsor()"
+            ></app-button-icon>
+          </div>
+        </div>
+        <div class="mx-20">
+          @if (showOrganizers) {
+          <app-agent-array-control
+            [formArray]="organizers"
+            [agents]="agents"
+            [label]="'Organizador'"
+            (remove)="removeOrganizer($event)"
+          ></app-agent-array-control>
+          } @if (showCollaborators) {
+          <app-agent-array-control
+            [formArray]="collaborators"
+            [agents]="agents"
+            [label]="'Colaborador'"
+            (remove)="removeCollaborator($event)"
+          ></app-agent-array-control>
+          } @if (showSponsors) {
+          <app-agent-array-control
+            [formArray]="sponsors"
+            [agents]="agents"
+            [label]="'Patrocinador'"
+            (remove)="removeSponsor($event)"
+          ></app-agent-array-control>
+          }
+        </div>
+      </div>
+
+      <!-- INFORMACIÓN ÚTIL + PARKING + FAQs -->
+      <div class="border-2 pt-2 px-4 pb-6 mb-6">
+        <h2 class="font-bold text-lilaText mt-4 uppercase">Información útil</h2>
+
+        <!-- Acciones rápidas -->
+        <div class="pt-6 mb-8 flex gap-x-4 justify-center">
+          <!-- Toggle Puertas -->
+          <app-button-icon
+            [buttonText]="
+              openDoorsEnabled
+                ? 'Quitar hora de apertura'
+                : 'Añadir hora de apertura de puertas'
+            "
+            [iconClass]="openDoorsEnabled ? 'uil-minus' : 'uil-plus'"
+            (addClicked)="toggleDoorsOpen()"
+          ></app-button-icon>
+
+          <!-- Toggle Parking -->
+          <app-button-icon
+            [buttonText]="
+              parkingEnabled
+                ? 'Quitar info de aparcamiento'
+                : 'Añadir info de aparcamiento'
+            "
+            [iconClass]="parkingEnabled ? 'uil-minus' : 'uil-plus'"
+            (addClicked)="toggleParking()"
+          ></app-button-icon>
+
+          <!-- FAQs se queda igual (siempre +) -->
+          <app-button-icon
+            [buttonText]="'Añadir preguntas frecuentes'"
+            [iconClass]="'uil-plus'"
+            (addClicked)="addFaq()"
+          ></app-button-icon>
+        </div>
+
+        <div class="mx-20 flex flex-col gap-y-6">
+          <!-- Puertas: solo si se ha añadido -->
+          @if (openDoorsEnabled) {
+          <div class="mt-4">
+            <h3 class="font-semibold text-lilaText mb-4">
+              Información de apertura de puertas
+            </h3>
+            <div class="px-8">
+              <div class="box-input gap-x-4">
+                <label for="open_doors" class="!min-w-[50px]">Hora</label>
+                <div class="w-20">
+                  <input
+                    formControlName="open_doors"
+                    type="time"
+                    placeholder="HH:mm"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+          }
+
+          <!-- Parking: solo si se ha añadido -->
+          @if (parkingEnabled) {
+          <div class="mt-4">
+            <h3 class="font-semibold text-lilaText mb-4">
+              Información de aparcamiento
+            </h3>
+
+            <div class="px-8">
+              <div class="flex gap-x-4 justify-center">
+                <app-button-select
+                  [buttonText]="'Aparc. gratuito'"
+                  subText="El espacio dispone de aparcamiento propio"
+                  [active]="(formEvent.get('parking')?.value || '') === 'FREE'"
+                  (addClicked)="setParking('FREE')"
+                  iconClass="uil-car"
+                />
+                <app-button-select
+                  [buttonText]="'Aparc. de pago'"
+                  subText="El espacio dispone de aparcamiento propio"
+                  [active]="(formEvent.get('parking')?.value || '') === 'PAID'"
+                  (addClicked)="setParking('PAID')"
+                  iconClass="uil-credit-card"
+                />
+                <app-button-select
+                  [buttonText]="'No hay aparcamiento '"
+                  subText="El espacio NO dispone de aparcamiento propio"
+                  [active]="(formEvent.get('parking')?.value || '') === 'NONE'"
+                  (addClicked)="setParking('NONE')"
+                  iconClass="uil-car-slash"
+                />
+              </div>
+
+              <div class="box-input gap-x-4 mt-8">
+                <label for="parking_info">Información adicional</label>
+                <textarea
+                  formControlName="parking_info"
+                  maxlength="300"
+                  rows="3"
+                  placeholder="Algunas zonas cercanas para aparcar..."
+                ></textarea>
+              </div>
+            </div>
+          </div>
+          }
+
+          <!-- FAQs: solo si hay elementos -->
+          @if (faqs.length > 0) {
+          <div class="mt-4">
+            <h3 class="font-semibold text-lilaText mb-4">
+              Preguntas frecuentes
+            </h3>
+
+            <p class="text-[12px] text-lilaText">
+              Responde a las preguntas que puedan tener los asistentes sobre el
+              evento, como la accesibilidad y los servicios.
+            </p>
+
+            <div formArrayName="faqs" class="flex flex-col gap-y-4 px-8">
+              @for (fg of faqs.controls; track $index; let i = $index) {
+              <div
+                [formGroupName]="i"
+                class="border-b border-1 border-lilaClaro p-4 flex gap-x-4"
+              >
+                <div
+                  class="flex flex-col flex-1 border-r border-1 border-lilaClaro"
+                >
+                  <div class="box-input gap-x-4">
+                    <label>Pregunta</label>
+                    <div
+                      class="flex flex-col flex-1 border-l border-1 border-lilaClaro p-4"
+                    >
+                      <input
+                        formControlName="q"
+                        type="text"
+                        placeholder="¿Hay accesibilidad para sillas de ruedas?"
+                        [ngClass]="{
+                          'is-invalid': submitted && $any(fg).errors?.qRequired
+                        }"
+                      />
+                    </div>
+                  </div>
+                  <div class="box-input gap-x-4">
+                    <label>Respuesta</label>
+                    <div
+                      class="flex flex-col flex-1 border-l border-1 border-lilaClaro p-4"
+                    >
+                      <textarea
+                        formControlName="a"
+                        maxlength="300"
+                        rows="3"
+                        placeholder="Sí, el recinto cuenta con... (máx. 300 caracteres)"
+                        [ngClass]="{
+                          'is-invalid':
+                            submitted &&
+                            ($any(fg).errors?.aRequired ||
+                              $any(fg).errors?.aTooLong)
+                        }"
+                      ></textarea>
+                      <div class="text-right text-xs text-gray-500 mt-1">
+                        {{ (fg.get("a")?.value || "").length }} / 300
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="flex items-center">
+                  <button
+                    type="button"
+                    (click)="removeFaq(i)"
+                    class="btn-danger"
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              </div>
+              }
+            </div>
+          </div>
+          }
+        </div>
+      </div>
+
+      <!-- COMUNICACIÓN (webs, vídeos, redes) EN RAÍZ -->
+      <div class="border-2 pt-2 px-4 pb-6 mb-6">
+        <h2 class="font-bold text-lilaText mt-4 uppercase">
+          Comunicación propia del evento
+        </h2>
+
+        <!-- Botones para añadir -->
+        <div class="pt-6 mb-8 flex gap-x-4 justify-center">
+          <app-button-icon
+            class="mt-2"
+            [buttonText]="'Página web'"
+            [iconClass]="'uil-plus'"
+            (addClicked)="addWebsite()"
+          ></app-button-icon>
+
+          <app-button-icon
+            class="mt-2"
+            [buttonText]="'Añadir vídeo'"
+            [iconClass]="'uil-plus'"
+            (addClicked)="addVideo()"
+          ></app-button-icon>
+
+          <app-button-icon
+            class="mt-2"
+            [buttonText]="'Añadir red'"
+            [iconClass]="'uil-plus'"
+            (addClicked)="addSocial()"
+          ></app-button-icon>
+        </div>
+
+        <div class="mx-20">
+          <!-- Websites -->
+          @if (websites.length > 0) {
+          <div class="mt-4" formArrayName="websites">
+            <h3 class="font-semibold text-lilaText mb-4">
+              Página web del evento
+            </h3>
+            <div class="flex flex-col gap-y-6 px-8">
+              @for (w of websites.controls; track $index; let i = $index) {
+              <app-link-item
+                [group]="$any(w)"
+                [submitted]="submitted"
+                textPlaceholder="Título de la página web"
+                (remove)="removeWebsite(i)"
+              />
+              }
+            </div>
+          </div>
+          }
+          <!-- Vídeos -->
+          @if (videos.length > 0) {
+          <div class="mt-8" formArrayName="videos">
+            <h3 class="font-semibold text-lilaText mb-4">
+              Vídeos (YouTube/Vimeo, opcional)
+            </h3>
+
+            <div class="flex flex-col gap-y-6 px-8">
+              @for (v of videos.controls; track $index; let i = $index) {
+              <app-link-item
+                [group]="$any(v)"
+                [submitted]="submitted"
+                textPlaceholder="Trailer, aftermovie..."
+                (remove)="removeVideo(i)"
+              />
+              }
+            </div>
+          </div>
+          }
+
+          <!-- Redes -->
+          @if (socials.length > 0) {
+          <div class="mt-8" formArrayName="socials">
+            <h3 class="font-semibold text-lilaText mb-4">Redes sociales</h3>
+            <div class="flex flex-col gap-y-6 px-8">
+              @for (s of socials.controls; track $index; let i = $index) {
+              <div [formGroupName]="i" class="flex gap-x-4">
+                <div
+                  class="flex flex-1 items-center gap-x-4 border-r border-1 border-lilaClaro pr-4"
+                >
+                  <div class="w-auto box-input">
+                    <select formControlName="network" class="w-40">
+                      <option value="web">Web</option>
+                      <option value="instagram">Instagram</option>
+                      <option value="facebook">Facebook</option>
+                      <option value="x">X (Twitter)</option>
+                      <option value="tiktok">TikTok</option>
+                      <option value="youtube">YouTube</option>
+                      <option value="threads">Threads</option>
+                      <option value="bluesky">Bluesky</option>
+                      <option value="linkedin">LinkedIn</option>
+                    </select>
+                  </div>
+
+                  <div class="flex-1 box-input gap-x-4">
+                    <label class="!min-w-[50px] text-right">URL</label>
+                    <div class="flex flex-1">
+                      <input
+                        type="url"
+                        formControlName="url"
+                        placeholder="https://..."
+                        [ngClass]="{
+                          'is-invalid':
+                            submitted && s.get('url')?.hasError('url')
+                        }"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex items-center">
+                  <button
+                    type="button"
+                    class="btn-danger"
+                    (click)="removeSocial(i)"
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              </div>
+              }
+            </div>
+          </div>
+          }
+        </div>
+      </div>
+
       <!-- STATUS -->
       <div class="border-2 pt-2 px-4 pb-6 mb-6">
         <h2 class="font-bold text-lilaText mt-4 uppercase">
           Estado del evento
         </h2>
 
-        <div class="flex justify-center gap-x-4 py-2 mb-6">
+        <div class="flex justify-center gap-x-4 my-6 mx-4">
           <app-button-select
             [buttonText]="'En curso'"
             subText="Todo sigue según lo provisto"
@@ -849,187 +1206,61 @@
         </div>
 
         @if (eventTypeStatus !== enumStatusEvent.EJECUCION) {
-        <div class="box-input gap-x-4 pt-4">
+        <div class="box-input gap-x-4 pt-4 mx-20">
           <label for="status_reason">Motivos <br />cambio</label>
-          <quill-editor
+          <textarea
             formControlName="status_reason"
-            [modules]="quillModules"
             placeholder="Escribe aquí..."
-            class="ql-container-small flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
-          />
+          ></textarea>
         </div>
         }
       </div>
 
-      <!-- GESTIÓN -->
-      <div class="border-2 pt-2 px-4 pb-6 mb-6">
-        <h2 class="font-bold text-lilaText mt-4 uppercase">Gestión</h2>
-
-        <div class="pt-6">
-          <div class="mb-10 flex gap-x-4 justify-center">
-            <app-button-icon
-              [buttonText]="'Añadir organizador'"
-              [iconClass]="'uil-plus'"
-              (addClicked)="addOrganizer()"
-            ></app-button-icon>
-            <app-button-icon
-              [buttonText]="'Añadir colaborador'"
-              [iconClass]="'uil-plus'"
-              (addClicked)="addCollaborator()"
-            ></app-button-icon>
-            <app-button-icon
-              [buttonText]="'Añadir patrocinador'"
-              [iconClass]="'uil-plus'"
-              (addClicked)="addSponsor()"
-            ></app-button-icon>
-          </div>
-        </div>
-
-        @if (showOrganizers) {
-        <app-agent-array-control
-          [formArray]="organizers"
-          [agents]="agents"
-          [label]="'Organizador'"
-          (remove)="removeOrganizer($event)"
-        ></app-agent-array-control>
-        } @if (showCollaborators) {
-        <app-agent-array-control
-          [formArray]="collaborators"
-          [agents]="agents"
-          [label]="'Colaborador'"
-          (remove)="removeCollaborator($event)"
-        ></app-agent-array-control>
-        } @if (showSponsors) {
-        <app-agent-array-control
-          [formArray]="sponsors"
-          [agents]="agents"
-          [label]="'Patrocinador'"
-          (remove)="removeSponsor($event)"
-        ></app-agent-array-control>
-        }
-      </div>
-      <!-- INFORMACIÓN ÚTIL -->
-      <div class="border-2 pt-2 px-4 pb-6 mb-6">
-        <h2 class="font-bold text-lilaText mt-4 uppercase">Infomación útil</h2>
-
-        <div class="pt-6">
-          <div class="mb-10 flex gap-x-4 justify-center">
-            <app-button-icon
-              [buttonText]="'Añadir hora de apertura'"
-              [iconClass]="'uil-plus'"
-              (addClicked)="addOrganizer()"
-            ></app-button-icon>
-            <app-button-icon
-              [buttonText]="'Añadir información de aparcamiento'"
-              [iconClass]="'uil-plus'"
-              (addClicked)="addCollaborator()"
-            ></app-button-icon>
-            <app-button-icon
-              [buttonText]="'Añadir preguntas frecuentes'"
-              [iconClass]="'uil-plus'"
-              (addClicked)="addSponsor()"
-            ></app-button-icon>
-          </div>
-        </div>
-
-        @if (showOrganizers) {
-        <app-agent-array-control
-          [formArray]="organizers"
-          [agents]="agents"
-          [label]="'Organizador'"
-          (remove)="removeOrganizer($event)"
-        ></app-agent-array-control>
-        } @if (showCollaborators) {
-        <app-agent-array-control
-          [formArray]="collaborators"
-          [agents]="agents"
-          [label]="'Colaborador'"
-          (remove)="removeCollaborator($event)"
-        ></app-agent-array-control>
-        } @if (showSponsors) {
-        <app-agent-array-control
-          [formArray]="sponsors"
-          [agents]="agents"
-          [label]="'Patrocinador'"
-          (remove)="removeSponsor($event)"
-        ></app-agent-array-control>
-        }
-      </div>
-      <!-- COMUNICACIÓN -->
-      <div class="border-2 pt-2 px-4 pb-6 mb-6">
-        <h2 class="font-bold text-lilaText mt-4 uppercase">Comunicación</h2>
-
-        <div class="pt-6">
-          <div class="mb-10 flex gap-x-4 justify-center">
-            <app-button-icon
-              [buttonText]="'Añadir video'"
-              [iconClass]="'uil-plus'"
-              (addClicked)="addOrganizer()"
-            ></app-button-icon>
-            <app-button-icon
-              [buttonText]="'Añadir pagina web'"
-              [iconClass]="'uil-plus'"
-              (addClicked)="addCollaborator()"
-            ></app-button-icon>
-            <app-button-icon
-              [buttonText]="'Añadir redes sociales'"
-              [iconClass]="'uil-plus'"
-              (addClicked)="addSponsor()"
-            ></app-button-icon>
-          </div>
-        </div>
-
-        @if (showOrganizers) {
-        <app-agent-array-control
-          [formArray]="organizers"
-          [agents]="agents"
-          [label]="'Organizador'"
-          (remove)="removeOrganizer($event)"
-        ></app-agent-array-control>
-        } @if (showCollaborators) {
-        <app-agent-array-control
-          [formArray]="collaborators"
-          [agents]="agents"
-          [label]="'Colaborador'"
-          (remove)="removeCollaborator($event)"
-        ></app-agent-array-control>
-        } @if (showSponsors) {
-        <app-agent-array-control
-          [formArray]="sponsors"
-          [agents]="agents"
-          [label]="'Patrocinador'"
-          (remove)="removeSponsor($event)"
-        ></app-agent-array-control>
-        }
-      </div>
       <!-- PUBLICACIÓN -->
       <div class="border-2 pt-2 px-4 pb-6 mb-6">
         <h2 class="font-bold text-lilaText mt-4 uppercase">Publicación</h2>
-        <div class="pt-6">
-          <div class="mb-10 flex gap-x-4 justify-center">
-            <app-button-select
-              [buttonText]="'Borrado'"
-              subText="Todo sigue según lo provisto"
-              [active]="eventTypeStatus === enumStatusEvent.EJECUCION"
-              (addClicked)="setEventTypeStatus(enumStatusEvent.EJECUCION)"
-              iconClass="uil-check-square"
-            />
-            <app-button-select
-              [buttonText]="'Publicar evento'"
-              subText="Todo sigue según lo provisto"
-              [active]="eventTypeStatus === enumStatusEvent.EJECUCION"
-              (addClicked)="setEventTypeStatus(enumStatusEvent.EJECUCION)"
-              iconClass="uil-check-square"
-            />
-            <app-button-select
-              [buttonText]="'Programar publicación evento'"
-              subText="Todo sigue según lo provisto"
-              [active]="eventTypeStatus === enumStatusEvent.EJECUCION"
-              (addClicked)="setEventTypeStatus(enumStatusEvent.EJECUCION)"
-              iconClass="uil-check-square"
-            />
+
+        <div class="pt-6 mb-8 flex gap-x-4 justify-center">
+          <app-button-select
+            [buttonText]="'Borrador'"
+            subText="Guardar pero no visible"
+            [active]="isDraft"
+            (addClicked)="setDraft()"
+            iconClass="uil-file-edit-alt"
+          />
+          <app-button-select
+            [buttonText]="'Publicar ahora'"
+            subText="Visible al guardar"
+            [active]="isPublishNow"
+            (addClicked)="publishNow()"
+            iconClass="uil-check-circle"
+          />
+          <app-button-select
+            [buttonText]="'Programar publicación'"
+            subText="Se publicará automáticamente"
+            [active]="isScheduled"
+            (addClicked)="schedulePublication()"
+            iconClass="uil-schedule"
+          />
+        </div>
+
+        <!-- Muestra los inputs SOLO en modo programado -->
+        @if (isScheduled) {
+        <div class="flex gap-6 px-40">
+          <div class="flex-1 box-input gap-x-4">
+            <label for="publish_day">Fecha de publicación</label>
+            <input type="date" formControlName="publish_day" />
+          </div>
+          <div class="box-input gap-x-4">
+            <label for="publish_time" class="block !min-w-[50px]">Hora</label>
+            <input type="time" formControlName="publish_time" />
           </div>
         </div>
+        <p class="text-center text-xs text-gray-500 mt-2">
+          Si cambias fecha/hora se programará; si las quitas, será “Publicar
+          ahora”.
+        </p>
+        }
       </div>
 
       @if (formEvent.invalid && submitted) {

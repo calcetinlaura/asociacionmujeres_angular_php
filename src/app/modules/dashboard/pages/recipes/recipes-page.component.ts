@@ -138,7 +138,6 @@ export class RecipesPageComponent implements OnInit {
   currentModalAction: TypeActionModal = TypeActionModal.Create;
   typeModal = TypeList.Recipes;
   typeSection = TypeList.Recipes;
-  modalKey = 0; // fuerza remontaje del shell al reabrir
 
   // Refs
   @ViewChild('printArea', { static: false })
@@ -202,19 +201,18 @@ export class RecipesPageComponent implements OnInit {
           .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe({
             next: (fresh) => {
-              this.modalKey++;
               this.openModal(event.typeModal, event.action, fresh);
             },
             error: (err) => {
               console.error('Error cargando receta', err);
-              this.modalKey++;
+
               this.openModal(event.typeModal, event.action, event.item ?? null);
             },
           });
         return;
       }
     }
-    this.modalKey++;
+
     this.openModal(event.typeModal, event.action, event.item ?? null);
   }
 

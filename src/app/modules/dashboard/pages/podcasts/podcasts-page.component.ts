@@ -137,7 +137,6 @@ export class PodcastsPageComponent implements OnInit {
   currentModalAction: TypeActionModal = TypeActionModal.Create;
   typeModal = TypeList.Podcasts;
   typeSection = TypeList.Podcasts;
-  modalKey = 0;
 
   @ViewChild('printArea', { static: false })
   printArea!: ElementRef<HTMLElement>;
@@ -201,7 +200,6 @@ export class PodcastsPageComponent implements OnInit {
       this.podcastsFacade.clearSelectedPodcast();
     }
 
-    this.modalKey++;
     this.modalService.openModal();
   }
 

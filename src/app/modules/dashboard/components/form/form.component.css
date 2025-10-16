@@ -27,8 +27,8 @@
 }
 .is-invalid-text {
   color: Red;
-  font-size: 11px;
-  padding-top: 4px;
+  font-size: 10px;
+  padding-top: 3px;
   padding-left: 10px;
 }
 .str.is-invalid-text {

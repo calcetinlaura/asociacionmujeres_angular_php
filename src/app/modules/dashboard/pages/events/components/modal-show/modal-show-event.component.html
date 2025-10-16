@@ -146,13 +146,13 @@
             {{ ticket.type }}
           </p>
 
-          @if (ticket.price.toString() !== "0") {
+          @if (ticket.price!.toString() !== "0") {
           <p
             class="text-[9px] md:text-[12px] px-[6px] pt-1 pb-[3px] rounded-[4px] border-[1px] border-lilaClaro"
           >
             {{ ticket.price + " €" }}
           </p>
-          }@if (ticket.price.toString() === "0") {
+          }@if (ticket.price!.toString() === "0") {
           <p
             class="text-[9px] md:text-[12px] px-[6px] pt-1 pb-[3px] rounded-[4px] border-[1px] border-lilaClaro"
           >

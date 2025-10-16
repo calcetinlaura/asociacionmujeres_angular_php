@@ -37,6 +37,7 @@ import { ModalShowRecipeComponent } from 'src/app/modules/dashboard/pages/recipe
 import { ModalShowSubsidyComponent } from 'src/app/modules/dashboard/pages/subsidies/components/modal-show/modal-show-subsidy.component';
 
 // Delete genérico
+import { SpinnerLoadingComponent } from '../spinner-loading/spinner-loading.component';
 import { ModalDeleteComponent } from './pages/modal-delete/modal-delete.component';
 import { ModalMultiEventComponent } from './pages/modal-multievent/modal-multievent.component';
 
@@ -80,6 +81,7 @@ import { ModalMultiEventComponent } from './pages/modal-multievent/modal-multiev
     // delete (genérico)
     ModalDeleteComponent,
     ModalMultiEventComponent,
+    SpinnerLoadingComponent,
   ],
   templateUrl: './modal-router.component.html',
 })
@@ -222,6 +224,7 @@ export class ModalRouterComponent {
     this.removeEvent.emit(id); // ⬆️ reenvía a padre SÓLO al confirmar
     this.showInlineDelete = false;
     this.deleteCandidate = null;
+    this.onClose();
   }
 
   // Cancelación/cierre de la confirmación

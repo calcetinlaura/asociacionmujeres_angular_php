@@ -22,13 +22,14 @@
   selectedFilter) {
   <div class="w-full">
     <app-calendar
-      [events]="events"
+      [events]="(events$ | async) ?? []"
       [filterYear]="selectedFilter"
       [isDashboard]="true"
       (createEvent)="onCreateEventAtDate($event)"
       (viewEvent)="onOpenEvent($event)"
       (editEvent)="onEditEvent($event)"
       (deleteEvent)="onDeleteEvent($event)"
+      (openMulti)="onOpenMulti($event)"
     ></app-calendar>
   </div>
   } @else {
@@ -50,4 +51,8 @@
   (openEvent)="onOpenEvent($event)"
   (confirmDelete)="onDeleteEvent($event)"
   (sendFormEventData)="sendFormEvent($event)"
+  (addEvent)="onCreateEventAtDate($event)"
+  (viewEvent)="onOpenEvent($event)"
+  (editEvent)="onEditEvent($event)"
+  (removeEvent)="onDeleteEvent($event)"
 />

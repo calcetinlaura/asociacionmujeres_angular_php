@@ -181,7 +181,7 @@ export class MacroeventsPageComponent implements OnInit {
   addNewMacroeventModal(): void {
     this.openModal(TypeList.Macroevents, TypeActionModal.Create, null);
   }
-  modalKey = 0;
+
   onOpenModal(payload: {
     typeModal: TypeList;
     action: TypeActionModal;
@@ -200,18 +200,15 @@ export class MacroeventsPageComponent implements OnInit {
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
           next: (fresh) => {
-            this.modalKey++;
             this.openModal(typeModal, action, fresh);
           },
           error: () => {
-            this.modalKey++;
             this.openModal(typeModal, action, item);
           },
         });
       return;
     }
 
-    this.modalKey++;
     this.openModal(typeModal, action, item ?? null);
   }
 

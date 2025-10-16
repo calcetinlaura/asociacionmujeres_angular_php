@@ -7,12 +7,13 @@ import {
   inject,
   Input,
   LOCALE_ID,
+  OnChanges,
   Output,
+  SimpleChanges,
 } from '@angular/core';
 import { EventModelFullData } from 'src/app/core/interfaces/event.interface';
 import { TypeList } from 'src/app/core/models/general.model';
 
-// UI/auxiliares para render
 import { ImgBrokenDirective } from 'src/app/shared/directives/img-broken.directive';
 import {
   DictTranslatePipe,
@@ -28,6 +29,7 @@ import {
   pickShareDate,
 } from 'src/app/shared/utils/share-url.util';
 import { environments } from 'src/environments/environments';
+
 import {
   ActionBarComponent,
   ActionItem,
@@ -43,12 +45,10 @@ import { ConfirmDialogComponent } from '../modal-confirm-dialog/modal-confirm-di
   standalone: true,
   imports: [
     CommonModule,
-    // render item
     ImgBrokenDirective,
     ItemImagePipe,
     FilterTransformCodePipe,
     DictTranslatePipe,
-    // UI auxiliares
     ButtonIconComponent,
     SocialMediaShareComponent,
     TextTitleComponent,
@@ -59,13 +59,13 @@ import { ConfirmDialogComponent } from '../modal-confirm-dialog/modal-confirm-di
   styleUrls: ['./modal-multievent.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ModalMultiEventComponent {
+export class ModalMultiEventComponent implements OnChanges {
   private readonly locale = inject(LOCALE_ID);
 
   @Input() events: EventModelFullData[] = [];
   @Input() date: Date | null = null;
   @Input() isDashboard = false;
-  //Evita errores si te pasan events sin /:
+
   @Input({ transform: (v: string) => (v?.startsWith('/') ? v : '/' + v) })
   sharePath = '/events';
 
@@ -74,19 +74,18 @@ export class ModalMultiEventComponent {
   @Output() view = new EventEmitter<number>();
   @Output() edit = new EventEmitter<number>();
   @Output() remove = new EventEmitter<number>();
+  @Output() close = new EventEmitter<void>(); // 🔹 para cerrar modal al quedar vacía
 
   readonly typeModal: TypeList = TypeList.Events;
   readonly dictType = DictType;
-
-  // 🔸 Estado para confirmación
-  isConfirmOpen = false;
-  idToRemove: number | null = null;
-  shareTitle = '';
-  shareUrl = '';
   readonly appLocale = this.locale;
 
-  trackByEventId = (_: number, e: { id?: number | null }) => e.id ?? _;
-  ngOnChanges() {
+  isConfirmOpen = false;
+  itemToDelete: EventModelFullData | null = null;
+  shareTitle = '';
+  shareUrl = '';
+
+  ngOnChanges(_: SimpleChanges = {}) {
     const d = pickShareDate(this.date, this.events);
     this.shareTitle = buildShareTitle(
       'Programación de eventos',
@@ -102,7 +101,6 @@ export class ModalMultiEventComponent {
       : '';
   }
 
-  // URL para compartir: SIEMPRE a la página de eventos con ?multiDate=YYYY-MM-DD
   getShareUrl(): string {
     const d = pickShareDate(this.date, this.events);
     return d
@@ -114,30 +112,47 @@ export class ModalMultiEventComponent {
       : '';
   }
 
-  // Navegar a Event (el router/shell abre el caso de evento)
   onOpenEvent(eventId: number) {
     if (eventId) this.openEvent.emit(eventId);
   }
+
   viewById(id: number) {
     this.view.emit(id);
   }
+
   editById(id: number) {
     this.edit.emit(id);
   }
-  removeById(id: number) {
-    this.isConfirmOpen = true;
-    this.idToRemove = id;
-  }
+
   onAddClick(): void {
     const d = pickShareDate(this.date, this.events);
     if (d) this.addEvent.emit(localISODate(d));
   }
 
+  /** 🔹 Confirmar eliminación del evento seleccionado */
   confirmRemove() {
-    if (this.idToRemove != null) {
-      this.remove.emit(this.idToRemove);
+    if (this.itemToDelete?.id != null) {
+      const id = this.itemToDelete.id;
+
+      // Emitimos al padre para eliminar en backend
+      this.remove.emit(id);
+
+      // Eliminamos localmente para actualizar vista
+      this.events = this.events.filter((ev) => ev.id !== id);
+
+      // Cerramos el diálogo de confirmación
+      this.closeConfirm();
+
+      // Si ya no quedan eventos, cerramos la modal completa
+      if (this.events.length === 0) {
+        this.close.emit();
+      } else {
+        // Forzamos recalcular los datos de compartir
+        this.ngOnChanges();
+      }
+    } else {
+      this.closeConfirm();
     }
-    this.closeConfirm();
   }
 
   cancelRemove() {
@@ -146,10 +161,9 @@ export class ModalMultiEventComponent {
 
   private closeConfirm() {
     this.isConfirmOpen = false;
-    this.idToRemove = null;
+    this.itemToDelete = null;
   }
 
-  // Cerrar con ESC
   @HostListener('document:keydown.escape', ['$event'])
   handleEscape(_: KeyboardEvent) {
     if (this.isConfirmOpen) this.closeConfirm();
@@ -161,7 +175,7 @@ export class ModalMultiEventComponent {
     { icon: 'uil-trash-alt', tooltip: 'Eliminar', type: 'remove' },
   ];
 
-  handleAction(ev: ActionPayload, element: any) {
+  handleAction(ev: ActionPayload, element: EventModelFullData) {
     switch (ev.type) {
       case 'view':
         this.view.emit(ev.id);
@@ -170,13 +184,15 @@ export class ModalMultiEventComponent {
         this.edit.emit(ev.id);
         break;
       case 'remove':
-        this.removeById(ev.id);
-        break; // abre confirmación
-      // si quisieras soportar más:
-      case 'duplicate':
-        /* ... */ break;
-      case 'download-image':
-        /* ... */ break;
+        this.removeById(element);
+        break;
     }
   }
+
+  removeById(event: EventModelFullData) {
+    this.itemToDelete = event;
+    this.isConfirmOpen = true;
+  }
+
+  trackByEventId = (_: number, e: { id?: number | null }) => e.id ?? _;
 }

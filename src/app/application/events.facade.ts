@@ -10,6 +10,7 @@ import {
   Observable,
   of,
   switchMap,
+  take,
   tap,
 } from 'rxjs';
 import { EventModelFullData } from 'src/app/core/interfaces/event.interface';
@@ -120,17 +121,22 @@ export class EventsFacade extends LoadableFacade {
 
   loadEventById(id: number): void {
     this.itemLoadingSubject.next(true);
+    this.selectedEventSubject.next(null); // opcional: limpia el valor anterior
+
     this.eventsService
       .getEventById(id)
       .pipe(
-        takeUntilDestroyed(this.destroyRef),
+        take(1),
         catchError((err) => {
           this.generalService.handleHttpError(err);
           return of(null);
         }),
         finalize(() => this.itemLoadingSubject.next(false))
       )
-      .subscribe((event) => this.selectedEventSubject.next(event));
+      .subscribe((event) => {
+        console.log('[EventsFacade] Event loaded by ID:', event);
+        this.selectedEventSubject.next(event);
+      });
   }
 
   /** Útil para modales/listas dependientes. No toca el estado global. */

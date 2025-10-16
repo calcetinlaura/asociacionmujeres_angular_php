@@ -110,6 +110,19 @@ body {
   overflow-y: auto;
   width: 100%;
 }
+.ql-container-mini .ql-container {
+  min-height: 100px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.ql-container-mini .ql-editor {
+  height: 100px !important;
+  flex: 1;
+  overflow-y: auto;
+  width: 100%;
+}
 /* placeholder editor de texto */
 .ql-editor.ql-blank::before {
   color: #a9b0ba !important;

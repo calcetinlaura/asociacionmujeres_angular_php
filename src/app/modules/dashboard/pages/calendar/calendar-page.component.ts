@@ -1,9 +1,15 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  DestroyRef,
+  OnInit,
+  inject,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { finalize, map, of, switchMap } from 'rxjs';
+import { finalize, map, of, switchMap, tap } from 'rxjs';
 
 import { EventsFacade } from 'src/app/application/events.facade';
 import {
@@ -27,6 +33,8 @@ import { ModalService } from 'src/app/shared/components/modal/services/modal.ser
 
 import { EventModelFullData } from 'src/app/core/interfaces/event.interface';
 
+type MultiEventsPayload = { date: Date; events: any[] };
+type ModalItem = EventModelFullData | MultiEventsPayload | null;
 @Component({
   selector: 'app-calendar-page',
   standalone: true,
@@ -51,6 +59,7 @@ export class CalendarPageComponent implements OnInit {
   private readonly generalService = inject(GeneralService);
   private readonly modalService = inject(ModalService);
   private readonly modalNav = inject(ModalNavService<EventModelFullData>);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   readonly eventsFacade = inject(EventsFacade);
 
@@ -61,7 +70,7 @@ export class CalendarPageComponent implements OnInit {
 
   // Modal shell
   isModalVisible = false;
-  item: EventModelFullData | null = null;
+  item: ModalItem = null;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
   typeModal: TypeList = TypeList.Events;
 
@@ -116,6 +125,13 @@ export class CalendarPageComponent implements OnInit {
 
     this.modalService.openModal();
   }
+  onOpenMulti = (payload: MultiEventsPayload) => {
+    console.log('[CalendarPage] openMulti', payload);
+    this.typeModal = TypeList.MultiEvents;
+    this.currentModalAction = TypeActionModal.Show;
+    this.item = payload; // <- ahora coincide el tipo
+    this.modalService.openModal();
+  };
 
   get canGoBack(): boolean {
     return this.modalNav.canGoBack();
@@ -137,24 +153,53 @@ export class CalendarPageComponent implements OnInit {
 
   // ── Acciones desde el calendario (Dashboard) ────────────────────────────────
   onCreateEventAtDate = (iso: string) => {
+    console.log('[CalendarPage] Crear evento en fecha', iso);
     this.openModal(TypeList.Events, TypeActionModal.Create, null);
-    // Si lo tienes en la facade/form:
     this.eventsFacade.prefillDate?.(iso);
   };
 
   onOpenEvent = (eventId: number) => {
+    console.log('[CalendarPage] onOpenEvent START id=', eventId);
+
+    // Guarda el estado actual para permitir volver atrás
     this.modalNav.push({
       typeModal: this.typeModal,
       action: this.currentModalAction,
       item: this.item,
     });
 
+    // Abrimos modal de forma optimista con item = null → se mostrará spinner
+    this.typeModal = TypeList.Events;
+    this.currentModalAction = TypeActionModal.Show;
+    this.item = null;
+
+    this.modalService.openModal();
+    console.log('[CalendarPage] modal opened optimistically with item=null');
+
+    // Pedimos los datos reales del evento
     this.eventsService
       .getEventById(eventId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(tap((ev) => console.log('[CalendarPage] tap ev', ev)))
       .subscribe({
-        next: (ev) => this.openModal(TypeList.Events, TypeActionModal.Show, ev),
-        error: (err) => console.error('Error cargando evento', err),
+        next: (ev) => {
+          console.log('[CalendarPage] getEventById OK', ev);
+          this.item = ev;
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('[CalendarPage] getEventById ERROR', err);
+          this.item = {
+            id: 0,
+            title: 'No se pudo cargar el evento',
+            start: '',
+            end: '',
+            time_start: '00:00:00',
+          } as any;
+          this.cdr.detectChanges();
+        },
+        complete: () => {
+          console.log('[CalendarPage] getEventById COMPLETE');
+        },
       });
   };
 
@@ -165,11 +210,20 @@ export class CalendarPageComponent implements OnInit {
       item: this.item,
     });
 
+    // 👇 Abre YA la modal en modo loading
+    this.typeModal = TypeList.Events;
+    this.currentModalAction = TypeActionModal.Edit;
+    this.item = null;
+    this.modalService.openModal();
+
+    // Fetch del evento
     this.eventsService
       .getEventById(eventId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (ev) => this.openModal(TypeList.Events, TypeActionModal.Edit, ev),
+        next: (ev) => {
+          this.item = ev;
+        },
         error: (err) => console.error('Error cargando evento para editar', err),
       });
   };
@@ -177,12 +231,19 @@ export class CalendarPageComponent implements OnInit {
   onDeleteEvent = (eventId: number) => {
     this.eventsFacade.deleteEvent(eventId);
   };
-
+  private isEventItem(x: any): x is EventModelFullData {
+    return !!x && typeof x === 'object' && 'id' in x && 'start' in x;
+  }
   // Si usas el mismo flujo de guardado que en EventsPage:
   sendFormEvent(event: { itemId: number; formData: FormData }): void {
-    const currentItem = this.item;
+    const currentItem = this.item; // puede ser EventModelFullData | MultiEventsPayload | null
     const newPeriodicId = event.formData.get('periodic_id');
-    const oldPeriodicId = currentItem?.periodic_id ?? null;
+
+    // ✅ solo lee periodic_id si el item actual es un EventModelFullData
+    const oldPeriodicId = this.isEventItem(currentItem)
+      ? currentItem.periodic_id ?? null
+      : null;
+
     const isRepeatedToUnique = !!oldPeriodicId && !newPeriodicId;
 
     const request$ = event.itemId

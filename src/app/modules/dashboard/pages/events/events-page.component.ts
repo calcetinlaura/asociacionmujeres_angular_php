@@ -107,6 +107,12 @@ export class EventsPageComponent implements OnInit {
       showIndicatorOnEmpty: true,
     },
     {
+      title: 'Resumen',
+      key: 'summary',
+      sortable: true,
+      booleanIndicator: true,
+    },
+    {
       title: 'Espacio',
       key: 'espacioTable',
       sortable: true,
@@ -171,6 +177,7 @@ export class EventsPageComponent implements OnInit {
     'collaborator',
     'sponsor',
     'status',
+    'summary',
   ]);
 
   // ── Lista de entidades (hook)

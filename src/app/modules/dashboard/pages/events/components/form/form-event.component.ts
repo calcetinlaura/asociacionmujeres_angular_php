@@ -41,12 +41,15 @@ import { EventsFacade } from 'src/app/application/events.facade';
 import { PlacesFacade } from 'src/app/application/places.facade';
 import { AgentModel } from 'src/app/core/interfaces/agent.interface';
 import {
+  AudienceDTO,
   CATEGORY_LIST,
   CATEGORY_UI,
   CategoryCode,
   DayEventModel,
   EnumStatusEvent,
   EventModelFullData,
+  ParkingValue,
+  SocialNetwork,
   statusEvent,
 } from 'src/app/core/interfaces/event.interface';
 import { MacroeventModel } from 'src/app/core/interfaces/macroevent.interface';
@@ -73,6 +76,7 @@ import {
 } from 'src/app/shared/utils/validators.utils';
 import { AgentArrayControlComponent } from '../array-agents/array-agents.component';
 import { DateArrayControlComponent } from '../array-dates/array-dates.component';
+import { LinkItemComponent } from '../link-item/link-item.components';
 // ------------------------------------------------------
 // Helpers mínimos
 // ------------------------------------------------------
@@ -88,27 +92,6 @@ const arrayNotEmpty: ValidatorFn = (
 function singleOnly(v: ValidatorFn): ValidatorFn {
   return (fg: AbstractControl) => (fg.get('periodic')?.value ? null : v(fg));
 }
-
-// --- Tipado del bloque de público
-type AudienceDTO = {
-  allPublic: boolean;
-  hasAgeRecommendation: boolean;
-  hasRestriction: boolean;
-  ages: {
-    babies: boolean; // 0–3
-    kids: boolean; // 4–11
-    teens: boolean; // 12–17
-    adults: boolean; // 18+
-    seniors: boolean; // 65+
-  };
-  ageNote: string;
-  restrictions: {
-    partnersOnly: boolean;
-    womenOnly: boolean;
-    other: boolean;
-    otherText: string;
-  };
-};
 
 // ------------------------------------------------------
 // Validador de "Público" AUTOCONTENIDO en este TS
@@ -177,6 +160,7 @@ export function audienceValidatorFactory(
     AgentArrayControlComponent,
     DateArrayControlComponent,
     ScrollToFirstErrorDirective,
+    LinkItemComponent,
   ],
   templateUrl: './form-event.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],
@@ -197,7 +181,7 @@ export class FormEventComponent implements OnInit, OnChanges {
     const nextYear = new Date().getFullYear() + 1;
     return new Date(nextYear, 11, 31, 0, 0, 0, 0);
   })();
-
+  @Input() modalKey: number = 0;
   @Input() item!: EventModelFullData | null;
   @Input() itemId!: number;
   @Output() submitForm = new EventEmitter<{
@@ -224,10 +208,10 @@ export class FormEventComponent implements OnInit, OnChanges {
   eventTypeMacro: 'SINGLE' | 'MACRO' = 'SINGLE';
   eventTypeProject: 'NO_PROJECT' | 'PROJECT' = 'NO_PROJECT';
   eventTypePeriod: 'event' | 'single' | 'periodic' = 'event';
-  eventTypeUbication: 'place' | 'online' | 'pending' = 'pending';
+  eventTypeUbication: 'PLACE' | 'ONLINE' | 'PENDING' = 'PENDING';
   eventTypeAccess: 'FREE' | 'TICKETS' | 'UNSPECIFIED' = 'UNSPECIFIED';
   eventTypeStatus: EnumStatusEvent = EnumStatusEvent.EJECUCION;
-  eventTypeInscription: 'unlimited' | 'inscription' = 'unlimited';
+  eventTypeInscription: 'UNLIMITED' | 'INSCRIPTION' = 'UNLIMITED';
 
   // ------------------------------------------------------
   // Formulario principal
@@ -249,7 +233,9 @@ export class FormEventComponent implements OnInit, OnChanges {
         validators: [arrayNotEmpty],
       }),
       description: new FormControl<string>('', [Validators.maxLength(2000)]),
+      summary: new FormControl<string>('', [Validators.maxLength(300)]),
       online_link: new FormControl<string>(''),
+      online_title: new FormControl<string>(''),
       province: new FormControl<string>(''),
       town: new FormControl<string>(''),
       place_id: new FormControl<number | null>(null),
@@ -281,6 +267,19 @@ export class FormEventComponent implements OnInit, OnChanges {
         value: null,
         disabled: true,
       } as any),
+      open_doors: new FormControl<string | null>(null),
+      parking: new FormControl<ParkingValue>(''),
+      parking_info: new FormControl<string>('', { nonNullable: true }),
+      // FAQs
+      faqs: this.fb.array<FormGroup>([]),
+      // Publicación (en raíz)
+      published: new FormControl<boolean>(false, { nonNullable: true }),
+      publish_day: new FormControl<string | null>(null),
+      publish_time: new FormControl<string | null>(null),
+      // Comunicación (en raíz)
+      websites: this.fb.array<FormGroup>([]),
+      videos: this.fb.array<FormGroup>([]),
+      socials: this.fb.array<FormGroup>([]),
     },
     {
       validators: [
@@ -508,27 +507,115 @@ export class FormEventComponent implements OnInit, OnChanges {
       )
       .subscribe();
   }
-
   ngOnChanges(changes: SimpleChanges): void {
+    console.log('%c[FormEventComponent] ngOnChanges', 'color:orange', changes);
+
+    if (changes['modalKey']) {
+      console.log(
+        '[ngOnChanges] modalKey changed',
+        changes['modalKey'].currentValue
+      );
+      // Se ha reabierto el formulario, forzamos limpieza
+      this.formEvent.reset();
+      this.resetAudienceForm(); // si tienes públicos, precios, fechas extra
+      this.isLoading = false;
+    }
+
+    if (changes['item'] && changes['item'].currentValue) {
+      const incoming = changes['item'].currentValue as EventModelFullData;
+      console.log('[ngOnChanges] item changed, hydrating form with:', incoming);
+      // Solo hidratamos si hay datos válidos
+      if (incoming && incoming.id) {
+        this.isLoading = true;
+        this.populateFormWithEvent(incoming).subscribe(() => {
+          console.log('[populateFormWithEvent] hydration done');
+          this.isLoading = false;
+        });
+      }
+    }
+
     if (changes['itemId'] && changes['itemId'].currentValue) {
       const newId = changes['itemId'].currentValue;
+      console.log('[ngOnChanges] itemId changed:', newId);
+      // Carga desde la fachada si viene sólo un ID
       if (newId !== 0) {
         this.isLoading = true;
         this.loadEventData(newId);
       }
     }
-
-    if (changes['item'] && changes['item'].currentValue && this.itemId === 0) {
-      this.originalIdForDuplicate = this.item?.id ?? null;
-      this.isLoading = true;
-      this.formEvent.reset();
-      this.resetAudienceForm();
-      this.populateFormWithEvent(this.item!).subscribe(() => {
-        this.isLoading = false;
-      });
+    if (changes['item']?.currentValue && changes['item']?.previousValue) {
+      const prevId = changes['item'].previousValue?.id;
+      const currId = changes['item'].currentValue?.id;
+      if (prevId === currId) {
+        // mismo item; evita rehidratar
+        return;
+      }
     }
   }
+  // 👉 Hidrata agentes (organizer, collaborator, sponsor) sin duplicar
+  hydrateAgentsFromEvent(event: any): void {
+    const orgs = this.uniqById(event.organizer);
+    const cols = this.uniqById(event.collaborator);
+    const spons = this.uniqById(event.sponsor);
 
+    // 🧹 Limpia los FormArray antes de agregar los nuevos valores
+    this.organizers.clear();
+    this.collaborators.clear();
+    this.sponsors.clear();
+
+    // 🎯 Controla visibilidad (por si usas *ngIf en el HTML)
+    this.showOrganizers = orgs.length > 0;
+    this.showCollaborators = cols.length > 0;
+    this.showSponsors = spons.length > 0;
+
+    // ➕ Agrega agentes únicos
+    orgs.forEach((a) => this.organizers.push(this.createAgentForm(a.id)));
+    cols.forEach((a) => this.collaborators.push(this.createAgentForm(a.id)));
+    spons.forEach((a) => this.sponsors.push(this.createAgentForm(a.id)));
+  }
+  private hydrateCommunications(event: any): void {
+    // 🔧 Parsear campos que vienen como string JSON
+    const websitesRaw =
+      typeof event.websites === 'string'
+        ? JSON.parse(event.websites || '[]')
+        : event.websites ?? [];
+    const videosRaw =
+      typeof event.videos === 'string'
+        ? JSON.parse(event.videos || '[]')
+        : event.videos ?? [];
+    const socialsRaw =
+      typeof event.socials === 'string'
+        ? JSON.parse(event.socials || '[]')
+        : event.socials ?? [];
+    const faqsRaw =
+      typeof event.faqs === 'string'
+        ? JSON.parse(event.faqs || '[]')
+        : event.faqs ?? [];
+
+    // Websites
+    this.websites.clear();
+    websitesRaw.forEach((w: any) => {
+      this.websites.push(this.createWebsite(w.url, w.title));
+    });
+
+    // Videos
+    this.videos.clear();
+    videosRaw.forEach((v: any) => {
+      this.videos.push(this.createVideo(v.url, v.title));
+    });
+
+    // Socials
+    this.socials.clear();
+    socialsRaw.forEach((s: any) => {
+      this.socials.push(this.createSocial(s.network, s.url));
+    });
+
+    // FAQs
+    this.faqs.clear();
+    faqsRaw.forEach((f: any) => {
+      this.faqs.push(this.createFaqItem(f.q, f.a));
+    });
+  }
   // ------------------------------------------------------
   // Getters y UI helpers
   // ------------------------------------------------------
@@ -544,7 +631,16 @@ export class FormEventComponent implements OnInit, OnChanges {
     i >= 0 ? current.splice(i, 1) : current.push(code);
     this.categoryCtrl.setValue(current);
   }
+  setParking(p: Exclude<ParkingValue, ''>) {
+    this.formEvent.get('parking')?.setValue(p);
+  } /** Estado UI para secciones */
 
+  get openDoorsEnabled(): boolean {
+    return !!this.formEvent.get('open_doors')?.value;
+  }
+  get parkingEnabled(): boolean {
+    return !!this.formEvent.get('parking')?.value;
+  }
   get repeatedDates(): FormArray {
     return this.formEvent.get('repeated_dates') as FormArray;
   }
@@ -565,7 +661,43 @@ export class FormEventComponent implements OnInit, OnChanges {
       this.eventTypePeriod === 'single' || this.eventTypePeriod === 'periodic'
     );
   }
+  get onlineLinkCtrl(): FormControl<string | null> {
+    return this.formEvent.get('online_link') as FormControl<string | null>;
+  }
+  get onlineTitleCtrl(): FormControl<string | null> {
+    return this.formEvent.get('online_title') as FormControl<string | null>;
+  }
+  summaryLen(): number {
+    return (this.formEvent.get('summary')?.value || '').length;
+  }
+  get faqs(): FormArray {
+    return this.formEvent.get('faqs') as FormArray;
+  }
+  get websites(): FormArray {
+    return this.formEvent.get('websites') as FormArray;
+  }
+  get videos(): FormArray {
+    return this.formEvent.get('videos') as FormArray;
+  }
+  get socials(): FormArray {
+    return this.formEvent.get('socials') as FormArray;
+  }
 
+  // Publicación
+  get isDraft(): boolean {
+    return !(this.formEvent.get('published')?.value ?? false);
+  }
+  get isPublishNow(): boolean {
+    const pub = !!this.formEvent.get('published')?.value;
+    const hasDate = !!this.formEvent.get('publish_day')?.value;
+    return pub && !hasDate;
+  }
+  get isScheduled(): boolean {
+    return (
+      !!this.formEvent.get('published')?.value &&
+      !!this.formEvent.get('publish_day')?.value
+    );
+  }
   // ------------------------------------------------------
   // Carga e hidratación
   // ------------------------------------------------------
@@ -618,7 +750,12 @@ export class FormEventComponent implements OnInit, OnChanges {
           (p) => p.label === event.province
         );
         this.municipios = province?.towns ?? [];
-
+        console.log('🔍 Datos de comunicación al editar:', {
+          websites: event.websites,
+          videos: event.videos,
+          socials: event.socials,
+          faqs: event.faqs,
+        });
         this.formEvent.patchValue(
           {
             title: event.title,
@@ -627,6 +764,7 @@ export class FormEventComponent implements OnInit, OnChanges {
             time_start: event.time_start,
             time_end: event.time_end,
             description: event.description,
+            summary: event.summary,
             province: event.province,
             town: event.town,
             place_id: event.place_id,
@@ -642,8 +780,15 @@ export class FormEventComponent implements OnInit, OnChanges {
             macroevent_id: event.macroevent_id,
             project_id: event.project_id,
             online_link: event.online_link ?? '',
+            online_title: event.online_title ?? '',
             periodic: event.periodic ?? false,
             periodic_id: event.periodic_id ?? '',
+            open_doors: event.open_doors ?? '',
+            published: event.published ?? false,
+            publish_day: event.publish_day ?? null,
+            publish_time: event.publish_time ?? null,
+            parking: event.parking ?? '',
+            parking_info: event.parking_info ?? '',
           },
           { emitEvent: false }
         );
@@ -662,9 +807,9 @@ export class FormEventComponent implements OnInit, OnChanges {
         this.eventTypePeriod = event.periodic ? 'periodic' : 'single';
         if (event.macroevent_id) this.eventTypeMacro = 'MACRO';
         if (event.project_id) this.eventTypeProject = 'PROJECT';
-        if (event.place_id) this.eventTypeUbication = 'place';
-        else if (event.online_link) this.eventTypeUbication = 'online';
-        else this.eventTypeUbication = 'pending';
+        if (event.place_id) this.eventTypeUbication = 'PLACE';
+        else if (event.online_link) this.eventTypeUbication = 'ONLINE';
+        else this.eventTypeUbication = 'PENDING';
 
         let parsedTicketPrices: any[] = [];
         try {
@@ -696,8 +841,8 @@ export class FormEventComponent implements OnInit, OnChanges {
             break;
         }
         this.eventTypeInscription = event.inscription
-          ? 'inscription'
-          : 'unlimited';
+          ? 'INSCRIPTION'
+          : 'UNLIMITED';
 
         switch (event.status) {
           case EnumStatusEvent.EJECUCION:
@@ -752,35 +897,28 @@ export class FormEventComponent implements OnInit, OnChanges {
           this.repeatedDates.clear();
         }
 
-        if (event.place_id) {
+        if (event.place_id != null) {
+          // descarta null y undefined
+          const placeId = event.place_id; // number
+          const selectedSalaId = event.sala_id ?? undefined; // number | undefined
+
           this.placesFacade
-            .loadSalasForPlace(event.place_id, event.sala_id)
+            .loadSalasForPlace(placeId, selectedSalaId)
             .pipe(
               takeUntilDestroyed(this.destroyRef),
               tap(({ salas, selectedSala }) => {
                 this.salasDelLugar = salas;
-                this.formEvent.patchValue({
-                  sala_id: selectedSala?.sala_id ?? null,
-                  capacity: selectedSala?.capacity ?? null,
-                });
+                this.formEvent.patchValue(
+                  {
+                    sala_id: selectedSala?.sala_id ?? null,
+                    capacity: selectedSala?.capacity ?? null,
+                  },
+                  { emitEvent: false }
+                );
               })
             )
             .subscribe();
         }
-
-        const orgs = this.uniqById(event.organizer);
-        const cols = this.uniqById(event.collaborator);
-        const spons = this.uniqById(event.sponsor);
-
-        this.showOrganizers = orgs.length > 0;
-        this.showCollaborators = cols.length > 0;
-        this.showSponsors = spons.length > 0;
-
-        orgs.forEach((a) => this.organizers.push(this.createAgentForm(a.id)));
-        cols.forEach((a) =>
-          this.collaborators.push(this.createAgentForm(a.id))
-        );
-        spons.forEach((a) => this.sponsors.push(this.createAgentForm(a.id)));
 
         this.onTownChange();
         this.titleForm =
@@ -791,15 +929,15 @@ export class FormEventComponent implements OnInit, OnChanges {
           this.imageSrc = event.img;
           this.selectedImageFile = null;
         }
-
-        // --- Hidratar audience
-        this.patchAudienceFromEvent(event);
+        this.hydrateAgentsFromEvent(event);
+        this.hydrateCommunications(event);
+        this.hydrateAudience(event);
       }),
       map(() => void 0)
     );
   }
 
-  private patchAudienceFromEvent(event?: Partial<EventModelFullData>): void {
+  private hydrateAudience(event?: Partial<EventModelFullData>): void {
     const raw = (event as any)?.audience;
 
     if (!raw || raw === 'null') {
@@ -1096,7 +1234,99 @@ export class FormEventComponent implements OnInit, OnChanges {
     this.selectedImageFile = result.file;
     this.imageSrc = result.imageSrc;
   }
+  setDraft(): void {
+    this.formEvent.patchValue({
+      published: false,
+      publish_day: null,
+      publish_time: null,
+    });
+  }
 
+  publishNow(): void {
+    this.formEvent.patchValue({
+      published: true,
+      publish_day: null,
+      publish_time: null,
+    });
+  }
+  private todayISO(): string {
+    const d = new Date();
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  } // FAQs / Websites / Vídeos / Redes
+  private faqItemValidator: ValidatorFn = (fg: AbstractControl) => {
+    const q = (fg.get('q')?.value || '').toString().trim();
+    const a = (fg.get('a')?.value || '').toString().trim();
+    const errs: ValidationErrors = {};
+    if (!q) errs['qRequired'] = true;
+    if (!a) errs['aRequired'] = true;
+    if (a && a.length > 300) errs['aTooLong'] = true;
+    return Object.keys(errs).length ? errs : null;
+  };
+
+  createFaqItem(q = '', a = ''): FormGroup {
+    return this.fb.group(
+      { q: [q], a: [a] },
+      { validators: [this.faqItemValidator] }
+    );
+  }
+  addFaq(): void {
+    this.faqs.push(this.createFaqItem());
+  }
+  clearFaqs(): void {
+    this.faqs.clear();
+  }
+  removeFaq(i: number): void {
+    this.faqs.removeAt(i);
+  }
+  private urlValidator: ValidatorFn = (c) =>
+    !c.value || /^https?:\/\/.+/i.test(String(c.value).trim())
+      ? null
+      : { url: true };
+  createWebsite(url = '', title = ''): FormGroup {
+    return this.fb.group({ url: [url, [this.urlValidator]], title: [title] });
+  }
+  addWebsite(): void {
+    this.websites.push(this.createWebsite());
+  }
+  removeWebsite(i: number): void {
+    this.websites.removeAt(i);
+  }
+
+  createVideo(url = '', title = ''): FormGroup {
+    return this.fb.group({ url: [url, [this.urlValidator]], title: [title] });
+  }
+  addVideo(): void {
+    this.videos.push(this.createVideo());
+  }
+  removeVideo(i: number): void {
+    this.videos.removeAt(i);
+  }
+
+  createSocial(network: SocialNetwork = 'instagram', url = ''): FormGroup {
+    return this.fb.group({
+      network: [network],
+      url: [url, [this.urlValidator]],
+    });
+  }
+  addSocial(): void {
+    this.socials.push(this.createSocial());
+  }
+  removeSocial(i: number): void {
+    this.socials.removeAt(i);
+  }
+  /** Activa “Programar publicación” dando valores por defecto si no existen */
+  schedulePublication(): void {
+    const day = this.formEvent.get('publish_day')?.value;
+    const time = this.formEvent.get('publish_time')?.value;
+    this.formEvent.patchValue({
+      published: true,
+      publish_day: day || this.todayISO(),
+      publish_time: time || '09:00',
+    });
+  }
   setEventTypePeriod(type: 'event' | 'single' | 'periodic'): void {
     this.eventTypePeriod = type;
 
@@ -1162,11 +1392,11 @@ export class FormEventComponent implements OnInit, OnChanges {
     }
   }
 
-  setEventTypeUbication(type: 'place' | 'online' | 'pending'): void {
+  setEventTypeUbication(type: 'PLACE' | 'ONLINE' | 'PENDING'): void {
     this.eventTypeUbication = type;
     const onlineLinkControl = this.formEvent.get('online_link')!;
 
-    if (type === 'online') {
+    if (type === 'ONLINE') {
       this.formEvent.patchValue(
         {
           province: '',
@@ -1218,9 +1448,9 @@ export class FormEventComponent implements OnInit, OnChanges {
     }
   }
 
-  setEventTypeInscription(type: 'unlimited' | 'inscription'): void {
+  setEventTypeInscription(type: 'UNLIMITED' | 'INSCRIPTION'): void {
     this.eventTypeInscription = type;
-    if (type === 'inscription')
+    if (type === 'INSCRIPTION')
       this.formEvent.patchValue({ inscription: true });
     else this.formEvent.patchValue({ inscription: false });
   }
@@ -1304,7 +1534,44 @@ export class FormEventComponent implements OnInit, OnChanges {
     const mm = (m ?? '0').padStart(2, '0');
     return `${hh}:${mm}:00`;
   }
+  // ---------- Info útil: acciones ----------
+  private subtractMinutesFromHHMM(hhmm: string, minutes: number): string {
+    const [hStr, mStr] = hhmm.split(':');
+    let total = +hStr * 60 + +mStr - minutes;
+    const DAY = 24 * 60;
+    total = ((total % DAY) + DAY) % DAY; // normaliza por si cruza medianoche
+    const h = Math.floor(total / 60);
+    const m = total % 60;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  }
 
+  addDoorsOpen(): void {
+    this.formEvent.patchValue({ open_doors: '00:00' });
+  }
+  removeDoorsOpen(): void {
+    this.formEvent.patchValue({ open_doors: null });
+  }
+
+  addParking(): void {
+    if (!this.formEvent.get('parking')?.value)
+      this.formEvent.patchValue({ parking: 'FREE' });
+  }
+  removeParking(): void {
+    this.formEvent.patchValue({
+      parking: '',
+      parking_info: '',
+    });
+  }
+  /** Estado UI para secciones */
+
+  /** Toggles (usan tus add/remove existentes) */
+  toggleDoorsOpen(): void {
+    this.openDoorsEnabled ? this.removeDoorsOpen() : this.addDoorsOpen();
+  }
+
+  toggleParking(): void {
+    this.parkingEnabled ? this.removeParking() : this.addParking();
+  }
   // ------------------------------------------------------
   // Envío
   // ------------------------------------------------------
@@ -1382,6 +1649,12 @@ export class FormEventComponent implements OnInit, OnChanges {
       collaborator: getIds(this.collaborators),
       sponsor: getIds(this.sponsors),
       ticket_prices: this.ticketPrices.getRawValue(),
+      faqs: this.faqs.getRawValue(), // [{q,a}]
+      websites: this.websites.getRawValue(), // [{url,title}]
+      videos: this.videos
+        .getRawValue()
+        .map((v: any) => ({ url: v.url, title: v.title ?? v.label ?? '' })), // ver patch 2
+      socials: this.socials.getRawValue(), // [{network,url}]
     };
 
     // --- Audience empaquetado
@@ -1561,6 +1834,19 @@ export class FormEventComponent implements OnInit, OnChanges {
       collaborator: number[];
       sponsor: number[];
       audience?: string;
+      summary?: string;
+      online_title?: string;
+      open_doors?: string | null;
+      parking?: ParkingValue;
+      parking_info?: string;
+      faqs?: Array<{ q: string; a: string }>;
+      websites?: Array<{ url: string; title?: string }>;
+      videos?: Array<{ url: string; title?: string }>;
+      socials?: Array<{ network: SocialNetwork; url: string }>;
+      // Publicación
+      published?: boolean;
+      publish_day?: string | null;
+      publish_time?: string | null;
     },
     files?: { img?: File | null },
     itemId?: number | null,
@@ -1616,7 +1902,22 @@ export class FormEventComponent implements OnInit, OnChanges {
       'project_id',
       typeof data.project_id === 'number' ? data.project_id : ''
     );
+    put('summary', data.summary ?? '');
+    put('online_title', data.online_title ?? '');
+    put('open_doors', this.normTime(data.open_doors ?? '')); // '' si no hay
+    put('parking', data.parking ?? '');
+    put('parking_info', data.parking_info ?? '');
 
+    // Publicación (separado como pediste)
+    put('published', !!data.published);
+    put('publish_day', data.publish_day ?? '');
+    put('publish_time', this.normTime(data.publish_time ?? ''));
+
+    // Arrays JSON (más simple y robusto para PHP)
+    fd.append('faqs', JSON.stringify(data.faqs ?? []));
+    fd.append('websites', JSON.stringify(data.websites ?? []));
+    fd.append('videos', JSON.stringify(data.videos ?? []));
+    fd.append('socials', JSON.stringify(data.socials ?? []));
     // Agents
     if (data.organizer.length === 0) fd.append('organizer[]', '');
     data.organizer.forEach((id) => fd.append('organizer[]', String(id)));
