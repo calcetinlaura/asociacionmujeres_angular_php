@@ -10,6 +10,7 @@ import { ModalComponent } from 'src/app/shared/components/modal/modal.component'
   template: ` @for (k of [renderKey]; track k) { @if (visible) {
     <app-modal
       [item]="item"
+      [contentVersion]="contentVersion"
       [typeModal]="typeModal"
       [typePage]="typeModal"
       [action]="action"
@@ -53,6 +54,7 @@ export class ModalShellComponent<T> {
   @Input() canGoBack = false;
   @Input() isDashboard = true;
   @Input() renderKey = 0;
+  @Input() contentVersion = 0;
 
   @Output() back = new EventEmitter<void>();
   @Output() close = new EventEmitter<void>();

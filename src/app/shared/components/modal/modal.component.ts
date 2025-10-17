@@ -1,5 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input,
+  Output,
+  SimpleChanges,
+  ViewChild,
+} from '@angular/core';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { ModalRouterComponent } from './modal-router.component';
 import { ModalPdfComponent } from './pages/modal-pdf/modal-pdf.component';
@@ -23,6 +31,7 @@ export class ModalComponent {
   @Input() action: TypeActionModal = TypeActionModal.Show;
   @Input() canGoBack = false;
   @Input() isDashboard = false;
+  @Input() contentVersion = 0;
 
   // 🔹 Control interno de apertura (el componente se crea con *ngIf)
   isOpen = true;
@@ -114,6 +123,8 @@ export class ModalComponent {
     itemId: number;
     formData: FormData;
   }>();
+  @ViewChild(UiModalComponent) ui?: UiModalComponent;
+  @ViewChild('host', { read: ElementRef }) host?: ElementRef<HTMLElement>;
 
   onOpenPdfFromRouter(e: { url: string; year: number | null; type: TypeList }) {
     this.pdfState = { open: true, url: e.url, year: e.year, type: e.type };
@@ -144,5 +155,30 @@ export class ModalComponent {
 
     this.confirmDelete.emit({ type, id, item: this.item });
     this.onCloseModal();
+  }
+  private forceScrollTop(behavior: ScrollBehavior = 'auto') {
+    queueMicrotask(() => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const root = this.host?.nativeElement || document;
+          // Ajusta el selector si tu scroller real es otro
+          const scroller = root.querySelector<HTMLElement>(
+            '.modal_body > section'
+          );
+          if (!scroller) return;
+          scroller.scrollTop = 0;
+          scroller.scrollTo({ top: 0, left: 0, behavior });
+          requestAnimationFrame(() => {
+            scroller.scrollTop = 0;
+          });
+          // console.log('[MODAL COMPONENT] forced scrollTop=0');
+        });
+      });
+    });
+  }
+  ngOnChanges(ch: SimpleChanges) {
+    if (ch['contentVersion'] || ch['item'] || ch['typeModal']) {
+      this.forceScrollTop('smooth');
+    }
   }
 }

@@ -67,6 +67,8 @@ export class EventsPageLandingComponent implements OnInit {
   currentModalAction: TypeActionModal = TypeActionModal.Show;
   typeModal: TypeList = TypeList.Events;
   private openedWithNavigation = false;
+  renderKey = 0;
+  contentVersion = 0;
 
   // Año seleccionado (para sincronizar UI; el backend ya filtra por año)
   private readonly selectedYear$ = new BehaviorSubject<number | null>(null);
@@ -265,7 +267,14 @@ export class EventsPageLandingComponent implements OnInit {
       this.openedWithNavigation && this.modalNav.canGoBack() && !!this.item
     );
   }
-
+  private bumpKeys() {
+    this.contentVersion++;
+    this.renderKey++;
+    console.log('[PARENT] bumpKeys →', {
+      contentVersion: this.contentVersion,
+      renderKey: this.renderKey,
+    });
+  }
   onBackModal(): void {
     const prev = this.modalNav.pop();
     if (!prev) return;
@@ -273,6 +282,7 @@ export class EventsPageLandingComponent implements OnInit {
     this.currentModalAction = prev.action;
     this.item = prev.item;
     this.typeModal = prev.typeModal;
+    this.bumpKeys();
   }
 
   onCloseModal(): void {
@@ -302,7 +312,10 @@ export class EventsPageLandingComponent implements OnInit {
     this.isModalVisible = true;
 
     this.eventsService.getEventById(eventId).subscribe({
-      next: (ev) => (this.item = ev),
+      next: (ev) => {
+        this.item = ev;
+        this.bumpKeys(); // 👈 AQUI
+      },
       error: (err) => console.error('Error loading event', err),
     });
   }
@@ -326,7 +339,10 @@ export class EventsPageLandingComponent implements OnInit {
     this.isModalVisible = true;
 
     this.macroeventsService.getMacroeventById(macroId).subscribe({
-      next: (macro) => (this.item = macro),
+      next: (macro) => {
+        this.item = macro;
+        this.bumpKeys(); // 👈 AQUI
+      },
       error: (err) => console.error('Error loading macroevent', err),
     });
   }
@@ -341,6 +357,7 @@ export class EventsPageLandingComponent implements OnInit {
     this.typeModal = TypeList.MultiEvents;
     this.currentModalAction = TypeActionModal.Show;
     this.item = payload;
+    this.bumpKeys();
     this.isModalVisible = true;
   }
 }

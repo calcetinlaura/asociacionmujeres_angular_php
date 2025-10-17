@@ -69,7 +69,10 @@
   margin: 0 !important;
   border-radius: 0 !important;
 }
-
+.modal_body,
+.modal_body > section {
+  overflow-anchor: none; /* 👈 evita “scroll anchoring” del navegador */
+}
 /* Media Queries */
 @media (max-width: 1200px) {
   .modal_body {
