@@ -114,6 +114,31 @@ export class CalendarComponent implements OnChanges {
     if (!s) return false;
     return s <= isoDate && isoDate <= e;
   }
+  public hasImg(ev: any): boolean {
+    const img = (ev?.img ?? '').toString().trim();
+    return img.length > 0;
+  }
+
+  public isDraft(ev: any): boolean {
+    // published null/0/undefined => borrador
+    return Number(ev?.published) !== 1;
+  }
+
+  private parsePublishDate(ev: any): Date | null {
+    const day = (ev?.publish_day ?? '').toString().trim();
+    const timeRaw = (ev?.publish_time ?? '').toString().trim();
+    if (!day) return null;
+    const time = timeRaw.length === 5 ? `${timeRaw}:00` : timeRaw || '00:00:00';
+    const d = new Date(`${day}T${time}`);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  public isScheduled(ev: any): boolean {
+    if (Number(ev?.published) !== 1) return false;
+    const dt = this.parsePublishDate(ev);
+    if (!dt) return false;
+    return dt.getTime() > Date.now();
+  }
 
   generateCalendar(): void {
     const year = this.getYearForCalendar();

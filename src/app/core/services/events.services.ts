@@ -10,49 +10,54 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { environments } from 'src/environments/environments';
 import { AgentEventsQuery } from '../interfaces/agent.interface';
 
+/**
+ * Tipos de consulta
+ * - PeriodicView: cómo mostrar series periódicas
+ * - PublishScope: qué estados de publicación incluir
+ */
+export type PeriodicView = 'all' | 'groupedByPeriodicId';
+export type PublishScope = 'published' | 'drafts' | 'scheduled' | 'all';
+
 @Injectable({ providedIn: 'root' })
 export class EventsService {
   private readonly generalService = inject(GeneralService);
   private readonly http = inject(HttpClient);
   private readonly apiUrl = `${environments.api}/backend/events.php`;
 
-  // ====== CACHES ======
-
-  // 🔁 getEventById: caché con TTL (dedupe)
-  private readonly CACHE_TTL_MS = 5 * 60 * 1000; // 5 min
-  private eventByIdCache = new Map<
-    number,
-    { expiresAt: number; value$: Observable<EventModelFullData> }
-  >();
-
-  // 📦 Eventos por macro: caché en memoria (request + valor materializado)
+  // 📦 Cache por macroevento: request + valor materializado
   private byMacroReq = new Map<number, Observable<EventModel[]>>();
   private byMacroVal = new Map<number, EventModel[]>();
 
   // ====== GETs ======
 
+  /** Lista base (sin filtros) */
   getEvents(): Observable<EventModel[]> {
     return this.http
       .get<EventModel[]>(this.apiUrl)
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
+  /**
+   * Listado por año con control de vista y alcance de publicación.
+   * - view: 'all' → todas las instancias; 'groupedByPeriodicId' → una por serie
+   * - scope: 'published' | 'drafts' | 'scheduled' | 'all'
+   */
   getEventsByYear(
     year: number,
-    periodic: 'all' | 'latest' = 'all'
-  ): Observable<EventModel[]> {
+    view: 'all' | 'groupedByPeriodicId',
+    scope: 'published' | 'drafts' | 'scheduled' | 'all'
+  ): Observable<EventModelFullData[]> {
+    const params: Record<string, string> = {
+      year: String(year),
+      view, // 👈 clave correcta para el backend
+      scope, // 'published' | 'drafts' | 'scheduled' | 'all'
+    };
+
     return this.http
-      .get<EventModel[]>(this.apiUrl, {
-        params: { year: String(year), periodic },
-      })
+      .get<EventModelFullData[]>(this.apiUrl, { params })
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
-
-  /**
-   * ✅ getEventsByMacroevent con memoización (shareReplay) + cache de valor
-   * - No repite request si ya hay una en curso
-   * - Deja "peek" disponible para abrir modal al instante
-   */
+  /** Lista por macroevento (con caché en memoria) */
   getEventsByMacroevent(macroeventId: number): Observable<EventModel[]> {
     if (!this.byMacroReq.has(macroeventId)) {
       const req$ = this.http
@@ -69,27 +74,10 @@ export class EventsService {
     return this.byMacroReq.get(macroeventId)!;
   }
 
-  /** 🔮 Dispara la carga en segundo plano para que llegue caliente a la modal */
-  prefetchEventsByMacro(macroeventId: number, _ttlMs?: number): void {
-    this.getEventsByMacroevent(macroeventId)
-      .pipe(take(1))
-      .subscribe({
-        next: () => {},
-        error: () => {},
-      });
-  }
-
-  /** 👀 Lee sincronamente si ya tenemos lista en memoria (para abrir modal ya) */
-  peekEventsByMacro(macroeventId: number): EventModel[] | null {
-    return this.byMacroVal.get(macroeventId) ?? null;
-  }
-
-  /** ❌ Invalidar caché por macro (llámalo tras altas/bajas/ediciones si procede) */
-  invalidateEventsByMacro(macroeventId: number): void {
-    this.byMacroReq.delete(macroeventId);
-    this.byMacroVal.delete(macroeventId);
-  }
-
+  /**
+   * Lista por agente (opcionalmente filtrando por year/role/order)
+   * Si en el futuro quieres también view/scope aquí, añade los params y listo.
+   */
   getEventsByAgent(
     agentId: number,
     opts: AgentEventsQuery = {}
@@ -104,6 +92,7 @@ export class EventsService {
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
+  /** Lista por proyecto */
   getEventsByProject(projectId: number): Observable<EventModel[]> {
     return this.http
       .get<EventModel[]>(this.apiUrl, {
@@ -113,15 +102,16 @@ export class EventsService {
   }
 
   /**
-   * 🏎️ getEventById con caché + TTL + dedupe
+   * getEventById con endpoint REST-like que ya usabas.
+   * Si prefieres query param (?id=), ajusta aquí y en backend.
    */
-
-  getEventById(id: number): Observable<any> {
+  getEventById(id: number): Observable<EventModelFullData> {
     return this.http
-      .get(`${this.apiUrl}/${id}`)
+      .get<EventModelFullData>(`${this.apiUrl}/${id}`)
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
+  /** Prefetch de un evento (ignora errores) */
   prefetchEventById(id: number): void {
     this.getEventById(id)
       .pipe(
@@ -131,26 +121,38 @@ export class EventsService {
       .subscribe();
   }
 
+  /** Lista de eventos por periodic_id */
   getEventsByPeriodicId(periodicId: string): Observable<EventModel[]> {
     return this.http
       .get<EventModel[]>(this.apiUrl, { params: { periodic_id: periodicId } })
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
-
+  getAllByScope(
+    view: 'all' | 'groupedByPeriodicId',
+    scope: 'published' | 'drafts' | 'scheduled' | 'all'
+  ): Observable<EventModelFullData[]> {
+    const params: Record<string, string> = { view, scope };
+    return this.http
+      .get<EventModelFullData[]>(this.apiUrl, { params })
+      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
+  }
   // ====== POST/PUT ======
 
+  /** Alta de evento (FormData completo) */
   add(event: FormData): Observable<any> {
     return this.http
       .post(this.apiUrl, event)
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
+  /** Edición (si tu backend diferencia add/edit por contenido de FormData) */
   edit(event: FormData): Observable<any> {
     return this.http
       .post(this.apiUrl, event)
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
+  /** Update explícito por id (manteniendo tu firma actual) */
   updateEvent(id: number, formData: FormData): Observable<any> {
     return this.http
       .post(`${this.apiUrl}?id=${id}`, formData)
@@ -159,22 +161,28 @@ export class EventsService {
 
   // ====== DELETE ======
 
+  /** Borrado por id (usa tu deleteOverride para soportar body en DELETE) */
   delete(id: number): Observable<any> {
     return this.generalService
       .deleteOverride<any>(this.apiUrl, { id })
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
-  /** Unificación de borrados por periodic_id */
+  /**
+   * Unificación de borrados por periodic_id
+   * - Si pasas keepId, borra todos menos ese (para “convertir en único”)
+   */
   deleteByPeriodicId(periodicId: string, keepId?: number): Observable<void> {
     const payload: Record<string, string | number> = {
       periodic_id: periodicId,
     };
     if (typeof keepId === 'number') payload['keep_id'] = keepId;
-    return this.generalService.deleteOverride<void>(this.apiUrl, payload);
+    return this.generalService
+      .deleteOverride<void>(this.apiUrl, payload)
+      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
-  // Back-compat
+  // Aliases de compatibilidad (por si todavía los usas en otros sitios)
   deleteEventsByPeriodicId(periodicId: string): Observable<void> {
     return this.deleteByPeriodicId(periodicId);
   }

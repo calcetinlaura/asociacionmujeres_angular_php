@@ -6,10 +6,12 @@
   >
   </app-filters>
 
-  @let loading = (eventsFacade.isLoadingList$ | async) ?? false; @let yearEvents
+  @let loading = (eventsFacade.isListLoading$ | async) ?? false; @let yearEvents
   = calendarList.sortedSig(); @let upcoming = upcomingListSig(); @let past =
   pastListSig(); @if (loading) {
-  <div class="mt-24"><app-spinner-loading /></div>
+  <div class="mt-24">
+    <app-spinner-loading />
+  </div>
   } @else { @if (yearEvents.length > 0 && filterYearForCalendar !== null) {
   <app-calendar
     [events]="yearEvents"

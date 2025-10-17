@@ -16,7 +16,7 @@
 </app-sticky-zone>
 
 <div class="w-full">
-  @if (eventsFacade.isLoadingList$ | async) {
+  @if (eventsFacade.isListLoading$ | async) {
   <app-spinner-loading />
   } @else { @if (events$ | async; as events) { @if ((events?.length ?? 0) > 0 &&
   selectedFilter) {

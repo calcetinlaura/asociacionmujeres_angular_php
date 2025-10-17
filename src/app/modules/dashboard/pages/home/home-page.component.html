@@ -9,8 +9,9 @@
         <option [ngValue]="'historic'">Histórico</option>
         @for (year of years; track year) {
         <option [ngValue]="year">{{ year }}</option>
-        }</select
-      ><!-- Botón global de informe -->
+        }
+      </select>
+      <!-- Botón global de informe -->
       <app-icon-action
         [icon]="'uil-print'"
         [tooltip]="'Imprimir / Guardar PDF del informe completo'"
@@ -18,12 +19,13 @@
       ></app-icon-action>
     </div>
   </header>
+
   <div #reportRoot class="report-root flex flex-col gap-6">
     <!-- KPIs -->
     <div class="flex gap-6 justify-between">
       <article class="card kpi flex-1">
         <div class="kpi-title">
-          Eventos ({{ variant() === "latest" ? "únicos" : "todos" }})
+          Eventos ({{ view() === "groupedByPeriodicId" ? "únicos" : "todos" }})
         </div>
         <div class="kpi-value">{{ vm.kpis.total }}</div>
         <div class="kpi-sub">
@@ -166,7 +168,9 @@
         class="flex-[2] min-w-[320px]"
         [title]="'Eventos por año (Histórico 2018–' + currentYear + ')'"
         [subtitle]="
-          variant() === 'latest' ? 'Solo eventos únicos' : 'Todos los eventos'
+          view() === 'groupedByPeriodicId'
+            ? 'Solo eventos únicos'
+            : 'Todos los eventos'
         "
       >
         <div card-actions>
@@ -207,7 +211,9 @@
         class="flex-[1] min-w-[320px]"
         [title]="'Eventos por mes (' + yearLabel() + ')'"
         [subtitle]="
-          variant() === 'latest' ? 'Solo eventos únicos' : 'Todos los eventos'
+          view() === 'groupedByPeriodicId'
+            ? 'Solo eventos únicos'
+            : 'Todos los eventos'
         "
       >
         <div card-actions>
@@ -238,7 +244,9 @@
         class="flex-[2] min-w-[320px]"
         [title]="'Eventos por espacio (' + yearLabel() + ')'"
         [subtitle]="
-          variant() === 'latest' ? 'Solo eventos únicos' : 'Todos los eventos'
+          view() === 'groupedByPeriodicId'
+            ? 'Solo eventos únicos'
+            : 'Todos los eventos'
         "
         ariaDescription="Gráfico de barras horizontales con el total de eventos por espacio durante el año seleccionado"
         [footer]="false"

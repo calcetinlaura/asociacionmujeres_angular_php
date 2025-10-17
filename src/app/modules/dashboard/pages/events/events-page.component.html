@@ -6,11 +6,17 @@
     [type]="'eventos'"
   />
   <div class="flex flex-col gap-y-10">
-    <app-filters
-      [filters]="filters"
-      [(selected)]="selectedFilter"
-      (filterClicked)="filterSelected($event)"
-    ></app-filters>
+    <div class="flex justify-center items-center gap-x-32">
+      <app-filters
+        [filters]="filters"
+        [(selected)]="selectedFilter"
+        (filterClicked)="filterSelected($event)"
+      ></app-filters>
+      <div class="flex gap-x-4 items-center">
+        <app-button-filter [name]="'Borradores'" (click)="showDrafts()" />
+        <app-button-filter [name]="'Programados'" (click)="showScheduled()" />
+      </div>
+    </div>
     <app-page-toolbar
       [columns]="headerListEvents"
       [visibility]="col.columnVisSig"
@@ -24,7 +30,7 @@
 </app-sticky-zone>
 
 <div class="flex flex-col px-8">
-  @if (eventsFacade.isLoadingList$ | async) {
+  @if (eventsFacade.isListLoading$ | async) {
   <app-spinner-loading />
   } @else { @if (list.processedSig().length > 0) {
   <div class="pb-4" #printArea>

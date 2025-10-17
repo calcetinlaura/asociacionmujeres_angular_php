@@ -43,8 +43,10 @@ import {
 import { LoadState, withLoading } from '../shared/utils/loading.operator';
 import { EventsFacade } from './events.facade';
 
+/** === NUEVOS TIPOS (alineados con la nueva fachada/servicio) === */
 type YearFilter = number | 'historic';
-export type PeriodicVariant = 'latest' | 'all';
+export type PeriodicView = 'all' | 'groupedByPeriodicId';
+export type PublishScope = 'published' | 'drafts' | 'scheduled' | 'all';
 
 export interface HBarDatum {
   label: string;
@@ -116,42 +118,38 @@ export class DashboardFacade {
   // ── Estado UI (signals) ───────────────────────────────────────────────────────
   readonly year = signal<number>(this.currentYear);
   readonly viewYear = signal<YearFilter>(this.currentYear);
-  readonly variant = signal<PeriodicVariant>('latest');
+
+  /** En la nueva API, “view” controla si quieres todos los pases o agrupado por periodic_id */
+  readonly view = signal<PeriodicView>('groupedByPeriodicId');
+
+  /** Scope de publicación (para analítica/general en dashboard, por defecto todos) */
+  readonly scope = signal<PublishScope>('all');
+
+  /** buscador local (aplicado sobre visibleEvents$ de la fachada) */
   readonly keyword = signal<string>('');
 
   // Observables derivados de signals
   private readonly viewYear$ = toObservable(this.viewYear).pipe(
     distinctUntilChanged()
   );
-  private readonly variant$ = toObservable(this.variant).pipe(
+  private readonly view$ = toObservable(this.view).pipe(distinctUntilChanged());
+  private readonly scope$ = toObservable(this.scope).pipe(
     distinctUntilChanged()
   );
 
-  // Trigger que provoca "loading" en los gráficos dependientes de año/variant
+  // Trigger que provoca "loading" en los gráficos dependientes de año/view/scope
   private readonly viewTrigger$ = combineLatest([
     this.viewYear$,
-    this.variant$,
+    this.view$,
+    this.scope$,
   ]);
-  monthName(n?: number): string {
-    if (!n || n < 1 || n > 12) return '—';
-    const nombres = [
-      'enero',
-      'febrero',
-      'marzo',
-      'abril',
-      'mayo',
-      'junio',
-      'julio',
-      'agosto',
-      'septiembre',
-      'octubre',
-      'noviembre',
-      'diciembre',
-    ];
-    return nombres[n - 1];
-  }
+
   constructor() {
-    this.eventsFacade.loadYearBundle(this.year());
+    // Para dashboard queremos tener disponibles ambas colecciones (no agrupados y agrupados)
+    // para que el VM y los gráficos puedan usar una u otra sin relanzar cargas.
+    const y = this.year();
+    this.eventsFacade.loadDashboardAllNotGrouped(y); // view='all', scope='all'
+    this.eventsFacade.loadDashboardAllGrouped(y); // view='groupedByPeriodicId', scope='all'
   }
 
   // ── Helpers generales ─────────────────────────────────────────────────────────
@@ -169,12 +167,9 @@ export class DashboardFacade {
     data$: Observable<T>
   ): Observable<LoadState<T>> {
     return trigger$.pipe(
-      // Cada cambio cancela la subscripción anterior
       switchMap(() =>
         concat(
-          // 1) Emite "loading" y permite a la vista renderizarlo
           of({ loading: true, data: null as unknown as T } as LoadState<T>),
-          // 2) En el SIGUIENTE frame, escucha los datos (evita el "salto" sin spinner)
           data$.pipe(
             observeOn(animationFrameScheduler),
             map((data) => ({ loading: false, data } as LoadState<T>)),
@@ -192,10 +187,10 @@ export class DashboardFacade {
     this.eventsFacade.visibleEvents$
   );
   private readonly all$ = this.toArray$<EventModelFullData>(
-    this.eventsFacade.eventsAll$
+    this.eventsFacade.allEvents$
   );
-  private readonly latest$ = this.toArray$<EventModelFullData>(
-    this.eventsFacade.eventsNonRepeteatedSubject$
+  private readonly grouped$ = this.toArray$<EventModelFullData>(
+    this.eventsFacade.groupedEvents$
   );
 
   // ── ViewModel principal ───────────────────────────────────────────────────────
@@ -205,45 +200,46 @@ export class DashboardFacade {
       EventModelFullData[],
       EventModelFullData[],
       number,
-      PeriodicVariant
+      PeriodicView
     ]
   >([
     this.visible$,
     this.all$,
-    this.latest$,
+    this.grouped$,
     toObservable(this.year),
-    toObservable(this.variant),
+    toObservable(this.view),
   ]).pipe(
-    map(([visible, all, latest, year, variant]) =>
+    map(([visible, all, grouped, year, view]) =>
       this.analytics.buildDashboardVM({
         visible,
         all,
-        latest,
+        latest: grouped, // “latest” en tu analítica eran los no repetidos → ahora agrupados
         year,
-        variant,
+        variant: view === 'groupedByPeriodicId' ? 'latest' : 'all',
         keyword: this.keyword(),
       })
     ),
     share({ resetOnRefCountZero: true })
   );
 
-  // ── Eventos para gráficos (respeta viewYear y variant) ────────────────────────
+  // ── Eventos para gráficos (respeta viewYear, view y scope) ────────────────────
   readonly eventsForCharts$ = combineLatest([
     this.viewYear$,
-    this.variant$,
+    this.view$,
+    this.scope$,
   ]).pipe(
-    switchMap(([vy, variant]) => {
+    switchMap(([vy, view, scope]) => {
       if (vy === 'historic') {
         return forkJoin(
           this.years.map((y) =>
             this.eventsService
-              .getEventsByYear(y, variant)
+              .getEventsByYear(y, view, scope)
               .pipe(catchError(() => of([])))
           )
         ).pipe(map((lists) => lists.flat()));
       }
       return this.eventsService
-        .getEventsByYear(vy as number, variant)
+        .getEventsByYear(vy as number, view, scope)
         .pipe(catchError(() => of([])));
     }),
     share({ resetOnRefCountZero: true })
@@ -260,11 +256,15 @@ export class DashboardFacade {
     share({ resetOnRefCountZero: true })
   );
 
-  readonly annual$ = combineLatest([of(this.years), this.variant$]).pipe(
-    switchMap(([ys, variant]) =>
+  readonly annual$ = combineLatest([
+    of(this.years),
+    this.view$,
+    this.scope$,
+  ]).pipe(
+    switchMap(([ys, view, scope]) =>
       forkJoin(
         ys.map((y) =>
-          this.eventsService.getEventsByYear(y, variant).pipe(
+          this.eventsService.getEventsByYear(y, view, scope).pipe(
             map((list) => ({ label: y, count: (list ?? []).length })),
             catchError(() => of({ label: y, count: 0 }))
           )
@@ -307,6 +307,7 @@ export class DashboardFacade {
     group: this.analytics.groupRecipesByCategory,
   });
 
+  // ── Partners (secciones sin cambios funcionales) ─────────────────────────────
   readonly partnersAnnual$ = this.partnersService.getPartners().pipe(
     map((partners: PartnerModel[] | null | undefined) => {
       const start = 1995;
@@ -316,11 +317,7 @@ export class DashboardFacade {
         (_, i) => start + i
       );
 
-      // año -> set de índices de socias con al menos un pago ese año
-      const yearToPartners: Map<number, Set<number>> = new Map<
-        number,
-        Set<number>
-      >();
+      const yearToPartners: Map<number, Set<number>> = new Map();
       for (const y of years) yearToPartners.set(y, new Set<number>());
 
       const list: PartnerModel[] = Array.isArray(partners) ? partners : [];
@@ -332,7 +329,6 @@ export class DashboardFacade {
         for (const c of cuotas) {
           if (!c.paid) continue;
 
-          // Usa el año de la fecha si es válida; si no, cae a c.year
           let y: number | null = null;
           if (c.date_payment) {
             const d = new Date(c.date_payment as string);
@@ -363,7 +359,7 @@ export class DashboardFacade {
     share({ resetOnRefCountZero: true })
   );
 
-  // ── Estados con "loading al cambiar" (spinner entre cambios) ─────────────────
+  // ── Estados con "loading al cambiar" ─────────────────────────────────────────
   readonly eventsByMonthState$: Observable<
     LoadState<Array<{ month: number; count: number }>>
   > = this.withLoadingOnChange(this.viewTrigger$, this.eventsByMonthForChart$);
@@ -378,7 +374,6 @@ export class DashboardFacade {
   readonly eventsByCategoryYearState$: Observable<LoadState<PieDatum[]>> =
     this.withLoadingOnChange(this.viewTrigger$, this.eventsByCategoryYear$);
 
-  // Estos no dependen de viewYear/variant
   readonly annualState$: Observable<
     LoadState<{ label: number; count: number }[]>
   > = withLoading(this.annual$);
@@ -468,6 +463,7 @@ export class DashboardFacade {
     }
     return null;
   }
+
   private calcAgeAt(dobLike: unknown, asOf: Date): number | null {
     if (!dobLike) return null;
     const dob = new Date(dobLike as any);
@@ -479,7 +475,6 @@ export class DashboardFacade {
     return age >= 0 ? age : null;
   }
 
-  /** ¿Esta socia tiene alguna cuota pagada en 'year'? */
   private hasPaidInYearLite(cuotasLike: unknown, year: number): boolean {
     const cs = this.normalizeCuotas(cuotasLike as any);
     for (const c of cs) {
@@ -493,30 +488,27 @@ export class DashboardFacade {
     }
     return false;
   }
+
   readonly partnersAgeBuckets$ = combineLatest([
     this.partnersService.getPartners(),
-    this.viewYear$, // <- dependemos del año de vista
+    this.viewYear$, // dependemos del año de vista
   ]).pipe(
     map(([partners, vy]) => {
       const list: PartnerModel[] = Array.isArray(partners) ? partners : [];
 
-      // 1) Filtramos por año (si no es histórico)
       let filtered: PartnerModel[];
       let asOf: Date;
       if (vy === 'historic') {
-        // Histórico: todas las socias; edad a fecha de hoy
         filtered = list;
-        asOf = new Date(); // hoy
+        asOf = new Date();
       } else {
         const year = Number(vy);
         filtered = list.filter((p) =>
           this.hasPaidInYearLite((p as any).cuotas, year)
         );
-        // Edad a 31/12/{year}
         asOf = new Date(year, 11, 31);
       }
 
-      // 2) Contabilizamos por buckets usando edad EN ESA FECHA
       const counts = new Map<AgeBucketKey, number>();
       let unknown = 0;
 
@@ -539,7 +531,6 @@ export class DashboardFacade {
           unknown++;
           continue;
         }
-
         counts.set(key, (counts.get(key) ?? 0) + 1);
       }
 
@@ -550,12 +541,10 @@ export class DashboardFacade {
 
       if (unknown > 0) data.push({ label: 'unknown' as any, value: unknown });
 
-      // Ordena descendente por valor
       return data.sort((a, b) => b.value - a.value);
     })
   );
 
-  // El state ya lo tienes:
   readonly partnersAgeBucketsState$: Observable<LoadState<PieDatum[]>> =
     withLoading(this.partnersAgeBuckets$);
 
@@ -563,7 +552,6 @@ export class DashboardFacade {
   private normalizeCuotas(a: unknown): CuotaLite[] {
     if (!Array.isArray(a)) return [];
     const first = a[0];
-    // legacy: number[]
     if (typeof first === 'number') {
       return (a as number[]).map((y) => ({
         year: y,
@@ -572,7 +560,6 @@ export class DashboardFacade {
         method_payment: null,
       }));
     }
-    // nuevo: CuotaModel[]
     return (a as any[]).map((c) => ({
       year: Number(c?.year),
       paid: !!c?.paid,
@@ -584,7 +571,6 @@ export class DashboardFacade {
     }));
   }
 
-  // Aplana todas las cuotas pagadas
   private paidCuotasFromPartners(partners: any[]): CuotaLite[] {
     const out: CuotaLite[] = [];
     for (const p of partners ?? []) {
@@ -594,14 +580,13 @@ export class DashboardFacade {
     return out;
   }
 
-  // Traducción simple de método (opcional; puedes cambiarlo por dict/i18n)
   private labelMetodo(k: 'cash' | 'domiciliation' | 'unknown'): string {
     const pm = ((this.i18n.dict() as any) ?? {}).paymentMethod ?? {};
     if (k === 'cash') return pm.cash ?? 'Efectivo';
     if (k === 'domiciliation') return pm.domiciliation ?? 'Domiciliación';
     return pm.unspecified ?? 'Sin especificar';
   }
-  // --- Serie: Métodos de pago (para cheese chart) ---
+
   readonly paymentsByMethod$ = combineLatest([
     this.partnersService.getPartners(),
     this.viewYear$,
@@ -644,11 +629,10 @@ export class DashboardFacade {
     share({ resetOnRefCountZero: true })
   );
 
-  // ¡TIPA el withLoading!
   readonly paymentsByMethodState$ = withLoading<PieDatum[]>(
     this.paymentsByMethod$
   );
-  // --- Serie: Pagos por mes (como “Eventos por mes”) ---
+
   readonly paymentsByMonth$ = combineLatest([
     this.partnersService.getPartners(),
     this.viewYear$,
@@ -664,12 +648,9 @@ export class DashboardFacade {
         const cuotas = this.normalizeCuotas((p as any).cuotas);
         for (const c of cuotas) {
           if (!c.paid) continue;
-
-          // Solo contamos al mes si hay fecha válida del año seleccionado
           if (!c.date_payment) continue;
           const d = new Date(c.date_payment);
           if (isNaN(d.getTime()) || d.getFullYear() !== year) continue;
-
           buckets[d.getMonth()].count++;
         }
       }
@@ -678,12 +659,10 @@ export class DashboardFacade {
     share({ resetOnRefCountZero: true })
   );
 
-  // ¡TIPA el withLoading!
   readonly paymentsByMonthState$ = withLoading<MonthBar[]>(
     this.paymentsByMonth$
   );
 
-  // ── KPIs de Socias (solo los solicitados) ────────────────────────────────────
   readonly partnersKpis$ = combineLatest([
     this.partnersService.getPartners(),
     this.viewYear$,
@@ -691,10 +670,8 @@ export class DashboardFacade {
     map(([partners, vy]) => {
       const targetYear = vy === 'historic' ? this.currentYear : (vy as number);
 
-      // total histórico
       const totalSocias = (partners ?? []).length;
 
-      // socias con al menos una cuota pagada en el año (por fecha o year)
       const hasPaidInYear = (p: any) => {
         const cs = this.normalizeCuotas(p?.cuotas);
         return cs.some((c) => {
@@ -710,7 +687,6 @@ export class DashboardFacade {
       const partnersYear = (partners ?? []).filter(hasPaidInYear);
       const sociasAnio = partnersYear.length;
 
-      // edad media de esas socias
       const edades: number[] = partnersYear
         .map((p: PartnerModel) => calcAge(p.birthday))
         .filter((x: any) => typeof x === 'number') as number[];
@@ -719,7 +695,6 @@ export class DashboardFacade {
           10
         : undefined;
 
-      // método más usado del año + mes con más pagos
       let cash = 0,
         dom = 0,
         unk = 0;
@@ -729,14 +704,13 @@ export class DashboardFacade {
         for (const c of this.normalizeCuotas(p?.cuotas)) {
           if (!c.paid) continue;
 
-          // filtra al año
           let okYear = false;
           if (c.date_payment) {
             const d = new Date(c.date_payment);
             okYear = !isNaN(d.getTime()) && d.getFullYear() === targetYear;
             if (okYear) monthCounts[d.getMonth()]++;
           } else {
-            okYear = c.year === targetYear; // sin fecha: no sumamos mes
+            okYear = c.year === targetYear;
           }
           if (!okYear) continue;
 
@@ -767,7 +741,7 @@ export class DashboardFacade {
       const maxMonthIdx = monthCounts.findIndex((v) => v === maxVal);
       const mesTopPagosAnio = monthCounts.every((v) => v === 0)
         ? undefined
-        : maxMonthIdx + 1; // 1..12
+        : maxMonthIdx + 1;
 
       return {
         totalSocias,
@@ -783,7 +757,7 @@ export class DashboardFacade {
   readonly partnersKpisState$: Observable<LoadState<PartnersKpis>> =
     withLoading(this.partnersKpis$);
 
-  // ── Píteras: serie auxiliar que ya tenías ────────────────────────────────────
+  // ── Píteras (igual que antes) ────────────────────────────────────────────────
   readonly piterasSorted$ = this.piterasService
     .getPiteras()
     .pipe(
@@ -821,20 +795,49 @@ export class DashboardFacade {
   );
 
   // ── Métodos públicos (UI) ─────────────────────────────────────────────────────
+  /** Cambia el año de gráficos/tablas. Si no es “historic”, recarga bundles dashboard (agrupado y no agrupado). */
   changeYear(v: number | 'historic') {
     this.viewYear.set(v === 'historic' ? 'historic' : Number(v));
     if (v !== 'historic') {
       const yy = Number(v);
       this.year.set(yy);
-      this.eventsFacade.loadYearBundle(yy);
+      // Cargamos ambas vistas (all + grouped) con scope actual
+      const sc = this.scope();
+      if (sc === 'all') {
+        this.eventsFacade.loadDashboardAllNotGrouped(yy);
+        this.eventsFacade.loadDashboardAllGrouped(yy);
+      } else {
+        // Si decidieras usar scope ≠ all para los gráficos
+        this.eventsFacade.loadDashboardByScope(yy, sc, 'all');
+        this.eventsFacade.loadDashboardByScope(yy, sc, 'groupedByPeriodicId');
+      }
     }
   }
 
-  changeVariant(v: PeriodicVariant) {
-    this.variant.set(v);
-    this.eventsFacade.loadEventsByYear(this.year(), v);
+  /** Cambia la vista (no agrupado vs agrupado). */
+  changeView(v: PeriodicView) {
+    this.view.set(v);
+    // Opcional: ajustar visible list si quieres que la tabla principal siga la vista
+    const yy = this.year();
+    const sc = this.scope();
+    if (sc === 'all') {
+      if (v === 'all') this.eventsFacade.loadDashboardAllNotGrouped(yy);
+      else this.eventsFacade.loadDashboardAllGrouped(yy);
+    } else {
+      this.eventsFacade.loadDashboardByScope(yy, sc, v);
+    }
   }
 
+  /** Cambia el scope de publicación (por defecto usamos 'all' en dashboard). */
+  changeScope(v: PublishScope) {
+    this.scope.set(v);
+    const yy = this.year();
+    // refresca ambas vistas para mantener VM sincronizado
+    this.eventsFacade.loadDashboardByScope(yy, v, 'all');
+    this.eventsFacade.loadDashboardByScope(yy, v, 'groupedByPeriodicId');
+  }
+
+  /** Busca en la lista visible de la fachada (filtrado cliente). */
   search(word: string) {
     this.keyword.set(word.trim());
     this.eventsFacade.applyFilterWord(this.keyword());

@@ -36,16 +36,15 @@ import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loadi
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
 
+import { PageToolbarComponent } from '../../components/page-toolbar/page-toolbar.component';
 import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.component';
 
-// ✅ Toolbar común
-import { PageToolbarComponent } from '../../components/page-toolbar/page-toolbar.component';
-
-// ✅ Hooks reutilizables
+// Hooks reutilizables
 import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
 
 // Shell modal + navegación
+import { ButtonFilterComponent } from 'src/app/shared/components/buttons/button-filter/button-filter.component';
 import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
 import { ModalNavService } from 'src/app/shared/components/modal/services/modal-nav.service';
 import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
@@ -67,6 +66,7 @@ import { ModalService } from 'src/app/shared/components/modal/services/modal.ser
     ReactiveFormsModule,
     MatMenuModule,
     MatCheckboxModule,
+    ButtonFilterComponent,
   ],
   templateUrl: './events-page.component.html',
 })
@@ -79,9 +79,9 @@ export class EventsPageComponent implements OnInit {
   private readonly generalService = inject(GeneralService);
   private readonly pdfPrintService = inject(PdfPrintService);
 
-  // Facade pública (para isLoading$ en template)
+  // Facade pública (para isListLoading$ en template si lo usas)
   readonly eventsFacade = inject(EventsFacade);
-
+  private activeScope: 'all' | 'drafts' | 'scheduled' = 'all';
   // ── Columnas
   headerListEvents: ColumnModel[] = [
     { title: 'Cartel', key: 'img', sortable: false },
@@ -180,22 +180,23 @@ export class EventsPageComponent implements OnInit {
     'summary',
   ]);
 
-  // ── Lista de entidades (hook)
+  // ── Lista de entidades (hook) -> la facade controla visibleEvents$ según la carga
   readonly list = useEntityList<EventModelFullData>({
     filtered$: this.eventsFacade.visibleEvents$,
     sort: (arr) => this.eventsService.sortEventsById(arr),
     count: (arr) => this.eventsService.countEvents(arr),
-    // map opcional si necesitas proyectar 'espacioTable'
+    // map opcional para proyectar 'espacioTable'
     // map: (arr) => arr.map(e => ({ ...e, espacioTable: e?.place?.name ?? e?.space ?? '' }) as any),
     initial: [],
   });
 
-  // Filtros
+  // ── Filtros
   filters: Filter[] = [];
   selectedFilter: string | number = '';
   currentYear = this.generalService.currentYear;
+  private lastYearSelected = this.currentYear; // recordar el último año para drafts/scheduled
 
-  // Modal
+  // ── Modal
   readonly modalVisibleSig = toSignal(this.modalService.modalVisibility$, {
     initialValue: false,
   });
@@ -217,15 +218,15 @@ export class EventsPageComponent implements OnInit {
     ModalNavService<EventModelFullData | MacroeventModelFullData>
   );
 
-  // ──────────────────────────────────────────────────────────────────────────────
+  // ──────────────────────────────────────────────────────────────
   // Lifecycle
-  // ──────────────────────────────────────────────────────────────────────────────
+  // ──────────────────────────────────────────────────────────────
   ngOnInit(): void {
-    this.filters = [
-      ...this.generalService.getYearFilters(2018, this.currentYear),
-    ];
+    // Filtros = años + extras "Borradores"/"Programados"
+    const years = this.generalService.getYearFilters(2018, this.currentYear);
+    this.filters = [...years];
 
-    // Carga inicial
+    // Carga inicial: año actual, AGRUPADO y scope=all
     this.filterSelected(this.currentYear.toString());
 
     // Mantener viva la suscripción si hace falta
@@ -235,10 +236,51 @@ export class EventsPageComponent implements OnInit {
   }
 
   // ── Filtros / búsqueda
-  filterSelected(filter: string): void {
-    this.selectedFilter = Number(filter);
+  filterSelected = (filter: string): void => {
+    // Botones especiales siguen funcionando si te llega el string
+    if (filter === 'drafts') {
+      this.showDrafts();
+      return;
+    }
+    if (filter === 'scheduled') {
+      this.showScheduled();
+      return;
+    }
+
+    // Filtro por año
+    // Si es año → agrupado y TODOS los estados (published + drafts + scheduled)
+    const year = Number(filter);
+    if (!Number.isFinite(year)) return;
+
+    this.selectedFilter = year;
+    this.lastYearSelected = year;
     this.eventsFacade.applyFilterWord('');
-    this.eventsFacade.loadNonRepeatedEventsByYear(Number(filter));
+    this.eventsFacade.loadDashboardAllGrouped(year);
+  };
+  showDrafts(): void {
+    this.selectedFilter = 'drafts';
+    this.activeScope = 'drafts';
+    this.eventsFacade.applyFilterWord('');
+    // ⬇️ Si quieres TODOS LOS AÑOS, usa el método “AllYears”:
+    // this.eventsFacade.loadDashboardDraftsAllYears('groupedByPeriodicId');
+    // ⬇️ Si prefieres el año actual/último seleccionado, deja esta línea:
+    this.eventsFacade.loadDashboardDrafts(
+      this.lastYearSelected,
+      'groupedByPeriodicId'
+    );
+  }
+
+  showScheduled(): void {
+    this.selectedFilter = 'scheduled';
+    this.activeScope = 'scheduled';
+    this.eventsFacade.applyFilterWord('');
+    // ⬇️ Todos los años:
+    // this.eventsFacade.loadDashboardScheduledAllYears('groupedByPeriodicId');
+    // ⬇️ Solo por año seleccionado:
+    this.eventsFacade.loadDashboardScheduled(
+      this.lastYearSelected,
+      'groupedByPeriodicId'
+    );
   }
 
   applyFilterWord(keyword: string): void {
@@ -337,7 +379,10 @@ export class EventsPageComponent implements OnInit {
               .pipe(
                 takeUntilDestroyed(this.destroyRef),
                 tap(() =>
-                  this.filterSelected(this.selectedFilter?.toString() ?? '')
+                  // recargar con el filtro actual
+                  this.filterSelected(
+                    String(this.selectedFilter ?? this.lastYearSelected)
+                  )
                 )
               )
               .subscribe();

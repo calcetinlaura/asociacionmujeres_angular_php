@@ -3,7 +3,6 @@ import { Component, computed, inject, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
   BehaviorSubject,
-  combineLatest,
   distinctUntilChanged,
   EMPTY,
   map,
@@ -68,56 +67,37 @@ export class EventsPageLandingComponent implements OnInit {
   currentModalAction: TypeActionModal = TypeActionModal.Show;
   typeModal: TypeList = TypeList.Events;
   private openedWithNavigation = false;
-  private selectedYear$ = new BehaviorSubject<number | null>(null);
 
-  // ─── Bases desde la fachada ───────────────────────────────────
-  private readonly allBase$ = this.eventsFacade.eventsAll$;
-  private readonly latestBase$ = this.eventsFacade.eventsNonRepeteatedSubject$;
+  // Año seleccionado (para sincronizar UI; el backend ya filtra por año)
+  private readonly selectedYear$ = new BehaviorSubject<number | null>(null);
 
-  // ─── Filtros de año ───────────────────────────────────────────
-  private filterByYear(
-    events: EventModel[] = [],
-    year: number | null
-  ): EventModel[] {
-    if (!year) return events;
-    return events.filter((e: any) => {
-      const s = e?.start ? String(e.start).slice(0, 10) : '';
-      const end = e?.end ? String(e.end).slice(0, 10) : s;
-      if (!s) return false;
-      const sy = Number(s.slice(0, 4));
-      const ey = Number(end.slice(0, 4));
-      return sy <= year && year <= ey;
-    });
-  }
-
-  private readonly allByYear$ = combineLatest([
-    this.allBase$,
-    this.selectedYear$,
-  ]).pipe(
-    map(([list, year]) =>
-      this.filterByYear(this.eventsService.sortEventsByDate(list ?? []), year)
-    )
-  );
-
-  private readonly latestByYear$ = combineLatest([
-    this.latestBase$,
-    this.selectedYear$,
-  ]).pipe(
-    map(([list, year]) =>
-      this.filterByYear(this.eventsService.sortEventsByDate(list ?? []), year)
-    )
-  );
+  // ─── Bases desde la fachada (nuevos nombres) ──────────────────
+  private readonly allBase$ = this.eventsFacade.allEvents$; // no agrupados (calendar)
+  private readonly groupedBase$ = this.eventsFacade.groupedEvents$; // agrupados (section)
 
   // ─── Listas derivadas ─────────────────────────────────────────
+  // Calendario: no agrupados, publicados del año cargado
+  private readonly allForCalendar$ = this.allBase$.pipe(
+    map((list) => this.eventsService.sortEventsByDate(list ?? []))
+  );
+
+  // Sección: agrupados, publicados del año cargado
+  private readonly groupedForSection$ = this.groupedBase$.pipe(
+    // processNonRepeated mantiene tu split y ordenaciones por año actual
+    map((list) =>
+      this.processNonRepeated(list ?? [], this.filterYearForCalendar)
+    )
+  );
+
   readonly calendarList = useEntityList<EventModel>({
-    filtered$: this.allByYear$,
+    filtered$: this.allForCalendar$,
     sort: (arr) => this.eventsService.sortEventsByDate(arr),
     count: (arr) => arr.length,
   });
 
   readonly sectionList = useEntityList<EventModel>({
-    filtered$: this.latestByYear$,
-    map: (arr) => this.processNonRepeated(arr, this.filterYearForCalendar),
+    filtered$: this.groupedForSection$,
+    map: (arr) => arr, // ya viene mapeado/ordenado en processNonRepeated
     sort: (arr) => arr,
     count: (arr) => arr.length,
   });
@@ -198,7 +178,7 @@ export class EventsPageLandingComponent implements OnInit {
       });
   }
 
-  // ─── Filtros ─────────────────────────────────────────────────
+  // ─── Filtros / UI ─────────────────────────────────────────────
   get filterYearForCalendar(): number | null {
     const val =
       typeof this.selectedFilter === 'number'
@@ -210,7 +190,8 @@ export class EventsPageLandingComponent implements OnInit {
   loadEvents(year: number): void {
     this.selectedFilter = year;
     this.selectedYear$.next(year);
-    this.eventsFacade.loadYearBundle(year);
+    // Landing: queremos publicados en ambas vistas (calendar = no agrupado, section = agrupado)
+    this.eventsFacade.loadYearBundle(year, 'published');
   }
 
   filterSelected(filter: string): void {
@@ -233,6 +214,7 @@ export class EventsPageLandingComponent implements OnInit {
       ? (selectedYear as number)
       : this.currentYear;
 
+    // Para el año actual: split future/past
     if (targetYear === this.currentYear) {
       const todayT = this.truncateTime(new Date()).getTime();
       const flagged = (events ?? []).map((e) => {
@@ -253,6 +235,7 @@ export class EventsPageLandingComponent implements OnInit {
       return [...future, ...past].map(({ __t, ...r }) => r);
     }
 
+    // Para otros años: orden descendente y sin flag de pasado (para tu UI)
     const sortedDesc = [...(events ?? [])]
       .sort((a, b) => new Date(b.start).getTime() - new Date(a.start).getTime())
       .map((e) => ({ ...e, isPast: false } as EventModel));

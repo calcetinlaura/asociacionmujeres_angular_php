@@ -72,10 +72,11 @@
           }"
         >
           <div
-            class="aspect-square bg-gray-100 relative overflow-hidden rounded-md"
+            class="aspect-square relative overflow-hidden rounded-md"
             [ngClass]="{ 'ring-2 ring-blue-500': isToday(cell.date) }"
             (click)="$event.stopPropagation(); openModalView(cell)"
           >
+            @if (hasImg(event)) {
             <img
               class="object-cover w-full h-full cursor-pointer"
               appImgBroken
@@ -83,6 +84,17 @@
               [src]="(event.img ? event.img : '') | itemImage : typeList.Events"
               [alt]="event.title || ''"
             />
+            } @else {
+            <!-- Sin imagen: pinta por estado -->
+            <div
+              class="w-full h-full"
+              [ngClass]="{
+                'bg-emerald-200': isDraft(event),
+                'bg-yellow-200': isScheduled(event),
+                'bg-gray-200': !isDraft(event) && !isScheduled(event)
+              }"
+            ></div>
+            }
           </div>
         </div>
         }

@@ -41,8 +41,26 @@
     <div
       class="flex-1 py-2 px-3 rounded-lg shadow-sm bg-white/70 transition-all duration-300 ease-out group-hover:bg-white group-hover:shadow-md"
     >
+      <div class="flex w-full items-center justify-end mb-1">
+        @if (isScheduled(event)) {
+        <span
+          class="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-[4px] bg-yellow-200"
+          title="Fecha de publicación programada"
+        >
+          Programado ·
+          {{
+            getScheduledDate(event) | date : "dd MMM y, HH:mm" : "" : appLocale
+          }}
+        </span>
+        } @else if (isDraft(event)) {
+        <span
+          class="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-[4px] bg-emerald-200"
+        >
+          Borrador
+        </span>
+        }
+      </div>
       <p class="text-[12px] font-semibold tracking-wide">{{ event.title }}</p>
-
       @if (event.start) {
       <p class="text-[12px] text-gray-600 mt-1">
         {{ event.start | date : "EEEE dd MMMM" : "" : appLocale | titlecase }}

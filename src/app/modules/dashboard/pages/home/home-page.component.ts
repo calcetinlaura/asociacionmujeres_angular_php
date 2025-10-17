@@ -7,9 +7,12 @@ import {
   ViewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { PeriodicVariant } from 'src/app/application/events.facade';
 
-import { DashboardFacade } from 'src/app/application/dashboard.facade';
+import {
+  DashboardFacade,
+  PeriodicView,
+  PublishScope,
+} from 'src/app/application/dashboard.facade';
 import { ChartExportService } from 'src/app/core/services/chart-export.service';
 import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
@@ -83,8 +86,10 @@ export class HomePageComponent {
   readonly paymentsByMonthState$ = this.facade.paymentsByMonthState$;
 
   dictType = DictType;
+
   @ViewChild('reportRoot', { read: ElementRef })
   reportRoot?: ElementRef<HTMLElement>;
+
   // Helpers UI
   monthName(n?: number): string {
     if (!n || n < 1 || n > 12) return '—';
@@ -105,21 +110,28 @@ export class HomePageComponent {
     return nombres[n - 1];
   }
 
+  // Getters de estado (signals del facade)
   year() {
     return this.facade.year();
   }
   viewYear() {
     return this.facade.viewYear();
   }
-  variant() {
-    return this.facade.variant();
+  view() {
+    return this.facade.view(); // 'all' | 'groupedByPeriodicId'
+  }
+  scope() {
+    return this.facade.scope(); // 'all' | 'published' | 'drafts' | 'scheduled'
   }
   keyword() {
     return this.facade.keyword();
   }
 
+  // Handlers
   onChangeYear = (v: number | 'historic') => this.facade.changeYear(v);
-  onChangeVariant = (v: PeriodicVariant) => this.facade.changeVariant(v);
+  onChangeView = (v: PeriodicView) => this.facade.changeView(v);
+  onChangeScope = (v: PublishScope) => this.facade.changeScope(v);
+
   onSearch = (e: Event) =>
     this.facade.search((e.target as HTMLInputElement).value ?? '');
   clearSearch = () => this.facade.clearSearch();

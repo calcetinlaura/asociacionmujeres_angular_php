@@ -128,7 +128,28 @@ export class ModalMultiEventComponent implements OnChanges {
     const d = pickShareDate(this.date, this.events);
     if (d) this.addEvent.emit(localISODate(d));
   }
+  public isDraft(ev: any): boolean {
+    // published null/0/undefined => borrador
+    return Number(ev?.published) !== 1;
+  }
 
+  private parsePublishDate(ev: any): Date | null {
+    const day = (ev?.publish_day ?? '').toString().trim();
+    const timeRaw = (ev?.publish_time ?? '').toString().trim();
+    if (!day) return null;
+    const time = timeRaw.length === 5 ? `${timeRaw}:00` : timeRaw || '00:00:00';
+    const d = new Date(`${day}T${time}`);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  getScheduledDate(ev: any): Date | null {
+    return this.parsePublishDate(ev);
+  }
+  public isScheduled(ev: any): boolean {
+    if (Number(ev?.published) !== 1) return false;
+    const dt = this.parsePublishDate(ev);
+    if (!dt) return false;
+    return dt.getTime() > Date.now();
+  }
   /** 🔹 Confirmar eliminación del evento seleccionado */
   confirmRemove() {
     if (this.itemToDelete?.id != null) {
