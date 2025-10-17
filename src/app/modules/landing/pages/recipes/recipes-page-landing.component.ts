@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import {
   Component,
+  computed,
   DestroyRef,
   ElementRef,
   inject,
@@ -9,7 +10,8 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
-import { take, tap } from 'rxjs';
+import { take } from 'rxjs';
+
 import { RecipesFacade } from 'src/app/application/recipes.facade';
 import {
   categoryFilterRecipes,
@@ -17,12 +19,16 @@ import {
 } from 'src/app/core/interfaces/recipe.interface';
 import { Filter, TypeList } from 'src/app/core/models/general.model';
 import { RecipesService } from 'src/app/core/services/recipes.services';
+
 import { FiltersComponent } from 'src/app/modules/landing/components/filters/filters.component';
 import { NoResultsComponent } from 'src/app/modules/landing/components/no-results/no-results.component';
 import { SectionGenericComponent } from 'src/app/modules/landing/components/section-generic/section-generic.component';
 import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
+
+// Hook reutilizable
+import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
 
 @Component({
   selector: 'app-recipes-page-landing',
@@ -45,13 +51,20 @@ export class RecipesPageLandingComponent implements OnInit {
   private readonly recipesService = inject(RecipesService);
   private readonly generalService = inject(GeneralService);
 
-  recipes: RecipeModel[] = [];
-  filteredRecipes: RecipeModel[] = [];
+  // ===== Signals derivadas con useEntityList =====
+  readonly list = useEntityList<RecipeModel>({
+    filtered$: this.recipesFacade.filteredRecipes$, // puede emitir null; el hook lo normaliza
+    map: (arr) => arr, // opcional para transformar
+    sort: (arr) => this.recipesService.sortRecipesByTitle(arr),
+    count: (arr) => this.recipesService.countRecipes(arr),
+  });
+  readonly totalSig = this.list.countSig;
+  readonly hasResultsSig = computed(() => this.totalSig() > 0);
+
+  // ===== Filtros / UI =====
   filters: Filter[] = [];
-  areThereResults = false;
-  typeList = TypeList;
-  number = 0;
   selectedFilter: string | number = '';
+  typeList = TypeList;
 
   @ViewChild(InputSearchComponent)
   private inputSearchComponent!: InputSearchComponent;
@@ -63,21 +76,13 @@ export class RecipesPageLandingComponent implements OnInit {
     // 1) Filtros: "Todas" + categorías
     this.filters = [{ code: '', name: 'Todas' }, ...categoryFilterRecipes];
 
-    // 2) Si vienes por /recipes/:id -> deduce categoría; si no, carga por defecto
+    // 2) Ruta inicial: /recipes/:id -> filtra por categoría de esa receta; si no, "Todas"
     const initialId = this.route.snapshot.paramMap.get('id');
     if (initialId) {
       this.handleDeepLinkById(Number(initialId));
     } else {
       this.filterSelected('');
     }
-
-    // 3) Pintar cuando cambie el listado filtrado
-    this.recipesFacade.filteredRecipes$
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((recipes) => this.updateRecipeState(recipes))
-      )
-      .subscribe();
   }
 
   private handleDeepLinkById(id: number): void {
@@ -86,8 +91,7 @@ export class RecipesPageLandingComponent implements OnInit {
       return;
     }
 
-    // Carga la receta -> lee category (code) -> aplica filtro por categoría
-    // (usamos el service directo; si tu facade tiene loadRecipeById/selectedRecipe$, puedes replicar ese patrón)
+    // Carga la receta -> extrae categoría -> aplica filtro por categoría
     this.recipesService
       .getRecipeById(id)
       .pipe(takeUntilDestroyed(this.destroyRef), take(1))
@@ -95,10 +99,10 @@ export class RecipesPageLandingComponent implements OnInit {
         next: (recipe) => {
           const catCode = this.pickCategoryFilterCode(recipe);
           if (catCode) {
-            this.selectedFilter = catCode; // marca botón
-            this.recipesFacade.loadRecipesByFilter(catCode); // filtra por categoría
+            this.selectedFilter = catCode;
+            this.recipesFacade.loadRecipesByFilter(catCode);
           } else {
-            this.filterSelected(''); // fallback: Todas
+            this.filterSelected('');
           }
         },
         error: () => this.filterSelected(''),
@@ -121,18 +125,9 @@ export class RecipesPageLandingComponent implements OnInit {
     this.recipesFacade.applyFilterWord(keyword);
   }
 
-  updateRecipeState(recipes: RecipeModel[] | null): void {
-    if (!recipes) return;
-    this.recipes = this.recipesService.sortRecipesByTitle(recipes);
-    this.filteredRecipes = [...this.recipes];
-    this.number = this.recipesService.countRecipes(recipes);
-    this.areThereResults = this.recipesService.hasResults(recipes);
-  }
-
   // === Helpers ===
-  // Si tu BBDD guarda el code de categoría en `category`, basta con devolverlo.
   private pickCategoryFilterCode(r: RecipeModel): string | null {
-    const code = (r as any)?.category; // p.ej. "POSTRES", "ENTRANTES", etc.
+    const code = (r as any)?.category; // p.ej., "POSTRES", "ENTRANTES", etc.
     return code ? String(code) : null;
   }
 }

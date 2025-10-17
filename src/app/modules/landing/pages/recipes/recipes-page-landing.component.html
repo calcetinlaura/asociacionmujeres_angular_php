@@ -5,14 +5,15 @@
     (filterClicked)="filterSelected($event)"
   />
   <app-input-search (onDebounce)="applyFilterWord($event)" class="my-8" />
+
   @if (recipesFacade.isLoadingList$ | async) {
   <app-spinner-loading />
-  } @else { @if (areThereResults) {
+  } @else { @if (hasResultsSig()) {
   <app-section-generic
     [typeSection]="typeList.Recipes"
     [typeModal]="typeList.Recipes"
-    [data]="filteredRecipes"
-    [total]="number"
+    [data]="list.sortedSig()"
+    [total]="totalSig()"
   />
   } @else {
   <app-no-results [text]="'recetas' | lowercase" />

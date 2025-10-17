@@ -3,9 +3,10 @@ import {
   Component,
   DestroyRef,
   ElementRef,
-  inject,
   OnInit,
   ViewChild,
+  computed,
+  inject,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
@@ -23,6 +24,9 @@ import { SectionGenericComponent } from 'src/app/modules/landing/components/sect
 import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
+
+// Reutilizable
+import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
 
 @Component({
   selector: 'app-books-page-landing',
@@ -45,13 +49,22 @@ export class BooksPageLandingComponent implements OnInit {
   private readonly booksService = inject(BooksService);
   private readonly generalService = inject(GeneralService);
 
-  books: BookModel[] = [];
-  filteredBooks: BookModel[] = [];
+  // ===== Signals derivadas con useEntityList =====
+  readonly list = useEntityList<BookModel>({
+    filtered$: this.booksFacade.filteredBooks$, // puede emitir null; el hook normaliza
+    map: (arr) => arr, // opcional: transforma los datos si lo necesitas
+    sort: (arr) => this.booksService.sortBooksByTitle(arr),
+    count: (arr) => this.booksService.countBooks(arr),
+  });
+
+  // Conteo y estado de resultados como signals
+  readonly totalSig = this.list.countSig; // alias conveniente
+  readonly hasResultsSig = computed(() => this.totalSig() > 0);
+
+  // ===== Estado de filtros / UI =====
   filters: Filter[] = [];
   selectedFilter: string | number = '';
-  areThereResults = false;
   typeList = TypeList;
-  number = 0;
   currentYear = this.generalService.currentYear;
 
   @ViewChild(InputSearchComponent)
@@ -67,13 +80,15 @@ export class BooksPageLandingComponent implements OnInit {
       ...genderFilterBooks,
     ];
 
-    // 2) Si vienes por /books/:id -> deduce GÉNERO; si no hay id: por defecto
+    // 1) Arranque: deep-link por id si viene, si no -> NOVEDADES
     const initialId = this.route.snapshot.paramMap.get('id');
     if (initialId) {
       this.handleDeepLinkById(Number(initialId));
     } else {
       this.filterSelected('NOVEDADES');
     }
+
+    // 2) Reacciona a cambios en la ruta (navegación dentro de la landing)
     this.route.paramMap
       .pipe(
         takeUntilDestroyed(this.destroyRef),
@@ -82,13 +97,6 @@ export class BooksPageLandingComponent implements OnInit {
           if (id) this.handleDeepLinkById(Number(id));
           else this.filterSelected('NOVEDADES');
         })
-      )
-      .subscribe();
-    // 3) Pintar cuando cambie el listado filtrado
-    this.booksFacade.filteredBooks$
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((books) => this.updateBookState(books))
       )
       .subscribe();
   }
@@ -116,7 +124,7 @@ export class BooksPageLandingComponent implements OnInit {
           return;
         }
 
-        // (Opcional) fallback si jamás viniera el code:
+        // Fallback
         this.filterSelected('NOVEDADES');
       });
   }
@@ -135,14 +143,6 @@ export class BooksPageLandingComponent implements OnInit {
 
   applyFilterWord(keyword: string): void {
     this.booksFacade.applyFilterWord(keyword);
-  }
-
-  updateBookState(books: BookModel[] | null): void {
-    if (!books) return;
-    this.books = this.booksService.sortBooksByTitle(books);
-    this.filteredBooks = [...this.books];
-    this.number = this.booksService.countBooks(books);
-    this.areThereResults = this.booksService.hasResults(books);
   }
 
   // === Helpers ===

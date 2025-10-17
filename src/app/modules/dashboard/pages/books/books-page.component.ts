@@ -5,6 +5,7 @@ import {
   ElementRef,
   OnInit,
   ViewChild,
+  computed,
   inject,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
@@ -105,11 +106,22 @@ export class BooksPageComponent implements OnInit {
     'year',
   ]);
 
+  // Lista derivada con useEntityList
   readonly list = useEntityList<BookModel>({
     filtered$: this.booksFacade.filteredBooks$.pipe(map((v) => v ?? [])),
+    // Normaliza/ajusta datos de salida para la tabla (opcional)
+    map: (arr) =>
+      arr.map((b) => ({
+        ...b,
+        // Ejemplo: asegura string en description
+        description: (b.description ?? '').toString(),
+      })),
     sort: (arr) => this.booksService.sortBooksById(arr),
     count: (arr) => this.booksService.countBooks(arr),
   });
+
+  // Señales derivadas adicionales útiles en plantilla
+  readonly hasRowsSig = computed(() => this.list.countSig() > 0);
 
   // Filtros
   filters: Filter[] = [];
@@ -148,9 +160,8 @@ export class BooksPageComponent implements OnInit {
   filterSelected(filter: string): void {
     this.selectedFilter = filter;
 
-    // Si usas InputSearchComponent en PageToolbar, no hay ref directa aquí;
-    // limpia el filtro de texto invocando el método de la facade si procede (opcional).
-    this.booksFacade.applyFilterWord(''); // reset búsqueda al cambiar filtro
+    // Reset búsqueda de texto al cambiar filtro
+    this.booksFacade.applyFilterWord('');
 
     if (!filter) {
       this.booksFacade.loadAllBooks();
