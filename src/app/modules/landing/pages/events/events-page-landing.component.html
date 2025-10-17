@@ -6,13 +6,9 @@
   >
   </app-filters>
 
-  @let loading = (eventsFacade.isLoadingList$ | async) ?? false;
-
-  <!-- Calendario (ALL con repetidos) -->
-  @let yearEvents = calendarList.sortedSig();
-
-  <!-- Secciones (LATEST sin repetidos), separadas -->
-  @let upcoming = upcomingListSig(); @let past = pastListSig(); @if (loading) {
+  @let loading = (eventsFacade.isLoadingList$ | async) ?? false; @let yearEvents
+  = calendarList.sortedSig(); @let upcoming = upcomingListSig(); @let past =
+  pastListSig(); @if (loading) {
   <div class="mt-24"><app-spinner-loading /></div>
   } @else { @if (yearEvents.length > 0 && filterYearForCalendar !== null) {
   <app-calendar
@@ -20,6 +16,8 @@
     [filterYear]="filterYearForCalendar"
     [isDashboard]="isDashboard"
     [deepLinkMultiDate]="deepLinkMultiDate"
+    (viewEvent)="onOpenEvent($event)"
+    (openMulti)="onOpenMulti($event)"
   >
   </app-calendar>
   }
@@ -30,20 +28,34 @@
     [typeSection]="typeList.Events"
     [typeModal]="typeList.Events"
     [data]="upcoming"
-    [total]="upcomingCountSig()"
+    [total]="upcoming.length"
   />
   }
 
-  <!-- Pasados (solo año actual; estará vacío en otros años) -->
+  <!-- Pasados -->
   @if (past.length > 0) {
   <p class="mt-6 mb-2 font-semibold">Eventos pasados</p>
   <app-section-generic
     [typeSection]="typeList.Events"
     [typeModal]="typeList.Events"
     [data]="past"
-    [total]="pastCountSig()"
+    [total]="past.length"
   />
   } @else { @if (upcoming.length === 0) {
   <app-no-results [text]="'eventos' | lowercase" />
   } } }
 </div>
+
+<!-- 🔹 Modal genérica para MultiEvent / Evento / MacroEvent -->
+<app-modal-shell
+  [visible]="isModalVisible"
+  [isDashboard]="isDashboard"
+  [typeModal]="typeModal"
+  [action]="currentModalAction"
+  [item]="item"
+  [canGoBack]="canGoBack()"
+  (back)="onBackModal()"
+  (close)="onCloseModal()"
+  (openEvent)="onOpenEvent($event)"
+  (openMacroevent)="onOpenMacroEvent($event)"
+/>

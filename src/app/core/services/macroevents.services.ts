@@ -58,18 +58,10 @@ export class MacroeventsService {
     return this.listByYearReq.get(year)!;
   }
 
-  getMacroeventById(id: number): Observable<MacroeventModelFullData> {
-    if (!this.macroReq.has(id)) {
-      const req$ = this.http
-        .get<MacroeventModelFullData>(`${this.apiUrl}/${id}`)
-        .pipe(
-          shareReplay(1),
-          tap((m) => this.macroVal.set(id, m)),
-          catchError((err) => this.generalService.handleHttpError(err))
-        );
-      this.macroReq.set(id, req$);
-    }
-    return this.macroReq.get(id)!;
+  getMacroeventById(id: number): Observable<any> {
+    return this.http
+      .get(`${this.apiUrl}/${id}`)
+      .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
   // ====== COMMANDS (mutaciones) ======

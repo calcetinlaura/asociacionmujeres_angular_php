@@ -306,6 +306,6 @@ export class ProjectsPageComponent implements OnInit {
 
   // Para el shell
   get canGoBack(): boolean {
-    return this.modalNav.canGoBack();
+    return this.modalNav.canGoBack() && !!this.item;
   }
 }

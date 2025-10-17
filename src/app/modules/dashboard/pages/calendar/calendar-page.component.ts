@@ -32,6 +32,7 @@ import { ModalNavService } from 'src/app/shared/components/modal/services/modal-
 import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
 
 import { EventModelFullData } from 'src/app/core/interfaces/event.interface';
+import { MacroeventsService } from 'src/app/core/services/macroevents.services';
 
 type MultiEventsPayload = { date: Date; events: any[] };
 type ModalItem = EventModelFullData | MultiEventsPayload | null;
@@ -56,6 +57,7 @@ export class CalendarPageComponent implements OnInit {
   // ── Inyección ────────────────────────────────────────────────────────────────
   private readonly destroyRef = inject(DestroyRef);
   private readonly eventsService = inject(EventsService);
+  private readonly macroeventsService = inject(MacroeventsService);
   private readonly generalService = inject(GeneralService);
   private readonly modalService = inject(ModalService);
   private readonly modalNav = inject(ModalNavService<EventModelFullData>);
@@ -134,7 +136,7 @@ export class CalendarPageComponent implements OnInit {
   };
 
   get canGoBack(): boolean {
-    return this.modalNav.canGoBack();
+    return this.modalNav.canGoBack() && !!this.item;
   }
 
   onBackModal(): void {
@@ -202,7 +204,36 @@ export class CalendarPageComponent implements OnInit {
         },
       });
   };
+  onOpenMacroEvent = (macroId: number) => {
+    if (!macroId) return;
 
+    // 🧠 Guarda el estado actual en el stack
+    this.modalNav.push({
+      typeModal: this.typeModal,
+      action: this.currentModalAction,
+      item: this.item,
+    });
+
+    // Abre modal de forma optimista
+    this.typeModal = TypeList.Macroevents;
+    this.currentModalAction = TypeActionModal.Show;
+    this.item = null;
+    this.modalService.openModal();
+
+    // Fetch del macroevento
+    this.macroeventsService
+      .getMacroeventById(macroId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (macro) => {
+          this.item = macro;
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('[CalendarPage] Error al cargar macroevento', err);
+        },
+      });
+  };
   onEditEvent = (eventId: number) => {
     this.modalNav.push({
       typeModal: this.typeModal,

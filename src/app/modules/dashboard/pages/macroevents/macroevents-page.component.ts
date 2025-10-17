@@ -304,6 +304,6 @@ export class MacroeventsPageComponent implements OnInit {
   }
 
   get canGoBack(): boolean {
-    return this.modalNav.canGoBack();
+    return this.modalNav.canGoBack() && !!this.item;
   }
 }

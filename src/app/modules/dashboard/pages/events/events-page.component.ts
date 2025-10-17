@@ -395,6 +395,6 @@ export class EventsPageComponent implements OnInit {
   }
 
   get canGoBack(): boolean {
-    return this.modalNav.canGoBack();
+    return this.modalNav.canGoBack() && !!this.item;
   }
 }

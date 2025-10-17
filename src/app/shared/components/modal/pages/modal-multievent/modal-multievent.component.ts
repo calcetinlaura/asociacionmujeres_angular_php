@@ -117,7 +117,7 @@ export class ModalMultiEventComponent implements OnChanges {
   }
 
   viewById(id: number) {
-    this.view.emit(id);
+    this.openEvent.emit(id);
   }
 
   editById(id: number) {

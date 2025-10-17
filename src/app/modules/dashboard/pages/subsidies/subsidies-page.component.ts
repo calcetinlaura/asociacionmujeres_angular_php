@@ -502,7 +502,7 @@ export class SubsidiesPageComponent implements OnInit {
     this.typeModal = prev.typeModal;
   }
   get canGoBack(): boolean {
-    return this.modalNav.canGoBack();
+    return this.modalNav.canGoBack() && !!this.item;
   }
 
   // ──────────────────────────────────────────────

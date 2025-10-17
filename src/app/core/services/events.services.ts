@@ -131,12 +131,6 @@ export class EventsService {
       .subscribe();
   }
 
-  /** 🧹 Limpiar caché por id o todo */
-  clearEventCache(id?: number): void {
-    if (typeof id === 'number') this.eventByIdCache.delete(id);
-    else this.eventByIdCache.clear();
-  }
-
   getEventsByPeriodicId(periodicId: string): Observable<EventModel[]> {
     return this.http
       .get<EventModel[]>(this.apiUrl, { params: { periodic_id: periodicId } })
