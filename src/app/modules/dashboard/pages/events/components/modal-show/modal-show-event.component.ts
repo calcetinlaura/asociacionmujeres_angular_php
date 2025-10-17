@@ -4,6 +4,7 @@ import {
   DestroyRef,
   EventEmitter,
   Input,
+  LOCALE_ID,
   Output,
   inject,
 } from '@angular/core';
@@ -32,6 +33,7 @@ import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
 import { buildShareUrl } from 'src/app/shared/utils/share-url.util';
 import { environments } from 'src/environments/environments';
 import { SafeHtmlPipe } from '../../../../../../shared/pipe/safe-html.pipe';
+import { EventPublishPillComponent } from '../publish-pill/publish-pill.component';
 
 @Component({
   selector: 'app-modal-show-event',
@@ -49,6 +51,7 @@ import { SafeHtmlPipe } from '../../../../../../shared/pipe/safe-html.pipe';
     AudienceBadgesPipe,
     ImageZoomOverlayComponent,
     SafeHtmlPipe,
+    EventPublishPillComponent,
   ],
   templateUrl: './modal-show-event.component.html',
   styleUrls: ['./modal-show-event.component.css'],
@@ -56,6 +59,7 @@ import { SafeHtmlPipe } from '../../../../../../shared/pipe/safe-html.pipe';
 export class ModalShowEventComponent {
   private readonly eventsService = inject(EventsService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly locale = inject(LOCALE_ID);
 
   @Input() item!: Partial<EventModelFullData> & { id: number };
   @Input() isDashboard = false;
@@ -66,6 +70,7 @@ export class ModalShowEventComponent {
   enumStatusEnum = EnumStatusEvent;
   dictType = DictType;
   showZoom = false;
+  readonly appLocale = this.locale;
 
   ngOnChanges() {
     // Si viene parcial, completa datos mostrando spinner

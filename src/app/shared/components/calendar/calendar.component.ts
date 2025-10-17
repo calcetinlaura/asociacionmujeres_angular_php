@@ -13,9 +13,19 @@ import {
   EventModelFullData,
 } from 'src/app/core/interfaces/event.interface';
 import { TypeList } from 'src/app/core/models/general.model';
+import { CalendarGridService } from 'src/app/core/services/calendar-grid.service';
 import { EventsService } from 'src/app/core/services/events.services';
 import { ImgBrokenDirective } from 'src/app/shared/directives/img-broken.directive';
 import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
+import {
+  hasImg,
+  isDraft,
+  isOnDate,
+  isScheduled,
+  toIsoDate,
+} from '../../utils/events.utils';
+
+// ✅ Nuevas utilidades y servicio extraídos
 
 @Component({
   selector: 'app-calendar',
@@ -53,6 +63,7 @@ export class CalendarComponent implements OnChanges {
   typeList = TypeList;
 
   private readonly eventsService = inject(EventsService);
+  private readonly grid = inject(CalendarGridService);
 
   /** Para deep-link público (opcional) */
   private pendingMultiDate: string | null = null;
@@ -101,69 +112,28 @@ export class CalendarComponent implements OnChanges {
     this.tryEmitMultiFromQuery(); // opcional
   }
 
-  /** YYYY-MM-DD */
+  /** Wrappers a utilidades (mantienen compatibilidad con la plantilla) */
   private toIsoDate(date: Date): string {
-    return date.toLocaleDateString('sv-SE');
+    return toIsoDate(date);
   }
-
   private isOnDate(isoDate: string, ev: any): boolean {
-    const s: string | undefined = ev?.start
-      ? String(ev.start).slice(0, 10)
-      : undefined;
-    const e: string = ev?.end ? String(ev.end).slice(0, 10) : s ?? '';
-    if (!s) return false;
-    return s <= isoDate && isoDate <= e;
+    return isOnDate(isoDate, ev);
   }
   public hasImg(ev: any): boolean {
-    const img = (ev?.img ?? '').toString().trim();
-    return img.length > 0;
+    return hasImg(ev);
   }
-
   public isDraft(ev: any): boolean {
-    // published null/0/undefined => borrador
-    return Number(ev?.published) !== 1;
+    return isDraft(ev);
   }
-
-  private parsePublishDate(ev: any): Date | null {
-    const day = (ev?.publish_day ?? '').toString().trim();
-    const timeRaw = (ev?.publish_time ?? '').toString().trim();
-    if (!day) return null;
-    const time = timeRaw.length === 5 ? `${timeRaw}:00` : timeRaw || '00:00:00';
-    const d = new Date(`${day}T${time}`);
-    return isNaN(d.getTime()) ? null : d;
-  }
-
   public isScheduled(ev: any): boolean {
-    if (Number(ev?.published) !== 1) return false;
-    const dt = this.parsePublishDate(ev);
-    if (!dt) return false;
-    return dt.getTime() > Date.now();
+    return isScheduled(ev);
   }
 
   generateCalendar(): void {
     const year = this.getYearForCalendar();
     const month = this.currentMonth;
-    const calendar: {
-      date: Date | null;
-      events: (EventModel | EventModelFullData)[];
-    }[] = [];
-
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const startDayOfWeek = (firstDay.getDay() + 6) % 7; // Lunes=0
-
-    for (let i = 0; i < startDayOfWeek; i++) {
-      calendar.push({ date: null, events: [] });
-    }
-
-    for (let d = 1; d <= lastDay.getDate(); d++) {
-      const date = new Date(year, month, d);
-      const iso = this.toIsoDate(date);
-      const events = this.events.filter((e: any) => this.isOnDate(iso, e));
-      calendar.push({ date, events });
-    }
-
-    this.calendar = calendar;
+    // ✅ usamos el servicio reutilizable
+    this.calendar = this.grid.buildMonthGrid(year, month, this.events);
   }
 
   nextMonth(): void {

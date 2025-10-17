@@ -24,11 +24,8 @@ import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
 
 import {
   buildShareTitle,
-  buildShareUrl,
   localISODate,
-  pickShareDate,
 } from 'src/app/shared/utils/share-url.util';
-import { environments } from 'src/environments/environments';
 
 import {
   ActionBarComponent,
@@ -39,6 +36,17 @@ import { ButtonIconComponent } from '../../../buttons/button-icon/button-icon.co
 import { SocialMediaShareComponent } from '../../../social-media/social-media-share.component';
 import { TextTitleComponent } from '../../../text/text-title/text-title.component';
 import { ConfirmDialogComponent } from '../modal-confirm-dialog/modal-confirm-dialog';
+
+// ✅ Nuevas utilidades para no duplicar lógica
+
+import { EventPublishPillComponent } from 'src/app/modules/dashboard/pages/events/components/publish-pill/publish-pill.component';
+import {
+  isDraft,
+  isScheduled,
+  parsePublishDate,
+} from 'src/app/shared/utils/events.utils';
+import { computeMultiShare } from 'src/app/shared/utils/share-multi-date.util';
+import { pickShareDate } from 'src/app/shared/utils/share-url.util';
 
 @Component({
   selector: 'app-modal-multievent',
@@ -54,6 +62,7 @@ import { ConfirmDialogComponent } from '../modal-confirm-dialog/modal-confirm-di
     TextTitleComponent,
     ConfirmDialogComponent,
     ActionBarComponent,
+    EventPublishPillComponent,
   ],
   templateUrl: './modal-multievent.component.html',
   styleUrls: ['./modal-multievent.component.css'],
@@ -74,7 +83,7 @@ export class ModalMultiEventComponent implements OnChanges {
   @Output() view = new EventEmitter<number>();
   @Output() edit = new EventEmitter<number>();
   @Output() remove = new EventEmitter<number>();
-  @Output() close = new EventEmitter<void>(); // 🔹 para cerrar modal al quedar vacía
+  @Output() close = new EventEmitter<void>(); // 🔹 cerrar modal al quedar vacía
 
   readonly typeModal: TypeList = TypeList.Events;
   readonly dictType = DictType;
@@ -85,42 +94,41 @@ export class ModalMultiEventComponent implements OnChanges {
   shareTitle = '';
   shareUrl = '';
 
+  // ✅ Hooks
   ngOnChanges(_: SimpleChanges = {}) {
-    const d = pickShareDate(this.date, this.events);
+    this.recomputeShare();
+  }
+
+  /** ✅ Unifica la construcción de título y URL para compartir */
+  private recomputeShare(): void {
+    const { date: picked, url } = computeMultiShare(
+      this.date,
+      this.events,
+      this.sharePath
+    );
     this.shareTitle = buildShareTitle(
       'Programación de eventos',
-      d,
+      picked,
       this.appLocale
     );
-    this.shareUrl = d
-      ? buildShareUrl({
-          base: environments.publicBaseUrl,
-          path: this.sharePath,
-          params: { multiDate: localISODate(d) },
-        })
-      : '';
+    this.shareUrl = url;
   }
 
+  /** Expuesta al template: devuelve lo ya calculado */
   getShareUrl(): string {
-    const d = pickShareDate(this.date, this.events);
-    return d
-      ? buildShareUrl({
-          base: environments.publicBaseUrl,
-          path: this.sharePath || '/events',
-          params: { multiDate: localISODate(d) },
-        })
-      : '';
+    return this.shareUrl;
   }
 
-  onOpenEvent(eventId: number) {
-    if (eventId) this.openEvent.emit(eventId);
+  // ✅ Acciones
+  onOpenEvent(eventId: number | null | undefined): void {
+    if (typeof eventId === 'number') this.openEvent.emit(eventId);
   }
 
-  viewById(id: number) {
-    this.openEvent.emit(id);
+  viewById(id: number): void {
+    this.view.emit(id);
   }
 
-  editById(id: number) {
+  editById(id: number): void {
     this.edit.emit(id);
   }
 
@@ -128,33 +136,28 @@ export class ModalMultiEventComponent implements OnChanges {
     const d = pickShareDate(this.date, this.events);
     if (d) this.addEvent.emit(localISODate(d));
   }
+
+  // ✅ Estado de publicación (sin duplicar lógica)
   public isDraft(ev: any): boolean {
-    // published null/0/undefined => borrador
-    return Number(ev?.published) !== 1;
+    return isDraft(ev);
   }
 
   private parsePublishDate(ev: any): Date | null {
-    const day = (ev?.publish_day ?? '').toString().trim();
-    const timeRaw = (ev?.publish_time ?? '').toString().trim();
-    if (!day) return null;
-    const time = timeRaw.length === 5 ? `${timeRaw}:00` : timeRaw || '00:00:00';
-    const d = new Date(`${day}T${time}`);
-    return isNaN(d.getTime()) ? null : d;
+    return parsePublishDate(ev);
   }
+
   getScheduledDate(ev: any): Date | null {
     return this.parsePublishDate(ev);
   }
-  public isScheduled(ev: any): boolean {
-    if (Number(ev?.published) !== 1) return false;
-    const dt = this.parsePublishDate(ev);
-    if (!dt) return false;
-    return dt.getTime() > Date.now();
-  }
-  /** 🔹 Confirmar eliminación del evento seleccionado */
-  confirmRemove() {
-    if (this.itemToDelete?.id != null) {
-      const id = this.itemToDelete.id;
 
+  public isScheduled(ev: any): boolean {
+    return isScheduled(ev);
+  }
+
+  /** 🔹 Confirmar eliminación del evento seleccionado */
+  confirmRemove(): void {
+    const id = this.itemToDelete?.id;
+    if (typeof id === 'number') {
       // Emitimos al padre para eliminar en backend
       this.remove.emit(id);
 
@@ -168,25 +171,25 @@ export class ModalMultiEventComponent implements OnChanges {
       if (this.events.length === 0) {
         this.close.emit();
       } else {
-        // Forzamos recalcular los datos de compartir
-        this.ngOnChanges();
+        // Recalcular datos de compartir
+        this.recomputeShare();
       }
     } else {
       this.closeConfirm();
     }
   }
 
-  cancelRemove() {
+  cancelRemove(): void {
     this.closeConfirm();
   }
 
-  private closeConfirm() {
+  private closeConfirm(): void {
     this.isConfirmOpen = false;
     this.itemToDelete = null;
   }
 
   @HostListener('document:keydown.escape', ['$event'])
-  handleEscape(_: KeyboardEvent) {
+  handleEscape(_: KeyboardEvent): void {
     if (this.isConfirmOpen) this.closeConfirm();
   }
 
@@ -196,7 +199,7 @@ export class ModalMultiEventComponent implements OnChanges {
     { icon: 'uil-trash-alt', tooltip: 'Eliminar', type: 'remove' },
   ];
 
-  handleAction(ev: ActionPayload, element: EventModelFullData) {
+  handleAction(ev: ActionPayload, element: EventModelFullData): void {
     switch (ev.type) {
       case 'view':
         this.view.emit(ev.id);
@@ -210,10 +213,10 @@ export class ModalMultiEventComponent implements OnChanges {
     }
   }
 
-  removeById(event: EventModelFullData) {
+  removeById(event: EventModelFullData): void {
     this.itemToDelete = event;
     this.isConfirmOpen = true;
   }
 
-  trackByEventId = (_: number, e: { id?: number | null }) => e.id ?? _;
+  trackByEventId = (index: number, e: { id?: number | null }) => e.id ?? index;
 }
