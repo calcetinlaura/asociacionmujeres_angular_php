@@ -4,17 +4,28 @@
   <div>
     <div class="flex flex-row gap-x-3 justify-center sm:justify-start">
       <a
-        href="https://m.facebook.com/p/Asociaci%C3%B3n-de-Mujeres-Callosa-de-Segura-100063464474083/"
+        [attr.href]="
+          {
+            network: 'facebook',
+            url: 'Asociaci%C3%B3n-de-Mujeres-Callosa-de-Segura-100063464474083'
+          } | socialUrl
+        "
         target="_blank"
+        rel="noopener noreferrer"
       >
-        <i class="uil uil-facebook-f"></i>
+        <i [ngClass]="'facebook' | socialIcon"></i>
       </a>
+
       <a
-        href="https://www.instagram.com/asociacionmujerescallosa/"
+        [attr.href]="
+          { network: 'instagram', url: 'asociacionmujerescallosa' } | socialUrl
+        "
         target="_blank"
+        rel="noopener noreferrer"
       >
-        <i class="uil uil-instagram w-10"></i>
+        <i [ngClass]="'instagram' | socialIcon"></i>
       </a>
+
       <a [routerLink]="'/auth'">
         <i class="uil uil-keyhole-square"></i>
       </a>

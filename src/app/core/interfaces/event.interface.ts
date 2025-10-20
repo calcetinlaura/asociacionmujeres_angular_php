@@ -1,4 +1,5 @@
 // src/app/core/interfaces/event.interface.ts
+import { SocialNetwork } from 'src/app/shared/utils/social.utils';
 import { Filter } from '../models/general.model';
 import { AgentAutocompleteModel } from './agent.interface';
 import { MacroeventModel } from './macroevent.interface';
@@ -79,18 +80,6 @@ export type AudienceDTO = {
     otherText: string;
   };
 };
-
-/* ===== Comunicación (enlaces) ===== */
-
-export type SocialNetwork =
-  | 'instagram'
-  | 'facebook'
-  | 'x'
-  | 'tiktok'
-  | 'youtube'
-  | 'threads'
-  | 'bluesky'
-  | 'linkedin';
 
 export interface WebsiteLink {
   url: string;

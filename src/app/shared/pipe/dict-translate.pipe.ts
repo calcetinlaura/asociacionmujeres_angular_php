@@ -10,7 +10,8 @@ export enum DictType {
   AudienceRestrictions = 'audienceRestrictions',
   Partners = 'partners',
   PartnersAgeBuckets = 'partners.ageBuckets',
-  PaymentMethod = 'paymentMethod', // 👈 nuevo
+  PaymentMethod = 'paymentMethod',
+  Parking = 'parking',
 }
 
 @Pipe({

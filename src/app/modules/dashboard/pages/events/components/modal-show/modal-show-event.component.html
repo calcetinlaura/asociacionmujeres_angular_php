@@ -118,23 +118,7 @@
         </div>
         }
       </div>
-      }@if (item.audience) {
-      <div class="flex">
-        <div
-          class="border-r-[1px] border-lilaOscuro w-[120px] text-[10px] flex justify-start items-center mr-4"
-        >
-          Público recomendado
-        </div>
-        @for (badge of (item.audience | audienceBadges); track (badge + '-' +
-        $index)) {
-        <app-text-background
-          [text]="badge"
-          colorBack="#bed8f7"
-        ></app-text-background>
-        }
-      </div>
-
-      } @if(item.access === 'FREE'){
+      }@if(item.access === 'FREE'){
       <app-text-background [text]="'Acceso gratuito'"></app-text-background>}
       @if (item.access === 'TICKETS'){
       <p
@@ -169,77 +153,210 @@
         }
       </div>
 
-      }@if (item.organizer && item.organizer.length > 0) {
+      }@if (item.audience) {
       <div class="flex">
         <div
-          class="border-r-[1px] border-lilaOscuro w-[60px] text-[10px] flex justify-start items-center"
+          class="border-r-[1px] border-lilaOscuro w-[80px] md:w-[120px] text-[10px] flex justify-start items-center mr-4"
+        >
+          Público recomendado
+        </div>
+        @for (badge of (item.audience | audienceBadges); track (badge + '-' +
+        $index)) {
+        <app-text-background
+          [text]="badge"
+          colorBack="#bed8f7"
+        ></app-text-background>
+        }
+      </div>
+
+      } @if (item.open_doors) {
+      <div class="flex">
+        <div
+          class="border-r-[1px] border-lilaOscuro w-[80px] md:w-[120px] text-[10px] flex justify-start items-center mr-4"
+        >
+          Apertura de puertas
+        </div>
+
+        <app-text-background
+          [text]="item.open_doors.slice(0, 5) + 'h'"
+          colorBack="#bed8f7"
+        ></app-text-background>
+      </div>
+
+      } @if (item.parking) {
+      <div class="flex">
+        <div
+          class="border-r-[1px] border-lilaOscuro w-[80px] md:w-[120px] text-[10px] flex justify-start items-center mr-4"
+        >
+          Aparcamiento
+        </div>
+        <div class="flex-1">
+          <app-text-background
+            [text]="item.parking | dictTranslate : dictType.Parking"
+            colorBack="#bed8f7"
+          ></app-text-background>
+          <p class="pt-4 text-[11px]">{{ item.parking_info }}</p>
+        </div>
+      </div>
+      } @if ( (item.faqs | ensureArray).length > 0 ) {
+      <div class="flex">
+        <div
+          class="border-r-[1px] border-lilaOscuro w-[80px] md:w-[120px] text-[10px] flex justify-start items-center mr-4"
+        >
+          Preguntas frecuentes
+        </div>
+        <div class="flex-1">
+          @for (faq of (item.faqs | ensureArray); track faq) {
+          <div class="pt-2">
+            <p class="font-semibold text-[11px]">{{ faq.q }}</p>
+            <p class="pt-2 text-[11px]">{{ faq.a }}</p>
+          </div>
+          }
+        </div>
+      </div>
+      } @if ( (item.websites | ensureArray).length > 0 ) {
+      <div class="flex">
+        <div
+          class="border-r-[1px] border-lilaOscuro w-[80px] md:w-[120px] text-[10px] flex justify-start items-center mr-4"
+        >
+          Página web
+        </div>
+        <div class="flex-1">
+          @for (site of (item.websites | ensureArray); track site) {
+          <a href="site.url" target="_blank">{{ site.title }} </a>
+          }
+        </div>
+      </div>
+      } @if ((item.socials | ensureArray).length > 0) {
+      <div class="flex">
+        <div
+          class="border-r-[1px] border-lilaOscuro w-[80px] md:w-[120px] text-[10px] flex justify-start items-center mr-4"
+        >
+          Redes sociales
+        </div>
+
+        <div class="flex-1 flex flex-wrap gap-2 items-center">
+          @for (soc of (item.socials | ensureArray); track soc) {
+          <a
+            [attr.href]="soc | socialUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center gap-2"
+          >
+            <i class="text-[18px]" [ngClass]="soc?.network | socialIcon"></i>
+            <span class="text-[12px] capitalize">{{ soc.network }}</span>
+          </a>
+          }
+        </div>
+      </div>
+      } @if (item.organizer && item.organizer.length > 0) {
+      <div class="flex">
+        <div
+          class="border-r-[1px] border-lilaOscuro w-[80px] md:w-[120px] text-[10px] flex justify-start items-center"
         >
           Organiza
         </div>
-        <div class="flex flex-col justify-center">
+        <div class="flex-1 flex flex-col justify-center">
           @for (organizer of item.organizer; track (organizer?.id ??
           (organizer.name + '-' + $index))) {
-          <p class="text-[10px] font-bold pl-3">{{ organizer.name }}</p>
+          <p class="text-[10px] pl-3">{{ organizer.name }}</p>
           }
         </div>
       </div>
       } @if (item.collaborator && item.collaborator.length > 0) {
       <div class="flex">
         <div
-          class="border-r-[1px] border-lilaOscuro w-[60px] text-[10px] flex justify-start items-center"
+          class="border-r-[1px] border-lilaOscuro w-[80px] md:w-[120px] text-[10px] flex justify-start items-center"
         >
           Colabora
         </div>
 
-        <div class="flex flex-col justify-center">
+        <div class="flex-1 flex flex-col justify-center">
           @for (colab of item.collaborator; track (colab?.id ?? (colab.name +
           '-' + $index))) {
-          <p class="text-[10px] font-bold pl-3">{{ colab.name }}</p>
+          <p class="text-[10px] pl-3">{{ colab.name }}</p>
           }
         </div>
       </div>
       } @if (item.sponsor && item.sponsor.length > 0) {
       <div class="flex">
         <div
-          class="border-r-[1px] border-lilaOscuro w-[60px] text-[10px] flex justify-start items-center"
+          class="border-r-[1px] border-lilaOscuro w-[80px] md:w-[120px] text-[10px] flex justify-start items-center"
         >
           Patrocina
         </div>
 
-        <div class="flex flex-col justify-center">
+        <div class="flex-1 flex flex-col justify-center">
           @for (sponsor of item.sponsor; track (sponsor?.id ?? (sponsor.name +
           '-' + $index))) {
-          <p class="text-[10px] font-bold pl-3">{{ sponsor.name }}</p>
+          <p class="text-[10px] pl-3">{{ sponsor.name }}</p>
           }
         </div>
       </div>
-      }
-      <div>
-        @if (item.inscription_method ) {
-        <p
-          class="text-[12px]"
-          [innerHTML]="item.inscription_method | safeHtml"
-        ></p>
-        }@if (item.tickets_method) {
-        <p class="text-[12px]" [innerHTML]="item.tickets_method | safeHtml"></p>
-        } @if (item.status === enumStatusEnum.CANCELADO) {
-        <app-text-background
-          [text]="'Evento ' + item.status"
-          [colorBack]="'#de7a71'"
-        ></app-text-background>
-        } @if (item.status === enumStatusEnum.AGOTADO) {
-        <div class="flex justify-center my-4">
-          <app-text-background
-            [text]="'Plazas agotadas'"
-            [colorBack]="'#de7a71'"
-            [colorText]="'white'"
-            [number]="12"
-          ></app-text-background>
+      } @if (item.inscription_method ) {
+      <div class="flex">
+        <div
+          class="border-r-[1px] border-lilaOscuro w-[80px] md:w-[120px] text-[10px] flex justify-start items-center"
+        >
+          Inscripción
         </div>
-        } @if (item.status_reason) {
-        <app-text-editor [text]="item.status_reason"></app-text-editor>
-        }
+        <div class="flex-1">
+          <p
+            class="text-[11px] pl-3"
+            [innerHTML]="item.inscription_method | safeHtml"
+          ></p>
+        </div>
       </div>
+      }@if (item.tickets_method) {
+      <div class="flex">
+        <div
+          class="border-r-[1px] border-lilaOscuro w-[80px] md:w-[120px] text-[10px] flex justify-start items-center"
+        >
+          Reservas
+        </div>
+        <div class="flex-1">
+          <p
+            class="pl-3 text-[11px]"
+            [innerHTML]="item.tickets_method | safeHtml"
+          ></p>
+        </div>
+      </div>
+      } @if (item.status === enumStatusEnum.CANCELADO) {
+      <app-text-background
+        [text]="'Evento ' + item.status"
+        [colorBack]="'#de7a71'"
+      ></app-text-background>
+      } @if (item.status === enumStatusEnum.AGOTADO) {
+      <div class="flex justify-center my-4">
+        <app-text-background
+          [text]="'Plazas agotadas'"
+          [colorBack]="'#de7a71'"
+          [colorText]="'white'"
+          [number]="12"
+        ></app-text-background>
+      </div>
+      } @if (item.status_reason) {
+      <app-text-editor [text]="item.status_reason"></app-text-editor>
+      } @if ((item.videos | ensureArray).length > 0) {
+      <div class="space-y-4">
+        @for (vid of (item.videos | ensureArray); track vid) {
+        <!-- Opción con plugin aspect-ratio -->
+        <div class="aspect-video">
+          <iframe
+            class="w-full h-full rounded-lg"
+            [src]="vid.url | youtubeEmbed"
+            title="{{ vid.title || 'Vídeo' }}"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowfullscreen
+          ></iframe>
+        </div>
+
+        @if (vid.title) {
+        <p class="mt-2 text-sm text-gray-700">{{ vid.title }}</p>
+        } }
+      </div>
+      }
       <hr class="mt-2 mb-2 border-b-1 border-[#1C1C3A]" />
       <div class="flex items-center gap-x-6">
         <div>
@@ -259,6 +376,7 @@
           >
           </span>
         </div>
+
         <div class="flex flex-col border-l-[1px] border-lilaOscuro pl-4">
           <p>{{ item.placeData?.name }}</p>
           <p>

@@ -14,6 +14,8 @@ module.exports = {
       naranjaClaro: "rgb(251 225 217)",
       transparent: "transparent",
       current: "currentColor",
+      eventDraft: "#fff8c2", // Amarillo suave para borrador
+      eventScheduler: "#d8f5d0", // Verde suave para borrador
       black: colors.black,
       white: colors.white,
       gray: colors.gray,

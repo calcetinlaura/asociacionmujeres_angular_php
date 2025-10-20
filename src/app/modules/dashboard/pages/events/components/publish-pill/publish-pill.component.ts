@@ -20,14 +20,14 @@ import {
   template: `
     @if (isScheduled(event)) {
     <span
-      class="inline-flex items-center gap-1 text-[10px]  px-2 py-0.5 rounded-[4px] bg-yellow-200 uppercase font-semibold"
+      class="inline-flex items-center gap-1 text-[10px]  px-2 py-0.5 rounded-[4px] bg-eventScheduler uppercase font-semibold"
       title="Fecha de publicación programada"
     >
       Programado · {{ scheduledDate | date : dateFmt : '' : appLocale }}
     </span>
     } @else if (isDraft(event)) {
     <span
-      class="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-[4px] bg-emerald-200 uppercase font-semibold"
+      class="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-[4px] bg-eventDraft uppercase font-semibold"
     >
       Borrador
     </span>

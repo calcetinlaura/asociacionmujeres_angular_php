@@ -542,7 +542,9 @@
       mat-row
       *matRowDef="let row; columns: displayedColumns"
       class="custom-list-row"
+      [ngClass]="getRowClasses(row)"
     ></tr>
+
     @if (showFooter) {
     <tr
       mat-footer-row

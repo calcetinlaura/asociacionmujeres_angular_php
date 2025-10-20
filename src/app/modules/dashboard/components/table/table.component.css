@@ -327,6 +327,26 @@ table.is-5-buttons-action .mat-column-actions {
 .print-title {
   display: none;
 }
+
+/* Aplica el fondo a TODA la fila (todas las celdas) */
+.table .custom-list-row.row-draft td,
+.table .custom-list-row.row-draft th {
+  background-color: rgb(167 243 208);
+}
+
+.table .custom-list-row.row-scheduled td,
+.table .custom-list-row.row-scheduled th {
+  background-color: rgb(254 240 138);
+}
+
+/* Opcional: resalta ligeramente al pasar el ratón */
+.table .custom-list-row.row-draft:hover td {
+  filter: brightness(0.98);
+}
+.table .custom-list-row.row-scheduled:hover td {
+  filter: brightness(0.98);
+}
+
 :host ::ng-deep {
   @media print {
     app-dashboard-header,
@@ -334,5 +354,10 @@ table.is-5-buttons-action .mat-column-actions {
     .top-246 {
       display: none !important;
     }
+  }
+  .table .custom-list-row.row-draft td,
+  .table .custom-list-row.row-scheduled td {
+    background: #fff !important;
+    box-shadow: none !important;
   }
 }

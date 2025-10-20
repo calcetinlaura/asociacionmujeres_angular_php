@@ -74,5 +74,10 @@
   "paymentMethod": {
     "cash": "Efectivo",
     "domiciliation": "Domiciliación"
+  },
+  "parking": {
+    "NONE": "NO tiene parking propio",
+    "FREE": "Parking propio gratuito",
+    "PAID": "Parking propio de pago"
   }
 }

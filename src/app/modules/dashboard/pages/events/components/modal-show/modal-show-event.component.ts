@@ -32,7 +32,11 @@ import { FilterTransformCodePipe } from 'src/app/shared/pipe/filterTransformCode
 import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
 import { buildShareUrl } from 'src/app/shared/utils/share-url.util';
 import { environments } from 'src/environments/environments';
+import { EnsureArrayPipe } from '../../../../../../shared/pipe/ensure-array.pipe';
 import { SafeHtmlPipe } from '../../../../../../shared/pipe/safe-html.pipe';
+import { SocialIconPipe } from '../../../../../../shared/pipe/social-icon.pipe';
+import { SocialUrlPipe } from '../../../../../../shared/pipe/social-url.pipe';
+import { YoutubeEmbedPipe } from '../../../../../../shared/pipe/youtube-embed.pipe';
 import { EventPublishPillComponent } from '../publish-pill/publish-pill.component';
 
 @Component({
@@ -52,6 +56,10 @@ import { EventPublishPillComponent } from '../publish-pill/publish-pill.componen
     ImageZoomOverlayComponent,
     SafeHtmlPipe,
     EventPublishPillComponent,
+    EnsureArrayPipe,
+    SocialUrlPipe,
+    SocialIconPipe,
+    YoutubeEmbedPipe,
   ],
   templateUrl: './modal-show-event.component.html',
   styleUrls: ['./modal-show-event.component.css'],

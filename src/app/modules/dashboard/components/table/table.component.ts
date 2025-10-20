@@ -31,6 +31,7 @@ import { FilterTransformCodePipe } from 'src/app/shared/pipe/filterTransformCode
 import { HasValuePipe } from 'src/app/shared/pipe/hasValue.pipe';
 import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
 import { PhoneFormatPipe } from 'src/app/shared/pipe/phoneFormat.pipe';
+import { isDraft, isScheduled } from 'src/app/shared/utils/events.utils';
 import { AudienceBadgesPipe } from '../../../../shared/pipe/audience-badges.pipe';
 import { HmsPipe } from '../../../../shared/pipe/dateTime_form.pipe';
 import {
@@ -130,6 +131,8 @@ export class TableComponent {
     ...this.baseActions,
     { icon: 'uil-trash-alt', tooltip: 'Eliminar', type: 'remove' },
   ];
+  readonly isDraft = isDraft;
+  readonly isScheduled = isScheduled;
 
   @ViewChild(MatSort) sort!: MatSort;
 
@@ -168,7 +171,17 @@ export class TableComponent {
     };
     this.dataSource.sort = this.sort;
   }
-
+  getRowClasses(row: any) {
+    if (this.typeSection !== this.TypeList.Events) return {};
+    return {
+      // Borrador → amarillo
+      '[&_.mat-mdc-cell]:bg-eventDraft [&_.mat-mdc-footer-cell]:bg-eventDraft':
+        this.isDraft(row),
+      // Programado → verde
+      '[&_.mat-mdc-cell]:bg-eventScheduler [&_.mat-mdc-footer-cell]:bg-eventScheduler':
+        this.isScheduled(row),
+    };
+  }
   initDisplayedColumns(): void {
     this.displayedColumns = this.getVisibleColumns();
     this.displayedColumns.push('actions');

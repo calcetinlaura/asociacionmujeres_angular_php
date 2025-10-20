@@ -49,7 +49,6 @@ import {
   EnumStatusEvent,
   EventModelFullData,
   ParkingValue,
-  SocialNetwork,
   statusEvent,
 } from 'src/app/core/interfaces/event.interface';
 import { MacroeventModel } from 'src/app/core/interfaces/macroevent.interface';
@@ -67,6 +66,7 @@ import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loadi
 import { ScrollToFirstErrorDirective } from 'src/app/shared/directives/scroll-to-first-error.directive';
 import { FilterTransformCodePipe } from 'src/app/shared/pipe/filterTransformCode.pipe';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
+import { SocialNetwork } from 'src/app/shared/utils/social.utils';
 import {
   dateBetween,
   dateRangeValidator,
