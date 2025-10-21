@@ -94,6 +94,13 @@ export class MacroeventsPageComponent implements OnInit {
       innerHTML: true,
       width: ColumnWidth.XL,
     },
+    {
+      title: 'Resumen',
+      key: 'summary',
+      sortable: true,
+      booleanIndicator: true,
+      width: ColumnWidth.XS,
+    },
     { title: 'Municipio', key: 'town', sortable: true, width: ColumnWidth.SM },
   ];
 

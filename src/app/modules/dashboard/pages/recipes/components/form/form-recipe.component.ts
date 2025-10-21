@@ -58,9 +58,10 @@ export class FormRecipeComponent {
     title: new FormControl('', [Validators.required]),
     category: new FormControl('', [Validators.required]),
     owner: new FormControl(''),
-    introduction: new FormControl(''),
-    recipe: new FormControl(''),
-    ingredients: new FormControl(''),
+    summary: new FormControl('', [Validators.maxLength(300)]),
+    introduction: new FormControl('', [Validators.maxLength(2000)]),
+    recipe: new FormControl('', [Validators.maxLength(2000)]),
+    ingredients: new FormControl('', [Validators.maxLength(2000)]),
     img: new FormControl(''),
     year: new FormControl<number | null>(null, [
       Validators.required,
@@ -144,5 +145,18 @@ export class FormRecipeComponent {
     );
 
     this.submitForm.emit({ itemId: this.itemId, formData: formData });
+  }
+
+  summaryLen(): number {
+    return (this.formRecipe.get('summary')?.value || '').length;
+  }
+  introductionLen(): number {
+    return (this.formRecipe.get('introduction')?.value || '').length;
+  }
+  ingredientsLen(): number {
+    return (this.formRecipe.get('ingredients')?.value || '').length;
+  }
+  recipeLen(): number {
+    return (this.formRecipe.get('recipe')?.value || '').length;
   }
 }

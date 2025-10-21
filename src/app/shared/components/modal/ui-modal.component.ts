@@ -47,11 +47,7 @@ export class UiModalComponent {
     el: ElementRef<HTMLElement> | undefined
   ) {
     this.scrollArea = el;
-    console.log('[UI-MODAL] scrollerRef set:', {
-      exists: !!el,
-      open: this.open,
-      pendingScroll: this.pendingScroll,
-    });
+
     this.tryFlushPendingScroll();
   }
   private scrollArea?: ElementRef<HTMLElement>;
@@ -100,11 +96,6 @@ export class UiModalComponent {
   /** Si tenemos petición pendiente y ya existe el contenedor, hacemos scroll estable */
   private tryFlushPendingScroll() {
     if (!this.open || !this.pendingScroll || !this.scrollArea) {
-      console.log('[UI-MODAL] tryFlushPendingScroll skipped', {
-        open: this.open,
-        pendingScroll: this.pendingScroll,
-        hasScrollArea: !!this.scrollArea,
-      });
       return;
     }
 

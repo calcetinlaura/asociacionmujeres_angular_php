@@ -78,7 +78,7 @@ export class MoviesPageComponent implements OnInit {
   // Columnas
   headerListMovies: ColumnModel[] = [
     { title: 'Portada', key: 'img', sortable: false },
-    { title: 'Título', key: 'title', sortable: true },
+    { title: 'Título', key: 'title', sortable: true, width: ColumnWidth.XL },
     {
       title: 'Director/a',
       key: 'director',
@@ -94,6 +94,13 @@ export class MoviesPageComponent implements OnInit {
       showIndicatorOnEmpty: true,
     },
     {
+      title: 'Resumen',
+      key: 'summary',
+      sortable: true,
+      booleanIndicator: true,
+      width: ColumnWidth.XS,
+    },
+    {
       title: 'Género',
       key: 'gender',
       sortable: true,
@@ -106,6 +113,7 @@ export class MoviesPageComponent implements OnInit {
   // Reutilizables (columnas + lista)
   readonly col = useColumnVisibility('movies-table', this.headerListMovies, [
     'year',
+    'gender',
   ]);
 
   readonly list = useEntityList<MovieModel>({

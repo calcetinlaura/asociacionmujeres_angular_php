@@ -93,16 +93,43 @@
         </div>
       </div>
       <hr />
+      <!-- Resumen (corto) -->
+      <div class="flex gap-x-4">
+        <div class="box-input">
+          <label for="summary">
+            Resumen <br />
+            <span class="text-[9px]">(Texto redes sociales)</span></label
+          >
+        </div>
+        <div class="box-input flex-1 flex flex-col w-full">
+          <textarea
+            formControlName="summary"
+            maxlength="300"
+            rows="2"
+            placeholder="Resumen breve del evento (máx. 300 caracteres visibles)"
+            class="w-full"
+          ></textarea>
+
+          <div class="w-full text-right text-xs text-gray-500">
+            {{ summaryLen() }} / 300
+          </div>
+        </div>
+      </div>
       <div class="flex gap-x-4">
         <!-- Ingredientes -->
         <div class="box-input gap-x-4 flex-1">
           <label for="ingredients">Introducción</label>
-          <quill-editor
-            formControlName="introduction"
-            [modules]="quillModules"
-            placeholder="Contexto de la receta"
-            class="ql-container-large flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
-          />
+          <div class="flex flex-col flex-1">
+            <quill-editor
+              formControlName="introduction"
+              [modules]="quillModules"
+              placeholder="Contexto de la receta"
+              class="ql-container-large flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
+            />
+            <div class="w-full text-right text-xs text-gray-500">
+              {{ introductionLen() }} / 2000
+            </div>
+          </div>
         </div>
 
         <!-- Portada (Imagen) -->
@@ -125,23 +152,32 @@
       <!-- Ingredientes -->
       <div class="box-input gap-x-4">
         <label for="ingredients">Ingredientes</label>
-        <quill-editor
-          formControlName="ingredients"
-          [modules]="quillModules"
-          placeholder="Lista los ingredientes con sus cantidades"
-          class="ql-container-large flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
-        />
+        <div class="flex-1 flex flex-col">
+          <quill-editor
+            formControlName="ingredients"
+            [modules]="quillModules"
+            placeholder="Lista los ingredientes con sus cantidades"
+            class="ql-container-large flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
+          />
+          <div class="w-full text-right text-xs text-gray-500">
+            {{ ingredientsLen() }} / 2000
+          </div>
+        </div>
       </div>
       <!-- Receta -->
       <div class="box-input gap-x-4">
         <label for="recipe">Receta</label>
-
-        <quill-editor
-          formControlName="recipe"
-          [modules]="quillModules"
-          placeholder="Detalla pasa a paso como elaborar la receta"
-          class="ql-container-large flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
-        />
+        <div class="flex-1 flex flex-col">
+          <quill-editor
+            formControlName="recipe"
+            [modules]="quillModules"
+            placeholder="Detalla pasa a paso como elaborar la receta"
+            class="ql-container-large flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
+          />
+          <div class="w-full text-right text-xs text-gray-500">
+            {{ recipeLen() }} / 2000
+          </div>
+        </div>
       </div>
       @if (formRecipe.invalid && submitted) {
       <div class="flex justify-center">

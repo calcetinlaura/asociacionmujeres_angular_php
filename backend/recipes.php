@@ -144,9 +144,9 @@ if (isset($_POST['action']) && $_POST['action'] === 'deleteImage') {
         }
 
         $stmt = $connection->prepare("
-          UPDATE recipes SET title = ?, category = ?, owner = ?, introduction = ?, ingredients = ?, recipe = ?, img = ?, year = ? WHERE id = ?
+          UPDATE recipes SET title = ?, category = ?, owner = ?, introduction = ?,summary =?, ingredients = ?, recipe = ?, img = ?, year = ? WHERE id = ?
         ");
-        $stmt->bind_param("sssssssii", $data['title'], $data['category'], $data['owner'],$data['introduction'], $data['ingredients'], $data['recipe'], $imgName, $year, $id);
+        $stmt->bind_param("ssssssssii", $data['title'], $data['category'], $data['owner'], $data['introduction'], $data['summary'], $data['ingredients'], $data['recipe'], $imgName, $year, $id);
 
         if ($stmt->execute()) {
           if ($oldImg && $imgName !== $oldImg) {
@@ -160,10 +160,10 @@ if (isset($_POST['action']) && $_POST['action'] === 'deleteImage') {
 
     } else {
         $stmt = $connection->prepare("
-          INSERT INTO recipes (title, category, owner,introduction, ingredients, recipe, img, year)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO recipes (title, category, owner,introduction, summary, ingredients, recipe, img, year)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?,  ?)
         ");
-        $stmt->bind_param("sssssssi", $data['title'], $data['category'], $data['owner'], $data['introduction'], $data['ingredients'], $data['recipe'], $imgName, $year);
+        $stmt->bind_param("ssssssssi", $data['title'], $data['category'], $data['owner'], $data['introduction'], $data['summary'], $data['ingredients'], $data['recipe'], $imgName, $year);
 
         if ($stmt->execute()) {
           echo json_encode(["message" => "Receta añadida con éxito."]);

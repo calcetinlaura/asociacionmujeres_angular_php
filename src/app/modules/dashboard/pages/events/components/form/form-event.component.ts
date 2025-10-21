@@ -667,6 +667,9 @@ export class FormEventComponent implements OnInit, OnChanges {
   get onlineTitleCtrl(): FormControl<string | null> {
     return this.formEvent.get('online_title') as FormControl<string | null>;
   }
+  descriptionLen(): number {
+    return (this.formEvent.get('summary')?.value || '').length;
+  }
   summaryLen(): number {
     return (this.formEvent.get('summary')?.value || '').length;
   }

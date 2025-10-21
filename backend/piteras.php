@@ -117,8 +117,8 @@ if (isset($_POST['action']) && $_POST['action'] === 'deleteImage') {
             if (!$imgName) $imgName = $oldImg;
             if (!$pdfName) $pdfName = $oldPdf;
 
-            $stmt = $connection->prepare("UPDATE piteras SET title = ?, publication_number=?, pages = ?, theme = ?,description = ?, url = ?, year = ?, img = ? WHERE id = ?");
-            $stmt->bind_param("siisssisi", $data['title'], $data['publication_number'],$data['pages'],$data['theme'], $data['description'], $pdfName, $data['year'], $imgName, $id);
+            $stmt = $connection->prepare("UPDATE piteras SET title = ?, publication_number=?, pages = ?, theme = ?,description = ?, summary =?, url = ?, year = ?, img = ? WHERE id = ?");
+            $stmt->bind_param("siissssisi", $data['title'], $data['publication_number'],$data['pages'],$data['theme'], $data['description'], $data['summary'], $pdfName, $data['year'], $imgName, $id);
             if ($stmt->execute()) {
                 if ($oldImg && $imgName !== $oldImg) {
                     eliminarArchivoSiNoSeUsa($connection, 'piteras', 'img', $oldImg, $imgPath);
@@ -132,8 +132,8 @@ if (isset($_POST['action']) && $_POST['action'] === 'deleteImage') {
                 echo json_encode(["message" => "Error al actualizar la pitera: " . $stmt->error]);
             }
         } else {
-            $stmt = $connection->prepare("INSERT INTO piteras (title, publication_number,pages, theme,description, url, year, img) VALUES (?,?,?,?, ?, ?, ?, ?)");
-            $stmt->bind_param("siisssis", $data['title'], $data['publication_number'],$data['pages'],$data['theme'], $data['description'],$pdfName, $data['year'], $imgName);
+            $stmt = $connection->prepare("INSERT INTO piteras (title, publication_number,pages, theme,description, summary, url, year, img) VALUES (?,?,?,?, ?, ?, ?,?, ?)");
+            $stmt->bind_param("siissssis", $data['title'], $data['publication_number'],$data['pages'],$data['theme'], $data['description'], $data['summary'],$pdfName, $data['year'], $imgName);
             if ($stmt->execute()) {
                 echo json_encode(["message" => "Pitera añadida con éxito."]);
             } else {

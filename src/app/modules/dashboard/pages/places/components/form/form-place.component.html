@@ -144,38 +144,24 @@
         </div>
       </div>
       <hr />
-      <div class="flex gap-4">
-        <!-- Descripción -->
-        <div class="box-input gap-x-4 pr-4 flex-1">
-          <label for="description">Descripción</label>
-          <quill-editor
-            formControlName="description"
-            [modules]="quillModules"
-            placeholder="Escribe aquí la descripción..."
-            class="ql-container-small flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
-          />
-        </div>
-        <!-- Imagen -->
-        <!-- <div class="w-72">
-          <app-image-control
-            [previewImg]="
-              formPlace.get('img')?.value ? formPlace.get('img')?.value! : null
-            "
-            [entityId]="itemId"
-            [type]="typeList"
-            (imgSelected)="onImageSelected($event)"
-            [imageWidthValue]="'full'"
-            class="w-full"
-          ></app-image-control>
-        </div> -->
-      </div>
-      <div class="box-input gap-x-4">
-        <label for="observations">Observaciones</label>
-        <input
-          formControlName="observations"
-          placeholder="Cualquier observación a tener en cuenta."
-          type="text"
+      <!-- Descripción -->
+      <div class="box-input gap-x-4 pr-4 flex-1">
+        <label for="description">Descripción</label>
+        <quill-editor
+          formControlName="description"
+          [modules]="quillModules"
+          placeholder="Escribe aquí la descripción..."
+          class="ql-container-small flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
         />
+      </div>
+      <div class="box-input gap-x-4 pr-4">
+        <label for="observations">Observaciones</label>
+        <textarea
+          formControlName="observations"
+          maxlength="300"
+          rows="2"
+          placeholder="Cualquier observación a tener en cuenta."
+        ></textarea>
       </div>
       <!-- GESTIÓN -->
       <div

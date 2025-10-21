@@ -69,6 +69,7 @@ export class FormMacroeventComponent implements OnInit, OnChanges {
       start: new FormControl('', [Validators.required]),
       end: new FormControl('', [Validators.required]),
       description: new FormControl('', [Validators.maxLength(2000)]),
+      summary: new FormControl('', [Validators.maxLength(300)]),
       province: new FormControl(''),
       town: new FormControl(''),
       img: new FormControl(''),
@@ -130,6 +131,7 @@ export class FormMacroeventComponent implements OnInit, OnChanges {
       start: '',
       end: '',
       description: '',
+      summary: '',
       province: '',
       town: '',
       img: '',
@@ -156,25 +158,28 @@ export class FormMacroeventComponent implements OnInit, OnChanges {
       .subscribe();
   }
 
-  private populateFrom(event: MacroeventModel): void {
-    const province = this.provincias.find((p) => p.label === event.province);
+  private populateFrom(macroevent: MacroeventModel): void {
+    const province = this.provincias.find(
+      (p) => p.label === macroevent.province
+    );
     this.municipios = province?.towns ?? [];
 
     this.formMacroevent.reset(); // limpia touched/dirty
     this.formMacroevent.patchValue({
-      title: event.title ?? '',
-      start: event.start ?? '',
-      end: event.end ?? '',
-      description: event.description ?? '',
-      province: event.province ?? '',
-      town: event.town ?? '',
-      img: event.img ?? '',
+      title: macroevent.title ?? '',
+      start: macroevent.start ?? '',
+      end: macroevent.end ?? '',
+      description: macroevent.description ?? '',
+      summary: macroevent.summary ?? '',
+      province: macroevent.province ?? '',
+      town: macroevent.town ?? '',
+      img: macroevent.img ?? '',
     });
 
     this.titleForm = 'Editar Macroevento';
     this.buttonAction = 'Guardar cambios';
 
-    this.imageSrc = event.img || '';
+    this.imageSrc = macroevent.img || '';
     this.selectedImageFile = null;
 
     this.isLoading = false;
@@ -212,5 +217,11 @@ export class FormMacroeventComponent implements OnInit, OnChanges {
     );
 
     this.submitForm.emit({ itemId: this.itemId, formData });
+  }
+  summaryDescription(): number {
+    return (this.formMacroevent.get('description')?.value || '').length;
+  }
+  summaryLen(): number {
+    return (this.formMacroevent.get('summary')?.value || '').length;
   }
 }

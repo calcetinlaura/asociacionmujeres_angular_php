@@ -77,7 +77,7 @@ export class BooksPageComponent implements OnInit {
   // Columnas
   headerListBooks: ColumnModel[] = [
     { title: 'Portada', key: 'img', sortable: false },
-    { title: 'Título', key: 'title', sortable: true },
+    { title: 'Título', key: 'title', sortable: true, width: ColumnWidth.XL },
     {
       title: 'Autor/a',
       key: 'author',
@@ -92,6 +92,13 @@ export class BooksPageComponent implements OnInit {
       innerHTML: true,
     },
     {
+      title: 'Resumen',
+      key: 'summary',
+      sortable: true,
+      booleanIndicator: true,
+      width: ColumnWidth.XS,
+    },
+    {
       title: 'Género',
       key: 'gender',
       sortable: true,
@@ -104,6 +111,7 @@ export class BooksPageComponent implements OnInit {
   // Reutilizables (columnas + lista)
   readonly col = useColumnVisibility('books-table', this.headerListBooks, [
     'year',
+    'gender',
   ]);
 
   // Lista derivada con useEntityList

@@ -2,10 +2,11 @@ export interface PodcastModel {
   id: number;
   title: string;
   date: string;
-  description: string;
+  description?: string;
+  summary?: string;
   img?: string;
-  artists: string;
-  technics: string;
+  artists?: string;
+  technics?: string;
   duration: number;
   podcast: string;
   season: number;

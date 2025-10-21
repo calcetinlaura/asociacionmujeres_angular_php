@@ -58,6 +58,7 @@ export class FormBookComponent {
     title: new FormControl('', [Validators.required]),
     author: new FormControl(''),
     description: new FormControl('', [Validators.maxLength(2000)]),
+    summary: new FormControl('', [Validators.maxLength(300)]),
     gender: new FormControl('', [Validators.required]),
     img: new FormControl(''),
     year: new FormControl<number | null>(null, [
@@ -106,6 +107,7 @@ export class FormBookComponent {
                 title: book.title || null,
                 author: book.author || null,
                 description: book.description || null,
+                summary: book.summary || null,
                 gender: book.gender || null,
                 img: book.img || null,
                 year: book.year || 0,
@@ -156,5 +158,11 @@ export class FormBookComponent {
     );
 
     this.submitForm.emit({ itemId: this.itemId, formData: formData });
+  }
+  summaryDescription(): number {
+    return (this.formBook.get('description')?.value || '').length;
+  }
+  summaryLen(): number {
+    return (this.formBook.get('summary')?.value || '').length;
   }
 }

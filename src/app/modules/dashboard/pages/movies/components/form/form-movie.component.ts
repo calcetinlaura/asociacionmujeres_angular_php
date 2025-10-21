@@ -57,6 +57,7 @@ export class FormMovieComponent {
     title: new FormControl('', [Validators.required]),
     director: new FormControl(''),
     description: new FormControl('', [Validators.maxLength(2000)]),
+    summary: new FormControl('', [Validators.maxLength(300)]),
     gender: new FormControl('', [Validators.required]),
     img: new FormControl(''),
     year: new FormControl<number | null>(null, [
@@ -104,6 +105,7 @@ export class FormMovieComponent {
                 title: movie.title || null,
                 director: movie.director || null,
                 description: movie.description || null,
+                summary: movie.summary || null,
                 gender: movie.gender || null,
                 img: movie.img || null,
                 year: movie.year || 0,
@@ -151,5 +153,11 @@ export class FormMovieComponent {
     );
 
     this.submitForm.emit({ itemId: this.itemId, formData: formData });
+  }
+  summaryDescription(): number {
+    return (this.formMovie.get('description')?.value || '').length;
+  }
+  summaryLen(): number {
+    return (this.formMovie.get('summary')?.value || '').length;
   }
 }

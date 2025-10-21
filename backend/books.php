@@ -151,8 +151,8 @@ switch ($method) {
         }
 
         $year = (int)$data['year'];
-        $stmt = $connection->prepare("UPDATE books SET title = ?, author = ?, gender = ?, year = ?, description = ?, img = ? WHERE id = ?");
-        $stmt->bind_param("sssissi", $data['title'], $data['author'], $data['gender'], $year, $data['description'], $imgName, $id);
+        $stmt = $connection->prepare("UPDATE books SET title = ?, author = ?, gender = ?, year = ?, description = ?, summary =?, img = ? WHERE id = ?");
+        $stmt->bind_param("sssisssi", $data['title'], $data['author'], $data['gender'], $year, $data['description'], $data['summary'], $imgName, $id);
 
         if ($stmt->execute()) {
           if ($oldImg && $imgName !== $oldImg) {
@@ -166,8 +166,8 @@ switch ($method) {
 
       } else {
         $year = (int)$data['year'];
-        $stmt = $connection->prepare("INSERT INTO books (title, author, gender, year, description, img) VALUES (?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("sssiss", $data['title'], $data['author'], $data['gender'], $year, $data['description'], $imgName);
+        $stmt = $connection->prepare("INSERT INTO books (title, author, gender, year, description, summary, img) VALUES (?, ?, ?, ?, ?,?, ?)");
+        $stmt->bind_param("sssisss", $data['title'], $data['author'], $data['gender'], $year, $data['description'], $data['summary'], $imgName);
 
         if ($stmt->execute()) {
           echo json_encode(["message" => "Libro añadido con éxito."]);

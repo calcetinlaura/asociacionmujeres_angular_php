@@ -55,6 +55,7 @@ export class FormArticleComponent {
     title: new FormControl('', [Validators.required]),
     date: new FormControl('', [Validators.required]),
     description: new FormControl('', [Validators.maxLength(2000)]),
+    summary: new FormControl('', [Validators.maxLength(300)]),
     img: new FormControl(''),
   });
 
@@ -91,6 +92,7 @@ export class FormArticleComponent {
                 title: article.title || null,
                 date: article.date || null,
                 description: article.description || null,
+                summary: article.summary || null,
                 img: article.img || null,
               });
 
@@ -140,5 +142,11 @@ export class FormArticleComponent {
       itemId: this.itemId,
       formData,
     });
+  }
+  summaryDescription(): number {
+    return (this.formArticle.get('description')?.value || '').length;
+  }
+  summaryLen(): number {
+    return (this.formArticle.get('summary')?.value || '').length;
   }
 }

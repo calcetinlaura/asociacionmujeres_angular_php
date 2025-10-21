@@ -100,6 +100,13 @@ export class PodcastsPageComponent implements OnInit {
       width: ColumnWidth.LG,
     },
     {
+      title: 'Resumen',
+      key: 'summary',
+      sortable: true,
+      booleanIndicator: true,
+      width: ColumnWidth.XS,
+    },
+    {
       title: 'Equipo artistico',
       key: 'artists',
       sortable: true,

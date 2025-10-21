@@ -111,6 +111,7 @@ export class EventsPageComponent implements OnInit {
       key: 'summary',
       sortable: true,
       booleanIndicator: true,
+      width: ColumnWidth.XS,
     },
     {
       title: 'Espacio',

@@ -97,11 +97,25 @@ body {
   overflow-y: auto;
   width: 100%;
 }
+.ql-container-medium .ql-container {
+  min-height: 190px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.ql-container-medium .ql-editor {
+  height: 190px !important;
+  flex: 1;
+  overflow-y: auto;
+  width: 100%;
+}
 .ql-container-small .ql-container {
   min-height: 150px;
   flex: 1;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .ql-container-small .ql-editor {
@@ -109,6 +123,7 @@ body {
   flex: 1;
   overflow-y: auto;
   width: 100%;
+  overflow: hidden;
 }
 .ql-container-mini .ql-container {
   min-height: 100px;

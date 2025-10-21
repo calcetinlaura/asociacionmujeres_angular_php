@@ -5,6 +5,7 @@ export interface MovieModel {
   title: string;
   director?: string;
   description?: string;
+  summary?: string;
   gender: string;
   img?: string;
   year: number;

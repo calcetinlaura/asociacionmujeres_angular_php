@@ -103,8 +103,8 @@ if (isset($_POST['action']) && $_POST['action'] === 'deleteImage') {
         $imgName = $oldImg;
       }
 
-      $stmt = $connection->prepare("UPDATE articles SET title = ?, date = ?, description = ?, img = ? WHERE id = ?");
-      $stmt->bind_param("ssssi", $data['title'], $data['date'], $data['description'], $imgName, $id);
+      $stmt = $connection->prepare("UPDATE articles SET title = ?, date = ?, description = ?, summary =?, img = ? WHERE id = ?");
+      $stmt->bind_param("sssssi", $data['title'], $data['date'], $data['description'], $data['summary'], $imgName, $id);
 
       if ($stmt->execute()) {
         if ($oldImg && $imgName !== $oldImg) {
@@ -117,8 +117,8 @@ if (isset($_POST['action']) && $_POST['action'] === 'deleteImage') {
       }
 
     } else {
-      $stmt = $connection->prepare("INSERT INTO articles (title, date, description, img) VALUES (?, ?, ?, ?)");
-      $stmt->bind_param("ssss", $data['title'], $data['date'], $data['description'], $imgName);
+      $stmt = $connection->prepare("INSERT INTO articles (title, date, description, summary, img) VALUES (?, ?, ?, ?, ?)");
+      $stmt->bind_param("sssss", $data['title'], $data['date'], $data['description'], $data['summary'], $imgName);
 
       if ($stmt->execute()) {
         echo json_encode(["message" => "Artículo añadido con éxito."]);

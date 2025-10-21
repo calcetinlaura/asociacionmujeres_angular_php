@@ -142,9 +142,9 @@ if (isset($_POST['action']) && $_POST['action'] === 'deleteImage') {
 
         $year = (int)$data['year'];
         $stmt = $connection->prepare("
-          UPDATE movies SET title = ?, director = ?, gender = ?, year = ?, description = ?, img = ? WHERE id = ?
+          UPDATE movies SET title = ?, director = ?, gender = ?, year = ?, description = ?, summary =?, img = ? WHERE id = ?
         ");
-        $stmt->bind_param("sssissi", $data['title'], $data['director'], $data['gender'], $year, $data['description'], $imgName, $id);
+        $stmt->bind_param("sssisssi", $data['title'], $data['director'], $data['gender'], $year, $data['description'], $data['summary'], $imgName, $id);
 
         if ($stmt->execute()) {
           if ($oldImg && $imgName !== $oldImg) {
@@ -159,10 +159,10 @@ if (isset($_POST['action']) && $_POST['action'] === 'deleteImage') {
     } else {
         $year = (int)$data['year'];
         $stmt = $connection->prepare("
-          INSERT INTO movies (title, director, gender, year, description, img)
-          VALUES (?, ?, ?, ?, ?, ?)
+          INSERT INTO movies (title, director, gender, year, description, summary, img)
+          VALUES (?, ?, ?, ?, ?, ?,?)
         ");
-        $stmt->bind_param("sssiss", $data['title'], $data['director'], $data['gender'], $year, $data['description'], $imgName);
+        $stmt->bind_param("sssisss", $data['title'], $data['director'], $data['gender'], $year, $data['description'], $data['summary'], $imgName);
 
         if ($stmt->execute()) {
           echo json_encode(["message" => "Película añadida con éxito."]);

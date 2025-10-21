@@ -320,15 +320,15 @@ switch ($method) {
 
       $stmt = $connection->prepare("
         UPDATE macroevents
-        SET title = ?, start = ?, end = ?, description = ?, province = ?, town = ?, img = ?
+        SET title = ?, start = ?, end = ?, description = ?, summary =?, province = ?, town = ?, img = ?
         WHERE id = ?
       ");
       $stmt->bind_param(
-        "sssssssi",
+        "ssssssssi",
         $data['title'],
         $data['start'],
         $data['end'],
-        $data['description'],
+        $data['description'],$data['summary'],
         $data['province'],
         $data['town'],
         $imgName,
@@ -348,15 +348,15 @@ switch ($method) {
     } else {
       // ---------- INSERT ----------
       $stmt = $connection->prepare("
-        INSERT INTO macroevents (title, start, end, description, province, town, img)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO macroevents (title, start, end, description, summary, province, town, img)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       ");
       $stmt->bind_param(
-        "sssssss",
+        "ssssssss",
         $data['title'],
         $data['start'],
         $data['end'],
-        $data['description'],
+        $data['description'], $data['summary'],
         $data['province'],
         $data['town'],
         $imgName

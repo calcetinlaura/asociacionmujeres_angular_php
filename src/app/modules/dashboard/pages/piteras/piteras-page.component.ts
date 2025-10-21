@@ -84,6 +84,14 @@ export class PiterasPageComponent implements OnInit {
       backColor: true,
     },
     { title: 'Temática', key: 'theme', sortable: true, textAlign: 'center' },
+
+    {
+      title: 'Resumen',
+      key: 'summary',
+      sortable: true,
+      booleanIndicator: true,
+      width: ColumnWidth.XS,
+    },
     {
       title: 'Nº páginas', // ← corregido
       key: 'pages',

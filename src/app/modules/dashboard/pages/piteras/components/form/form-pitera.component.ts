@@ -61,7 +61,8 @@ export class FormPiteraComponent {
       Validators.max(100),
     ]),
     theme: new FormControl(''),
-    description: new FormControl(''),
+    description: new FormControl('', [Validators.maxLength(2000)]),
+    summary: new FormControl('', [Validators.maxLength(300)]),
     url: new FormControl<string | File | null>(null), // 🔹 Acepta string, File o null
     img: new FormControl(''),
     year: new FormControl<number | null>(null, [
@@ -101,6 +102,7 @@ export class FormPiteraComponent {
             if (pitera) {
               this.formPitera.patchValue({
                 description: pitera.description || '',
+                summary: pitera.summary || '',
                 theme: pitera.theme || '',
                 title: pitera.title || '',
                 publication_number: pitera.publication_number || 0,
@@ -179,5 +181,11 @@ export class FormPiteraComponent {
       itemId: this.itemId,
       formData: formData,
     });
+  }
+  summaryDescription(): number {
+    return (this.formPitera.get('description')?.value || '').length;
+  }
+  summaryLen(): number {
+    return (this.formPitera.get('summary')?.value || '').length;
   }
 }

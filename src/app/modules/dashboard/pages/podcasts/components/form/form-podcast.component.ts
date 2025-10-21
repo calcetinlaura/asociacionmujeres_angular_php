@@ -55,9 +55,10 @@ export class FormPodcastComponent implements OnInit {
     title: new FormControl('', [Validators.required]),
     date: new FormControl(''),
     description: new FormControl('', [Validators.maxLength(2000)]),
+    summary: new FormControl('', [Validators.maxLength(300)]),
     img: new FormControl(''),
-    artists: new FormControl(''),
-    technics: new FormControl(''),
+    artists: new FormControl('', [Validators.maxLength(500)]),
+    technics: new FormControl('', [Validators.maxLength(500)]),
     duration: new FormControl<number | null>(null),
     podcast: new FormControl<string | File | null>(null),
     season: new FormControl<number | null>(null, {
@@ -105,6 +106,7 @@ export class FormPodcastComponent implements OnInit {
                 title: podcast.title || '',
                 date: podcast.date,
                 description: podcast.description || '',
+                summary: podcast.summary || '',
                 img: podcast.img || '',
                 duration: podcast.duration || null,
                 artists: podcast.artists || '',
@@ -222,5 +224,18 @@ export class FormPodcastComponent implements OnInit {
       itemId: this.itemId,
       formData: formData,
     });
+  }
+
+  summaryLen(): number {
+    return (this.formPodcast.get('summary')?.value || '').length;
+  }
+  descriptionLen(): number {
+    return (this.formPodcast.get('description')?.value || '').length;
+  }
+  artistsLen(): number {
+    return (this.formPodcast.get('artists')?.value || '').length;
+  }
+  technicsLen(): number {
+    return (this.formPodcast.get('technics')?.value || '').length;
   }
 }

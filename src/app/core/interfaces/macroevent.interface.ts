@@ -6,6 +6,7 @@ export interface MacroeventModel {
   start: string;
   end: string;
   description?: string;
+  summary?: string;
   province: string;
   town: string;
   img?: string;

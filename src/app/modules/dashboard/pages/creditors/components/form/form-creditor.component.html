@@ -178,12 +178,12 @@
       </div>
       <div class="box-input gap-x-4">
         <label for="observations">Observaciones</label>
-        <quill-editor
+        <textarea
           formControlName="observations"
-          [modules]="quillModules"
-          placeholder="Escribe aquí la descripción..."
-          class="ql-container-small flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
-        />
+          maxlength="300"
+          rows="2"
+          placeholder="Escribe aquí la cualquier observación..."
+        ></textarea>
       </div>
       @if (formCreditor.invalid && submitted) {
       <div class="flex justify-center">

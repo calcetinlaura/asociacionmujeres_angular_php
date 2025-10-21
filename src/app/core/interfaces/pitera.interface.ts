@@ -4,8 +4,9 @@ export interface PiteraModel {
   title: string;
   year: number;
   url?: File;
-  theme: string;
-  description: string;
+  theme?: string;
+  description?: string;
+  summary?: string;
   img?: string;
   pages?: number;
 }

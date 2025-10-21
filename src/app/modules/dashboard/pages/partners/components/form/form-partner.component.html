@@ -229,11 +229,12 @@
 
       <div class="box-input gap-x-4 flex-1">
         <label for="observations">Observaciones</label>
-        <input
+        <textarea
           formControlName="observations"
-          type="text"
-          placeholder="Añadir cualquier apreciación importante"
-        />
+          maxlength="300"
+          rows="2"
+          placeholder="Escribe aquí la cualquier observación..."
+        ></textarea>
       </div>
 
       <div class="flex gap-4">

@@ -5,6 +5,7 @@ export interface BookModel {
   title: string;
   author?: string;
   description?: string;
+  summary?: string;
   gender: string;
   img?: string;
   year: number;

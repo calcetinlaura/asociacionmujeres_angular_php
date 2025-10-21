@@ -77,6 +77,13 @@ export class ArticlesPageComponent implements OnInit {
       showIndicatorOnEmpty: true,
       width: ColumnWidth.LG,
     },
+    {
+      title: 'Resumen',
+      key: 'summary',
+      sortable: true,
+      booleanIndicator: true,
+      width: ColumnWidth.XS,
+    },
   ];
 
   // Reutilizables

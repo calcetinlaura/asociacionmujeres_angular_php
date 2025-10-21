@@ -283,15 +283,15 @@ if ($podcastName === '') {
     // UPDATE
     $stmt = $connection->prepare("
       UPDATE podcasts
-      SET title = ?, date = ?, description = ?, img = ?, artists = ?, technics = ?, duration = ?, podcast = ?, season = ?, episode = ?
+      SET title = ?, date = ?, description = ?, summary =?, img = ?, artists = ?, technics = ?, duration = ?, podcast = ?, season = ?, episode = ?
       WHERE id = ?
     ");
     // s s s s s s i s i i i
     $stmt->bind_param(
-      "ssssssisiii",
+      "sssssssisiii",
       $data['title'],
       $date,
-      $data['description'],
+      $data['description'], $data['summary'],
       $imgName,
       $data['artists'],
       $data['technics'],
@@ -319,16 +319,16 @@ if ($podcastName === '') {
   } else {
     $stmt = $connection->prepare("
       INSERT INTO podcasts
-        (title, date, description, img, artists, technics, duration, podcast, season, episode)
+        (title, date, description, summary, img, artists, technics, duration, podcast, season, episode)
       VALUES
-        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
 
     $stmt->bind_param(
-      "ssssssisii",
+      "sssssssisii",
       $data['title'],
     $date,
-      $data['description'],
+      $data['description'], $data['summary'],
       $imgName,
       $data['artists'],
       $data['technics'],

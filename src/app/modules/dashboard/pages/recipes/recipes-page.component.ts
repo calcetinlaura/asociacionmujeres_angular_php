@@ -95,6 +95,13 @@ export class RecipesPageComponent implements OnInit {
       width: ColumnWidth.SM,
     },
     {
+      title: 'Resumen',
+      key: 'summary',
+      sortable: true,
+      booleanIndicator: true,
+      width: ColumnWidth.XS,
+    },
+    {
       title: 'Ingredientes',
       key: 'ingredients',
       sortable: true,

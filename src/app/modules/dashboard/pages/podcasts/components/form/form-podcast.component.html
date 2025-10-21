@@ -102,16 +102,43 @@
         </div>
       </div>
       <hr />
+      <!-- Resumen (corto) -->
+      <div class="flex gap-x-4">
+        <div class="box-input">
+          <label for="summary">
+            Resumen <br />
+            <span class="text-[9px]">(Texto redes sociales)</span></label
+          >
+        </div>
+        <div class="box-input flex-1 flex flex-col w-full">
+          <textarea
+            formControlName="summary"
+            maxlength="300"
+            rows="2"
+            placeholder="Resumen breve del evento (máx. 300 caracteres visibles)"
+            class="w-full"
+          ></textarea>
+
+          <div class="w-full text-right text-xs text-gray-500">
+            {{ summaryLen() }} / 300
+          </div>
+        </div>
+      </div>
       <div class="flex gap-4">
         <!-- Descripción -->
         <div class="box-input gap-x-4 flex-1">
           <label for="description">Descripción</label>
-          <quill-editor
-            formControlName="description"
-            [modules]="quillModules"
-            placeholder="Escribe aquí la descripción..."
-            class="ql-container-large flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
-          />
+          <div class="flex flex-col flex-1">
+            <quill-editor
+              formControlName="description"
+              [modules]="quillModules"
+              placeholder="Escribe aquí la descripción..."
+              class="ql-container-large flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
+            />
+            <div class="w-full text-right text-xs text-gray-500">
+              {{ descriptionLen() }} / 2000
+            </div>
+          </div>
         </div>
         <!-- Portada (Imagen) -->
         <div class="w-72">
@@ -148,22 +175,32 @@
       <!-- Artistas -->
       <div class="box-input gap-x-4 flex-1 !items-start">
         <label for="title">Artistas</label>
-        <quill-editor
-          formControlName="artists"
-          [modules]="quillModules"
-          placeholder="Escribe aquí las personas artistas involucradas"
-          class="ql-container-small flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
-        />
+        <div class="flex flex-col flex-1">
+          <quill-editor
+            formControlName="artists"
+            [modules]="quillModules"
+            placeholder="Escribe aquí las personas artistas involucradas"
+            class="ql-container-small flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
+          />
+          <div class="w-full text-right text-xs text-gray-500">
+            {{ artistsLen() }} / 500
+          </div>
+        </div>
       </div>
       <!-- Equipo técnico -->
       <div class="box-input gap-x-4 flex-1 !items-start">
         <label for="title">Equipo técnico</label>
-        <quill-editor
-          formControlName="technics"
-          [modules]="quillModules"
-          placeholder="Escribe aquí el equipo técnico"
-          class="ql-container-small flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
-        />
+        <div class="flex flex-col flex-1">
+          <quill-editor
+            formControlName="technics"
+            [modules]="quillModules"
+            placeholder="Escribe aquí el equipo técnico"
+            class="ql-container-small flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
+          />
+          <div class="w-full text-right text-xs text-gray-500">
+            {{ technicsLen() }} / 500
+          </div>
+        </div>
       </div>
 
       @if (formPodcast.invalid && submitted) {
