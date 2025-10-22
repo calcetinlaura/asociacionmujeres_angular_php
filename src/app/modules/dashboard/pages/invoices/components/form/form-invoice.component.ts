@@ -104,7 +104,7 @@ export class FormInvoiceComponent {
   invoiceData: any;
   imageSrc: string = '';
   submitted: boolean = false;
-  titleForm: string = 'Registrar factura';
+  titleForm: string = 'Registrar movimiento';
   buttonAction: string = 'Guardar';
   years: number[] = [];
   FilterSubsidies = categoryFilterSubsidies;
@@ -395,7 +395,7 @@ export class FormInvoiceComponent {
       this.formInvoice.patchValue({ type_invoice: 'INVOICE' });
     }
     if (type === 'TICKET') {
-      this.formInvoice.patchValue({ type_invoice: 'TICKETS' });
+      this.formInvoice.patchValue({ type_invoice: 'TICKET' });
     }
     if (type === 'INCOME') {
       this.formInvoice.patchValue({ type_invoice: 'INCOME' });

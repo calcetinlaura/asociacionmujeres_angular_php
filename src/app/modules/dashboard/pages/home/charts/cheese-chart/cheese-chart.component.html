@@ -23,6 +23,7 @@
     [attr.stroke]="a.color"
     [attr.opacity]="0.9"
   />
+
   <!-- Conectores y etiquetas (se omitirán si isEmpty) -->
   <line
     [attr.x1]="a.connector.x1"
@@ -57,7 +58,7 @@
   <text class="pie-label" [attr.text-anchor]="'middle'">
     <tspan [attr.x]="a.text.cx" [attr.y]="a.text.y1">{{ a.label }}</tspan>
     <tspan class="ttl" [attr.x]="a.text.cx" [attr.y]="a.text.y2">
-      {{ a.value }}
+      {{ euro ? (a.value | eurosFormat) : a.value }}
     </tspan>
     <tspan class="pct" [attr.x]="a.text.cx" [attr.y]="a.text.y3">
       {{ pct(a.value) }}%
@@ -65,9 +66,10 @@
   </text>
   }
 
-  <!-- Total centrado -->
+  <!-- Total centrado (opcional) -->
+  @if (showTotal) {
   <text [attr.x]="cx" [attr.y]="cy - 2" text-anchor="middle" class="pie-total">
-    {{ total() }}
+    {{ total() | eurosFormat }}
   </text>
   <text
     [attr.x]="cx"
@@ -77,4 +79,5 @@
   >
     total
   </text>
+  }
 </svg>

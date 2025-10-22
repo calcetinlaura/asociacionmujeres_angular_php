@@ -1,0 +1,15 @@
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+svg {
+  width: 100%;
+  height: auto;
+}
+
+text {
+  font-family: "Inter", sans-serif;
+  fill: #333;
+}

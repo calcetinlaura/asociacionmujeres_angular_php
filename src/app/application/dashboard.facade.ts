@@ -21,7 +21,10 @@ import {
   AudienceDTO,
   EventModelFullData,
 } from '../core/interfaces/event.interface';
+import { InvoiceModelFullData } from '../core/interfaces/invoice.interface';
 import { PartnerModel } from '../core/interfaces/partner.interface';
+import { ProjectModelFullData } from '../core/interfaces/project.interface';
+import { SubsidyModelFullData } from '../core/interfaces/subsidy.interface';
 import {
   AnalyticsService,
   AnnualPoint,
@@ -29,10 +32,13 @@ import {
 } from '../core/services/analytics.service';
 import { BooksService } from '../core/services/books.services';
 import { EventsService } from '../core/services/events.services';
+import { InvoicesService } from '../core/services/invoices.services';
 import { MoviesService } from '../core/services/movies.services';
 import { PartnersService } from '../core/services/partners.services';
 import { PiterasService } from '../core/services/piteras.services';
+import { ProjectsService } from '../core/services/projects.services';
 import { RecipesService } from '../core/services/recipes.services';
+import { SubsidiesService } from '../core/services/subsidies.services';
 import { MonthBar } from '../modules/dashboard/pages/home/charts/monthly-chart/monthly-chart.component';
 import { calcAge } from '../shared/utils/age.util';
 import {
@@ -103,6 +109,9 @@ export class DashboardFacade {
   private readonly recipesService = inject(RecipesService);
   private readonly partnersService = inject(PartnersService);
   private readonly piterasService = inject(PiterasService);
+  private readonly invoicesService = inject(InvoicesService);
+  private readonly subsidiesService = inject(SubsidiesService);
+  private readonly projectsService = inject(ProjectsService);
   private readonly analytics = inject(AnalyticsService);
   private readonly i18n = inject(TranslationsService);
 
@@ -845,5 +854,284 @@ export class DashboardFacade {
 
   clearSearch() {
     this.search('');
-  }
+  } // 1️⃣ Ingresos: facturas + subvenciones adjudicadas
+  readonly incomeByType$ = combineLatest([
+    this.viewYear$,
+    this.invoicesService.getInvoices(),
+    this.subsidiesService.getSubsidies(),
+  ]).pipe(
+    map(([vy, invoices, subs]) => {
+      const year = vy === 'historic' ? this.currentYear : (vy as number);
+
+      // Ingresos: facturas de tipo "INCOME"
+      const totalInvoices = (invoices ?? [])
+        .filter(
+          (i: any) =>
+            new Date(i.date_invoice).getFullYear() === year &&
+            i.type_invoice === 'INCOME'
+        )
+        .reduce(
+          (sum: number, i: any) =>
+            sum + Number(i.total_amount_irpf ?? i.total_amount ?? 0),
+          0
+        );
+
+      // Subvenciones concedidas ese año
+      const totalSubv = (subs ?? [])
+        .filter((s: any) => s.year === year)
+        .reduce(
+          (sum: number, s: any) => sum + Number(s.amount_granted ?? 0),
+          0
+        );
+
+      return [
+        { label: 'Ingresos internos', value: totalInvoices },
+        { label: 'Subvenciones adjudicadas', value: totalSubv },
+      ] satisfies PieDatum[];
+    }),
+    catchError(() => of([]))
+  );
+
+  readonly incomeByTypeState$ = withLoading(this.incomeByType$);
+  readonly subsidiesByType$ = combineLatest([
+    this.viewYear$,
+    this.subsidiesService.getSubsidies(),
+  ]).pipe(
+    map(([vy, subsidies]) => {
+      const year = vy === 'historic' ? this.currentYear : (vy as number);
+
+      const subsOfYear = (subsidies ?? []).filter((s: any) => s.year === year);
+
+      // Agrupa por tipo de subvención (campo "name")
+      const grouped = new Map<string, number>();
+      for (const s of subsOfYear) {
+        const key = s.name || 'OTROS';
+        grouped.set(
+          key,
+          (grouped.get(key) || 0) + Number(s.amount_granted || 0)
+        );
+      }
+
+      // Mapea con los nombres legibles
+      return [...grouped.entries()].map(([code, value]) => ({
+        label: this.subsidiesService.subsidiesMap[code] ?? code,
+        value,
+      })) satisfies PieDatum[];
+    }),
+    catchError(() => of([]))
+  );
+
+  readonly subsidiesByTypeState$ = withLoading(this.subsidiesByType$);
+  readonly incomeByConcept$ = combineLatest([
+    this.viewYear$,
+    this.invoicesService.getInvoices(),
+  ]).pipe(
+    map(([vy, invoices]) => {
+      const year = vy === 'historic' ? this.currentYear : (vy as number);
+
+      const incomeInvoices = (invoices ?? []).filter(
+        (i: any) =>
+          i.type_invoice === 'INCOME' &&
+          new Date(i.date_invoice).getFullYear() === year
+      );
+
+      const grouped = new Map<string, number>();
+      for (const inv of incomeInvoices) {
+        const key = inv.description?.trim() || 'Sin concepto';
+        grouped.set(
+          key,
+          (grouped.get(key) || 0) +
+            Number(inv.total_amount_irpf ?? inv.total_amount ?? 0)
+        );
+      }
+
+      return [...grouped.entries()]
+        .map(([label, value]) => ({ label, value }))
+        .sort((a, b) => b.value - a.value) satisfies PieDatum[];
+    }),
+    catchError(() => of([]))
+  );
+
+  readonly incomeByConceptState$ = withLoading(this.incomeByConcept$);
+
+  // 2️⃣ Gastos: facturas + tickets
+  // 2️⃣ Gastos: facturas + tickets
+  readonly expensesByType$ = combineLatest([
+    this.viewYear$,
+    this.invoicesService.getInvoices(),
+  ]).pipe(
+    map(([vy, invoices]) => {
+      const year = vy === 'historic' ? this.currentYear : (vy as number);
+
+      const list = Array.isArray(invoices) ? invoices : [];
+
+      const facturas = list
+        .filter(
+          (i) =>
+            i.type_invoice === 'INVOICE' &&
+            new Date(i.date_invoice).getFullYear() === year
+        )
+        .reduce((sum, i) => sum + Number(i.total_amount_irpf || 0), 0);
+
+      const tickets = list
+        .filter(
+          (i) =>
+            i.type_invoice === 'TICKET' &&
+            new Date(i.date_invoice).getFullYear() === year
+        )
+        .reduce((sum, i) => sum + Number(i.total_amount_irpf || 0), 0);
+
+      return [
+        { label: 'Facturas', value: facturas },
+        { label: 'Tickets', value: tickets },
+      ] satisfies PieDatum[];
+    }),
+    catchError(() => of([]))
+  );
+  readonly expensesByTypeState$ = withLoading(this.expensesByType$);
+
+  // 3️⃣ Comparativo total: subvenciones, tickets, ingresos
+  readonly economyByYear$ = combineLatest([
+    this.invoicesService.getInvoices(),
+    this.subsidiesService.getSubsidies(),
+  ]).pipe(
+    map(
+      ([invoices, subsidies]: [
+        InvoiceModelFullData[],
+        SubsidyModelFullData[]
+      ]) => {
+        if (!Array.isArray(invoices) || !Array.isArray(subsidies)) return [];
+
+        const current = new Date().getFullYear();
+        const years = Array.from({ length: 5 }, (_, i) => current - i);
+
+        return years.map((year) => {
+          // 🟢 Ingresos (INCOME)
+          const ingresos = (invoices ?? [])
+            .filter(
+              (inv) =>
+                inv?.type_invoice === 'INCOME' &&
+                new Date(inv.date_invoice).getFullYear() === year
+            )
+            .reduce((sum, inv) => {
+              const v = Number(
+                inv?.total_amount_irpf ?? inv?.total_amount ?? 0
+              );
+              return sum + (isFinite(v) ? v : 0);
+            }, 0);
+
+          // 🔵 Gastos: separamos facturas y tickets
+          const gastosFacturas = (invoices ?? [])
+            .filter(
+              (inv) =>
+                inv?.type_invoice === 'INVOICE' &&
+                new Date(inv.date_invoice).getFullYear() === year
+            )
+            .reduce((sum, inv) => {
+              const v = Number(
+                inv?.total_amount_irpf ?? inv?.total_amount ?? 0
+              );
+              return sum + (isFinite(v) ? v : 0);
+            }, 0);
+
+          const gastosTickets = (invoices ?? [])
+            .filter(
+              (inv) =>
+                inv?.type_invoice === 'TICKET' &&
+                new Date(inv.date_invoice).getFullYear() === year
+            )
+            .reduce((sum, inv) => {
+              const v = Number(
+                inv?.total_amount_irpf ?? inv?.total_amount ?? 0
+              );
+              return sum + (isFinite(v) ? v : 0);
+            }, 0);
+
+          // 🟠 Subvenciones concedidas
+          const subvenciones = (subsidies ?? [])
+            .filter((s) => Number(s?.year) === year)
+            .reduce((sum, s) => {
+              const v = Number(s?.amount_granted ?? 0);
+              return sum + (isFinite(v) ? v : 0);
+            }, 0);
+
+          return {
+            year,
+            ingresos,
+            gastosFacturas,
+            gastosTickets,
+            subvenciones,
+          };
+        });
+      }
+    )
+  );
+  readonly economyByYearState$ = withLoading(this.economyByYear$);
+
+  // 3️⃣ Gastos por proyecto
+  readonly expensesByProject$ = combineLatest([
+    this.viewYear$,
+    this.projectsService.getProjects(),
+  ]).pipe(
+    map(([vy, projects]: [YearFilter, ProjectModelFullData[] | null]) => {
+      const year: number =
+        vy === 'historic' ? this.currentYear : (vy as number);
+
+      const list: ProjectModelFullData[] = Array.isArray(projects)
+        ? projects
+        : [];
+
+      const rows: PieDatum[] = list
+        .map((p: ProjectModelFullData): PieDatum => {
+          const invs: InvoiceModelFullData[] = Array.isArray(p.invoices)
+            ? p.invoices
+            : [];
+
+          const total: number = invs
+            .filter(
+              (inv: InvoiceModelFullData) =>
+                (inv.type_invoice === 'INVOICE' ||
+                  inv.type_invoice === 'TICKET') &&
+                new Date(inv.date_invoice).getFullYear() === year
+            )
+            .reduce(
+              (sum: number, inv: InvoiceModelFullData) =>
+                sum + Number(inv.total_amount ?? 0),
+              0
+            );
+
+          return { label: p.title, value: total };
+        })
+        .filter((row: PieDatum) => row.value > 0)
+        .sort((a: PieDatum, b: PieDatum) => b.value - a.value);
+
+      return rows;
+    }),
+    catchError(() => of([] as PieDatum[]))
+  );
+
+  readonly expensesByProjectState$ = withLoading(this.expensesByProject$);
+  // Donut comparativo económico (solo año seleccionado)
+  readonly economyDonutByYear$ = combineLatest([
+    this.viewYear$,
+    this.economyByYear$,
+  ]).pipe(
+    map(([vy, data]) => {
+      const year = vy === 'historic' ? this.currentYear : (vy as number);
+      const list = Array.isArray(data) ? data : [];
+
+      const found = list.find((d) => d.year === year);
+      if (!found) return [];
+
+      return [
+        { label: 'Ingresos', value: found.ingresos },
+        { label: 'Gastos', value: found.gastosFacturas + found.gastosTickets },
+        { label: 'Subvenciones', value: found.subvenciones },
+      ];
+    }),
+    catchError(() => of([]))
+  );
+
+  // 👇 ESTA línea es la importante
+  readonly economyDonutByYearState$ = withLoading(this.economyDonutByYear$);
 }

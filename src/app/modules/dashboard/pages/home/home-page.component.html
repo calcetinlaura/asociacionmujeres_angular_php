@@ -598,6 +598,276 @@
         </app-chart-card>
       </div>
     </div>
+    <!-- Ingresos, gastos y subvenciones -->
+    <div class="mt-10 flex flex-col gap-y-6">
+      <h1 class="title">Ingresos, gastos y subvenciones</h1>
+      <div class="flex flex-wrap gap-6 items-stretch w-full">
+        <!-- Distribución económica -->
+        <app-chart-card
+          class="flex-[1] min-w-[320px]"
+          [title]="'Distribución económica (' + yearLabel() + ')'"
+        >
+          <div card-actions>
+            <app-icon-action
+              [icon]="'uil-print'"
+              [tooltip]="'Imprimir card'"
+              (click)="
+                printClosestCard(
+                  $event,
+                  'Distribución económica (' + yearLabel() + ')'
+                )
+              "
+            ></app-icon-action>
+          </div>
+
+          @if (economyDonutByYearState$ | async; as s) { @if (s.loading) {
+          <app-spinner-loading />
+          } @else if (s.error) {
+          <div class="error">No se pudo cargar el gráfico.</div>
+          } @else if (s.data?.length) {
+          <app-cheese-chart
+            [data]="s.data"
+            [size]="220"
+            [rScale]="0.84"
+            [euro]="true"
+            [showTotal]="false"
+            [margin]="{ top: 0, right: 40, bottom: 0, left: 40 }"
+          />
+          <!-- 🟢 Nuevo bloque de balance -->
+          @let balance = getBalanceFromDonut(s.data);
+
+          <div
+            class="mt-0 text-center font-semibold"
+            [style.color]="balance >= 0 ? '#16a34a' : '#dc2626'"
+          >
+            {{ balance | number : "1.2-2" }} €
+            <span class="block text-sm font-normal text-gray-600">
+              Balance {{ balance >= 0 ? "positivo" : "negativo" }}
+            </span>
+          </div>
+          } @else {
+          <div class="muted">Sin datos.</div>
+          } }
+        </app-chart-card>
+        <!-- Gastos por proyecto -->
+        <app-chart-card
+          class="flex-[1] min-w-[320px]"
+          [title]="'Gastos por proyecto (' + yearLabel() + ')'"
+        >
+          <div card-actions>
+            <app-icon-action
+              [icon]="'uil-print'"
+              [tooltip]="'Imprimir card'"
+              (click)="
+                printClosestCard(
+                  $event,
+                  'Gastos por proyecto (' + yearLabel() + ')'
+                )
+              "
+            ></app-icon-action>
+          </div>
+
+          @if (expensesByProjectState$ | async; as s) { @if (s.loading) {
+          <app-spinner-loading />
+          } @else if (s.error) {
+          <div class="error">No se pudo cargar el gráfico.</div>
+          } @else if (s.data?.length) {
+          <app-donut-chart
+            [data]="s.data"
+            [title]="'Gastos por proyecto'"
+            [euro]="true"
+            [legendWidth]="270"
+          />
+          } @else {
+          <div class="muted">Sin datos.</div>
+          } }
+        </app-chart-card>
+        <!-- Gastos -->
+        <app-chart-card
+          class="flex-[1] min-w-[320px]"
+          [title]="'Gastos por tipo (' + yearLabel() + ')'"
+        >
+          <div card-actions>
+            <app-icon-action
+              [icon]="'uil-print'"
+              [tooltip]="'Imprimir card'"
+              (click)="
+                printClosestCard(
+                  $event,
+                  'Gastos por tipo (' + yearLabel() + ')'
+                )
+              "
+            ></app-icon-action>
+          </div>
+
+          @if (expensesByTypeState$ | async; as s) { @if (s.loading) {
+          <app-spinner-loading />
+          } @else if (s.error) {
+          <div class="error">No se pudieron cargar los datos.</div>
+          } @else if (s.data?.length) {
+          <app-cheese-chart
+            [data]="s.data"
+            [size]="220"
+            [rScale]="0.84"
+            [euro]="true"
+          />
+          } @else {
+          <div class="muted">Sin datos.</div>
+          } }
+        </app-chart-card>
+      </div>
+
+      <div class="flex flex-wrap gap-6 items-stretch w-full">
+        <!-- Ingresos -->
+        <app-chart-card
+          class="flex-[1] min-w-[320px]"
+          [title]="'Ingresos por tipo (' + yearLabel() + ')'"
+        >
+          <div card-actions>
+            <app-icon-action
+              [icon]="'uil-print'"
+              [tooltip]="'Imprimir card'"
+              (click)="
+                printClosestCard(
+                  $event,
+                  'Ingresos por tipo (' + yearLabel() + ')'
+                )
+              "
+            ></app-icon-action>
+          </div>
+
+          @if (incomeByTypeState$ | async; as s) { @if (s.loading) {
+          <app-spinner-loading />
+          } @else if (s.error) {
+          <div class="error">No se pudieron cargar los datos.</div>
+          } @else if (s.data?.length) {
+          <app-cheese-chart
+            [data]="s.data"
+            [size]="220"
+            [rScale]="0.84"
+            [euro]="true"
+          />
+          } @else {
+          <div class="muted">Sin datos.</div>
+          } }
+        </app-chart-card>
+
+        <!-- Subvenciones por tipo -->
+        <app-chart-card
+          class="flex-[1] min-w-[320px]"
+          [title]="'Subvenciones por tipo (' + yearLabel() + ')'"
+        >
+          <div card-actions>
+            <app-icon-action
+              [icon]="'uil-print'"
+              [tooltip]="'Imprimir card'"
+              (click)="
+                printClosestCard(
+                  $event,
+                  'Subvenciones por tipo (' + yearLabel() + ')'
+                )
+              "
+            ></app-icon-action>
+          </div>
+
+          @if (subsidiesByTypeState$ | async; as s) { @if (s.loading) {
+          <app-spinner-loading />
+          } @else if (s.error) {
+          <div class="error">No se pudo cargar el gráfico.</div>
+          } @else if (s.data?.length) {
+          <app-donut-chart
+            [data]="s.data"
+            [title]="'Subvenciones por tipo'"
+            [euro]="true"
+          />
+          } @else {
+          <div class="muted">Sin datos.</div>
+          } }
+        </app-chart-card>
+
+        <!-- Ingresos por concepto -->
+        <app-chart-card
+          class="flex-[1] min-w-[320px]"
+          [title]="'Ingresos por concepto (' + yearLabel() + ')'"
+        >
+          <div card-actions>
+            <app-icon-action
+              [icon]="'uil-print'"
+              [tooltip]="'Imprimir card'"
+              (click)="
+                printClosestCard(
+                  $event,
+                  'Ingresos por concepto (' + yearLabel() + ')'
+                )
+              "
+            ></app-icon-action>
+          </div>
+
+          @if (incomeByConceptState$ | async; as s) { @if (s.loading) {
+          <app-spinner-loading />
+          } @else if (s.error) {
+          <div class="error">No se pudo cargar el gráfico.</div>
+          } @else if (s.data?.length) {
+          <app-donut-chart
+            [data]="s.data"
+            [title]="'Ingresos por concepto'"
+            [euro]="true"
+          />
+          } @else {
+          <div class="muted">Sin datos.</div>
+          } }
+        </app-chart-card>
+      </div>
+      <div class="flex flex-wrap gap-6 items-stretch w-full">
+        <!-- Comparativo -->
+        <app-chart-card
+          class="flex-[2] min-w-[320px]"
+          [title]="'Comparativo económico por año'"
+        >
+          <div card-actions>
+            <app-icon-action
+              [icon]="'uil-print'"
+              [tooltip]="'Imprimir card'"
+              (click)="
+                printClosestCard($event, 'Comparativo económico por año')
+              "
+            ></app-icon-action>
+          </div>
+
+          @if (economyByYearState$ | async; as s) { @if (s.loading) {
+          <app-spinner-loading />
+          } @else if (s.error) {
+          <div class="error">No se pudo cargar el gráfico.</div>
+          } @else {
+          <app-yearly-comparison-chart [data]="s.data ?? []" [euro]="true" />
+          } }
+        </app-chart-card>
+
+        <!-- Balance anual -->
+        <app-chart-card
+          class="flex-[1] min-w-[640px]"
+          [title]="'Balance anual (ingresos - gastos)'"
+        >
+          <div card-actions>
+            <app-icon-action
+              [icon]="'uil-print'"
+              [tooltip]="'Imprimir card'"
+              (click)="
+                printClosestCard($event, 'Balance anual (ingresos - gastos)')
+              "
+            ></app-icon-action>
+          </div>
+
+          @if (economyByYearState$ | async; as s) { @if (s.loading) {
+          <app-spinner-loading />
+          } @else if (s.error) {
+          <div class="error">No se pudo cargar el gráfico.</div>
+          } @else {
+          <app-balance-by-year-chart [data]="s.data ?? []" [euro]="true" />
+          } }
+        </app-chart-card>
+      </div>
+    </div>
   </div>
 </section>
 }

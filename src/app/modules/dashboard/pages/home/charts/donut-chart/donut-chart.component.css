@@ -9,7 +9,7 @@
 .donut-layout {
   display: inline-flex; /* inline-flex → el ancho intrínseco expande la card */
   align-items: center;
-  gap: 16px;
+  gap: 4px;
   width: max-content; /* asegura que no se comprima */
 }
 
@@ -21,7 +21,7 @@
 
 /* Tipografías */
 .donut-total {
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 700;
   fill: #111827;
 }
@@ -39,7 +39,7 @@
   grid-template-columns: auto 1fr auto auto;
   gap: 8px 10px;
   text-align: left;
-  padding-right: 20px;
+  padding-right: 10px;
 }
 
 .donut-legend.left li {
@@ -54,7 +54,7 @@
 }
 .donut-legend .name {
   color: #374151;
-  font-size: 12px;
+  font-size: 11px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -62,14 +62,10 @@
 .donut-legend .val {
   color: #111827;
   font-weight: 600;
-  font-size: 12px;
+  font-size: 11px;
+  text-align: right;
 }
 .donut-legend .pct {
   color: #6b7280;
   font-size: 11px;
-}
-
-/* (Opcional) Si hay muchas categorías, limita alto y añade scroll vertical */
-.donut-legend.left {
-  /* max-height: 280px; overflow: auto; */
 }

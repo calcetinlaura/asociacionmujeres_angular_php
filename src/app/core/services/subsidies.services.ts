@@ -14,7 +14,7 @@ export class SubsidiesService {
   private apiUrl: string = `${environments.api}/backend/subsidies.php`;
   constructor(private http: HttpClient) {}
 
-  public subsidiesMap = {
+  public subsidiesMap: Record<string, string> = {
     GENERALITAT: 'Generalitat',
     DIPUTACION: 'Diputación',
     AYUNT_EQUIPAMIENTO: 'Ayunt. Equipamiento',

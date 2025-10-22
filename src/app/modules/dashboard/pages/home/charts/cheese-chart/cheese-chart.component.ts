@@ -4,6 +4,7 @@ import {
   ChartColors,
   PALETTE_PASTEL,
 } from 'src/app/core/interfaces/general.interface';
+import { EurosFormatPipe } from '../../../../../../shared/pipe/eurosFormat.pipe';
 
 export type PieDatum = { label: string; value: number };
 
@@ -34,7 +35,7 @@ type ArcItem = {
 @Component({
   selector: 'app-cheese-chart',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, EurosFormatPipe],
   templateUrl: './cheese-chart.component.html',
   styleUrls: ['./cheese-chart.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -52,6 +53,8 @@ export class CheeseChartComponent {
   @Input() title = 'Cheese chart';
   /** Lado del área de pastel (sin contar márgenes) */
   @Input() size = 240;
+  @Input() euro = false;
+  @Input() showTotal: boolean = true;
   /** Separación angular entre porciones (rad) */
   @Input() padAngle = 0.02;
   /** Distancia de las etiquetas al borde del círculo */

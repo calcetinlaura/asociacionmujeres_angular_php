@@ -1,0 +1,86 @@
+<div #wrapEl class="w-full h-full">
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    [attr.viewBox]="'0 0 ' + canvasWidth + ' ' + canvasHeight"
+  >
+    @if (data.length) { @let baseY = top + usableHeight / 2; @let totalGroups =
+    balances.length; @let totalWidth = totalGroups * (barWidth + barGroupGap);
+    @let offset = (usableWidth - totalWidth) / 2;
+
+    <line
+      [attr.x1]="left"
+      [attr.x2]="left + usableWidth"
+      [attr.y1]="baseY"
+      [attr.y2]="baseY"
+      stroke="#999"
+      [attr.stroke-width]="1 / scale"
+    />
+
+    @for (b of balances; track b.year; let i = $index) { @let x = left + offset
+    + i * (barWidth + barGroupGap); @let h = (abs(b.balance) / maxAbsValue) *
+    (usableHeight / 2);
+
+    <rect
+      [attr.x]="x"
+      [attr.y]="b.balance >= 0 ? baseY - h : baseY"
+      [attr.width]="barWidth"
+      [attr.height]="h"
+      [attr.fill]="b.balance >= 0 ? colors.positivo : colors.negativo"
+      [attr.opacity]="0.9"
+    />
+
+    <!-- Año -->
+    <text
+      [attr.x]="x + barWidth / 2"
+      [attr.y]="canvasHeight - bottom + 22"
+      text-anchor="middle"
+      [attr.font-size]="effTickFont"
+    >
+      {{ b.year }}
+    </text>
+
+    <!-- Valor: con límite inferior para que no se solape con los años -->
+    <text
+      [attr.x]="x + barWidth / 2"
+      [attr.y]="b.balance >= 0 ? baseY - h - 8 : baseY + h / 2"
+      text-anchor="middle"
+      [attr.font-size]="effValueFont"
+      font-weight="bold"
+      fill="#000"
+      [attr.dominant-baseline]="b.balance >= 0 ? 'auto' : 'middle'"
+    >
+      {{ b.balance | eurosFormat }}
+    </text>
+    }
+
+    <!-- Leyenda, más baja para no chocar -->
+    <g
+      [attr.transform]="
+        'translate(' + (canvasWidth / 2 - 110) + ',' + (canvasHeight - 18) + ')'
+      "
+    >
+      <rect x="0" y="0" width="14" height="14" [attr.fill]="colors.positivo" />
+      <text x="20" y="12" font-size="14">Balance positivo</text>
+
+      <rect
+        x="150"
+        y="0"
+        width="14"
+        height="14"
+        [attr.fill]="colors.negativo"
+      />
+      <text x="170" y="12" font-size="14">Balance negativo</text>
+    </g>
+    } @else {
+    <text
+      x="50%"
+      [attr.y]="canvasHeight / 2"
+      text-anchor="middle"
+      font-size="14"
+      opacity="0.7"
+    >
+      Sin datos para mostrar
+    </text>
+    }
+  </svg>
+</div>

@@ -8,13 +8,14 @@ import {
   DictTranslatePipe,
   DictType,
 } from 'src/app/shared/pipe/dict-translate.pipe';
+import { EurosFormatPipe } from '../../../../../../shared/pipe/eurosFormat.pipe';
 
 export type PieDatum = { label: string; value: number };
 
 @Component({
   selector: 'app-donut-chart',
   standalone: true,
-  imports: [CommonModule, DictTranslatePipe],
+  imports: [CommonModule, DictTranslatePipe, EurosFormatPipe],
   templateUrl: './donut-chart.component.html',
   styleUrls: ['./donut-chart.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -31,6 +32,8 @@ export class DonutChartComponent {
   @Input() labelType?: DictType = DictType.General;
   @Input() labelNormalize: 'upper' | 'lower' | false = false;
   @Input() title = 'Donut';
+  @Input() euro = false;
+  @Input() showTotal: boolean = true;
   @Input() size = 220; // lado del SVG (px)
   @Input() ring = 24;
   @Input() padAngle = 0.02;

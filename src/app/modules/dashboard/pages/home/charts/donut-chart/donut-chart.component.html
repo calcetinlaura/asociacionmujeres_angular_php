@@ -5,7 +5,7 @@
     <li class="muted">
       <span class="dot" [style.background]="emptyColor"></span>
       <span class="name">Sin datos</span>
-      <span class="val">0</span>
+      <span class="val">{{ euro ? (0 | eurosFormat) : 0 }}</span>
       <span class="pct">0%</span>
     </li>
     } @else { @for (d of data; track d.label) {
@@ -26,7 +26,9 @@
                 }
         }}
       </span>
-      <span class="val">{{ d.value }}</span>
+      <span class="val">
+        {{ euro ? (d.value | eurosFormat) : d.value }}
+      </span>
       <span class="pct">{{ pct(d.value) }}%</span>
     </li>
     } }
@@ -63,14 +65,15 @@
     />
     } }
 
-    <!-- Centro -->
+    <!-- Centro (total) -->
+    @if (showTotal) {
     <text
       [attr.x]="cx"
       [attr.y]="cy - 2"
       text-anchor="middle"
       class="donut-total"
     >
-      {{ total() }}
+      {{ euro ? (total() | eurosFormat) : total() }}
     </text>
     <text
       [attr.x]="cx"
@@ -80,5 +83,6 @@
     >
       total
     </text>
+    }
   </svg>
 </div>

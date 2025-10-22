@@ -20,11 +20,16 @@ import { DictType } from 'src/app/shared/pipe/dict-translate.pipe';
 import { TranslationsService } from 'src/i18n/translations.service';
 
 import { AnnualLineChartComponent } from './charts/annual-line-chart/annual-line-chart.component';
-import { CheeseChartComponent } from './charts/cheese-chart/cheese-chart.component';
+import { BalanceByYearChartComponent } from './charts/balance-by-year-chart/balance-by-year-chart.component';
+import {
+  CheeseChartComponent,
+  PieDatum,
+} from './charts/cheese-chart/cheese-chart.component';
 import { ChartCardComponent } from './charts/components/chart-card/chart-card.component';
 import { DonutChartComponent } from './charts/donut-chart/donut-chart.component';
 import { HorizontalBarChartComponent } from './charts/horizontal-bar-chart/horizontal-bar-chart.component';
 import { MonthlyChartComponent } from './charts/monthly-chart/monthly-chart.component';
+import { YearlyComparisonChartComponent } from './charts/yearly-comparison-chart/yearly-comparison-chart.component';
 
 @Component({
   selector: 'app-home-page',
@@ -42,6 +47,8 @@ import { MonthlyChartComponent } from './charts/monthly-chart/monthly-chart.comp
     // UI
     SpinnerLoadingComponent,
     IconActionComponent,
+    YearlyComparisonChartComponent,
+    BalanceByYearChartComponent,
   ],
   templateUrl: './home-page.component.html',
   styleUrls: ['./home-page.component.css'],
@@ -84,6 +91,13 @@ export class HomePageComponent {
   readonly partnersAgeBucketsState$ = this.facade.partnersAgeBucketsState$;
   readonly paymentsByMethodState$ = this.facade.paymentsByMethodState$;
   readonly paymentsByMonthState$ = this.facade.paymentsByMonthState$;
+  readonly incomeByTypeState$ = this.facade.incomeByTypeState$;
+  readonly expensesByTypeState$ = this.facade.expensesByTypeState$;
+  readonly economyByYearState$ = this.facade.economyByYearState$;
+  readonly subsidiesByTypeState$ = this.facade.subsidiesByTypeState$;
+  readonly incomeByConceptState$ = this.facade.incomeByConceptState$;
+  readonly expensesByProjectState$ = this.facade.expensesByProjectState$;
+  readonly economyDonutByYearState$ = this.facade.economyDonutByYearState$;
 
   dictType = DictType;
 
@@ -156,6 +170,17 @@ export class HomePageComponent {
     const out: Record<string, string> = { other: 'Desconocido' };
     for (const k of Object.keys(acc)) out[k.toUpperCase()] = String(acc[k]);
     return out;
+  }
+  getDonutValue(arr: PieDatum[] | null | undefined, label: string): number {
+    const item = (arr ?? []).find((d) => d.label === label);
+    return Number(item?.value ?? 0);
+  }
+
+  getBalanceFromDonut(arr: PieDatum[] | null | undefined): number {
+    const ingresos = this.getDonutValue(arr, 'Ingresos');
+    const subv = this.getDonutValue(arr, 'Subvenciones');
+    const gastos = this.getDonutValue(arr, 'Gastos');
+    return ingresos + subv - gastos;
   }
 
   /** Imprime la card completa donde esté el botón pulsado */

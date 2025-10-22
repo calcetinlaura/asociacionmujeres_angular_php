@@ -1,0 +1,7 @@
+svg text {
+  font-family: system-ui, sans-serif;
+  user-select: none;
+}
+rect {
+  transition: all 0.25s ease-out;
+}

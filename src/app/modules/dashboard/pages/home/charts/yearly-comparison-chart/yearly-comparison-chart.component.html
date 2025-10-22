@@ -1,0 +1,199 @@
+<div #wrapEl class="w-full h-full">
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    [attr.viewBox]="'0 0 ' + canvasWidth + ' ' + canvasHeight"
+  >
+    @if (data.length) {
+    <!-- Línea base -->
+    <line
+      [attr.x1]="left"
+      [attr.x2]="left + usableWidth"
+      [attr.y1]="canvasHeight - bottom"
+      [attr.y2]="canvasHeight - bottom"
+      stroke="#999"
+      [attr.stroke-width]="1 / scale"
+    />
+
+    <!-- Cálculo para centrar los grupos -->
+    @let totalGroups = data.length; @let totalWidth = totalGroups * (groupWidth
+    + barGroupGap) - barGroupGap; @let offset = (usableWidth - totalWidth) / 2;
+
+    <!-- Grupos por año -->
+    @for (d of data; track $index; let i = $index) { @let baseY = canvasHeight -
+    bottom; @let x0 = left + offset + i * (groupWidth + barGroupGap); @let leftX
+    = x0; @let rightX = x0 + barWidth + barGap; @let totalStack = d.ingresos +
+    d.subvenciones; @let hIngresos = (d.ingresos / maxValue) * usableHeight;
+    @let hSubv = (d.subvenciones / maxValue) * usableHeight; @let hFacturas =
+    (d.gastosFacturas / maxValue) * usableHeight; @let hTickets =
+    (d.gastosTickets / maxValue) * usableHeight; @let totalGastos =
+    d.gastosFacturas + d.gastosTickets;
+
+    <!-- Etiqueta del año -->
+    <text
+      [attr.x]="x0 + groupWidth / 2"
+      [attr.y]="baseY + 26"
+      text-anchor="middle"
+      [attr.font-size]="effTickFont"
+    >
+      {{ d.year }}
+    </text>
+
+    <!-- ===== Barra izquierda: Ingresos + Subvenciones (apiladas) ===== -->
+    <!-- Ingresos -->
+    <rect
+      [attr.x]="leftX"
+      [attr.y]="baseY - hIngresos"
+      [attr.width]="barWidth"
+      [attr.height]="hIngresos"
+      [attr.fill]="colors.ingresos"
+    />
+    <!-- Subvenciones -->
+    <rect
+      [attr.x]="leftX"
+      [attr.y]="baseY - hIngresos - hSubv"
+      [attr.width]="barWidth"
+      [attr.height]="hSubv"
+      [attr.fill]="colors.subvenciones"
+    />
+
+    <!-- Total (negro) encima de la barra apilada si > 0 -->
+    @if (totalStack > 0) {
+    <text
+      [attr.x]="leftX + barWidth / 2"
+      [attr.y]="baseY - hIngresos - hSubv - 8"
+      text-anchor="middle"
+      [attr.font-size]="effValueFont"
+      font-weight="bold"
+      fill="#000"
+    >
+      {{ totalStack | eurosFormat }}
+    </text>
+    }
+
+    <!-- Etiquetas internas de ingresos/subvenciones -->
+    @if (hIngresos >= minLabelHeight && d.ingresos > 0) {
+    <text
+      [attr.x]="leftX + barWidth / 2"
+      [attr.y]="baseY + 5 - hIngresos / 2"
+      text-anchor="middle"
+      [attr.font-size]="12"
+      fill="white"
+    >
+      {{ d.ingresos | eurosFormat }}
+    </text>
+    } @if (hSubv >= minLabelHeight && d.subvenciones > 0) {
+    <text
+      [attr.x]="leftX + barWidth / 2"
+      [attr.y]="baseY - hIngresos - hSubv / 2"
+      text-anchor="middle"
+      [attr.font-size]="12"
+      fill="white"
+    >
+      {{ d.subvenciones | eurosFormat }}
+    </text>
+    }
+
+    <!-- ===== Barra derecha: Gastos (Facturas + Tickets apiladas) ===== -->
+    <!-- Facturas -->
+    <rect
+      [attr.x]="rightX"
+      [attr.y]="baseY - hFacturas"
+      [attr.width]="barWidth"
+      [attr.height]="hFacturas"
+      [attr.fill]="colors.gastosFacturas"
+    />
+    <!-- Tickets -->
+    <rect
+      [attr.x]="rightX"
+      [attr.y]="baseY - hFacturas - hTickets"
+      [attr.width]="barWidth"
+      [attr.height]="hTickets"
+      [attr.fill]="colors.gastosTickets"
+    />
+
+    <!-- Total (negro) encima de la barra de gastos si > 0 -->
+    @if (totalGastos > 0) {
+    <text
+      [attr.x]="rightX + barWidth / 2"
+      [attr.y]="baseY - hFacturas - hTickets - 8"
+      text-anchor="middle"
+      [attr.font-size]="effValueFont"
+      font-weight="bold"
+      fill="#000"
+    >
+      {{ totalGastos | eurosFormat }}
+    </text>
+    }
+
+    <!-- Etiquetas internas de facturas/tickets -->
+    @if (hFacturas >= minLabelHeight && d.gastosFacturas > 0) {
+    <text
+      [attr.x]="rightX + barWidth / 2"
+      [attr.y]="baseY - hFacturas / 2"
+      text-anchor="middle"
+      [attr.font-size]="12"
+    >
+      {{ d.gastosFacturas | eurosFormat }}
+    </text>
+    } @if (hTickets >= minLabelHeight && d.gastosTickets > 0) {
+    <text
+      [attr.x]="rightX + barWidth / 2"
+      [attr.y]="baseY + 5 - hFacturas - hTickets / 2"
+      text-anchor="middle"
+      [attr.font-size]="12"
+      fill="white"
+    >
+      {{ d.gastosTickets | eurosFormat }}
+    </text>
+    } }
+
+    <!-- ===== Leyenda ===== -->
+    <g
+      [attr.transform]="
+        'translate(' + (canvasWidth / 2 - 180) + ',' + (canvasHeight - 22) + ')'
+      "
+    >
+      <rect x="0" y="0" width="14" height="14" [attr.fill]="colors.ingresos" />
+      <text x="20" y="12" font-size="12">Ingresos</text>
+
+      <rect
+        x="90"
+        y="0"
+        width="14"
+        height="14"
+        [attr.fill]="colors.subvenciones"
+      />
+      <text x="110" y="12" font-size="12">Subvenciones</text>
+
+      <rect
+        x="210"
+        y="0"
+        width="14"
+        height="14"
+        [attr.fill]="colors.gastosFacturas"
+      />
+      <text x="230" y="12" font-size="12">Facturas</text>
+
+      <rect
+        x="310"
+        y="0"
+        width="14"
+        height="14"
+        [attr.fill]="colors.gastosTickets"
+      />
+      <text x="330" y="12" font-size="12">Tickets</text>
+    </g>
+
+    } @else {
+    <text
+      x="50%"
+      [attr.y]="canvasHeight / 2"
+      text-anchor="middle"
+      font-size="12"
+      opacity="0.7"
+    >
+      Sin datos para mostrar
+    </text>
+    }
+  </svg>
+</div>
