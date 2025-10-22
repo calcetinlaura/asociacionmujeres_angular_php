@@ -18,6 +18,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSort, MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { ColumnModel } from 'src/app/core/interfaces/column.interface';
+import { ProjectModelFullData } from 'src/app/core/interfaces/project.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { SubsidiesService } from 'src/app/core/services/subsidies.services';
 import {
@@ -40,7 +41,6 @@ import {
 } from '../../../../shared/pipe/dict-translate.pipe';
 import { SafeHtmlPipe } from '../../../../shared/pipe/safe-html.pipe';
 import { CircleIndicatorComponent } from '../circle-indicator/circle-indicator.component';
-
 @Component({
   standalone: true,
   imports: [
@@ -87,6 +87,7 @@ export class TableComponent {
   @Input() showNumberColumn = true;
   @Input() printExcludeColumns: string[] | null = null; // p.ej. ['invoice_pdf','proof_pdf','total_amount', ...]
   @Input() printIncludeNumber = true; // si quieres imprimir la columna de numeración
+  @Input() showFooterEnabled = true;
   @Input() printIncludeActions = false;
   @Output() openModal = new EventEmitter<{
     typeModal: TypeList;
@@ -246,13 +247,40 @@ export class TableComponent {
   }
 
   getColumnTotal(key: string): number {
-    return (this.dataSource.data as Record<string, any>[])
-      .map((item) => Number(item[key]) || 0)
-      .reduce((acc, value) => acc + value, 0);
+    const data = this.dataSource.data as Record<string, any>[];
+
+    switch (key) {
+      case 'activities':
+        return data.reduce((sum, item) => {
+          const project = item as ProjectModelFullData;
+          if (!Array.isArray(project.activities)) return sum;
+          const subtotal = project.activities.reduce(
+            (s, act) => s + (Number(act?.budget) || 0),
+            0
+          );
+          return sum + subtotal;
+        }, 0);
+
+      case 'invoices':
+        return data.reduce((sum, item) => {
+          const project = item as ProjectModelFullData;
+          if (!Array.isArray(project.invoices)) return sum;
+          const subtotal = project.invoices.reduce(
+            (s, inv) => s + (Number(inv?.total_amount) || 0),
+            0
+          );
+          return sum + subtotal;
+        }, 0);
+
+      default:
+        return data.reduce((acc, item) => acc + (Number(item[key]) || 0), 0);
+    }
   }
   get showFooter(): boolean {
+    if (!this.showFooterEnabled) return false;
     return this.headerColumns.some((col) => col.footerTotal);
   }
+
   shouldPrintColumn(key: string): boolean {
     if (key === 'number') return !!this.printIncludeNumber;
     if (key === 'actions') return !!this.printIncludeActions;

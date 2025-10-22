@@ -109,10 +109,11 @@ export class ProjectsPageComponent implements OnInit {
       width: ColumnWidth.SM,
     },
     {
-      title: 'Tareas',
+      title: 'Tareas presupuestadas',
       key: 'activities',
       sortable: true,
       width: ColumnWidth.LG,
+      footerTotal: true,
     },
     {
       title: 'Eventos',
@@ -126,6 +127,7 @@ export class ProjectsPageComponent implements OnInit {
       key: 'invoices',
       sortable: true,
       width: ColumnWidth.LG,
+      footerTotal: true,
     },
   ];
 
