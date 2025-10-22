@@ -1,5 +1,5 @@
 @let vm = (vm$ | async); @if (vm) {
-<section class="p-8">
+<div class="p-8">
   <!-- Encabezado -->
   <header class="flex flex-wrap items-center justify-between gap-3">
     <h1 class="title">Eventos</h1>
@@ -273,9 +273,83 @@
     </div>
 
     <!-- Libros, películas y recetas -->
-    <div class="mt-10">
-      <h1 class="title mt-10">Libros, películas, recetas y Piteras</h1>
+    <section class="mt-16">
+      <h1 class="title">Libros, películas, recetas y Piteras</h1>
+      @if (cultureKpisState$ | async; as st) {
+      <div class="flex gap-6 justify-between flex-wrap">
+        <!-- Libros -->
+        <article class="card kpi flex-1 min-w-[220px]">
+          <div class="kpi-title">Libros donados ({{ yearLabel() }})</div>
+          <div class="kpi-value">
+            @if (st.loading) { — } @else if (viewYear() === 'historic') {
+            {{ st.data?.books?.total }}
+            } @else {
+            {{ st.data?.books?.year }}
+            }
+          </div>
+          <div class="kpi-sub">
+            @if (!st.loading && viewYear() !== 'historic') {
+            {{ st.data?.books?.total }} en total ·
+            {{ st.data?.books?.perc | number : "1.0-2" }}% }
+          </div>
+        </article>
 
+        <!-- Películas -->
+        <article class="card kpi flex-1 min-w-[220px]">
+          <div class="kpi-title">Películas donadas ({{ yearLabel() }})</div>
+          <div class="kpi-value">
+            @if (st.loading) { — } @else if (viewYear() === 'historic') {
+            {{ st.data?.movies?.total }}
+            } @else {
+            {{ st.data?.movies?.year }}
+            }
+          </div>
+          <div class="kpi-sub">
+            @if (!st.loading && viewYear() !== 'historic') {
+            {{ st.data?.movies?.total }} en total ·
+            {{ st.data?.movies?.perc | number : "1.0-2" }}% }
+          </div>
+        </article>
+
+        <!-- Recetas -->
+        <article class="card kpi flex-1 min-w-[220px]">
+          <div class="kpi-title">Recetas publicadas ({{ yearLabel() }})</div>
+          <div class="kpi-value">
+            @if (st.loading) { — } @else if (viewYear() === 'historic') {
+            {{ st.data?.recipes?.total }}
+            } @else {
+            {{ st.data?.recipes?.year }}
+            }
+          </div>
+          <div class="kpi-sub">
+            @if (!st.loading && viewYear() !== 'historic') {
+            {{ st.data?.recipes?.total }} en total ·
+            {{ st.data?.recipes?.perc | number : "1.0-2" }}% }
+          </div>
+        </article>
+
+        <!-- Pitera -->
+        <article class="card kpi flex-1 min-w-[220px]">
+          <div class="kpi-title">Pitera ({{ yearLabel() }})</div>
+
+          <div class="kpi-value">
+            @if (st.loading) { — } @else if (viewYear() === 'historic') {
+            <strong
+              >{{ st.data?.piteras?.totalIssuesAll }} publicaciones</strong
+            >
+            } @else {
+            <strong>Nº {{ st.data?.piteras?.lastIssueNumberYear }}</strong>
+            }
+          </div>
+
+          <div class="kpi-sub">
+            @if (!st.loading && viewYear() !== 'historic') {
+            {{ st.data?.piteras?.pagesYear }} páginas }
+          </div>
+        </article>
+      </div>
+
+      }
       <div class="flex flex-wrap gap-6 items-stretch w-full">
         <!-- Libros -->
         <app-chart-card
@@ -382,81 +456,81 @@
           } }
         </app-chart-card>
       </div>
+      @if (viewYear() === 'historic') {
+      <div class="flex gap-6 container-charts">
+        <!-- Páginas por número (Pitera) -->
+        <app-chart-card
+          class="flex-[3] min-w-[320px]"
+          title="Páginas por número de Pitera"
+          subtitle="Ordenado por edición"
+        >
+          <div card-actions>
+            <app-icon-action
+              [icon]="'uil-print'"
+              [tooltip]="'Imprimir card'"
+              (click)="printClosestCard($event, 'Páginas por número de Pitera')"
+            >
+            </app-icon-action>
+          </div>
 
-      <!-- Páginas por número (Pitera) -->
-      <app-chart-card
-        class="flex-[3] min-w-[320px]"
-        title="Páginas por número de Pitera"
-        subtitle="Ordenado por edición"
-      >
-        <div card-actions>
-          <app-icon-action
-            [icon]="'uil-print'"
-            [tooltip]="'Imprimir card'"
-            (click)="printClosestCard($event, 'Páginas por número de Pitera')"
-          >
-          </app-icon-action>
-        </div>
-
-        @if (pagesPerIssueState$ | async; as st) { @if (st.loading) {
-        <app-spinner-loading /> } @else if (st.error) {
-        <div class="error">No se pudo cargar el gráfico.</div>
-        } @else if (st.data.length) {
-        <app-annual-line-chart
-          [data]="st.data"
-          [innerHeight]="110"
-          [margin]="{ top: 6, right: 12, bottom: 18, left: 18 }"
-          [yGridLines]="3"
-          [compact]="true"
-          [title]="'Páginas por número'"
-          [subtitle]="'Cada punto es un número de Pitera'"
-          [xTickFontSize]="6"
-        />
-        } @else {
-        <div class="muted">Sin datos.</div>
-        } }
-      </app-chart-card>
-    </div>
+          @if (pagesPerIssueState$ | async; as st) { @if (st.loading) {
+          <app-spinner-loading /> } @else if (st.error) {
+          <div class="error">No se pudo cargar el gráfico.</div>
+          } @else if (st.data.length) {
+          <app-annual-line-chart
+            [data]="st.data"
+            [innerHeight]="110"
+            [margin]="{ top: 6, right: 12, bottom: 18, left: 18 }"
+            [yGridLines]="3"
+            [compact]="true"
+            [title]="'Páginas por número'"
+            [subtitle]="'Cada punto es un número de Pitera'"
+            [xTickFontSize]="6"
+          />
+          } @else {
+          <div class="muted">Sin datos.</div>
+          } }
+        </app-chart-card>
+      </div>
+      }
+    </section>
 
     <!-- Socias -->
-    <div class="mt-10 flex flex-col gap-y-6">
+    <section class="mt-16 flex flex-col gap-y-6">
       <h1 class="title">Socias</h1>
-
+      @if (viewYear() !== 'historic') { @if (partnersKpisState$ | async; as st)
+      {
+      <div class="flex gap-6 justify-between">
+        <article class="card kpi flex-1">
+          <div class="kpi-title">Socias en {{ yearLabel() }}</div>
+          <div class="kpi-value">
+            @if (st.loading) { — } @else { {{ st.data?.sociasAnio ?? "—" }} }
+          </div>
+        </article>
+        <article class="card kpi flex-1">
+          <div class="kpi-title">Edad media ({{ yearLabel() }})</div>
+          <div class="kpi-value">
+            @if (st.loading) { — } @if (st.data?.edadMediaAnio != null) {
+            {{ st.data!.edadMediaAnio | number : "1.0-1" }} años } @else { — }
+          </div>
+        </article>
+        <article class="card kpi flex-1">
+          <div class="kpi-title">Método pago más usado ({{ yearLabel() }})</div>
+          <div class="kpi-value">
+            @if (st.loading) { — } @else {
+            {{ st.data?.metodoMasUsadoAnio ?? "—" }} }
+          </div>
+        </article>
+        <article class="card kpi flex-1">
+          <div class="kpi-title">Mes con más pagos ({{ yearLabel() }})</div>
+          <div class="kpi-value">
+            @if (st.loading) { — } @else {
+            {{ monthName(st.data?.mesTopPagosAnio) }} }
+          </div>
+        </article>
+      </div>
+      }
       <div class="flex gap-6 container-charts">
-        @if (partnersKpisState$ | async; as st) {
-        <div class="flex flex-col w-[400px] gap-y-2 container-articles">
-          <article class="card kpi flex-1">
-            <div class="kpi-title">Socias en {{ yearLabel() }}</div>
-            <div class="kpi-value">
-              @if (st.loading) { — } @else { {{ st.data?.sociasAnio ?? "—" }} }
-            </div>
-          </article>
-          <article class="card kpi flex-1">
-            <div class="kpi-title">Edad media ({{ yearLabel() }})</div>
-            <div class="kpi-value">
-              @if (st.loading) { — } @if (st.data?.edadMediaAnio != null) {
-              {{ st.data!.edadMediaAnio | number : "1.0-1" }} años } @else { — }
-            </div>
-          </article>
-          <article class="card kpi flex-1">
-            <div class="kpi-title">
-              Método pago más usado ({{ yearLabel() }})
-            </div>
-            <div class="kpi-value">
-              @if (st.loading) { — } @else {
-              {{ st.data?.metodoMasUsadoAnio ?? "—" }} }
-            </div>
-          </article>
-          <article class="card kpi flex-1">
-            <div class="kpi-title">Mes con más pagos ({{ yearLabel() }})</div>
-            <div class="kpi-value">
-              @if (st.loading) { — } @else {
-              {{ monthName(st.data?.mesTopPagosAnio) }} }
-            </div>
-          </article>
-        </div>
-        }
-
         <!-- Métodos de pago -->
         <app-chart-card
           class="flex-1 min-w-[320px]"
@@ -522,12 +596,8 @@
             [title]="'Pago de cuota por meses (' + yearLabel() + ')'"
             [width]="0"
           />
-          } }
-        </app-chart-card>
-      </div>
-
-      <div class="flex gap-6 container-charts">
-        <!-- Distribución por edad (donut) -->
+          } } </app-chart-card
+        ><!-- Distribución por edad (donut) -->
         <app-chart-card
           [title]="'Distribución por edad de socias (' + yearLabel() + ')'"
         >
@@ -559,7 +629,9 @@
           <div class="muted">Sin datos.</div>
           } }
         </app-chart-card>
-
+      </div>
+      } @if (viewYear() === 'historic') {
+      <div class="flex gap-6 container-charts">
         <!-- Socias por año -->
         <app-chart-card
           class="flex-1 min-w-[320px]"
@@ -597,10 +669,46 @@
           } }
         </app-chart-card>
       </div>
-    </div>
+      }
+    </section>
     <!-- Ingresos, gastos y subvenciones -->
-    <div class="mt-10 flex flex-col gap-y-6">
+    <section class="mt-16 flex flex-col gap-y-6">
       <h1 class="title">Ingresos, gastos y subvenciones</h1>
+      @if (viewYear() !== 'historic') {
+      <!-- KPIs -->
+      @let kpis = economyKpis(); @if (kpis) {
+      <div class="flex gap-6 justify-between">
+        <article class="card kpi flex-1 min-w-[220px]">
+          <div class="kpi-title">Ingresos totales ({{ yearLabel() }})</div>
+          <div class="kpi-value">{{ kpis.ingresos | number : "1.0-2" }} €</div>
+        </article>
+
+        <article class="card kpi flex-1 min-w-[220px]">
+          <div class="kpi-title">Gastos totales</div>
+          <div class="kpi-value">{{ kpis.gastos | number : "1.0-2" }} €</div>
+        </article>
+
+        <article class="card kpi flex-1 min-w-[220px]">
+          <div class="kpi-title">Subvenciones</div>
+          <div class="kpi-value">
+            {{ kpis.numSubvenciones | number : "1.0-0" }}
+          </div>
+          <div class="kpi-sub">
+            {{ kpis.subvenciones | number : "1.0-2" }} €
+          </div>
+        </article>
+
+        <article class="card kpi flex-1 min-w-[220px]">
+          <div class="kpi-title">Balance</div>
+          <div
+            class="kpi-value"
+            [style.color]="kpis.balance >= 0 ? '#16a34a' : '#dc2626'"
+          >
+            {{ kpis.balance | number : "1.0-2" }} €
+          </div>
+        </article>
+      </div>
+      }
       <div class="flex flex-wrap gap-6 items-stretch w-full">
         <!-- Distribución económica -->
         <app-chart-card
@@ -818,6 +926,7 @@
           } }
         </app-chart-card>
       </div>
+      } @if (viewYear() === 'historic') {
       <div class="flex flex-wrap gap-6 items-stretch w-full">
         <!-- Comparativo -->
         <app-chart-card
@@ -867,7 +976,8 @@
           } }
         </app-chart-card>
       </div>
-    </div>
+      }
+    </section>
   </div>
-</section>
+</div>
 }

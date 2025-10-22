@@ -17,13 +17,16 @@ import {
 } from 'rxjs';
 
 import { TranslationsService } from 'src/i18n/translations.service';
+import { BookModel } from '../core/interfaces/book.interface';
 import {
   AudienceDTO,
   EventModelFullData,
 } from '../core/interfaces/event.interface';
 import { InvoiceModelFullData } from '../core/interfaces/invoice.interface';
+import { MovieModel } from '../core/interfaces/movie.interface';
 import { PartnerModel } from '../core/interfaces/partner.interface';
 import { ProjectModelFullData } from '../core/interfaces/project.interface';
+import { RecipeModel } from '../core/interfaces/recipe.interface';
 import { SubsidyModelFullData } from '../core/interfaces/subsidy.interface';
 import {
   AnalyticsService,
@@ -49,10 +52,33 @@ import {
 import { LoadState, withLoading } from '../shared/utils/loading.operator';
 import { EventsFacade } from './events.facade';
 
-/** === NUEVOS TIPOS (alineados con la nueva fachada/servicio) === */
+// === Tipos ===
 type YearFilter = number | 'historic';
 export type PeriodicView = 'all' | 'groupedByPeriodicId';
 export type PublishScope = 'published' | 'drafts' | 'scheduled' | 'all';
+export interface EconomyKpis {
+  ingresos: number;
+  gastos: number;
+  subvenciones: number;
+  numSubvenciones: number;
+  balance: number;
+  porcSubvenciones: number;
+}
+export interface CultureKpis {
+  books: { year: number; total: number; perc: number };
+  movies: { year: number; total: number; perc: number };
+  recipes: { year: number; total: number; perc: number };
+  piteras: {
+    year: number; // páginas del año (compat)
+    total: number; // total páginas histórico (compat)
+    perc: number; // porcentaje del año frente al total
+    issuesCountYear: number; // nº de publicaciones del año
+    pagesYear: number; // nº total de páginas del año
+    lastIssueNumberYear: number | null; // último número del año
+    totalIssuesAll: number; // total de publicaciones históricas
+    totalPagesAll: number; // total de páginas históricas
+  };
+}
 
 export interface HBarDatum {
   label: string;
@@ -101,7 +127,7 @@ const AGE_BUCKETS = [
 
 @Injectable({ providedIn: 'root' })
 export class DashboardFacade {
-  // ── Inyecciones ───────────────────────────────────────────────────────────────
+  // ── Inyecciones ──────────────────────────────
   private readonly eventsFacade = inject(EventsFacade);
   private readonly eventsService = inject(EventsService);
   private readonly booksService = inject(BooksService);
@@ -115,7 +141,7 @@ export class DashboardFacade {
   private readonly analytics = inject(AnalyticsService);
   private readonly i18n = inject(TranslationsService);
 
-  // ── Constantes ────────────────────────────────────────────────────────────────
+  // ── Datos base ───────────────────────────────
   readonly now = new Date();
   readonly currentYear = this.now.getFullYear();
   readonly START_YEAR = 2018;
@@ -124,20 +150,14 @@ export class DashboardFacade {
     (_, i) => this.currentYear - i
   );
 
-  // ── Estado UI (signals) ───────────────────────────────────────────────────────
+  // ── Estado UI (signals) ──────────────────────
   readonly year = signal<number>(this.currentYear);
   readonly viewYear = signal<YearFilter>(this.currentYear);
-
-  /** En la nueva API, “view” controla si quieres todos los pases o agrupado por periodic_id */
   readonly view = signal<PeriodicView>('groupedByPeriodicId');
-
-  /** Scope de publicación (para analítica/general en dashboard, por defecto todos) */
   readonly scope = signal<PublishScope>('all');
-
-  /** buscador local (aplicado sobre visibleEvents$ de la fachada) */
   readonly keyword = signal<string>('');
 
-  // Observables derivados de signals
+  // ── Observables derivados ────────────────────
   private readonly viewYear$ = toObservable(this.viewYear).pipe(
     distinctUntilChanged()
   );
@@ -145,8 +165,6 @@ export class DashboardFacade {
   private readonly scope$ = toObservable(this.scope).pipe(
     distinctUntilChanged()
   );
-
-  // Trigger que provoca "loading" en los gráficos dependientes de año/view/scope
   private readonly viewTrigger$ = combineLatest([
     this.viewYear$,
     this.view$,
@@ -154,11 +172,17 @@ export class DashboardFacade {
   ]);
 
   constructor() {
-    // Para dashboard queremos tener disponibles ambas colecciones (no agrupados y agrupados)
-    // para que el VM y los gráficos puedan usar una u otra sin relanzar cargas.
     const y = this.year();
-    this.eventsFacade.loadDashboardAllNotGrouped(y); // view='all', scope='all'
-    this.eventsFacade.loadDashboardAllGrouped(y); // view='groupedByPeriodicId', scope='all'
+    this.eventsFacade.loadDashboardAllNotGrouped(y);
+    this.eventsFacade.loadDashboardAllGrouped(y);
+  }
+
+  // ── Helpers ──────────────────────────────────
+  private sumValues(arr: { value: number }[] | undefined): number {
+    return (arr ?? []).reduce(
+      (sum: number, i) => sum + (Number(i.value) || 0),
+      0
+    );
   }
 
   // ── Helpers generales ─────────────────────────────────────────────────────────
@@ -767,27 +791,33 @@ export class DashboardFacade {
     withLoading(this.partnersKpis$);
 
   // ── Píteras (igual que antes) ────────────────────────────────────────────────
-  readonly piterasSorted$ = this.piterasService
-    .getPiteras()
-    .pipe(
-      map((rows) =>
-        (rows ?? [])
-          .filter((r: any) => r && r.pages && r.publication_number)
-          .sort(
-            (a: any, b: any) =>
-              Number(a.year) - Number(b.year) ||
-              Number(a.publication_number) - Number(b.publication_number)
-          )
-      )
-    );
+  readonly piterasSorted$ = this.piterasService.getPiteras().pipe(
+    map((rows) =>
+      (rows ?? [])
+        // ✅ no descarta 0
+        .filter(
+          (r: any) =>
+            r != null &&
+            r.pages != null &&
+            r.pages !== '' &&
+            r.publication_number != null &&
+            r.publication_number !== ''
+        )
+        .sort(
+          (a: any, b: any) =>
+            Number(a.year) - Number(b.year) ||
+            Number(a.publication_number) - Number(b.publication_number)
+        )
+    )
+  );
 
   readonly pagesPerIssue$ = this.piterasSorted$.pipe(
     map((rows: any[]) =>
       rows.map(
         (r: any) =>
           ({
-            label: Number(r.publication_number),
-            count: Number(r.pages),
+            label: Number(r.publication_number), // 0,1,2,... ✅
+            count: Number(r.pages) || 0,
           } as AnnualPoint)
       )
     )
@@ -1134,4 +1164,170 @@ export class DashboardFacade {
 
   // 👇 ESTA línea es la importante
   readonly economyDonutByYearState$ = withLoading(this.economyDonutByYear$);
+  readonly economyKpis$ = combineLatest([
+    this.viewYear$,
+    this.invoicesService.getInvoices(),
+    this.subsidiesService.getSubsidies(),
+  ]).pipe(
+    map(([vy, invoices, subsidies]) => {
+      const year = vy === 'historic' ? this.currentYear : (vy as number);
+
+      const invs = Array.isArray(invoices) ? invoices : [];
+      const subs = Array.isArray(subsidies) ? subsidies : [];
+
+      // Ingresos internos (facturas de tipo INCOME)
+      const ingresosInternos = invs
+        .filter(
+          (i) =>
+            i?.type_invoice === 'INCOME' &&
+            new Date(i.date_invoice).getFullYear() === year
+        )
+        .reduce(
+          (acc: number, i) =>
+            acc + Number(i.total_amount_irpf ?? i.total_amount ?? 0),
+          0
+        );
+
+      // Gastos: facturas + tickets
+      const gastos = invs
+        .filter(
+          (i) =>
+            (i?.type_invoice === 'INVOICE' || i?.type_invoice === 'TICKET') &&
+            new Date(i.date_invoice).getFullYear() === year
+        )
+        .reduce(
+          (acc: number, i) =>
+            acc + Number(i.total_amount_irpf ?? i.total_amount ?? 0),
+          0
+        );
+
+      // Subvenciones del año
+      const subsYear = subs.filter((s) => Number(s?.year) === year);
+      const totalSubvenciones = subsYear.reduce(
+        (acc: number, s) => acc + Number(s?.amount_granted ?? 0),
+        0
+      );
+      const numSubvenciones = subsYear.length;
+
+      const ingresosTotales = ingresosInternos + totalSubvenciones;
+      const balance = ingresosTotales - gastos;
+
+      return {
+        ingresos: ingresosTotales,
+        gastos,
+        subvenciones: totalSubvenciones,
+        numSubvenciones, // ← NUEVO
+        balance,
+        porcSubvenciones: ingresosTotales
+          ? (totalSubvenciones / ingresosTotales) * 100
+          : 0,
+      } as EconomyKpis;
+    }),
+    share({ resetOnRefCountZero: true })
+  );
+
+  readonly economyKpisState$ = withLoading(this.economyKpis$);
+  readonly cultureKpis$: Observable<CultureKpis> = combineLatest([
+    this.viewYear$,
+    this.booksService.getBooks(),
+    this.moviesService.getMovies(),
+    this.recipesService.getRecipes(),
+    this.piterasService.getPiteras(),
+  ]).pipe(
+    map(([vy, books, movies, recipes, piteras]) => {
+      const currentYear = vy === 'historic' ? this.currentYear : (vy as number);
+
+      // Totales globales (histórico)
+      const totalBooksAll = (books ?? []).length;
+      const totalMoviesAll = (movies ?? []).length;
+      const totalRecipesAll = (recipes ?? []).length;
+
+      const pList = Array.isArray(piteras) ? piteras : [];
+      const totalIssuesAll = pList.length;
+      const totalPagesAll = pList.reduce(
+        (acc, p) => acc + Number(p.pages ?? 0),
+        0
+      );
+
+      // Totales año seleccionado
+      const booksOfYear = (books ?? []).filter(
+        (b: BookModel) => Number(b.year) === currentYear
+      ).length;
+      const moviesOfYear = (movies ?? []).filter(
+        (m: MovieModel) => Number(m.year) === currentYear
+      ).length;
+      const recipesOfYear = (recipes ?? []).filter(
+        (r: RecipeModel) => Number(r.year) === currentYear
+      ).length;
+
+      const yearIssues = pList.filter((p) => Number(p.year) === currentYear);
+      const issuesCountYear = yearIssues.length;
+      const pagesYear = yearIssues.reduce(
+        (sum, p) => sum + Number(p.pages ?? 0),
+        0
+      );
+      const lastIssueNumberYear = yearIssues.length
+        ? Math.max(...yearIssues.map((p) => Number(p.publication_number ?? 0)))
+        : null;
+
+      // Porcentajes respecto al histórico (por si los sigues usando en otros sitios)
+      const booksPerc = totalBooksAll ? (booksOfYear / totalBooksAll) * 100 : 0;
+      const moviesPerc = totalMoviesAll
+        ? (moviesOfYear / totalMoviesAll) * 100
+        : 0;
+      const recipesPerc = totalRecipesAll
+        ? (recipesOfYear / totalRecipesAll) * 100
+        : 0;
+      const piteraPerc = totalPagesAll ? (pagesYear / totalPagesAll) * 100 : 0;
+
+      return {
+        books: {
+          year: booksOfYear,
+          total: totalBooksAll,
+          perc: Math.round(booksPerc * 10) / 10,
+        },
+        movies: {
+          year: moviesOfYear,
+          total: totalMoviesAll,
+          perc: Math.round(moviesPerc * 10) / 10,
+        },
+        recipes: {
+          year: recipesOfYear,
+          total: totalRecipesAll,
+          perc: Math.round(recipesPerc * 10) / 10,
+        },
+        // 👇 Mantengo las claves antiguas (year/total/perc) y AÑADO campos específicos para tu KPI
+        piteras: {
+          year: pagesYear, // páginas del año (compat)
+          total: totalPagesAll, // total de páginas (compat)
+          perc: Math.round(piteraPerc * 10) / 10, // %
+          issuesCountYear, // ← nº de números del año
+          pagesYear, // ← páginas del año
+          lastIssueNumberYear, // ← último nº de publicación del año
+          totalIssuesAll, // ← nº total de piteras históricas
+          totalPagesAll, // ← total de páginas históricas
+        },
+      } as CultureKpis;
+    }),
+    catchError(() =>
+      of({
+        books: { year: 0, total: 0, perc: 0 },
+        movies: { year: 0, total: 0, perc: 0 },
+        recipes: { year: 0, total: 0, perc: 0 },
+        piteras: {
+          year: 0,
+          total: 0,
+          perc: 0,
+          issuesCountYear: 0,
+          pagesYear: 0,
+          lastIssueNumberYear: null,
+          totalIssuesAll: 0,
+          totalPagesAll: 0,
+        },
+      })
+    ),
+    share({ resetOnRefCountZero: true })
+  );
+
+  readonly cultureKpisState$ = withLoading(this.cultureKpis$);
 }

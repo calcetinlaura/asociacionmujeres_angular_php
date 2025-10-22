@@ -19,6 +19,8 @@ import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loadi
 import { DictType } from 'src/app/shared/pipe/dict-translate.pipe';
 import { TranslationsService } from 'src/i18n/translations.service';
 
+import { toSignal } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs';
 import { AnnualLineChartComponent } from './charts/annual-line-chart/annual-line-chart.component';
 import { BalanceByYearChartComponent } from './charts/balance-by-year-chart/balance-by-year-chart.component';
 import {
@@ -98,6 +100,14 @@ export class HomePageComponent {
   readonly incomeByConceptState$ = this.facade.incomeByConceptState$;
   readonly expensesByProjectState$ = this.facade.expensesByProjectState$;
   readonly economyDonutByYearState$ = this.facade.economyDonutByYearState$;
+  readonly economyKpis$ = this.facade.economyKpis$;
+  readonly economyKpis = toSignal(
+    this.facade.economyKpis$.pipe(map((data) => data ?? null))
+  );
+  readonly cultureKpisState$ = this.facade.cultureKpisState$;
+  readonly cultureKpis = toSignal(
+    this.cultureKpisState$.pipe(map((s) => s.data ?? null))
+  );
 
   dictType = DictType;
 

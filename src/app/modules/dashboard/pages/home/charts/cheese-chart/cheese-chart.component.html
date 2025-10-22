@@ -69,7 +69,7 @@
   <!-- Total centrado (opcional) -->
   @if (showTotal) {
   <text [attr.x]="cx" [attr.y]="cy - 2" text-anchor="middle" class="pie-total">
-    {{ total() | eurosFormat }}
+    {{ euro ? (total() | eurosFormat) : total() }}
   </text>
   <text
     [attr.x]="cx"
