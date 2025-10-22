@@ -64,6 +64,20 @@ export interface EconomyKpis {
   balance: number;
   porcSubvenciones: number;
 }
+export interface EventsKpis {
+  total: number;
+  promedioMes: number;
+  unicos: number;
+  repetidos: number;
+  proximoEvento?: { title: string; date: string };
+  espacioTop?: string;
+  espacioPerc?: number;
+  categoriaTop?: string;
+  categoriaPerc?: number;
+  mesTop?: string;
+  mesPerc?: number;
+  drafts: number;
+}
 export interface CultureKpis {
   books: { year: number; total: number; perc: number };
   movies: { year: number; total: number; perc: number };
@@ -280,7 +294,12 @@ export class DashboardFacade {
 
   // ── Streams derivados para charts ─────────────────────────────────────────────
   readonly eventsByMonthForChart$ = this.eventsForCharts$.pipe(
-    map((list) => this.analytics.countByMonth(list)),
+    map((list) =>
+      this.analytics.countByMonth(list).map((d) => ({
+        ...d,
+        month: d.month + 1,
+      }))
+    ),
     share({ resetOnRefCountZero: true })
   );
 
@@ -1330,4 +1349,142 @@ export class DashboardFacade {
   );
 
   readonly cultureKpisState$ = withLoading(this.cultureKpis$);
+  readonly eventsKpis$: Observable<EventsKpis> = this.eventsForCharts$.pipe(
+    map((events: EventModelFullData[]) => {
+      if (!Array.isArray(events) || events.length === 0) {
+        return {
+          total: 0,
+          promedioMes: 0,
+          unicos: 0,
+          repetidos: 0,
+          drafts: 0,
+        } as EventsKpis;
+      }
+
+      const total = events.length;
+
+      // Agrupación por mes
+      const monthlyCounts = new Array(12).fill(0);
+      for (const ev of events) {
+        const d = new Date(ev.start);
+        if (!isNaN(d.getTime())) {
+          const m = d.getMonth();
+          monthlyCounts[m]++;
+        }
+      }
+      const promedioMes = Math.round(
+        monthlyCounts.reduce((a, b) => a + b, 0) / 12
+      );
+
+      // Agrupación por periodic_id → únicos / repetidos
+      const groupedByPeriodic = new Map<string | number | null, number>();
+      for (const ev of events) {
+        const pid = ev.periodic_id ?? ev.id;
+        groupedByPeriodic.set(pid, (groupedByPeriodic.get(pid) ?? 0) + 1);
+      }
+      const unicos = Array.from(groupedByPeriodic.values()).filter(
+        (v) => v === 1
+      ).length;
+      const repetidos = total - unicos;
+
+      // Próximo evento
+      const now = new Date();
+      const futuros = events
+        .filter((e) => new Date(e.start) > now)
+        .sort(
+          (a, b) => new Date(a.start).getTime() - new Date(b.start).getTime()
+        );
+      const proximoEvento = futuros.length
+        ? { title: futuros[0].title, date: futuros[0].start }
+        : undefined;
+
+      // Espacio con más eventos
+      const spaceCount = new Map<string, number>();
+      for (const e of events) {
+        const key = e.placeData?.name ?? 'Sin espacio';
+        spaceCount.set(key, (spaceCount.get(key) ?? 0) + 1);
+      }
+      const spaceSorted = Array.from(spaceCount.entries()).sort(
+        (a, b) => b[1] - a[1]
+      );
+      const espacioTop = spaceSorted[0]?.[0] ?? '—';
+      const espacioPerc =
+        total > 0 ? Math.round((spaceSorted[0]?.[1] / total) * 100) : 0;
+
+      // Categoría con más eventos
+      const groupedByCat = this.analytics.groupEventsByCategory(events);
+      const categoriaTop = groupedByCat[0]?.label ?? '—';
+      let categoriaPerc = 0;
+      if (groupedByCat.length > 0) {
+        if ('perc' in groupedByCat[0]) {
+          categoriaPerc = Math.round(Number((groupedByCat[0] as any).perc));
+        } else {
+          const topCount = Number(groupedByCat[0].value ?? 0);
+          const totalCatCount = groupedByCat.reduce(
+            (sum, c) => sum + Number(c.value ?? 0),
+            0
+          );
+          categoriaPerc =
+            totalCatCount > 0
+              ? Math.round((topCount / totalCatCount) * 100)
+              : 0;
+        }
+      }
+
+      // Mes con más eventos
+      const maxVal = Math.max(...monthlyCounts);
+      const maxMonthIdx = monthlyCounts.findIndex((v) => v === maxVal);
+      const months = [
+        'Enero',
+        'Febrero',
+        'Marzo',
+        'Abril',
+        'Mayo',
+        'Junio',
+        'Julio',
+        'Agosto',
+        'Septiembre',
+        'Octubre',
+        'Noviembre',
+        'Diciembre',
+      ];
+      const mesTop = maxVal > 0 && maxMonthIdx >= 0 ? months[maxMonthIdx] : '—';
+      const mesPerc = total > 0 ? Math.round((maxVal / total) * 100) : 0;
+
+      // Borradores
+      const drafts = events.filter((e) => e.published === false).length;
+
+      return {
+        total,
+        promedioMes,
+        unicos,
+        repetidos,
+        proximoEvento,
+        espacioTop,
+        espacioPerc,
+        categoriaTop,
+        categoriaPerc,
+        mesTop,
+        mesPerc,
+        drafts,
+      } as EventsKpis;
+    }),
+    catchError(() =>
+      of({
+        total: 0,
+        promedioMes: 0,
+        unicos: 0,
+        repetidos: 0,
+        espacioPerc: 0,
+        categoriaPerc: 0,
+        mesPerc: 0,
+        drafts: 0,
+      } as EventsKpis)
+    ),
+    share({ resetOnRefCountZero: true })
+  );
+
+  // Estado con loading al cambiar de vista o año
+  readonly eventsKpisState$: Observable<LoadState<EventsKpis>> =
+    this.withLoadingOnChange(this.viewTrigger$, this.eventsKpis$);
 }

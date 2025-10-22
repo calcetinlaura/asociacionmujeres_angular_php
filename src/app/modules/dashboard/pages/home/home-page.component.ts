@@ -16,7 +16,10 @@ import {
 import { ChartExportService } from 'src/app/core/services/chart-export.service';
 import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
-import { DictType } from 'src/app/shared/pipe/dict-translate.pipe';
+import {
+  DictTranslatePipe,
+  DictType,
+} from 'src/app/shared/pipe/dict-translate.pipe';
 import { TranslationsService } from 'src/i18n/translations.service';
 
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -51,6 +54,7 @@ import { YearlyComparisonChartComponent } from './charts/yearly-comparison-chart
     IconActionComponent,
     YearlyComparisonChartComponent,
     BalanceByYearChartComponent,
+    DictTranslatePipe,
   ],
   templateUrl: './home-page.component.html',
   styleUrls: ['./home-page.component.css'],
@@ -106,6 +110,10 @@ export class HomePageComponent {
   );
   readonly cultureKpisState$ = this.facade.cultureKpisState$;
   readonly cultureKpis = toSignal(
+    this.cultureKpisState$.pipe(map((s) => s.data ?? null))
+  );
+  readonly eventsKpisState$ = this.facade.eventsKpisState$;
+  readonly eventsKpis = toSignal(
     this.cultureKpisState$.pipe(map((s) => s.data ?? null))
   );
 
@@ -206,5 +214,8 @@ export class HomePageComponent {
     if (!root) return;
     const title = `Informe Dashboard (${this.yearLabel()})`;
     this.exportSvc.printCardElement(root, title);
+  }
+  onToggleView(checked: boolean) {
+    this.onChangeView(checked ? 'groupedByPeriodicId' : 'all');
   }
 }
