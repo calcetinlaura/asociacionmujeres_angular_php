@@ -1,0 +1,21 @@
+span {
+  border-radius: 5px;
+  padding: 2px 4px;
+  font-size: 10px;
+}
+/* Equivalentes a tus clases originales */
+.type-ticket {
+  background-color: rgba(245, 178, 178, 0.91);
+}
+.type-ingreso {
+  background-color: rgba(149, 218, 202, 0.908);
+}
+.type-factura {
+  background-color: rgba(210, 218, 149, 0.941);
+}
+
+/* Por si llega un tipo no contemplado */
+.type-unknown {
+  background: #f3f4f6;
+  color: #374151;
+}

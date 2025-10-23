@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import {
   afterNextRender,
   Component,
+  computed,
   DestroyRef,
   ElementRef,
   inject,
@@ -134,11 +135,14 @@ export class MacroeventsPageComponent implements OnInit {
   typeSection: TypeList = TypeList.Macroevents;
   item: MacroeventModelFullData | EventModelFullData | null = null;
   currentModalAction: TypeActionModal = TypeActionModal.Create;
-
+  contentVersion = 0;
   // Filters
   filters: Filter[] = [];
   selectedFilter: number | null = null;
   readonly currentYear = this.generalService.currentYear;
+  readonly canGoBackSig = computed(
+    () => this.modalNav.canGoBack() && !!this.item
+  );
 
   // Refs
   @ViewChild('printArea', { static: false })
@@ -227,8 +231,8 @@ export class MacroeventsPageComponent implements OnInit {
     this.currentModalAction = action;
     this.item = item;
     this.typeModal = typeModal;
+    this.contentVersion++; // 👈 fuerza re-render del contenido sin destruir la shell
 
-    // Limpiar seleccionado sólo en CREATE
     if (
       typeModal === TypeList.Macroevents &&
       action === TypeActionModal.Create
@@ -238,6 +242,7 @@ export class MacroeventsPageComponent implements OnInit {
 
     this.modalService.openModal();
   }
+
   onOpenEvent(eventId: number): void {
     // Guarda estado actual para "volver"
     this.modalNav.push({

@@ -6,7 +6,8 @@ export interface InvoiceModel {
   date_accounting?: string;
   date_payment?: string;
   creditor_id?: number | null;
-  description: string;
+  description?: string;
+  concept: string;
   amount?: number;
   irpf?: number;
   iva?: number;

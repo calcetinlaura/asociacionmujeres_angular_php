@@ -164,20 +164,7 @@ table.is-5-buttons-action .mat-column-actions {
   display: flex;
   justify-content: center;
 }
-.mat-column-type_invoice > span {
-  border-radius: 5px;
-  padding: 4px;
-  font-size: 10px;
-}
-.mat-column-type_invoice > .type-ticket {
-  background-color: rgba(245, 178, 178, 0.91);
-}
-.mat-column-type_invoice > .type-ingreso {
-  background-color: rgba(149, 218, 202, 0.908);
-}
-.mat-column-type_invoice > .type-factura {
-  background-color: rgba(210, 218, 149, 0.941);
-}
+
 .filterColumns {
   position: sticky;
   z-index: 999;

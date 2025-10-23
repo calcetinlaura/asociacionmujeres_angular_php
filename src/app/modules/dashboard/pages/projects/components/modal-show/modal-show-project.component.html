@@ -40,117 +40,118 @@
   <app-text-editor [text]="item.description" />
   } @if (item.events && item.events.length > 0) {
   <p class="text-[18px] font-normal mt-6 mb-4">Eventos</p>
-  <table class="w-full -collapse tableProjects my-4">
+  <div class="mx-8 flex flex-col gap-y-2">
     @for (event of item.events; track event; let pIndex = $index) {
-    <tbody>
-      <tr
-        class="hover:bg-gray-50 cursor-pointer"
-        (click)="onOpenEvent(event.id)"
-      >
-        <td>
-          @if (event.img) {
-          <img
-            [src]="event.img | itemImage : typeEvent"
-            [alt]="event.title"
-            class="object-cover w-full h-full transition-transform duration-300 ease-out group-hover:scale-[1.03]"
-          />
-          }
-        </td>
-        <td class="p-2 w-auto text-[14px]">
-          {{ event.title }}
-        </td>
-        <td>
-          @if (event.placeData?.name) {
-          <p class="text-[12px] text-gray-600">
-            {{ event.placeData?.name }}
-          </p>
-          } @if (event.town) {
-          <p class="text-[12px] text-gray-600">
-            {{ event.town }}
-          </p>
-          }
-        </td>
-        <td>
-          @if (event.start) {
-          <p class="text-[12px] text-gray-600">
-            {{
-              event.start | date : "EEEE dd MMMM" : "" : "es-ES" | titlecase
-            }}@if (event.time_start) { | {{ event.time_start!.slice(0, 5) }}h}
-          </p>
+    <app-card-events-mini
+      [event]="event"
+      [isDashboard]="true"
+      [showButtonsActions]="false"
+      (openEvent)="onOpenEvent($event)"
+    />
 
-          }
-        </td>
-        <td class="p-2 w-1/2">
-          <div>
-            <p class="text-[13px] text-gray-800">
-              <span [innerHTML]="event.description | safeHtml"></span>
-            </p>
-          </div>
-        </td>
-      </tr>
-    </tbody>
-
-    }
-  </table>
-  } @if (item.activities && item.activities.length > 0) {
-  <p class="text-[18px] font-normal mt-6 mb-4">Presupuesto - tareas</p>
-  <table class="w-full -collapse tableProjects my-4">
-    @for (activity of item.activities; track activity; let pIndex = $index) {
-
-    <tbody>
-      <tr class="hover:bg-gray-50 cursor-pointer">
-        <td class="p-2 w-auto">
-          {{ activity.name }}
-        </td>
-
-        <td class="p-2 w-1/2">
-          <div>
-            <p class="text-[13px] text-gray-800">
-              <span [innerHTML]="activity.observations | safeHtml"></span>
-            </p>
-            @if (activity.attendant) {
-            <p class="text-[12px] text-gray-500 flex items-center gap-1 mt-1">
-              <i class="uil uil-user text-[10px]"></i>
-              {{ activity.attendant }}
-            </p>
-            }
-          </div>
-        </td>
-
-        <td class="p-2 w-auto text-right">
-          {{ activity.budget | eurosFormat }}
-        </td>
-      </tr>
-    </tbody>
-
-    }
-    <tfoot>
-      <tr class="total_table">
-        <!-- Etiqueta total ocupando las 3 primeras columnas -->
-        <td colspan="2" class="text-right text-[12px] font-semibold pr-4">
-          TOTAL
-        </td>
-        <!-- Total de todos los proyectos -->
-        <td class="text-right text-[12px] font-bold">
-          {{ getProjectTotalBudget(item) | eurosFormat }}
-        </td>
-      </tr>
-    </tfoot>
-  </table>
-  } @if (item.invoices && item.invoices.length > 0) {
-  <p class="text-[18px] font-normal mt-12 mb-4">Facturas</p>
-  <div class="w-full">
-    @if (item.invoices && item.invoices.length>0) {
-    <div class="mb-10">
-      <app-invoices-table
-        [invoices]="item.invoices"
-        [showCreditor]="true"
-        [showTotals]="true"
-        totalLabel="TOTAL"
-        (rowClick)="onOpenInvoice($event)"
-      />
-    </div>
     }
   </div>
+  } @if (item.activities && item.activities.length > 0) {
+  <p class="text-[18px] font-normal mt-8 mb-4">Presupuesto - tareas</p>
+  <div class="w-full">
+    <table class="w-full -collapse tableProjects my-4">
+      @for (activity of item.activities; track activity; let pIndex = $index) {
+
+      <tbody>
+        <tr class="hover:bg-gray-50 cursor-pointer">
+          <td class="p-2 w-auto">
+            {{ activity.name }}
+          </td>
+
+          <td class="p-2 w-1/2">
+            <div>
+              <p class="text-[13px] text-gray-800">
+                <span [innerHTML]="activity.observations | safeHtml"></span>
+              </p>
+              @if (activity.attendant) {
+              <p class="text-[12px] text-gray-500 flex items-center gap-1 mt-1">
+                <i class="uil uil-user text-[10px]"></i>
+                {{ activity.attendant }}
+              </p>
+              }
+            </div>
+          </td>
+
+          <td class="p-2 w-auto text-right">
+            {{ activity.budget | eurosFormat }}
+          </td>
+        </tr>
+      </tbody>
+
+      }
+      <tfoot>
+        <tr class="total_table">
+          <!-- Etiqueta total ocupando las 3 primeras columnas -->
+          <td colspan="2" class="text-right text-[12px] font-semibold pr-4">
+            TOTAL
+          </td>
+          <!-- Total de todos los proyectos -->
+          <td class="text-right text-[12px] font-bold">
+            {{ getProjectTotalBudget(item) | eurosFormat }}
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+  } @if (item.invoices && item.invoices.length > 0) {
+  <!-- GASTOS -->
+  @if (getProjectExpenses(item).length > 0) {
+  <p class="text-[18px] font-normal mt-8 mb-4">Gastos</p>
+  <div class="w-full">
+    <app-invoices-table
+      [invoices]="getProjectExpenses(item)"
+      [showCreditor]="true"
+      [showTotals]="true"
+      totalLabel="TOTAL GASTOS"
+      (rowClick)="onOpenInvoice($event)"
+    />
+  </div>
   }
+
+  <!-- INGRESOS -->
+  @if (getProjectIncomes(item).length > 0) {
+  <p class="text-[18px] font-normal mt-4 mb-4">Ingresos</p>
+  <div class="w-full">
+    <app-invoices-table
+      [invoices]="getProjectIncomes(item)"
+      [showCreditor]="true"
+      [showTotals]="true"
+      totalLabel="TOTAL INGRESOS"
+      (rowClick)="onOpenInvoice($event)"
+    />
+  </div>
+
+  <p class="text-[18px] font-normal mt-4 mb-4">Balanza</p>
+  <div class="w-full">
+    <table class="w-full -collapse tableProjects my-4">
+      <tbody>
+        <tr>
+          <td class="p-2 text-right">Total gastos</td>
+          <td class="p-2 text-right">{{ totalExpenses | eurosFormat }}</td>
+        </tr>
+        <tr>
+          <td class="p-2 text-right">Total ingresos</td>
+          <td class="p-2 text-right">{{ totalIncomes | eurosFormat }}</td>
+        </tr>
+        <tr class="total_table">
+          <td class="p-2 text-right font-bold">Balance</td>
+          <td
+            class="p-2 text-right font-bold"
+            [ngClass]="{
+              'text-green-700': balance > 0,
+              'text-red-700': balance < 0
+            }"
+          >
+            {{ balance | eurosFormat }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  } }
 </div>

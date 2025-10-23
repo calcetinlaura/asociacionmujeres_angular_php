@@ -24,7 +24,7 @@ import {
     DictTranslatePipe,
   ],
 })
-export class CardPlayerComponent {
+export class CardEventsComponent {
   @Input() type: TypeList = TypeList.Books;
   @Input() item: any = {};
   typeList = TypeList;

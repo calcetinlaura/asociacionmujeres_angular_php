@@ -161,7 +161,7 @@
                     class="ql-container-medium flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
                   />
                   <div class="w-full text-right text-xs text-gray-500 mt-1">
-                    {{ observationsLen() }} / 300
+                    {{ observationsLen() }} / 1000
                   </div>
                 </div>
               </div>
@@ -197,58 +197,16 @@
           Eventos vinculadas
         </h2>
         @if (events && events.length > 0) {
-        <table class="w-full -collapse tableProjects my-4">
+        <div class="mx-96 flex flex-col gap-y-2 mt-6">
           @for (event of events; track event; let pIndex = $index) {
-          <tbody>
-            <tr>
-              <td class="bg-amarilloClaro w-auto">
-                @if (event.img) {
-                <img
-                  [src]="event.img | itemImage : typeList.Events"
-                  [alt]="event.title"
-                  class="object-cover w-full h-full transition-transform duration-300 ease-out group-hover:scale-[1.03]"
-                />
-                }
-              </td>
-              <td class="p-2 w-auto text-[12px]">
-                {{ event.title }}
-              </td>
-              <td class="p-2 bg-lilaClaro w-auto">
-                @if (event.placeData?.name) {
-                <p class="text-[12px] text-gray-600">
-                  {{ event.placeData?.name }}
-                </p>
-                } @if (event.town) {
-                <p class="text-[12px] text-gray-600">
-                  {{ event.town }}
-                </p>
-                }
-              </td>
-              <td class="p-2 bg-emerald-300">
-                @if (event.start) {
-                <p class="text-[12px] text-gray-600">
-                  {{
-                    event.start
-                      | date : "EEEE dd MMMM" : "" : "es-ES"
-                      | titlecase
-                  }}@if (event.time_start) { |
-                  {{ event.time_start!.slice(0, 5) }}h}
-                </p>
-
-                }
-              </td>
-              <td class="p-2 w-auto bg-verdeClaro">
-                <div>
-                  <p class="text-[13px] text-gray-800">
-                    <span [innerHTML]="event.description | safeHtml"></span>
-                  </p>
-                </div>
-              </td>
-            </tr>
-          </tbody>
+          <app-card-events-mini
+            [event]="event"
+            [isDashboard]="true"
+            [showButtonsActions]="false"
+          />
 
           }
-        </table>
+        </div>
         }
       </div>
       }

@@ -26,6 +26,7 @@ import {
   ActionItem,
   ActionPayload,
 } from 'src/app/shared/components/action-bar/action-bar.component';
+import { TypeInvoiceBadgeComponent } from 'src/app/shared/components/type-invoice-badge/type-invoice-badge.component';
 import { AgePipe } from 'src/app/shared/pipe/caculate_age.pipe';
 import { EurosFormatPipe } from 'src/app/shared/pipe/eurosFormat.pipe';
 import { FilterTransformCodePipe } from 'src/app/shared/pipe/filterTransformCode.pipe';
@@ -66,6 +67,7 @@ import { CircleIndicatorComponent } from '../circle-indicator/circle-indicator.c
     AudienceBadgesPipe,
     ActionBarComponent,
     SafeHtmlPipe,
+    TypeInvoiceBadgeComponent,
   ],
   providers: [ItemImagePipe],
   selector: 'app-table',

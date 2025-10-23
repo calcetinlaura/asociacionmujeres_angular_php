@@ -66,71 +66,12 @@
           <div class="mt-6 flex flex-1">
             <div class="flex flex-col gap-1 mt-2 w-full">
               @for (event of item!.events; track trackById($index, event)) {
-              <div
-                class="group flex w-full gap-4 cursor-pointer rounded-xl p-2 border border-transparent transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-md hover:border-lilaOscuro/15 hover:bg-lilaClaro/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lilaOscuro/40"
-                (click)="onOpenEvent(event.id)"
-                tabindex="0"
-                (keyup.enter)="onOpenEvent(event.id)"
-              >
-                <div
-                  class="w-28 h-auto overflow-hidden flex-shrink-0 rounded-lg flex items-center"
-                >
-                  @if (event?.img) {
-                  <img
-                    [src]="event.img | itemImage : typeEvent"
-                    [alt]="event?.title || ''"
-                    class="object-cover w-full h-autor transition-transform duration-300 ease-out group-hover:scale-[1.03]"
-                  />
-                  }
-                </div>
-
-                <div
-                  class="flex-1 py-2 px-3 rounded-lg shadow-sm bg-white/70 transition-all duration-300 ease-out group-hover:bg-white group-hover:shadow-md"
-                >
-                  <p class="text-[12px] font-semibold tracking-wide">
-                    {{ event?.title }}
-                  </p>
-
-                  @if (event?.start) {
-                  <p class="text-[11px] text-gray-600 mt-1">
-                    {{
-                      event.start
-                        | date : "EEEE dd MMMM" : "" : "es-ES"
-                        | titlecase
-                    }}
-                    | {{ event?.time_start?.slice(0, 5) }}h
-                  </p>
-                  }
-
-                  <div class="flex gap-x-2 flex-wrap justify-start my-2">
-                    @for (category of (event?.category || []); track category) {
-                    <p class="categories">
-                      {{ category | dictTranslate : dictType.Categories }}
-                    </p>
-                    }
-                  </div>
-
-                  @if (event?.placeData?.name) {
-                  <p class="text-[10px] text-gray-600">
-                    {{ event.placeData?.name }}
-                  </p>
-                  } @if (event?.salaData?.name) {
-                  <p class="text-xs md:text-[9px] text-gray-500 mb-2">
-                    {{ event.salaData?.name }} -
-                    {{
-                      event.salaData?.room_location
-                        | filterTransformCode : "roomLocationPlaces"
-                    }}
-                  </p>
-                  } @if (event?.town) {
-                  <p class="text-xs md:text-[9px] text-gray-600">
-                    @if (event?.placeData?.address) {
-                    <span>{{ event.placeData?.address }}, </span> }
-                    {{ event.town }}
-                  </p>
-                  }
-                </div>
-              </div>
+              <app-card-events-mini
+                [event]="event"
+                [isDashboard]="isDashboard"
+                [showButtonsActions]="false"
+                (openEvent)="onOpenEvent($event)"
+              />
               }
             </div>
           </div>

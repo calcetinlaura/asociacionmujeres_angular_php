@@ -14,24 +14,13 @@ import {
 import { EventModelFullData } from 'src/app/core/interfaces/event.interface';
 import { TypeList } from 'src/app/core/models/general.model';
 
-import { ImgBrokenDirective } from 'src/app/shared/directives/img-broken.directive';
-import {
-  DictTranslatePipe,
-  DictType,
-} from 'src/app/shared/pipe/dict-translate.pipe';
-import { FilterTransformCodePipe } from 'src/app/shared/pipe/filterTransformCode.pipe';
-import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
+import { DictType } from 'src/app/shared/pipe/dict-translate.pipe';
 
 import {
   buildShareTitle,
   localISODate,
 } from 'src/app/shared/utils/share-url.util';
 
-import {
-  ActionBarComponent,
-  ActionItem,
-  ActionPayload,
-} from '../../../action-bar/action-bar.component';
 import { ButtonIconComponent } from '../../../buttons/button-icon/button-icon.component';
 import { SocialMediaShareComponent } from '../../../social-media/social-media-share.component';
 import { TextTitleComponent } from '../../../text/text-title/text-title.component';
@@ -39,7 +28,7 @@ import { ConfirmDialogComponent } from '../modal-confirm-dialog/modal-confirm-di
 
 // ✅ Nuevas utilidades para no duplicar lógica
 
-import { EventPublishPillComponent } from 'src/app/modules/dashboard/pages/events/components/publish-pill/publish-pill.component';
+import { CardEventMiniComponent } from 'src/app/modules/landing/components/cards/card-events-min/card-events.min.component';
 import {
   isDraft,
   isScheduled,
@@ -53,16 +42,11 @@ import { pickShareDate } from 'src/app/shared/utils/share-url.util';
   standalone: true,
   imports: [
     CommonModule,
-    ImgBrokenDirective,
-    ItemImagePipe,
-    FilterTransformCodePipe,
-    DictTranslatePipe,
     ButtonIconComponent,
     SocialMediaShareComponent,
     TextTitleComponent,
     ConfirmDialogComponent,
-    ActionBarComponent,
-    EventPublishPillComponent,
+    CardEventMiniComponent,
   ],
   templateUrl: './modal-multievent.component.html',
   styleUrls: ['./modal-multievent.component.css'],
@@ -193,22 +177,16 @@ export class ModalMultiEventComponent implements OnChanges {
     if (this.isConfirmOpen) this.closeConfirm();
   }
 
-  readonly actionsForSection: ActionItem[] = [
-    { icon: 'uil-eye', tooltip: 'Ver', type: 'view' },
-    { icon: 'uil-edit', tooltip: 'Editar', type: 'edit' },
-    { icon: 'uil-trash-alt', tooltip: 'Eliminar', type: 'remove' },
-  ];
-
-  handleAction(ev: ActionPayload, element: EventModelFullData): void {
+  handleEventAction(ev: { type: string; event: EventModelFullData }): void {
     switch (ev.type) {
       case 'view':
-        this.view.emit(ev.id);
+        this.view.emit(ev.event.id);
         break;
       case 'edit':
-        this.edit.emit(ev.id);
+        this.edit.emit(ev.event.id);
         break;
       case 'remove':
-        this.removeById(element);
+        this.removeById(ev.event);
         break;
     }
   }

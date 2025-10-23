@@ -67,7 +67,7 @@ export class EventsPageLandingComponent implements OnInit {
   currentModalAction: TypeActionModal = TypeActionModal.Show;
   typeModal: TypeList = TypeList.Events;
   private openedWithNavigation = false;
-  renderKey = 0;
+
   contentVersion = 0;
 
   // Año seleccionado (para sincronizar UI; el backend ya filtra por año)
@@ -269,10 +269,9 @@ export class EventsPageLandingComponent implements OnInit {
   }
   private bumpKeys() {
     this.contentVersion++;
-    this.renderKey++;
+
     console.log('[PARENT] bumpKeys →', {
       contentVersion: this.contentVersion,
-      renderKey: this.renderKey,
     });
   }
   onBackModal(): void {

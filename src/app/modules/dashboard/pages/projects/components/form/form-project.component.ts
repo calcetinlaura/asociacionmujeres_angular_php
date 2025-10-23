@@ -28,14 +28,13 @@ import { SubsidyModelFullData } from 'src/app/core/interfaces/subsidy.interface'
 import { TypeList } from 'src/app/core/models/general.model';
 import { SubsidiesService } from 'src/app/core/services/subsidies.services';
 import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
+import { CardEventMiniComponent } from 'src/app/modules/landing/components/cards/card-events-min/card-events.min.component';
 import { ButtonSelectComponent } from 'src/app/shared/components/buttons/button-select/button-select.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { ScrollToFirstErrorDirective } from 'src/app/shared/directives/scroll-to-first-error.directive';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { dateRangeValidator } from 'src/app/shared/utils/validators.utils';
 import { ButtonIconComponent } from '../../../../../../shared/components/buttons/button-icon/button-icon.component';
-import { ItemImagePipe } from '../../../../../../shared/pipe/item-img.pipe';
-import { SafeHtmlPipe } from '../../../../../../shared/pipe/safe-html.pipe';
 
 @Component({
   selector: 'app-form-project',
@@ -49,8 +48,8 @@ import { SafeHtmlPipe } from '../../../../../../shared/pipe/safe-html.pipe';
     SpinnerLoadingComponent,
     ButtonSelectComponent,
     ScrollToFirstErrorDirective,
-    ItemImagePipe,
-    SafeHtmlPipe,
+
+    CardEventMiniComponent,
   ],
   templateUrl: './form-project.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],

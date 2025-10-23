@@ -79,5 +79,10 @@
     "NONE": "NO tiene parking propio",
     "FREE": "Parking propio gratuito",
     "PAID": "Parking propio de pago"
+  },
+  "typeInvoices": {
+    "INVOICE": "Factura",
+    "TICKET": "Ticket",
+    "INCOME": "Ingreso"
   }
 }

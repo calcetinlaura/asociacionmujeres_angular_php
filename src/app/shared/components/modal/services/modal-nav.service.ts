@@ -1,4 +1,3 @@
-// shared/modal/modal-nav.service.ts
 import { computed, Injectable, signal } from '@angular/core';
 import { ModalHistory, ModalState } from '../modal-history';
 

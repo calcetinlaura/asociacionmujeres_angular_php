@@ -12,6 +12,7 @@ export enum DictType {
   PartnersAgeBuckets = 'partners.ageBuckets',
   PaymentMethod = 'paymentMethod',
   Parking = 'parking',
+  TypeInvoices = 'typeInvoices',
 }
 
 @Pipe({

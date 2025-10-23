@@ -3,6 +3,9 @@
     <colgroup>
       @if (showIndex) {
       <col class="w-auto" />
+      } @if (showType) {
+      <!-- Tipo -->
+      <col class="w-[30px]" />
       }
       <!-- Numero -->
       <col class="w-[80px]" />
@@ -18,12 +21,14 @@
       <!-- Descripción -->
       <col class="w-[auto]" />
       <!-- Total -->
-      <col class="w-[60px]" />
+      <col class="w-[80px]" />
     </colgroup>
 
     <thead>
       <tr>
         @if (showIndex) {
+        <th class="p-2 text-center text-[12px] font-semibold"></th>
+        }@if (showType) {
         <th class="p-2 text-center text-[12px] font-semibold"></th>
         }
         <th class="p-2 text-center text-[12px] font-semibold">N°</th>
@@ -33,7 +38,7 @@
         } @if (showCreditor) {
         <th class="p-2 text-center text-[12px] font-semibold">Acreedor</th>
         }
-        <th class="p-2 text-center text-[12px] font-semibold">Descripción</th>
+        <th class="p-2 text-center text-[12px] font-semibold">Concepto</th>
         <th class="p-2 text-right pr-4 text-[12px] font-semibold">Total</th>
       </tr>
     </thead>
@@ -46,6 +51,10 @@
       >
         @if (showIndex) {
         <td class="p-2">{{ i + 1 }}</td>
+        } @if (showType) {
+        <td class="p-2 text-center">
+          <app-type-invoice-badge [value]="invoice.type_invoice" />
+        </td>
         }
         <td class="p-2 text-center">{{ invoice.number_invoice }}</td>
         <td class="p-2 text-center">
@@ -68,7 +77,7 @@
         }
 
         <td class="p-2">
-          <span [innerHTML]="invoice.description"></span>
+          <span [innerHTML]="invoice.concept"></span>
         </td>
 
         <td class="p-2 w-auto text-right">
@@ -80,7 +89,11 @@
         <td
           class="text-right text-[12px] font-semibold pr-4"
           [attr.colspan]="
-            (showIndex ? 1 : 0) + 3 + (showCreditor ? 1 : 0) + (showCif ? 1 : 0)
+            (showIndex ? 1 : 0) +
+            3 +
+            (showCreditor ? 1 : 0) +
+            (showCif ? 1 : 0) +
+            (showType ? 1 : 0)
           "
         >
           {{ totalLabel }}

@@ -9,16 +9,13 @@ import {
 } from '@angular/core';
 import { MacroeventModelFullData } from 'src/app/core/interfaces/macroevent.interface';
 import { TypeList } from 'src/app/core/models/general.model';
+import { CardEventMiniComponent } from 'src/app/modules/landing/components/cards/card-events-min/card-events.min.component';
 import { ImageZoomOverlayComponent } from 'src/app/shared/components/image-zoom-overlay/image-zoom-overlay.component';
 import { SocialMediaShareComponent } from 'src/app/shared/components/social-media/social-media-share.component';
 import { TextEditorComponent } from 'src/app/shared/components/text/text-editor/text-editor.component';
 import { TextSubTitleComponent } from 'src/app/shared/components/text/text-subTitle/text-subtitle.component';
 import { TextTitleComponent } from 'src/app/shared/components/text/text-title/text-title.component';
-import {
-  DictTranslatePipe,
-  DictType,
-} from 'src/app/shared/pipe/dict-translate.pipe';
-import { FilterTransformCodePipe } from 'src/app/shared/pipe/filterTransformCode.pipe';
+import { DictType } from 'src/app/shared/pipe/dict-translate.pipe';
 import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
 import { buildShareUrl } from 'src/app/shared/utils/share-url.util';
 import { environments } from 'src/environments/environments';
@@ -35,8 +32,7 @@ import { environments } from 'src/environments/environments';
     SocialMediaShareComponent,
     TitleCasePipe,
     ImageZoomOverlayComponent,
-    DictTranslatePipe,
-    FilterTransformCodePipe,
+    CardEventMiniComponent,
   ],
   templateUrl: './modal-show-macroevent.component.html',
   styleUrls: ['./modal-show-macroevent.component.css'],
@@ -67,7 +63,7 @@ export class ModalShowMacroeventComponent {
     this.showZoom = false;
   }
 
-  onOpenEvent(eventId: number) {
+  onOpenEvent(eventId: number): void {
     if (eventId) this.openEvent.emit(eventId);
   }
 

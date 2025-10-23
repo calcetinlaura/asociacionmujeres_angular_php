@@ -209,6 +209,7 @@ $proofUpload   = procesarArchivoPorAnio($pdfPath, 'proof_pdf',   'date_invoice',
       $date_accounting = !empty($data['date_accounting']) ? $data['date_accounting'] : null;
       $date_payment = !empty($data['date_payment']) ? $data['date_payment'] : null;
       $creditor_id = isset($data['creditor_id']) && is_numeric($data['creditor_id']) ? (int)$data['creditor_id'] : null;
+      $concept = $data['concept'] ?? '';
       $description = $data['description'] ?? '';
       $amount = normNumber($data['amount'] ?? null);
       $irpf = normNumber($data['irpf'] ?? null);
@@ -278,7 +279,7 @@ if ($proofUpload !== '') {
 }
           $stmt = $connection->prepare("UPDATE invoices SET
               number_invoice = ?, type_invoice = ?, date_invoice = ?, date_accounting = ?, date_payment = ?,
-              creditor_id = ?, description = ?, amount = ?, irpf = ?, iva = ?,
+              creditor_id = ?, description = ?, concept = ?, amount = ?, irpf = ?, iva = ?,
               total_amount = ?, total_amount_irpf = ?, subsidy_id = ?, project_id = ?, invoice_pdf = ?, proof_pdf = ?
               WHERE id = ?");
 
@@ -289,14 +290,14 @@ if ($proofUpload !== '') {
           }
 
           $stmt->bind_param(
-              "sssssisdddddiissi",
+              "sssssissdddddiissi",
               $number_invoice,
               $type_invoice,
               $date_invoice,
               $date_accounting,
               $date_payment,
               $creditor_id,
-              $description,
+              $description, $concept,
               $amount,
               $irpf,
               $iva,
@@ -326,9 +327,9 @@ if ($proofUpload !== '') {
 $finalProof   = $proofUpload;
           $stmt = $connection->prepare("INSERT INTO invoices
               (number_invoice, type_invoice, date_invoice, date_accounting, date_payment,
-              creditor_id, description, amount, irpf, iva,
+              creditor_id, description, concept, amount, irpf, iva,
               total_amount, total_amount_irpf, subsidy_id, project_id, invoice_pdf, proof_pdf)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
           if (!$stmt) {
               http_response_code(500);
@@ -337,14 +338,14 @@ $finalProof   = $proofUpload;
           }
 
           $stmt->bind_param(
-              "sssssisdddddiiss",
+              "sssssissdddddiiss",
               $number_invoice,
               $type_invoice,
               $date_invoice,
               $date_accounting,
               $date_payment,
               $creditor_id,
-              $description,
+              $description,$concept,
               $amount,
               $irpf,
               $iva,

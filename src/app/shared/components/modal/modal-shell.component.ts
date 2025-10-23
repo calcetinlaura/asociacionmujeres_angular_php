@@ -1,5 +1,15 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  EventEmitter,
+  Input,
+  OnChanges,
+  OnDestroy,
+  OnInit,
+  Output,
+  SimpleChanges,
+} from '@angular/core';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
 
@@ -7,7 +17,9 @@ import { ModalComponent } from 'src/app/shared/components/modal/modal.component'
   standalone: true,
   selector: 'app-modal-shell',
   imports: [CommonModule, ModalComponent],
-  template: ` @for (k of [renderKey]; track k) { @if (visible) {
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `<div class="modal-shell-wrapper">
+    @if (visible) {
     <app-modal
       [item]="item"
       [contentVersion]="contentVersion"
@@ -33,6 +45,7 @@ import { ModalComponent } from 'src/app/shared/components/modal/modal.component'
       (sendFormBookData)="sendFormBookData.emit($event)"
       (sendFormMovieData)="sendFormMovieData.emit($event)"
       (sendFormAgentData)="sendFormAgentData.emit($event)"
+      (sendFormArticleData)="sendFormArticleData.emit($event)"
       (sendFormRecipeData)="sendFormRecipeData.emit($event)"
       (sendFormPiteraData)="sendFormPiteraData.emit($event)"
       (sendFormPartnerData)="sendFormPartnerData.emit($event)"
@@ -40,20 +53,19 @@ import { ModalComponent } from 'src/app/shared/components/modal/modal.component'
       (sendFormSubsidyData)="sendFormSubsidyData.emit($event)"
       (sendFormCreditorData)="sendFormCreditorData.emit($event)"
       (sendFormPlaceData)="sendFormPlaceData.emit($event)"
-      (sendFormArticleData)="sendFormArticleData.emit($event)"
       (sendFormProjectData)="sendFormProjectData.emit($event)"
       (sendFormPodcastData)="sendFormPodcastData.emit($event)"
     />
-    } }`,
+    }
+  </div> `,
 })
-export class ModalShellComponent<T> {
+export class ModalShellComponent<T> implements OnInit, OnChanges, OnDestroy {
   @Input({ required: true }) visible!: boolean;
   @Input({ required: true }) typeModal!: TypeList;
   @Input({ required: true }) action!: TypeActionModal;
   @Input() item: T | null = null;
   @Input() canGoBack = false;
   @Input() isDashboard = true;
-  @Input() renderKey = 0;
   @Input() contentVersion = 0;
 
   @Output() back = new EventEmitter<void>();
@@ -117,4 +129,27 @@ export class ModalShellComponent<T> {
     itemId: number;
     formData: FormData;
   }>();
+
+  // Logs de ciclo de vida
+  ngOnInit() {
+    console.log(
+      '%c🧱 ModalShellComponent → ngOnInit',
+      'color: lightgreen; font-weight:bold'
+    );
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    console.log(
+      '%c🧱 ModalShellComponent → ngOnChanges',
+      'color: lightblue; font-weight:bold',
+      changes
+    );
+  }
+
+  ngOnDestroy() {
+    console.log(
+      '%c💥 ModalShellComponent → ngOnDestroy',
+      'color: red; font-weight:bold'
+    );
+  }
 }

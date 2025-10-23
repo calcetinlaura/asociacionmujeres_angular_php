@@ -460,14 +460,7 @@
         } } @case (column.key === 'name') {
         {{ element[column.key] }}
         } @case (column.key === 'type_invoice') {
-        <span
-          [ngClass]="{
-                'type-ticket': element.type_invoice === 'TICKET',
-                'type-factura': element.type_invoice === 'INVOICE',
-                'type-ingreso': element.type_invoice === 'INCOME',
-              }"
-          >{{ element.type_invoice | i18nSelect : nameMovement }}</span
-        >
+        <app-type-invoice-badge [value]="element.type_invoice" />
         } @case (column.key === 'creditor_company') {
         <p class="text-[12px]">{{ element.creditor_company }}</p>
 
