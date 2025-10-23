@@ -71,9 +71,9 @@ export class FormPlaceComponent {
     ]),
     lat: new FormControl(0),
     lon: new FormControl(0),
-    description: new FormControl('', [Validators.maxLength(2000)]),
+    description: new FormControl('', [Validators.maxLength(500)]),
     img: new FormControl(''),
-    observations: new FormControl('', [Validators.maxLength(2000)]),
+    observations: new FormControl('', [Validators.maxLength(300)]),
     management: new FormControl(''),
     salas: new FormArray([]),
     type_room: new FormControl(''),
@@ -324,5 +324,11 @@ export class FormPlaceComponent {
     });
 
     return result;
+  }
+  observationsLen(): number {
+    return (this.formPlace.get('observations')?.value || '').length;
+  }
+  descriptionLen(): number {
+    return (this.formPlace.get('description')?.value || '').length;
   }
 }

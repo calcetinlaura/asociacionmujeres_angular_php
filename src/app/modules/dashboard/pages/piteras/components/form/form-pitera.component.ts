@@ -182,7 +182,7 @@ export class FormPiteraComponent {
       formData: formData,
     });
   }
-  summaryDescription(): number {
+  descriptionLen(): number {
     return (this.formPitera.get('description')?.value || '').length;
   }
   summaryLen(): number {

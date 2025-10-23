@@ -147,21 +147,31 @@
       <!-- Descripción -->
       <div class="box-input gap-x-4 pr-4 flex-1">
         <label for="description">Descripción</label>
-        <quill-editor
-          formControlName="description"
-          [modules]="quillModules"
-          placeholder="Escribe aquí la descripción..."
-          class="ql-container-small flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
-        />
+        <div class="flex flex-col flex-1">
+          <quill-editor
+            formControlName="description"
+            [modules]="quillModules"
+            placeholder="Escribe aquí la descripción..."
+            class="ql-container-small flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
+          />
+          <div class="w-full text-right text-xs text-gray-500 mt-1">
+            {{ descriptionLen() }} / 500
+          </div>
+        </div>
       </div>
       <div class="box-input gap-x-4 pr-4">
         <label for="observations">Observaciones</label>
-        <textarea
-          formControlName="observations"
-          maxlength="300"
-          rows="2"
-          placeholder="Cualquier observación a tener en cuenta."
-        ></textarea>
+        <div class="flex flex-col flex-1">
+          <textarea
+            formControlName="observations"
+            maxlength="300"
+            rows="2"
+            placeholder="Cualquier observación a tener en cuenta."
+          ></textarea>
+          <div class="w-full text-right text-xs text-gray-500 mt-1">
+            {{ observationsLen() }} / 300
+          </div>
+        </div>
       </div>
       <!-- GESTIÓN -->
       <div

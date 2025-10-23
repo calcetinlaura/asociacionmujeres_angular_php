@@ -143,7 +143,7 @@ export class FormArticleComponent {
       formData,
     });
   }
-  summaryDescription(): number {
+  descriptionLen(): number {
     return (this.formArticle.get('description')?.value || '').length;
   }
   summaryLen(): number {

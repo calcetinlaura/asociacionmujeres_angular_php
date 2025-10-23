@@ -69,7 +69,7 @@ export class FormCreditorComponent {
     ]),
     category: new FormControl(''),
     key_words: new FormControl(''),
-    observations: new FormControl(''),
+    observations: new FormControl('', [Validators.maxLength(300)]),
   });
 
   creditorData: any;
@@ -160,5 +160,8 @@ export class FormCreditorComponent {
     );
 
     this.submitForm.emit({ itemId: this.itemId, formData: formData });
+  }
+  observationsLen(): number {
+    return (this.formCreditor.get('observations')?.value || '').length;
   }
 }

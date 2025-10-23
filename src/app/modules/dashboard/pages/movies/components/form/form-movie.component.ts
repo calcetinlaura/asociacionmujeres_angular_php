@@ -154,7 +154,7 @@ export class FormMovieComponent {
 
     this.submitForm.emit({ itemId: this.itemId, formData: formData });
   }
-  summaryDescription(): number {
+  descriptionLen(): number {
     return (this.formMovie.get('description')?.value || '').length;
   }
   summaryLen(): number {

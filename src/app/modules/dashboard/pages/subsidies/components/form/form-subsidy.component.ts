@@ -86,7 +86,7 @@ export class FormSubsidyComponent implements OnInit {
     amount_granted: new FormControl<number | null>(null),
     amount_justified: new FormControl<number | null>(null),
     amount_association: new FormControl<number | null>(null),
-    observations: new FormControl(''),
+    observations: new FormControl('', [Validators.maxLength(1000)]),
   });
 
   submitted = false;
@@ -191,5 +191,8 @@ export class FormSubsidyComponent implements OnInit {
     );
 
     this.submitForm.emit({ itemId: this.itemId, formData: formData });
+  }
+  observationsLen(): number {
+    return (this.formSubsidy.get('observations')?.value || '').length;
   }
 }

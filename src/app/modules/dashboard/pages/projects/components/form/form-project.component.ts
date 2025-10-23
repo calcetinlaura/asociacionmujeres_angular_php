@@ -22,7 +22,8 @@ import { MatCardModule } from '@angular/material/card';
 import { QuillModule } from 'ngx-quill';
 import { filter, Observable, tap } from 'rxjs';
 import { ProjectsFacade } from 'src/app/application/projects.facade';
-import { ProjectModel } from 'src/app/core/interfaces/project.interface';
+import { EventModelFullData } from 'src/app/core/interfaces/event.interface';
+import { ProjectModelFullData } from 'src/app/core/interfaces/project.interface';
 import { SubsidyModelFullData } from 'src/app/core/interfaces/subsidy.interface';
 import { TypeList } from 'src/app/core/models/general.model';
 import { SubsidiesService } from 'src/app/core/services/subsidies.services';
@@ -33,6 +34,8 @@ import { ScrollToFirstErrorDirective } from 'src/app/shared/directives/scroll-to
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { dateRangeValidator } from 'src/app/shared/utils/validators.utils';
 import { ButtonIconComponent } from '../../../../../../shared/components/buttons/button-icon/button-icon.component';
+import { ItemImagePipe } from '../../../../../../shared/pipe/item-img.pipe';
+import { SafeHtmlPipe } from '../../../../../../shared/pipe/safe-html.pipe';
 
 @Component({
   selector: 'app-form-project',
@@ -46,6 +49,8 @@ import { ButtonIconComponent } from '../../../../../../shared/components/buttons
     SpinnerLoadingComponent,
     ButtonSelectComponent,
     ScrollToFirstErrorDirective,
+    ItemImagePipe,
+    SafeHtmlPipe,
   ],
   templateUrl: './form-project.component.html',
   styleUrls: ['../../../../components/form/form.component.css'],
@@ -57,6 +62,7 @@ export class FormProjectComponent implements OnInit {
   private readonly generalService = inject(GeneralService);
 
   @Input() itemId!: number;
+
   @Input() prefillFromSubsidy?: {
     year: number;
     subsidyId: number;
@@ -66,7 +72,7 @@ export class FormProjectComponent implements OnInit {
     itemId: number;
     formData: FormData;
   }>();
-
+  events: EventModelFullData[] = [];
   formProject = new FormGroup(
     {
       title: new FormControl('', [Validators.required]),
@@ -74,7 +80,7 @@ export class FormProjectComponent implements OnInit {
         Validators.required,
         Validators.min(2000),
       ]),
-      description: new FormControl('', [Validators.maxLength(2000)]),
+      description: new FormControl('', [Validators.maxLength(500)]),
       subsidy_id: new FormControl<number | null>({
         value: null,
         disabled: true,
@@ -91,7 +97,7 @@ export class FormProjectComponent implements OnInit {
   submitted = false;
   titleForm = 'Registrar proyecto';
   buttonAction = 'Guardar';
-  typeList = TypeList.Projects;
+  typeList = TypeList;
   years: number[] = [];
   subsidies: SubsidyModelFullData[] = [];
   currentYear = this.generalService.currentYear;
@@ -136,9 +142,11 @@ export class FormProjectComponent implements OnInit {
         .pipe(
           takeUntilDestroyed(this.destroyRef),
           filter(
-            (event: ProjectModel | null): event is ProjectModel => !!event
+            (
+              event: ProjectModelFullData | null
+            ): event is ProjectModelFullData => !!event
           ),
-          tap((project: ProjectModel) => {
+          tap((project: ProjectModelFullData) => {
             this.formProject.patchValue({
               title: project.title,
               year: project.year,
@@ -161,6 +169,7 @@ export class FormProjectComponent implements OnInit {
               this.imageSrc = project.img;
               this.selectedImageFile = null;
             }
+            this.events = project.events || [];
             this.isLoading = false;
           })
         )
@@ -282,5 +291,11 @@ export class FormProjectComponent implements OnInit {
       itemId: this.itemId,
       formData: formData,
     });
+  }
+  observationsLen(): number {
+    return (this.formProject.get('observations')?.value || '').length;
+  }
+  descriptionLen(): number {
+    return (this.formProject.get('description')?.value || '').length;
   }
 }

@@ -79,7 +79,7 @@ export class FormAgentComponent {
       Validators.pattern(/^(?:0[1-9]|[1-4][0-9]|5[0-2])[0-9]{3}$/),
     ]),
     category: new FormControl(''),
-    observations: new FormControl(''),
+    observations: new FormControl('', [Validators.maxLength(300)]),
     img: new FormControl(''),
   });
   provincias: {
@@ -171,5 +171,8 @@ export class FormAgentComponent {
     );
 
     this.submitForm.emit({ itemId: this.itemId, formData: formData });
+  }
+  observationsLen(): number {
+    return (this.formAgent.get('observations')?.value || '').length;
   }
 }

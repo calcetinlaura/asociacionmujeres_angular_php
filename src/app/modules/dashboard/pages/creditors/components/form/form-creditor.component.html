@@ -178,12 +178,17 @@
       </div>
       <div class="box-input gap-x-4">
         <label for="observations">Observaciones</label>
-        <textarea
-          formControlName="observations"
-          maxlength="300"
-          rows="2"
-          placeholder="Escribe aquí la cualquier observación..."
-        ></textarea>
+        <div class="flex flex-col flex-1">
+          <textarea
+            formControlName="observations"
+            maxlength="300"
+            rows="3"
+            placeholder="Cualquier observación a tener en cuenta."
+          ></textarea>
+          <div class="text-right text-xs text-gray-500 mt-1">
+            {{ observationsLen() }} / 300
+          </div>
+        </div>
       </div>
       @if (formCreditor.invalid && submitted) {
       <div class="flex justify-center">

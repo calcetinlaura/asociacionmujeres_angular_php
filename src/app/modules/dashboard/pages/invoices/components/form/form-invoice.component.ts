@@ -121,7 +121,9 @@ export class FormInvoiceComponent {
 
   formInvoice = new FormGroup({
     number_invoice: new FormControl(''),
-    type_invoice: new FormControl('', [Validators.required]),
+    type_invoice: new FormControl('', [
+      Validators.pattern(/^(INVOICE|TICKET|INCOME)$/),
+    ]),
     date_invoice: new FormControl('', [
       Validators.required,
       dateBetween(this.minDate, this.tomorrowDate),
@@ -129,15 +131,26 @@ export class FormInvoiceComponent {
     date_accounting: new FormControl(''),
     date_payment: new FormControl(''),
     creditor_id: new FormControl<number | null>(null),
-    description: new FormControl('', [Validators.maxLength(2000)]),
+    description: new FormControl('', [Validators.maxLength(500)]),
+    concept: new FormControl('', [
+      Validators.required,
+      Validators.maxLength(100),
+    ]),
     amount: new FormControl<number | null>(null, [
       Validators.required,
       Validators.min(1),
+      Validators.pattern(/^[0-9]+(\.[0-9]{1,2})?$/),
     ]),
     irpf: new FormControl<number | null>(null),
     iva: new FormControl<number | null>(null),
-    total_amount: new FormControl<number | null>(null),
-    total_amount_irpf: new FormControl<number | null>(null),
+    total_amount: new FormControl<number | null>({
+      value: null,
+      disabled: true,
+    }),
+    total_amount_irpf: new FormControl<number | null>({
+      value: null,
+      disabled: true,
+    }),
     subsidy_id: new FormControl<number | null>({
       value: null,
       disabled: true,
@@ -177,6 +190,10 @@ export class FormInvoiceComponent {
           filter((invoice: InvoiceModelFullData | null) => invoice !== null),
           tap((invoice: InvoiceModelFullData | null) => {
             if (invoice) {
+              this.formInvoice.reset(); // <-- limpia el formulario completo
+              this.creditors = [];
+              this.selectedCreditor = undefined;
+              this.searchInput.reset('');
               this.formInvoice.patchValue({
                 number_invoice: invoice.number_invoice || '',
                 type_invoice: invoice.type_invoice || '',
@@ -185,6 +202,7 @@ export class FormInvoiceComponent {
                 date_payment: invoice.date_payment || '',
                 creditor_id: invoice.creditor_id,
                 description: invoice.description || '',
+                concept: invoice.concept || '',
                 amount: invoice.amount || null,
                 irpf: invoice.irpf || null,
                 iva: invoice.iva || null,
@@ -352,6 +370,14 @@ export class FormInvoiceComponent {
       )
       .subscribe();
   }
+  hasErrorsIn(fields: string[]): boolean {
+    return fields.some((field) => this.formInvoice.get(field)?.invalid);
+  }
+
+  hasErrorMovementType(): boolean {
+    return this.submitted && !this.isInvoiceTypeMovementSelected;
+  }
+
   get isInvoiceTypeMovementSelected(): boolean {
     return (
       this.invoiceTypeMovement === 'INVOICE' ||
@@ -604,5 +630,12 @@ export class FormInvoiceComponent {
       itemId: this.itemId,
       formData: formData,
     });
+  }
+
+  conceptLen(): number {
+    return (this.formInvoice.get('concept')?.value || '').length;
+  }
+  descriptionLen(): number {
+    return (this.formInvoice.get('description')?.value || '').length;
   }
 }

@@ -229,12 +229,17 @@
 
       <div class="box-input gap-x-4 flex-1">
         <label for="observations">Observaciones</label>
-        <textarea
-          formControlName="observations"
-          maxlength="300"
-          rows="2"
-          placeholder="Escribe aquí la cualquier observación..."
-        ></textarea>
+        <div class="flex flex-col">
+          <textarea
+            formControlName="observations"
+            maxlength="300"
+            rows="2"
+            placeholder="Cualquier observación a tener en cuenta."
+          ></textarea>
+          <div class="w-full text-right text-xs text-gray-500 mt-1">
+            {{ observationsLen() }} / 300
+          </div>
+        </div>
       </div>
 
       <div class="flex gap-4">

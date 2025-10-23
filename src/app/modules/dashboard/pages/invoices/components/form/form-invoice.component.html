@@ -18,10 +18,10 @@
       <div
         class="border-2 pt-2 px-4 pb-6 mb-6"
         [ngClass]="{
-          'border-[red]': submitted && !isInvoiceTypeMovementSelected
+          'border-[red]': hasErrorMovementType()
         }"
       >
-        <h2 class="font-bold text-lilaText mt-4 uppercase">
+        <h2 class="font-bold text-lilaText mt-4 mb-6 uppercase">
           Tipo de movimiento económico
         </h2>
         <div class="flex justify-center gap-x-4 py-2">
@@ -30,144 +30,197 @@
             subText="El gasto dispone de factura"
             [active]="invoiceTypeMovement === 'INVOICE'"
             (addClicked)="setInvoiceTypeMovement('INVOICE')"
-            iconClass="uil-calendar-alt"
+            iconClass="uil uil-invoice"
           /><app-button-select
             [buttonText]="'Ticket'"
             subText="El gasto no dispone de factura"
             [active]="invoiceTypeMovement === 'TICKET'"
             (addClicked)="setInvoiceTypeMovement('TICKET')"
-            iconClass="uil-calendar-alt"
+            iconClass="uil uil-receipt"
           /><app-button-select
             [buttonText]="'Ingreso'"
             subText="Entrada de dinero a la cuenta"
             [active]="invoiceTypeMovement === 'INCOME'"
             (addClicked)="setInvoiceTypeMovement('INCOME')"
-            iconClass="uil-calendar-alt"
+            iconClass="uil uil-money-insert"
           />
         </div>
       </div>
-
-      <div class="flex gap-x-16">
-        <!-- Fecha Factura -->
-        <div class="flex-1 box-input">
-          <label for="date_invoice">F. Compra</label>
-          <div class="flex flex-col flex-1">
+      <!-- FECHAS -->
+      <div
+        class="border-2 pt-2 px-4 pb-6 mb-6"
+        [ngClass]="{
+          'border-[red]': submitted && hasErrorsIn(['date_invoice'])
+        }"
+      >
+        <h2 class="font-bold text-lilaText mt-4 mb-6 uppercase">Fecha</h2>
+        <div class="flex justify-center gap-x-16 mx-8">
+          <!-- Fecha Factura -->
+          <div class="flex-1 box-input">
+            <label for="date_invoice">
+              {{
+                invoiceTypeMovement === "INVOICE"
+                  ? "F. Factura"
+                  : invoiceTypeMovement === "TICKET"
+                  ? "F. Ticket"
+                  : invoiceTypeMovement === "INCOME"
+                  ? "F. Ingreso"
+                  : "F. Compra"
+              }}
+            </label>
+            <div class="flex flex-col flex-1">
+              <input
+                formControlName="date_invoice"
+                type="date"
+                class="w-full"
+                [ngClass]="{
+                  'text-placeholder': !formInvoice.get('date_invoice')?.value,
+                  'strong-border': !formInvoice.get('date_invoice')?.invalid,
+                  'is-invalid':
+                    submitted && formInvoice.get('date_invoice')?.invalid
+                }"
+              />
+              @if (submitted && formInvoice.get('date_invoice')?.invalid) { @if
+              (submitted &&
+              formInvoice.get('date_invoice')?.errors?.['minDate']){
+              <div class="is-invalid-text">Debe ser desde 01/01/2018.</div>
+              } @else if (submitted &&
+              formInvoice.get('date_invoice')?.errors?.['maxDate']){
+              <div class="is-invalid-text">Debe ser fecha máxima hoy.</div>
+              }@else{
+              <div class="is-invalid-text">Campo requerido</div>
+              } }
+            </div>
+          </div>
+          <!-- Fecha libreta contabilidad -->
+          <div class="flex-1 box-input">
+            <label for="date_accounting">F. Libro cont</label>
             <input
-              formControlName="date_invoice"
+              formControlName="date_accounting"
               type="date"
               class="w-full"
               [ngClass]="{
-                'text-placeholder': !formInvoice.get('date_invoice')?.value,
-                'strong-border': !formInvoice.get('date_invoice')?.invalid,
-                'is-invalid':
-                  submitted && formInvoice.get('date_invoice')?.invalid
+                'text-placeholder': !formInvoice.get('date_accounting')?.value
               }"
             />
-            @if (submitted && formInvoice.get('date_invoice')?.invalid) { @if
-            (submitted && formInvoice.get('date_invoice')?.errors?.['minDate']){
-            <div class="is-invalid-text">Debe ser desde 01/01/2018.</div>
-            } @else if (submitted &&
-            formInvoice.get('date_invoice')?.errors?.['maxDate']){
-            <div class="is-invalid-text">Debe ser fecha máxima hoy.</div>
-            }@else{
-            <div class="is-invalid-text">Campo requerido</div>
-            } }
           </div>
-        </div>
-        <!-- Fecha libreta contabilidad -->
-        <div class="flex-1 box-input">
-          <label for="date_accounting">F. Libro cont</label>
-          <input
-            formControlName="date_accounting"
-            type="date"
-            class="w-full"
-            [ngClass]="{
-              'text-placeholder': !formInvoice.get('date_accounting')?.value
-            }"
-          />
-        </div>
-        <!-- Fecha pago -->
-        <div class="flex-1 box-input">
-          <label for="date_payment">F. Pago</label>
-          <input
-            formControlName="date_payment"
-            type="date"
-            class="w-full"
-            [ngClass]="{
-              'text-placeholder': !formInvoice.get('date_payment')?.value
-            }"
-          />
+          <!-- Fecha pago -->
+          @if (invoiceTypeMovement !== 'INCOME') {
+          <div class="flex-1 box-input">
+            <label for="date_payment">F. Pago</label>
+            <input
+              formControlName="date_payment"
+              type="date"
+              class="w-full"
+              [ngClass]="{
+                'text-placeholder': !formInvoice.get('date_payment')?.value
+              }"
+            />
+          </div>
+          }
         </div>
       </div>
-      <div class="w-full flex flex-col gap-y-4 justify-start">
-        <!-- NÚMERO FACTURA -->
-        <div class="box-input">
-          <label for="number_invoice">Num. Factura</label>
-          <input
-            formControlName="number_invoice"
-            type="text"
-            placeholder="Número de factura"
-          />
-        </div>
-        <!-- ACREEDOR -->
-        <div class="box-input">
-          <label for="creditor">Acreedor</label>
-          <div class="flex flex-col flex-1">
-            <input
-              type="text"
-              matInput
-              [formControl]="searchInput"
-              (input)="searchCreditor()"
-              [matAutocomplete]="auto"
-              placeholder="Busca el acreedor de la fatura"
-              style="z-index: 1200"
-              [ngClass]="{
-                'is-invalid':
-                  searchInput.value &&
-                  formInvoice.get('creditor_id')?.hasError('notRegistered')
-              }"
-            />
-            <mat-autocomplete
-              autoActiveFirstOption
-              #auto="matAutocomplete"
-              style="z-index: 1200; position: fixed"
-              (optionSelected)="onSelectedOption($event)"
-            >
-              @for (creditor of creditors; track creditor.id) {
-              <mat-option
-                [value]="creditor"
-                (onSelectionChange)="creditorSelected(creditor)"
+      <!-- DAtos -->
+      <div
+        class="border-2 pt-2 px-4 pb-6 mb-6"
+        [ngClass]="{
+          'border-[red]': submitted && hasErrorsIn(['concept'])
+        }"
+      >
+        <h2 class="font-bold text-lilaText mt-4 mb-6 uppercase">Datos</h2>
+        <div class="flex flex-col gap-y-4 justify-start mx-8">
+          <!-- ACREEDOR -->
+          @if (invoiceTypeMovement !== 'INCOME') {
+          <div class="box-input">
+            <label for="creditor">Acreedor</label>
+            <div class="flex flex-col flex-1">
+              <input
+                type="text"
+                matInput
+                [formControl]="searchInput"
+                (input)="searchCreditor()"
+                [matAutocomplete]="auto"
+                placeholder="Busca el acreedor de la fatura"
+                style="z-index: 1200"
+                [ngClass]="{
+                  'is-invalid':
+                    searchInput.value &&
+                    formInvoice.get('creditor_id')?.hasError('notRegistered')
+                }"
+              />
+              <mat-autocomplete
+                autoActiveFirstOption
+                #auto="matAutocomplete"
+                style="z-index: 1200; position: fixed"
+                (optionSelected)="onSelectedOption($event)"
               >
-                {{ creditor.company }}
-                @if ( creditor.contact && creditor.contact !== creditor.company
-                ) {
-                <span>- {{ creditor.contact }}</span>
+                @for (creditor of creditors; track creditor.id) {
+                <mat-option
+                  [value]="creditor"
+                  (onSelectionChange)="creditorSelected(creditor)"
+                >
+                  {{ creditor.company }}
+                  @if ( creditor.contact && creditor.contact !==
+                  creditor.company ) {
+                  <span>- {{ creditor.contact }}</span>
+                  }
+                </mat-option>
+                } @if ( creditors.length === 0 && searchInput.value &&
+                searchInput.value.length > 0 ) {
+                <mat-option value=""
+                  >No se encontró ningún acreedor con el término
+                  {{ searchInput.value }}
+                </mat-option>
                 }
-              </mat-option>
-              } @if ( creditors.length === 0 && searchInput.value &&
-              searchInput.value.length > 0 ) {
-              <mat-option value=""
-                >No se encontró ningún acreedor con el término
-                {{ searchInput.value }}
-              </mat-option>
-              }
-            </mat-autocomplete>
+              </mat-autocomplete>
 
-            @if ( formInvoice.get('creditor_id')?.hasError('notRegistered') &&
-            searchInput.value ) {
-            <div class="is-invalid-text">
-              Acreedor NO registrado. Necesita registrar NUEVO ACREEDOR
-              previamente en la sección ACREEDORES
+              @if ( formInvoice.get('creditor_id')?.hasError('notRegistered') &&
+              searchInput.value ) {
+              <div class="is-invalid-text">
+                Acreedor NO registrado. Necesita registrar NUEVO ACREEDOR
+                previamente en la sección ACREEDORES
+              </div>
+              }
             </div>
-            }
+          </div>
+          } @if (invoiceTypeMovement === 'INVOICE') {
+          <!-- NÚMERO FACTURA -->
+          <div class="box-input">
+            <label for="number_invoice">Num. Factura</label>
+            <input
+              formControlName="number_invoice"
+              type="text"
+              placeholder="Número de factura"
+            />
+          </div>
+          }
+          <!-- CONCEPTO DEL MOVIMIENTO  -->
+          <div class="box-input">
+            <label for="concept">Concepto</label>
+            <div class="flex flex-col flex-1">
+              <textarea
+                formControlName="concept"
+                maxlength="100"
+                rows="2"
+                placeholder="Concepto del movimiento económico"
+              ></textarea>
+              <div class="flex justify-between">
+                @if (submitted && formInvoice.get('concept')?.invalid) {
+                <div class="flex-1 is-invalid-text">Campo requerido</div>
+                }
+                <div class="text-right text-xs text-gray-500 mt-1">
+                  {{ conceptLen() }} / 100
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
       <!-- DESCRIPCIÓN -->
-      <div class="flex gap-x-4 pt-4">
-        <div class="flex box-input gap-x-4 flex-1">
+      <div class="flex gap-x-4">
+        <div class="flex box-input flex-1">
           <!-- Descripción -->
-          <label for="description">Concepto</label>
+          <label for="description">Descripción</label>
           <div class="flex flex-col flex-1">
             <quill-editor
               formControlName="description"
@@ -175,9 +228,9 @@
               placeholder="Escribe aquí el concepto del movimiento económico..."
               class="ql-container-large flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
             />
-            @if (submitted && formInvoice.get('description')?.invalid) {
-            <div class="is-invalid-text">Campo requerido</div>
-            }
+            <div class="w-full text-right text-xs text-gray-500 mt-1">
+              {{ descriptionLen() }} / 500
+            </div>
           </div>
         </div>
         <div class="w-80">
@@ -200,77 +253,87 @@
         </div>
       </div>
       <!-- CANTIDAD -->
-      <div class="flex gap-x-16 justify-between">
-        <div class="flex flex-col box-input flex-1">
-          <label for="amount">Cantidad</label>
-          <input
-            formControlName="amount"
-            type="number"
-            class="w-full"
-            [ngClass]="{
-              'text-placeholder': !formInvoice.get('amount')?.value,
-              'is-invalid': submitted && formInvoice.get('amount')?.invalid
-            }"
-          />
-          @if (submitted && formInvoice.get('amount')?.invalid) {
-          <div class="is-invalid-text">Campo requerido</div>
-          }
-        </div>
-        <!-- IVA -->
-        <div class="flex flex-col box-input flex-1">
-          <label for="iva">IVA</label>
-          <input
-            formControlName="iva"
-            type="number"
-            class="w-full"
-            [ngClass]="{
-              'is-invalid': submitted && formInvoice.get('iva')?.invalid
-            }"
-          />
-        </div>
-        <!-- IRPF -->
-        <div class="flex flex-col box-input flex-1">
-          <label for="irpf">IRPF</label>
-          <input
-            formControlName="irpf"
-            type="number"
-            class="w-full"
-            [ngClass]="{
-              'is-invalid': submitted && formInvoice.get('irpf')?.invalid
-            }"
-          />
-        </div>
-        <!-- TOTAL -->
-        <div class="flex flex-col box-input">
-          <label for="total_amount" class="font-medium">Total</label>
-          <input
-            formControlName="total_amount"
-            type="number"
-            readonly
-            class="bg-gray-100 cursor-not-allowed w-full"
-            [ngClass]="{
-              'is-invalid':
-                submitted && formInvoice.get('total_amount')?.invalid
-            }"
-          />
+      <div
+        class="border-2 pt-2 px-4 pb-6 mb-6"
+        [ngClass]="{
+          'border-[red]': submitted && hasErrorsIn(['amount'])
+        }"
+      >
+        <h2 class="font-bold text-lilaText mt-4 mb-6 uppercase">Cantidad</h2>
+
+        <div class="flex gap-x-16 justify-between mx-8">
+          <div class="flex flex-col box-input flex-1">
+            <label for="amount">Cantidad</label>
+            <input
+              formControlName="amount"
+              type="number"
+              class="w-full"
+              [ngClass]="{
+                'text-placeholder': !formInvoice.get('amount')?.value,
+                'is-invalid': submitted && formInvoice.get('amount')?.invalid
+              }"
+            />
+            @if (submitted && formInvoice.get('amount')?.invalid) {
+            <div class="is-invalid-text">Campo requerido</div>
+            }
+          </div>
+          <!-- IVA -->
+          <div class="flex flex-col box-input flex-1">
+            <label for="iva">IVA</label>
+            <input
+              formControlName="iva"
+              type="number"
+              class="w-full"
+              [ngClass]="{
+                'is-invalid': submitted && formInvoice.get('iva')?.invalid
+              }"
+            />
+          </div>
+          <!-- IRPF -->
+          <div class="flex flex-col box-input flex-1">
+            <label for="irpf">IRPF</label>
+            <input
+              formControlName="irpf"
+              type="number"
+              class="w-full"
+              [ngClass]="{
+                'is-invalid': submitted && formInvoice.get('irpf')?.invalid
+              }"
+            />
+          </div>
+          <!-- TOTAL -->
+          <div class="flex flex-col box-input">
+            <label for="total_amount" class="font-medium">Total</label>
+            <input
+              formControlName="total_amount"
+              type="number"
+              readonly
+              class="bg-gray-100 cursor-not-allowed w-full"
+              [ngClass]="{
+                'is-invalid':
+                  submitted && formInvoice.get('total_amount')?.invalid
+              }"
+            />
+          </div>
         </div>
       </div>
       <!-- SUBVENCIÓN -->
+      @if (invoiceTypeMovement === 'INVOICE') {
       <div class="border-2 pt-2 px-4 pb-6 mb-6">
-        <h2 class="font-bold text-lilaText mt-4 uppercase">Subvención</h2>
+        <h2 class="font-bold text-lilaText mt-4 mb-6 uppercase">Subvención</h2>
         <div class="flex justify-center gap-x-4 py-2">
           <app-button-select
             [buttonText]="'No está dentro de una subvención'"
             subText="Es un evento gasto propio"
             [active]="invoiceTypeSubsidy === 'NO_SUBSIDY'"
             (addClicked)="setInvoiceTypeSubsidy('NO_SUBSIDY')"
-            iconClass="uil-calendar-alt"
+            iconClass="uil-times-circle"
           /><app-button-select
-            [buttonText]="'Está dentro de un subvención'"
+            [buttonText]="'Está dentro de una subvención'"
             subText="Evento subvencionado"
             [active]="invoiceTypeSubsidy === 'SUBSIDY'"
             (addClicked)="setInvoiceTypeSubsidy('SUBSIDY')"
-            iconClass="uil-calendar-alt"
+            iconClass="uil-check-circle"
           />
         </div>
         @if (invoiceTypeSubsidy === 'SUBSIDY') {
@@ -307,22 +370,23 @@
         </div>
         }
       </div>
+      }
       <!-- PROYECTO -->
       <div class="border-2 pt-2 px-4 pb-6 mb-6">
-        <h2 class="font-bold text-lilaText mt-4 uppercase">Proyecto</h2>
+        <h2 class="font-bold text-lilaText mt-4 mb-6 uppercase">Proyecto</h2>
         <div class="flex justify-center gap-x-4 py-2">
           <app-button-select
             [buttonText]="'No está dentro de un proyecto'"
             subText="Es un evento único"
             [active]="invoiceTypeProject === 'NO_PROJECT'"
             (addClicked)="setInvoiceTypeProject('NO_PROJECT')"
-            iconClass="uil-calendar-alt"
+            iconClass="uil-minus-circle"
           /><app-button-select
             [buttonText]="'Está dentro de un proyecto'"
             subText="Está dentro de una programación más amplia"
             [active]="invoiceTypeProject === 'PROJECT'"
             (addClicked)="setInvoiceTypeProject('PROJECT')"
-            iconClass="uil-calendar-alt"
+            iconClass="uil-folder-open"
           />
         </div>
         @if (invoiceTypeProject === 'PROJECT') {

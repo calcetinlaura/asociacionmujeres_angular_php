@@ -168,12 +168,17 @@
         <!-- Descripción -->
         <div class="box-input flex-1">
           <label for="observations">Observaciones</label>
-          <quill-editor
-            formControlName="observations"
-            [modules]="quillModules"
-            placeholder="Escribe aquí cualquier observación..."
-            class="ql-container-large flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
-          />
+          <div class="flex flex-col flex-1">
+            <quill-editor
+              formControlName="observations"
+              [modules]="quillModules"
+              placeholder="Escribe aquí cualquier observación..."
+              class="ql-container-large flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
+            />
+            <div class="text-right text-xs text-gray-500 mt-1">
+              {{ observationsLen() }} / 300
+            </div>
+          </div>
         </div>
         <!-- Portada (Imagen) -->
         <div class="w-72">

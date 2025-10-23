@@ -132,7 +132,7 @@ export class FormPartnerComponent {
     // ⛔️ eliminados 'method_payment' y 'date_paymnet' del root: ahora viven en cada cuota
     cuotas: new FormArray<CuotaFormGroup>([]),
     img: new FormControl(''),
-    observations: new FormControl(''),
+    observations: new FormControl('', [Validators.maxLength(300)]),
     death: new FormControl(false),
     unsubscribe: new FormControl(false),
   });
@@ -362,5 +362,8 @@ export class FormPartnerComponent {
       itemId: this.itemId,
       formData,
     });
+  }
+  observationsLen(): number {
+    return (this.formPartner.get('observations')?.value || '').length;
   }
 }

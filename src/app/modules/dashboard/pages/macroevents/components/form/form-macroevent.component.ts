@@ -218,7 +218,7 @@ export class FormMacroeventComponent implements OnInit, OnChanges {
 
     this.submitForm.emit({ itemId: this.itemId, formData });
   }
-  summaryDescription(): number {
+  descriptionLen(): number {
     return (this.formMacroevent.get('description')?.value || '').length;
   }
   summaryLen(): number {

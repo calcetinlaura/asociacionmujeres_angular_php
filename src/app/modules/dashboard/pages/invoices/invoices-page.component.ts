@@ -131,14 +131,26 @@ export class InvoicesPageComponent implements OnInit {
       showIndicatorOnEmpty: true,
       textAlign: 'center',
     },
-    { title: 'Acreedor', key: 'creditor_company', sortable: true },
+    {
+      title: 'Acreedor',
+      key: 'creditor_company',
+      sortable: true,
+      showIndicatorOnEmpty: true,
+      width: ColumnWidth.XL,
+    },
+    {
+      title: 'Concepto',
+      key: 'concept',
+      sortable: true,
+      showIndicatorOnEmpty: true,
+    },
     {
       title: 'Descripción',
       key: 'description',
       sortable: true,
       innerHTML: true,
-      showIndicatorOnEmpty: true,
-      width: ColumnWidth.LG,
+      booleanIndicator: true,
+      width: ColumnWidth.SM,
     },
     {
       title: 'Cantidad',
@@ -275,7 +287,8 @@ export class InvoicesPageComponent implements OnInit {
     this.invoicesFacade.clearInvoices();
     this.filters = this.generalService.getYearFilters(2018, this.currentYear);
     // carga inicial
-    this.filterSelected(this.currentYear.toString());
+    this.selectedFilter = this.currentYear.toString();
+    this.filterSelected(this.selectedFilter);
   }
 
   // ── Filtros / tabs / búsqueda

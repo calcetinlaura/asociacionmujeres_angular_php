@@ -159,7 +159,7 @@ export class FormBookComponent {
 
     this.submitForm.emit({ itemId: this.itemId, formData: formData });
   }
-  summaryDescription(): number {
+  descriptionLen(): number {
     return (this.formBook.get('description')?.value || '').length;
   }
   summaryLen(): number {

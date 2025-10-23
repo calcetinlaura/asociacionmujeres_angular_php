@@ -14,8 +14,12 @@
     class="login-auth-form"
   >
     <div class="flex flex-col gap-y-4">
-      <div class="flex flex-col gap-y-4">
-        <div class="flex justify-between gap-x-4">
+      <!-- IDENTIFICACIÓN -->
+      <div class="border-2 pt-2 px-4 pb-6 mb-6">
+        <h2 class="font-bold text-lilaText mt-4 uppercase mb-8">
+          Identificación
+        </h2>
+        <div class="flex justify-between gap-x-4 mx-8">
           <div class="flex flex-col w-3/4 gap-y-4">
             <div class="box-input gap-x-4">
               <label for="email">Título</label>
@@ -58,69 +62,66 @@
             </div>
           </div>
         </div>
-        <!-- SUBVENCIÓN -->
-        <div class="border-2 pt-2 px-4 pb-6 mb-6">
-          <h2 class="font-bold text-lilaText mt-4 uppercase">Subvención</h2>
-          <div class="flex justify-center gap-x-4 py-2">
-            <app-button-select
-              [buttonText]="'Subvencionado'"
-              subText="Está dentro de una subvención"
-              [active]="projectTypeSubsidy === 'SUBSIDIZED'"
-              (addClicked)="setProjectTypeSubsidy('SUBSIDIZED')"
-              iconClass="uil-calendar-alt"
-            /><app-button-select
-              [buttonText]="'No subvencionado'"
-              subText="No está dentro de una subvención"
-              [active]="projectTypeSubsidy === 'UNSUBSIDIZED'"
-              (addClicked)="setProjectTypeSubsidy('UNSUBSIDIZED')"
-              iconClass="uil-calendar-alt"
-            />
-          </div>
-          <!-- subvencionado -->
-          @if (projectTypeSubsidy=== 'SUBSIDIZED') {
-          <div class="pt-4 px-4">
-            <p class="text-[15px] text-center mb-10 text-lilaText px-4">
-              Si la subvención a la que pertenece el proyecto no aparece se debe
-              añadir previamente desde la sección de subvenciones.
-            </p>
+      </div>
+      <!-- SUBVENCIÓN -->
+      <div class="border-2 pt-2 px-4 pb-6 mb-6">
+        <h2 class="font-bold text-lilaText mt-4 uppercase">Subvención</h2>
+        <div class="flex justify-center gap-x-4 py-2">
+          <app-button-select
+            [buttonText]="'Subvencionado'"
+            subText="Está dentro de una subvención"
+            [active]="projectTypeSubsidy === 'SUBSIDIZED'"
+            (addClicked)="setProjectTypeSubsidy('SUBSIDIZED')"
+            iconClass="uil-check-circle"
+          /><app-button-select
+            [buttonText]="'No subvencionado'"
+            subText="No está dentro de una subvención"
+            [active]="projectTypeSubsidy === 'UNSUBSIDIZED'"
+            (addClicked)="setProjectTypeSubsidy('UNSUBSIDIZED')"
+            iconClass="uil-times-circle"
+          />
+        </div>
+        <!-- subvencionado -->
+        @if (projectTypeSubsidy=== 'SUBSIDIZED') {
+        <div class="pt-4 px-4">
+          <p class="text-[15px] text-center mb-10 text-lilaText px-4">
+            Si la subvención a la que pertenece el proyecto no aparece se debe
+            añadir previamente desde la sección de subvenciones.
+          </p>
 
-            <div class="flex gap-x-8">
-              <div class="box-input gap-x-4 flex flex-1">
-                <label for="province">Subvención</label>
-                <div class="flex flex-col flex-1">
-                  <select formControlName="subsidy_id">
-                    <option [ngValue]="null">
-                      Seleccione una subvención si el proyecto pertenece a
-                      alguna
-                    </option>
-                    @for (subsidy of subsidies; track subsidy) {
-                    <option [value]="subsidy.id">
-                      {{ subsidy.name }} - {{ subsidy.year }}
-                    </option>
-                    }
-                  </select>
-                  @if (formProject.controls.subsidy_id.disabled) {
-                  <div>
-                    <small class="text-gray-500 italic">
-                      Selecciona un año para habilitar las subvenciones
-                    </small>
-                  </div>
+          <div class="flex gap-x-8">
+            <div class="box-input gap-x-4 flex flex-1">
+              <label for="province">Subvención</label>
+              <div class="flex flex-col flex-1">
+                <select formControlName="subsidy_id">
+                  <option [ngValue]="null">
+                    Seleccione una subvención si el proyecto pertenece a alguna
+                  </option>
+                  @for (subsidy of subsidies; track subsidy) {
+                  <option [value]="subsidy.id">
+                    {{ subsidy.name }} - {{ subsidy.year }}
+                  </option>
                   }
+                </select>
+                @if (formProject.controls.subsidy_id.disabled) {
+                <div>
+                  <small class="text-gray-500 italic">
+                    Selecciona un año para habilitar las subvenciones
+                  </small>
                 </div>
+                }
               </div>
             </div>
           </div>
-          }
         </div>
+        }
       </div>
       <!-- ACTIVIDADES -->
       <div class="justify-center border-2 pt-2 px-4 pb-6 mb-6">
         <h2 class="font-bold text-lilaText mt-4 uppercase">
-          Actividades del proyecto
+          Borrador de tareas y presupuestos
         </h2>
         <div formArrayName="activities" class="flex flex-col gap-y-4">
-          <!-- Recorremos las actividades y las mostramos -->
-
           @for (activity of activities.controls; track
           activity.get('activity_id')?.value ?? $index; let i = $index) {
           <div [formGroupName]="i" class="flex gap-x-4 px-8 pt-8">
@@ -130,7 +131,7 @@
               <p
                 class="py-2 px-2 rounded-xl text-sm text-lilaText text-center bg-naranjaClaro font-bold"
               >
-                Actividad {{ i + 1 }}
+                Tarea {{ i + 1 }}
               </p>
             </div>
 
@@ -139,7 +140,7 @@
                 <label>Nombre </label>
                 <input
                   formControlName="name"
-                  placeholder="Nombre de la actividad"
+                  placeholder="Nombre de la tarea"
                 />
               </div>
               <div class="box-input gap-x-4">
@@ -152,12 +153,17 @@
               </div>
               <div class="box-input gap-x-4">
                 <label>Observaciones</label>
-                <quill-editor
-                  formControlName="observations"
-                  [modules]="quillModules"
-                  placeholder="Escribe aquí la descripción..."
-                  class="ql-container-small flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
-                />
+                <div class="flex flex-col flex-1">
+                  <quill-editor
+                    formControlName="observations"
+                    [modules]="quillModules"
+                    placeholder="Escribe aquí cualquier observación..."
+                    class="ql-container-medium flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
+                  />
+                  <div class="w-full text-right text-xs text-gray-500 mt-1">
+                    {{ observationsLen() }} / 300
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -173,26 +179,94 @@
           </div>
           }
         </div>
-
         <!-- Botón para añadir -->
         <div class="mt-6 flex justify-center">
           <app-button-icon
-            [buttonText]="'Añadir actividad'"
+            [buttonText]="'Añadir tarea'"
             [iconClass]="'uil-plus'"
             (addClicked)="addActivity()"
           />
         </div>
       </div>
+
+      <!-- EVENTOS -->
+
+      @if(itemId ){
+      <div class="justify-center border-2 pt-2 px-4 pb-6 mb-6">
+        <h2 class="font-bold text-lilaText mt-4 uppercase">
+          Eventos vinculadas
+        </h2>
+        @if (events && events.length > 0) {
+        <table class="w-full -collapse tableProjects my-4">
+          @for (event of events; track event; let pIndex = $index) {
+          <tbody>
+            <tr>
+              <td class="bg-amarilloClaro w-auto">
+                @if (event.img) {
+                <img
+                  [src]="event.img | itemImage : typeList.Events"
+                  [alt]="event.title"
+                  class="object-cover w-full h-full transition-transform duration-300 ease-out group-hover:scale-[1.03]"
+                />
+                }
+              </td>
+              <td class="p-2 w-auto text-[12px]">
+                {{ event.title }}
+              </td>
+              <td class="p-2 bg-lilaClaro w-auto">
+                @if (event.placeData?.name) {
+                <p class="text-[12px] text-gray-600">
+                  {{ event.placeData?.name }}
+                </p>
+                } @if (event.town) {
+                <p class="text-[12px] text-gray-600">
+                  {{ event.town }}
+                </p>
+                }
+              </td>
+              <td class="p-2 bg-emerald-300">
+                @if (event.start) {
+                <p class="text-[12px] text-gray-600">
+                  {{
+                    event.start
+                      | date : "EEEE dd MMMM" : "" : "es-ES"
+                      | titlecase
+                  }}@if (event.time_start) { |
+                  {{ event.time_start!.slice(0, 5) }}h}
+                </p>
+
+                }
+              </td>
+              <td class="p-2 w-auto bg-verdeClaro">
+                <div>
+                  <p class="text-[13px] text-gray-800">
+                    <span [innerHTML]="event.description | safeHtml"></span>
+                  </p>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+
+          }
+        </table>
+        }
+      </div>
+      }
       <div class="flex gap-x-4">
         <div class="flex-col gap-y-4 flex-1">
           <div class="box-input gap-x-4">
             <label for="description">Descripción</label>
-            <quill-editor
-              formControlName="description"
-              [modules]="quillModules"
-              placeholder="Escribe aquí la descripción..."
-              class="ql-container-large flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
-            />
+            <div class="flex flex-col flex-1">
+              <quill-editor
+                formControlName="description"
+                [modules]="quillModules"
+                placeholder="Escribe aquí la descripción..."
+                class="ql-container-large flex-1 text-sm focus:outline-none focus:ring focus:ring-blue-200"
+              />
+              <div class="w-full text-right text-xs text-gray-500 mt-1">
+                {{ descriptionLen() }} / 500
+              </div>
+            </div>
           </div>
         </div>
         <div class="box-input w-72">
@@ -203,7 +277,7 @@
                 : null
             "
             [entityId]="itemId"
-            [type]="typeList"
+            [type]="typeList.Projects"
             (imgSelected)="onImageSelected($event)"
             [imageWidthValue]="'full'"
             class="w-full"

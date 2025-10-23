@@ -24,7 +24,7 @@ import { RecipesService } from 'src/app/core/services/recipes.services';
 
 import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
 import { ModalNavService } from 'src/app/shared/components/modal/services/modal-nav.service';
-import { CardPlayerComponent } from '../cards/card-events/card-events.component';
+import { CardEventsComponent } from '../cards/card-events/card-events.component';
 import { CardComponent } from '../cards/card/card.component';
 
 type LoaderFn = (id: number) => Observable<any>;
@@ -32,7 +32,7 @@ type LoaderFn = (id: number) => Observable<any>;
 @Component({
   selector: 'app-section-generic',
   standalone: true,
-  imports: [CardComponent, CommonModule, ModalComponent, CardPlayerComponent],
+  imports: [CardComponent, CommonModule, ModalComponent, CardEventsComponent],
   templateUrl: './section-generic.component.html',
   styleUrls: ['./section-generic.component.css'],
 })
