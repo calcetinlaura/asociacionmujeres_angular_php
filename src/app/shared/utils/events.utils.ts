@@ -1,7 +1,9 @@
+/** Devuelve true si el evento no está publicado */
 export function isDraft(ev: any): boolean {
   return Number(ev?.published) !== 1;
 }
 
+/** Devuelve un objeto Date válido para publish_day + publish_time */
 export function parsePublishDate(ev: any): Date | null {
   const day = (ev?.publish_day ?? '').toString().trim();
   const timeRaw = (ev?.publish_time ?? '').toString().trim();
@@ -11,10 +13,19 @@ export function parsePublishDate(ev: any): Date | null {
   return isNaN(d.getTime()) ? null : d;
 }
 
+/** Devuelve true si el evento está programado para publicarse en el futuro */
 export function isScheduled(ev: any, now = Date.now()): boolean {
   if (isDraft(ev)) return false;
   const dt = parsePublishDate(ev);
   return !!dt && dt.getTime() > now;
+}
+
+/** Devuelve true si el evento está publicado y visible actualmente */
+export function isPublishedVisible(ev: any, now = Date.now()): boolean {
+  if (Number(ev?.published) !== 1) return false; // no publicado
+  const dt = parsePublishDate(ev);
+  if (!dt) return true; // sin fecha -> visible directamente
+  return dt.getTime() <= now;
 }
 
 /** YYYY-MM-DD (locale seguro tipo sv-SE) */

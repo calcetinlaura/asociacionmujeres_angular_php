@@ -986,7 +986,7 @@ export class DashboardFacade {
 
       const grouped = new Map<string, number>();
       for (const inv of incomeInvoices) {
-        const key = inv.description?.trim() || 'Sin concepto';
+        const key = inv.concept?.trim() || 'Sin concepto';
         grouped.set(
           key,
           (grouped.get(key) || 0) +

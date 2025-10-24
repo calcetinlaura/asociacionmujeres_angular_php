@@ -82,23 +82,125 @@
       class="text-center inline-block border-b border-[#1C1C3A] pb-4 mb-4 md:pb-4 md:mb-8"
     >
       <app-text-title [text]="item.creditor_company" />
-      @if (item.number_invoice) {
-      <app-text-subtitle [text]="item.number_invoice" />
-      }
+      <div class="flex gap-4 justify-center items-center">
+        <app-type-invoice-badge [value]="item.type_invoice" />
+        @if (item.number_invoice) {
+        <app-text-subtitle [text]="item.number_invoice" />
+        }
+      </div>
     </div>
 
-    @if (item.description) {
-    <app-text-editor [text]="item.description" />
-    } @if (item.date_invoice) {
-    <p class="text-left text-[14px]">
-      {{ item.date_invoice | date : "EEEE dd MMM yyyy" }}
-    </p>
-    } @if (item.date_accounting) {
-    <p>Feche contabilidad: {{ item.date_accounting | date : "dd MMM yyyy" }}</p>
-    } @if (item.date_payment) {
-    <p>{{ item.date_payment | date : "dd MMM yyyy" }}</p>
-    }
+    @if (item.date_invoice) {
+    <div class="flex">
+      <div
+        class="border-r-[1px] border-lilaOscuro w-[80px] md:w-[120px] text-[10px] flex justify-start items-center mr-4"
+      >
+        Fecha movimiento
+      </div>
 
+      <app-text-background
+        [text]="item.date_invoice | date : 'dd MMM yyyy'"
+        colorBack="#bed8f7"
+      ></app-text-background>
+    </div>
+
+    } @if (item.date_accounting) {
+    <div class="flex">
+      <div
+        class="border-r-[1px] border-lilaOscuro w-[80px] md:w-[120px] text-[10px] flex justify-start items-center mr-4"
+      >
+        Fecha cuaderno contabilidad
+      </div>
+
+      <app-text-background
+        [text]="item.date_accounting | date : 'dd MMM yyyy'"
+        colorBack="#bed8f7"
+      ></app-text-background>
+    </div>
+
+    }@if (item.date_payment) {
+    <div class="flex">
+      <div
+        class="border-r-[1px] border-lilaOscuro w-[80px] md:w-[120px] text-[10px] flex justify-start items-center mr-4"
+      >
+        Fecha de pago
+      </div>
+
+      <app-text-background
+        [text]="item.date_payment | date : 'dd MMM yyyy'"
+        colorBack="#bed8f7"
+      ></app-text-background>
+    </div>
+
+    } @if (item.concept) {
+    <div class="flex">
+      <div
+        class="border-r-[1px] border-lilaOscuro w-[80px] md:w-[120px] text-[10px] flex justify-start items-center mr-4"
+      >
+        Concepto
+      </div>
+      <div class="flex-1">
+        <app-text-background
+          [text]="item.concept"
+          colorBack="#bed8f7"
+        ></app-text-background>
+        @if (item.description) {
+        <p
+          class="pt-4 text-[11px]"
+          [innerHTML]="item.description | safeHtml"
+        ></p>
+        }
+      </div>
+    </div>
+    }@if (item.creditor_contact) {
+    <div class="flex">
+      <div
+        class="border-r-[1px] border-lilaOscuro w-[80px] md:w-[120px] text-[10px] flex justify-start items-center mr-4"
+      >
+        Acreedor
+      </div>
+      <div class="flex-1">
+        <app-text-background
+          [text]="item.creditor_contact"
+          colorBack="#bed8f7"
+        ></app-text-background>
+        @if (item.creditor_id) {
+        <p
+          class="pt-4 text-[11px]"
+          [innerHTML]="item.creditor_cif | safeHtml"
+        ></p>
+        }
+      </div>
+    </div>
+    }@if (item.subsidy_name) {
+    <div class="flex">
+      <div
+        class="border-r-[1px] border-lilaOscuro w-[80px] md:w-[120px] text-[10px] flex justify-start items-center mr-4"
+      >
+        Subvención
+      </div>
+      <div class="flex-1">
+        <app-text-background
+          [text]="item.subsidy_name"
+          colorBack="#bed8f7"
+        ></app-text-background>
+      </div>
+    </div>
+    }@if (item.project_title) {
+    <div class="flex">
+      <div
+        class="border-r-[1px] border-lilaOscuro w-[80px] md:w-[120px] text-[10px] flex justify-start items-center mr-4"
+      >
+        Proyecto
+      </div>
+      <div class="flex-1">
+        <app-text-background
+          [text]="item.project_title"
+          colorBack="#bed8f7"
+        ></app-text-background>
+      </div>
+    </div>
+    }
     <div class="flex flex-row gap-4 align-middle">
       @if (item.amount) {
       <div
@@ -125,11 +227,10 @@
       <div
         class="flex flex-1 flex-col items-center justify-center text-[9px] md:text-[12px] px-[6px] pt-1 pb-[3px] rounded-[4px] border-[1px] border-lilaClaro"
       >
+        <p>(TOTAL)</p>
         {{ item.total_amount | eurosFormat }}
       </div>
       }
     </div>
-
-    <app-text-background [text]="item.subsidy_name"></app-text-background>
   </div>
 </div>

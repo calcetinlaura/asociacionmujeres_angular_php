@@ -461,6 +461,14 @@
         {{ element[column.key] }}
         } @case (column.key === 'type_invoice') {
         <app-type-invoice-badge [value]="element.type_invoice" />
+        } @case (column.key === 'published') {
+        <app-event-publish-pill
+          [published]="element.published"
+          [publish_day]="element.publish_day"
+          [publish_time]="element.publish_time"
+          [showPublished]="true"
+          [isTable]="true"
+        ></app-event-publish-pill>
         } @case (column.key === 'creditor_company') {
         <p class="text-[12px]">{{ element.creditor_company }}</p>
 

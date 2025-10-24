@@ -16,6 +16,10 @@ module.exports = {
       current: "currentColor",
       eventDraft: "#fff8c2", // Amarillo suave para borrador
       eventScheduler: "#d8f5d0", // Verde suave para borrador
+      eventPublished: "#f5d0ef", // Tonos MUY claros para filas
+      eventDraftRow: "#FFFEF3",
+      eventSchedulerRow: "#F8FFF6",
+      eventPublishedRow: "#FFF7FD",
       black: colors.black,
       white: colors.white,
       gray: colors.gray,

@@ -1,0 +1,54 @@
+<!-- PROGRAMADO -->
+@if (scheduledDate) { @if (isTable) {
+<div class="flex flex-col items-center justify-center">
+  <p
+    class="inline-flex items-center text-[9px] rounded-[4px] bg-eventScheduler uppercase px-1 py-0.5"
+  >
+    Programado
+  </p>
+  <p class="text-[8px]">
+    {{ scheduledDate | date : dateFmt : "" : appLocale }}
+  </p>
+</div>
+} @else {
+<span
+  class="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-[4px] bg-eventScheduler uppercase"
+  title="Fecha de publicación programada"
+>
+  Programado · {{ scheduledDate | date : dateFmt : "" : appLocale }}
+</span>
+} }
+
+<!-- BORRADOR -->
+@else if (isDraftState) {@if (isTable) {
+<div class="flex flex-col items-center justify-center">
+  <p
+    class="inline-flex items-center text-[9px] rounded-[4px] bg-eventDraft uppercase px-1 py-0.5"
+  >
+    Borrador
+  </p>
+</div>
+} @else {
+<span
+  class="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-[4px] bg-eventDraft uppercase"
+>
+  Borrador
+</span>
+}}
+
+<!-- PUBLICADO -->
+@else if (showPublished && isPublishedState) { @if (isTable) {
+<div class="flex flex-col items-center justify-center">
+  <p
+    class="inline-flex items-center text-[9px] rounded-[4px] bg-eventPublished uppercase px-1 py-0.5"
+  >
+    Publicado
+  </p>
+</div>
+} @else {
+<span
+  class="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-[4px] bg-eventPublished uppercase"
+>
+  Publicado
+</span>
+} }

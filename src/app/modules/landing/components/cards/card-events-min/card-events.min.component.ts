@@ -1,12 +1,5 @@
 import { CommonModule } from '@angular/common';
-import {
-  Component,
-  EventEmitter,
-  inject,
-  Input,
-  LOCALE_ID,
-  Output,
-} from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { EventModelFullData } from 'src/app/core/interfaces/event.interface';
 import { TypeList } from 'src/app/core/models/general.model';
 import { EventPublishPillComponent } from 'src/app/modules/dashboard/pages/events/components/publish-pill/publish-pill.component';
@@ -37,8 +30,6 @@ import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
   ],
 })
 export class CardEventMiniComponent {
-  private readonly locale = inject(LOCALE_ID);
-
   @Input({ required: true }) event!: EventModelFullData;
   @Input() isDashboard = false;
   @Input() showButtonsActions = false;
@@ -52,7 +43,7 @@ export class CardEventMiniComponent {
     type: ActionType;
     event: EventModelFullData;
   }>();
-  readonly appLocale = this.locale;
+
   dictType = DictType;
   typeList = TypeList;
 

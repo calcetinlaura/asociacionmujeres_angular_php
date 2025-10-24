@@ -5,6 +5,7 @@ import {
   EventEmitter,
   inject,
   Input,
+  LOCALE_ID,
   Output,
   SimpleChanges,
   ViewChild,
@@ -41,6 +42,7 @@ import {
   DictType,
 } from '../../../../shared/pipe/dict-translate.pipe';
 import { SafeHtmlPipe } from '../../../../shared/pipe/safe-html.pipe';
+import { EventPublishPillComponent } from '../../pages/events/components/publish-pill/publish-pill.component';
 import { CircleIndicatorComponent } from '../circle-indicator/circle-indicator.component';
 @Component({
   standalone: true,
@@ -68,6 +70,7 @@ import { CircleIndicatorComponent } from '../circle-indicator/circle-indicator.c
     ActionBarComponent,
     SafeHtmlPipe,
     TypeInvoiceBadgeComponent,
+    EventPublishPillComponent,
   ],
   providers: [ItemImagePipe],
   selector: 'app-table',
@@ -78,6 +81,7 @@ export class TableComponent {
   private readonly subsidiesService = inject(SubsidiesService);
   private _liveAnnouncer = inject(LiveAnnouncer);
   private itemImagePipe = inject(ItemImagePipe);
+  private readonly locale = inject(LOCALE_ID);
 
   @Input() displayedColumns: string[] = [];
   @Input() columnVisibility: { [key: string]: boolean } = {};
@@ -104,6 +108,7 @@ export class TableComponent {
   searchKeywordFilter = new FormControl();
   TypeList = TypeList;
   dictType = DictType;
+  readonly appLocale = this.locale;
   readonly baseActions: ActionItem[] = [
     { icon: 'uil-eye', tooltip: 'Ver', type: 'view' },
     { icon: 'uil-edit', tooltip: 'Editar', type: 'edit' },
@@ -178,10 +183,10 @@ export class TableComponent {
     if (this.typeSection !== this.TypeList.Events) return {};
     return {
       // Borrador → amarillo
-      '[&_.mat-mdc-cell]:bg-eventDraft [&_.mat-mdc-footer-cell]:bg-eventDraft':
+      '[&_.mat-mdc-cell]:bg-eventDraftRow [&_.mat-mdc-footer-cell]:bg-eventDraftRow':
         this.isDraft(row),
       // Programado → verde
-      '[&_.mat-mdc-cell]:bg-eventScheduler [&_.mat-mdc-footer-cell]:bg-eventScheduler':
+      '[&_.mat-mdc-cell]:bg-eventSchedulerRow [&_.mat-mdc-footer-cell]:bg-eventSchedulerRow':
         this.isScheduled(row),
     };
   }

@@ -4,9 +4,11 @@ import {
   ChangeDetectionStrategy,
   Component,
   EventEmitter,
+  inject,
   Input,
   Output,
 } from '@angular/core';
+import { EventsFacade } from 'src/app/application/events.facade';
 import { MacroeventModelFullData } from 'src/app/core/interfaces/macroevent.interface';
 import { TypeList } from 'src/app/core/models/general.model';
 import { CardEventMiniComponent } from 'src/app/modules/landing/components/cards/card-events-min/card-events.min.component';
@@ -39,6 +41,7 @@ import { environments } from 'src/environments/environments';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ModalShowMacroeventComponent {
+  private readonly eventsFacade = inject(EventsFacade);
   /** Ahora aceptamos item parcial y con flag loading */
   @Input() item:
     | (Partial<MacroeventModelFullData> & {
@@ -69,6 +72,15 @@ export class ModalShowMacroeventComponent {
 
   trackById = (_: number, ev: any) => ev?.id ?? _;
 
+  get filteredEvents() {
+    if (!this.item?.events) return [];
+    if (this.isDashboard) return this.item.events;
+
+    const now = new Date();
+    return this.item.events.filter((ev) =>
+      this.eventsFacade.isVisiblePublic(ev, now)
+    );
+  }
   /** Fechas iguales (mismo día) con tolerancia a string/Date */
   get datesEquals(): boolean {
     const s = this.item?.start;

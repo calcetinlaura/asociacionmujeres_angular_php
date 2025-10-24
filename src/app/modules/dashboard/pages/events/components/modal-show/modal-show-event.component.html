@@ -14,8 +14,9 @@
 <div>
   <div class="flex w-full items-center justify-end mb-1">
     <app-event-publish-pill
-      [event]="item"
-      [locale]="appLocale"
+      [published]="item.published ?? false"
+      [publish_day]="item.publish_day ?? null"
+      [publish_time]="item.publish_time ?? null"
     ></app-event-publish-pill>
   </div>
   <div class="text-center">

@@ -169,6 +169,12 @@ export class EventsPageComponent implements OnInit {
       showIndicatorOnEmpty: true,
       width: ColumnWidth.SM,
     },
+    {
+      title: 'Publicación',
+      key: 'published',
+      sortable: true,
+      width: ColumnWidth.SM,
+    },
   ];
 
   // ── Column visibility (hook)
@@ -179,6 +185,7 @@ export class EventsPageComponent implements OnInit {
     'sponsor',
     'status',
     'summary',
+    'published',
   ]);
 
   // ── Lista de entidades (hook) -> la facade controla visibleEvents$ según la carga

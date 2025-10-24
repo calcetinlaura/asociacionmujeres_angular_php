@@ -44,6 +44,9 @@ export class EventsFacade extends LoadableFacade {
   private readonly groupedEventsSubject = new BehaviorSubject<
     EventModelFullData[] | null
   >(null); // view=groupedByPeriodicId
+  public isVisiblePublic(e: EventModelFullData, now = new Date()): boolean {
+    return this.isPublishedVisible(e, now);
+  }
   private readonly visibleEventsSubject = new BehaviorSubject<
     EventModelFullData[] | null
   >(null);

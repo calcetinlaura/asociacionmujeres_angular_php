@@ -4,7 +4,6 @@ import {
   DestroyRef,
   EventEmitter,
   Input,
-  LOCALE_ID,
   Output,
   inject,
 } from '@angular/core';
@@ -67,7 +66,6 @@ import { EventPublishPillComponent } from '../publish-pill/publish-pill.componen
 export class ModalShowEventComponent {
   private readonly eventsService = inject(EventsService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly locale = inject(LOCALE_ID);
 
   @Input() item!: Partial<EventModelFullData> & { id: number };
   @Input() isDashboard = false;
@@ -78,7 +76,6 @@ export class ModalShowEventComponent {
   enumStatusEnum = EnumStatusEvent;
   dictType = DictType;
   showZoom = false;
-  readonly appLocale = this.locale;
 
   ngOnChanges() {
     // Si viene parcial, completa datos mostrando spinner

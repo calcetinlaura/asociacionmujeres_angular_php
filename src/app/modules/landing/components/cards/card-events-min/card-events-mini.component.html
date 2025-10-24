@@ -5,7 +5,7 @@
   (keyup.enter)="onOpenEvent(event.id)"
 >
   <div
-    class="w-28 h-auto overflow-hidden flex-shrink-0 rounded-lg flex items-center"
+    class="w-28 h-auto overflow-hidden flex-shrink-0 rounded-lg flex items-center bg-gray-300"
   >
     @if (event.img) {
     <img
@@ -22,8 +22,9 @@
     @if(isDashboard){
     <div class="flex w-full items-center justify-end mb-1">
       <app-event-publish-pill
-        [event]="event"
-        [locale]="appLocale"
+        [published]="event.published"
+        [publish_day]="event.publish_day ?? null"
+        [publish_time]="event.publish_time ?? null"
       ></app-event-publish-pill>
     </div>
     }

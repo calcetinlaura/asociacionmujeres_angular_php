@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import {
   isDraft,
+  isPublishedVisible,
   isScheduled,
   parsePublishDate,
 } from 'src/app/shared/utils/events.utils';
@@ -17,42 +18,54 @@ import {
   standalone: true,
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    @if (isScheduled(event)) {
-    <span
-      class="inline-flex items-center gap-1 text-[10px]  px-2 py-0.5 rounded-[4px] bg-eventScheduler uppercase font-semibold"
-      title="Fecha de publicación programada"
-    >
-      Programado · {{ scheduledDate | date : dateFmt : '' : appLocale }}
-    </span>
-    } @else if (isDraft(event)) {
-    <span
-      class="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-[4px] bg-eventDraft uppercase font-semibold"
-    >
-      Borrador
-    </span>
-    }
-  `,
+  templateUrl: './publish-pill.component.html',
+  styleUrls: [],
 })
 export class EventPublishPillComponent {
   private readonly defaultLocale = inject(LOCALE_ID);
+  @Input() published: boolean = false;
+  @Input() publish_day: string | null = null;
+  @Input() publish_time: string | null = null;
+  @Input() showPublished: boolean = false;
+  @Input() isTable: boolean = false;
 
-  /** Objeto evento (debe contener: published, publish_day, publish_time) */
-  @Input() event: any;
-
-  /** Locale opcional; si no se pasa usa LOCALE_ID del app */
+  /** Locale y formato opcionales */
   @Input() locale?: string;
-
-  /** Formato de fecha opcional (por defecto: "dd MMM y, HH:mm") */
   @Input() dateFmt = 'dd MMM y, HH:mm';
 
   get appLocale(): string {
     return this.locale ?? this.defaultLocale;
   }
 
-  isDraft = (ev: any) => isDraft(ev);
-  isScheduled = (ev: any) => isScheduled(ev);
+  /** Estado: borrador */
+  get isDraftState(): boolean {
+    return isDraft({
+      published: this.published,
+      publish_day: this.publish_day,
+      publish_time: this.publish_time,
+    });
+  }
+
+  /** Estado: programado */
   get scheduledDate(): Date | null {
-    return parsePublishDate(this.event);
+    const parsed = parsePublishDate({
+      publish_day: this.publish_day,
+      publish_time: this.publish_time,
+    });
+    const scheduled = isScheduled({
+      published: this.published,
+      publish_day: this.publish_day,
+      publish_time: this.publish_time,
+    });
+    return scheduled ? parsed : null;
+  }
+
+  /** Estado: publicado (visible ya) */
+  get isPublishedState(): boolean {
+    return isPublishedVisible({
+      published: this.published,
+      publish_day: this.publish_day,
+      publish_time: this.publish_time,
+    });
   }
 }

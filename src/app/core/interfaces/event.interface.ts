@@ -198,7 +198,7 @@ export interface EventModel {
   socials?: SocialLink[];
 
   // ===== Publicación en raíz =====
-  published?: boolean;
+  published: boolean;
   publish_day?: string | null;
   publish_time?: string | null;
 }
