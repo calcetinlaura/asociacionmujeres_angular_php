@@ -109,7 +109,12 @@ export class CreditorsPageComponent implements OnInit {
       showIndicatorOnEmpty: true,
       width: ColumnWidth.LG,
     },
-    { title: 'Municipio', key: 'town', sortable: true },
+    {
+      title: 'Municipio',
+      key: 'town',
+      showIndicatorOnEmpty: true,
+      sortable: true,
+    },
     {
       title: 'Nº Facturas',
       key: 'invoices',

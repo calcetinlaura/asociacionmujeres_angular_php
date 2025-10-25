@@ -5,7 +5,6 @@ import {
   EventEmitter,
   inject,
   Input,
-  LOCALE_ID,
   Output,
   SimpleChanges,
   ViewChild,
@@ -81,7 +80,6 @@ export class TableComponent {
   private readonly subsidiesService = inject(SubsidiesService);
   private _liveAnnouncer = inject(LiveAnnouncer);
   private itemImagePipe = inject(ItemImagePipe);
-  private readonly locale = inject(LOCALE_ID);
 
   @Input() displayedColumns: string[] = [];
   @Input() columnVisibility: { [key: string]: boolean } = {};
@@ -108,7 +106,6 @@ export class TableComponent {
   searchKeywordFilter = new FormControl();
   TypeList = TypeList;
   dictType = DictType;
-  readonly appLocale = this.locale;
   readonly baseActions: ActionItem[] = [
     { icon: 'uil-eye', tooltip: 'Ver', type: 'view' },
     { icon: 'uil-edit', tooltip: 'Editar', type: 'edit' },

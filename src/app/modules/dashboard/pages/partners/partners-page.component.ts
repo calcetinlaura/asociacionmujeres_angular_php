@@ -99,6 +99,7 @@ export class PartnersPageComponent implements OnInit {
       title: 'Dirección',
       key: 'town',
       sortable: true,
+      showIndicatorOnEmpty: true,
       width: ColumnWidth.FULL,
       textAlign: 'center',
     },

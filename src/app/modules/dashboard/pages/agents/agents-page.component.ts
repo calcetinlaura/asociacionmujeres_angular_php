@@ -108,7 +108,13 @@ export class AgentsPageComponent implements OnInit {
       showIndicatorOnEmpty: true,
       width: ColumnWidth.LG,
     },
-    { title: 'Municipio', key: 'town', sortable: true, textAlign: 'center' },
+    {
+      title: 'Municipio',
+      key: 'town',
+      showIndicatorOnEmpty: true,
+      sortable: true,
+      textAlign: 'center',
+    },
     {
       title: 'Categoría',
       key: 'category',

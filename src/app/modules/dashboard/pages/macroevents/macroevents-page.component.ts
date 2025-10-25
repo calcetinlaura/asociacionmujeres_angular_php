@@ -102,7 +102,13 @@ export class MacroeventsPageComponent implements OnInit {
       booleanIndicator: true,
       width: ColumnWidth.XS,
     },
-    { title: 'Municipio', key: 'town', sortable: true, width: ColumnWidth.SM },
+    {
+      title: 'Municipio',
+      key: 'town',
+      showIndicatorOnEmpty: true,
+      sortable: true,
+      width: ColumnWidth.SM,
+    },
   ];
 
   // ── Column visibility (hook)

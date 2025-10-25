@@ -83,6 +83,7 @@ export class PlacesPageComponent implements OnInit {
       title: 'Salas',
       key: 'salas',
       sortable: true,
+      showIndicatorOnEmpty: true,
       showLengthOnly: true,
       width: ColumnWidth.MD,
     },

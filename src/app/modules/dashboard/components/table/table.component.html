@@ -121,8 +121,10 @@
           alt=""
           class="cover"
         />
-        } @case (column.key === 'invoice_pdf' ||column.key === 'proof_pdf' ) {
-        @if (element['invoice_pdf'] ||element['proof_pdf'] ) {
+        }
+        <!-- PDF -->
+        @case (column.key === 'invoice_pdf' ||column.key === 'proof_pdf' ) { @if
+        (element['invoice_pdf'] ||element['proof_pdf'] ) {
         <div class="flex">
           <i class="uil uil-file-alt text-[25px]"></i>
         </div>
@@ -146,7 +148,6 @@
             </p>
           </div>
           } }
-
           <!-- Caso 2: Tiene periodicEvents -->
           @if (element['periodicEvents'] && element['periodicEvents'].length >
           0) {
@@ -161,7 +162,9 @@
           </div>
           }
         </div>
-        } @case (column.key === 'title' || column.key === 'name' ||
+        }
+        <!-- TÍTULO -->
+        @case (column.key === 'title' || column.key === 'name' ||
         column.key==='nameSubsidy'|| column.key==='company' ){
         <div (click)="onOpenModal(typeModal, typeActionModal.Show, element)">
           <p
@@ -189,7 +192,7 @@
         </div>
         }
 
-        <!-- Diseño especial para 'espacio en eventos' -->
+        <!-- EVENTO CON MACROEVENTO -->
         @case (column.key === 'title' && typeSection === TypeList.Events) {
         <div>
           @if (element.title) {
@@ -204,23 +207,29 @@
           </div>
           } }
         </div>
-        } @case (column.key === 'duration') { @if (element.duration) {
+        }
+        <!-- PODCAST DURACIÓN -->
+        @case (column.key === 'duration') { @if (element.duration) {
         <div class="backColor">
           <span> {{ element.duration | hms }}</span>
         </div>
-        } }@case (column.key === 'season') { @if (element.season) {
+        } }
+        <!-- PODCAST TEMPORADA -->
+        @case (column.key === 'season') { @if (element.season) {
         <div class="backColor">
           <span>TEMP. {{ element.season }} - EPIS. {{ element.episode }}</span>
         </div>
 
         } }
-        <!-- Diseño especial para 'gender' -->
+        <!-- SOCIAS EDAD -->
         @case (column.key === 'birthday') { @if (element.birthday) {
         <div class="text-center">
           {{ element.birthday | date : "dd MMM yyyy" }}<br />
           <span class="dateColumn"> {{ element.birthday | age }} años </span>
         </div>
-        } } @case (column.key === 'years') {
+        } }
+        <!-- AÑO -->
+        @case (column.key === 'years') {
         {{ element.years || 0 }} años } @case (column.key === 'subsidy_name') {
         @if (element[column.key]) {
         <div class="text-center">
@@ -238,7 +247,9 @@
             >{{ element[column.key] | i18nSelect : nameSubsidy }}
           </span>
         </div>
-        } } @case (column.key === 'activities' && !column.showLengthOnly) { @if
+        } }
+        <!-- PROYECTOS - TAREAS ACTIVIDADES -->
+        @case (column.key === 'activities' && !column.showLengthOnly) { @if
         (element[column.key] | hasValue) {
         <div class="box-activities">
           <div class="flex items-center gap-x-2 justify-center">
@@ -247,16 +258,6 @@
             >
               {{ element.activities.length }}
             </div>
-            <!-- <div
-              class="flex flex-col gap-y-4 w-3/4 border-r border-gray-300 pr-3"
-            >
-              @for (activity of element.activities; track activity) {
-              <div class="activities-list">
-                <p>{{ activity.name }}</p>
-                <p>{{ activity.budget | eurosFormat }}</p>
-              </div>
-              }
-            </div> -->
             <div class="totalAmount mx-2 bg-emerald-400">
               <p>
                 {{ getTotalActivitiesAmount(element) | eurosFormat }}
@@ -264,9 +265,9 @@
             </div>
           </div>
         </div>
-        } @else {
-        <app-circle-indicator [item]="false"></app-circle-indicator>
-        } } @case (column.key === 'events' && !column.showLengthOnly) { @if
+        } }
+        <!-- PROYECTOS EVENTOS -->
+        @case (column.key === 'events' && !column.showLengthOnly) { @if
         (element[column.key] | hasValue) {
         <div class="box-events">
           @for (event of element.events; track event) {
@@ -278,9 +279,9 @@
           </div>
           }
         </div>
-        } @else {
-        <app-circle-indicator [item]="false"></app-circle-indicator>
-        } } @case (column.key === 'invoices' && !column.showLengthOnly) { @if
+        } }
+        <!-- PROYECTOS FACTURAS -->
+        @case (column.key === 'invoices' && !column.showLengthOnly) { @if
         (element[column.key] | hasValue) {
         <div class="box-invoices">
           <div class="flex items-center gap-x-4 justify-center">
@@ -289,36 +290,21 @@
             >
               {{ element.invoices.length }}
             </div>
-            <!--  <div
-              class="flex flex-col gap-y-4 w-4/5 border-r border-gray-300 pr-3"
-            >@for (invoice of element.invoices; track invoice) {
-              <div class="invoices-list">
-                <p class="flex flex-row">
-                  {{ invoice.type_invoice }} {{ invoice.number_invoice }} -
-                  {{ invoice.creditor_company }} -
-                  <span [innerHTML]="invoice.description"></span>
-                </p>
-                <p>{{ invoice.total_amount | eurosFormat }}</p>
-              </div>
-              }
-              </div>-->
-
             <div class="px-3 totalAmount">
               <p>{{ getTotalInvoiceAmount(element) | eurosFormat }}</p>
             </div>
           </div>
         </div>
-        } @else {
-        <app-circle-indicator [item]="false"></app-circle-indicator>
-        } } @case (column.key === 'access'){ @if(element[column.key] ===
-        'FREE'){
+        } }
+        <!-- EVENTO ACCESO -->
+        @case (column.key === 'access'){ @if(element[column.key] === 'FREE'){
         <p class="text-center">Gratis</p>
         } @if(element[column.key] === 'UNSPECIFIED'){
         <app-circle-indicator [item]="false"></app-circle-indicator>
         }@if ((element.access ?? element[column.key]) === 'TICKETS') {
         <p class="text-center">Entrada</p>
         }}
-        <!-- STATUS -->
+        <!-- EVENTO STATUS -->
         @case (column.key === 'status') { @if
         (element[column.key]!=='EJECUCION') {
         <div class="statusColumn">
@@ -340,11 +326,7 @@
           <div style="font-size: 0.75rem; color: #666" class="address">
             {{ element.address }}
           </div>
-          } } @else {
-          <div class="flex justify-center">
-            <app-circle-indicator [item]="false"></app-circle-indicator>
-          </div>
-          }
+          } }
         </div>
         }
         <!-- ESPACIO -->
@@ -358,13 +340,11 @@
           <div style="font-size: 0.75rem; color: #666">
             {{ element.salaData.name }}
           </div>
-          } } @else {
-          <div class="flex justify-center">
-            <app-circle-indicator [item]="false"></app-circle-indicator>
-          </div>
-          }
+          } }
         </div>
-        } @case (column.key === 'salas' && !column.showLengthOnly) { @if
+        }
+        <!-- SALAS -->
+        @case (column.key === 'salas' && !column.showLengthOnly) { @if
         (element[column.key] | hasValue) {
         <div class="box-activities">
           <div class="flex items-center gap-x-2">
@@ -386,16 +366,8 @@
             </div>
           </div>
         </div>
-        } @else {
-        <app-circle-indicator [item]="false"></app-circle-indicator>
         } }
-
-        <!-- Diseño especial para 'capacity' -->
-        @case (column.key === 'capacity') { @if (element[column.key] !== 0) {
-        <div>
-          {{ element[column.key] }}
-        </div>
-        } }<!-- PÚBLICO -->
+        <!-- PÚBLICO -->
         @case (column.key === 'audience') { @if (element[column.key]) {
         <div class="flex gap-2 flex-wrap justify-center">
           @for (badge of (element.audience | audienceBadges); track badge) {
@@ -404,8 +376,6 @@
           </div>
           }
         </div>
-        } @else {
-        <app-circle-indicator [item]="false"></app-circle-indicator>
         } }
         <!-- CATEGORíAs -->
         @case (column.key === 'category') { @if (element[column.key] | hasValue)
@@ -420,7 +390,7 @@
           }
         </div>
         }}
-        <!-- Organizadores -->
+        <!-- ORGANIZADORES -->
         @case (column.key === 'organizer') { @if (element[column.key] |
         hasValue) {
         <ul class="agent-list">
@@ -430,10 +400,8 @@
           </li>
           }
         </ul>
-        } @else {
-        <app-circle-indicator [item]="false"></app-circle-indicator>
         } }
-        <!-- Colaboradores -->
+        <!-- COLABORADORES -->
         @case (column.key === 'collaborator') { @if (element[column.key] |
         hasValue) {
         <ul class="agent-list">
@@ -443,10 +411,8 @@
           </li>
           }
         </ul>
-        } @else {
-        <app-circle-indicator [item]="false"></app-circle-indicator>
         } }
-        <!-- 💰 Patrocinadores -->
+        <!-- PATROCINADORES -->
         @case (column.key === 'sponsor') { @if (element[column.key]) {
         <ul class="agent-list">
           @for (agent of element[column.key]; track agent) {
@@ -455,13 +421,13 @@
           </li>
           }
         </ul>
-        } @else {
-        <app-circle-indicator [item]="false"></app-circle-indicator>
-        } } @case (column.key === 'name') {
-        {{ element[column.key] }}
-        } @case (column.key === 'type_invoice') {
+        } }
+        <!-- TIPO FACTURA -->
+        @case (column.key === 'type_invoice') {
         <app-type-invoice-badge [value]="element.type_invoice" />
-        } @case (column.key === 'published') {
+        }
+        <!-- EVENTO ESTADO PUBLICACIÓN -->
+        @case (column.key === 'published') {
         <app-event-publish-pill
           [published]="element.published"
           [publish_day]="element.publish_day"
@@ -469,25 +435,18 @@
           [showPublished]="true"
           [isTable]="true"
         ></app-event-publish-pill>
-        } @case (column.key === 'creditor_company') {
+        }
+        <!-- FACTURA ACREEDOR -->
+        @case (column.key === 'creditor_company') {
         <p class="text-[12px]">{{ element.creditor_company }}</p>
-
         @if (element.creditor_contact) {
         <p class="text-[10x] text-[#666]">
           {{ element.creditor_contact }}
         </p>
         } }
-        <!-- Diseño especial para 'email' -->
+        <!-- EMAIL -->
         @case (column.key === 'email') {
         <small>{{ element[column.key] }}</small>
-        }
-        <!-- Diseño especial para 'salas' -->
-        @case (column.key === 'salasCount') {
-        <div>
-          @if (element[column.key] > 0) {
-          {{ element[column.key] }}
-          }
-        </div>
         }
         <!-- Diseño por defecto para otras columnas -->
         @default {

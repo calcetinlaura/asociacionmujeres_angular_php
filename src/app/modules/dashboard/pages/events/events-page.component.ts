@@ -97,6 +97,7 @@ export class EventsPageComponent implements OnInit {
       title: 'Público',
       key: 'audience',
       sortable: true,
+      showIndicatorOnEmpty: true,
       width: ColumnWidth.SM,
     },
     {
@@ -117,15 +118,17 @@ export class EventsPageComponent implements OnInit {
       title: 'Espacio',
       key: 'espacioTable',
       sortable: true,
+      showIndicatorOnEmpty: true,
       width: ColumnWidth.LG,
       textAlign: 'center',
     },
     {
       title: 'Aforo',
       key: 'capacity',
-      sortable: false,
+      sortable: true,
       width: ColumnWidth.XS,
       textAlign: 'center',
+      showIndicatorOnEmpty: true,
     },
     {
       title: 'Precio',
