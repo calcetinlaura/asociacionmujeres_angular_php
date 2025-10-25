@@ -114,7 +114,7 @@ export class HomePageComponent {
   );
   readonly eventsKpisState$ = this.facade.eventsKpisState$;
   readonly eventsKpis = toSignal(
-    this.cultureKpisState$.pipe(map((s) => s.data ?? null))
+    this.eventsKpisState$.pipe(map((s) => s.data ?? null))
   );
 
   dictType = DictType;

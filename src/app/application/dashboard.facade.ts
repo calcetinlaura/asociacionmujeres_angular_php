@@ -191,14 +191,6 @@ export class DashboardFacade {
     this.eventsFacade.loadDashboardAllGrouped(y);
   }
 
-  // ── Helpers ──────────────────────────────────
-  private sumValues(arr: { value: number }[] | undefined): number {
-    return (arr ?? []).reduce(
-      (sum: number, i) => sum + (Number(i.value) || 0),
-      0
-    );
-  }
-
   // ── Helpers generales ─────────────────────────────────────────────────────────
   private toArray$<T>(
     src: Observable<T[] | ReadonlyArray<T> | null | undefined>

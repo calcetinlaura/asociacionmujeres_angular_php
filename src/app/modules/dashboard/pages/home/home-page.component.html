@@ -1,362 +1,370 @@
 @let vm = (vm$ | async); @if (vm) {
 <div class="p-8">
   <!-- Encabezado -->
-  <header class="flex flex-wrap items-center justify-between gap-3">
-    <h1 class="title">Eventos</h1>
-    <div class="control">
-      <label>Año</label>
-      <select [ngModel]="viewYear()" (ngModelChange)="onChangeYear($event)">
-        <option [ngValue]="'historic'">Histórico</option>
-        @for (year of years; track year) {
-        <option [ngValue]="year">{{ year }}</option>
-        }</select
-      ><!-- ✅ Nuevo selector de tipo de vista -->
-      <div class="flex items-center gap-3">
-        <label class="inline-flex items-center cursor-pointer select-none">
-          <input
-            type="checkbox"
-            class="sr-only peer"
-            [ngModel]="view() === 'groupedByPeriodicId'"
-            (ngModelChange)="onToggleView($event)"
-          />
-
-          <!-- SWITCH -->
-          <div
-            class="relative w-12 h-7 bg-gray-400 rounded-full peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[transparent] after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-5 peer-checked:bg-[#cb8dd952]"
-          ></div>
-
-          <!-- TEXTO DINÁMICO -->
-          <span
-            class="ml-3 text-sm font-semibold transition-colors"
-            [class.text-[#704f80]]="view() === 'groupedByPeriodicId'"
-          >
-            {{ view() === "groupedByPeriodicId" ? "Únicos" : "Repetidos" }}
-          </span>
-        </label>
-      </div>
-
-      <!-- Botón global de informe -->
-      <app-icon-action
-        [icon]="'uil-print'"
-        [tooltip]="'Imprimir / Guardar PDF del informe completo'"
-        (click)="printWholeReport()"
-      ></app-icon-action>
-    </div>
-  </header>
 
   <div #reportRoot class="report-root flex flex-col gap-6">
-    <!-- KPIs -->
-    @if (eventsKpisState$ | async; as st) {
-    <div class="flex gap-6 justify-between">
-      <article class="card kpi flex-1">
-        <div class="kpi-title">
-          Eventos ({{ view() === "groupedByPeriodicId" ? "únicos" : "todos" }})
-        </div>
-        <div class="kpi-value">
-          @if (st.loading) { <app-spinner-loading /> } @else {
-          {{ st.data?.total }} }
-        </div>
-        <div class="kpi-sub">
-          Promedio/mes: <strong>{{ st.data?.promedioMes }}</strong>
-        </div>
-      </article>
+    <section>
+      <header class="flex flex-wrap items-center justify-between gap-3">
+        <h1 class="title">Eventos</h1>
+        <div class="control">
+          <label>Año</label>
+          <select [ngModel]="viewYear()" (ngModelChange)="onChangeYear($event)">
+            <option [ngValue]="'historic'">Histórico</option>
+            @for (year of years; track year) {
+            <option [ngValue]="year">{{ year }}</option>
+            }</select
+          ><!-- ✅ Nuevo selector de tipo de vista -->
+          <div class="flex items-center gap-3">
+            <label class="inline-flex items-center cursor-pointer select-none">
+              <input
+                type="checkbox"
+                class="sr-only peer"
+                [ngModel]="view() === 'groupedByPeriodicId'"
+                (ngModelChange)="onToggleView($event)"
+              />
 
-      @if (vm.kpis.proximoEvento; as next) {
-      <article class="card kpi flex-1">
-        <div class="kpi-title">Próximo evento</div>
-        <div class="kpi-value ellipsis" [title]="next.title">
-          {{ next.title }}
+              <!-- SWITCH -->
+              <div
+                class="relative w-12 h-7 bg-gray-400 rounded-full peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[transparent] after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-5 peer-checked:bg-[#cb8dd952]"
+              ></div>
+
+              <!-- TEXTO DINÁMICO -->
+              <span
+                class="ml-3 text-sm font-semibold transition-colors"
+                [class.text-[#704f80]]="view() === 'groupedByPeriodicId'"
+              >
+                {{ view() === "groupedByPeriodicId" ? "Únicos" : "Repetidos" }}
+              </span>
+            </label>
+          </div>
+
+          <!-- Botón global de informe -->
+          <app-icon-action
+            [icon]="'uil-print'"
+            [tooltip]="'Imprimir / Guardar PDF del informe completo'"
+            (click)="printWholeReport()"
+          ></app-icon-action>
         </div>
-        <div class="kpi-sub">{{ next.date | date : "EEE, d MMM" }}</div>
-      </article>
+      </header>
+      <!-- KPIs -->
+      @if (eventsKpisState$ | async; as st) {
+      <div class="flex flex-wrap gap-6 justify-between">
+        <article class="kpi-event card kpi flex-1">
+          <div class="kpi-title">
+            Eventos ({{
+              view() === "groupedByPeriodicId" ? "únicos" : "todos"
+            }})
+          </div>
+          <div class="kpi-value">
+            @if (st.loading) { <app-spinner-loading /> } @else {
+            {{ st.data?.total }} }
+          </div>
+          <div class="kpi-sub">
+            Promedio/mes: <strong>{{ st.data?.promedioMes }}</strong>
+          </div>
+        </article>
+
+        @if (vm.kpis.proximoEvento; as next) {
+        <article class="kpi-event card kpi flex-1 noPrint">
+          <div class="kpi-title">Próximo evento</div>
+          <div class="kpi-value ellipsis" [title]="next.title">
+            {{ next.title }}
+          </div>
+          <div class="kpi-sub">{{ next.date | date : "EEE, d MMM" }}</div>
+        </article>
+        }
+
+        <article class="kpi-event card kpi flex-1 noPrint">
+          <div class="kpi-title">Borradores</div>
+          <div class="kpi-value">{{ st.data?.drafts }}</div>
+        </article>
+        <article class="kpi-event card kpi flex-1">
+          <div class="kpi-title">
+            Espacio con más eventos ({{
+              view() === "groupedByPeriodicId" ? "únicos" : "todos"
+            }})
+          </div>
+          <div class="kpi-value">
+            @if (st.loading) { <app-spinner-loading /> } @else {
+            {{ st.data?.espacioTop }}
+            }
+          </div>
+          <div class="kpi-sub">
+            @if (st.loading) { — } @else { {{ st.data?.espacioPerc }}% de los
+            eventos }
+          </div>
+        </article>
+
+        <article class="kpi-event card kpi flex-1">
+          <div class="kpi-title">
+            Categoría más frecuente ({{
+              view() === "groupedByPeriodicId" ? "únicos" : "todos"
+            }})
+          </div>
+          <div class="kpi-value">
+            @if (st.loading) { <app-spinner-loading /> } @else {
+            {{ st.data?.categoriaTop | dictTranslate : dictType.Categories }}
+            }
+          </div>
+          <div class="kpi-sub">
+            @if (st.loading) { — } @else { {{ st.data?.categoriaPerc }}% de los
+            eventos }
+          </div>
+        </article>
+
+        <article class="kpi-event card kpi flex-1">
+          <div class="kpi-title">
+            Mes con más eventos ({{
+              view() === "groupedByPeriodicId" ? "únicos" : "todos"
+            }})
+          </div>
+          <div class="kpi-value">
+            @if (st.loading) { <app-spinner-loading /> } @else {
+            {{ st.data?.mesTop }} }
+          </div>
+          <div class="kpi-sub">
+            @if (st.loading) { — } @else { {{ st.data?.mesPerc }}% de los
+            eventos }
+          </div>
+        </article>
+      </div>
       }
 
-      <article class="card kpi flex-1">
-        <div class="kpi-title">Borradores</div>
-        <div class="kpi-value">{{ st.data?.drafts }}</div>
-      </article>
-      <article class="card kpi flex-1">
-        <div class="kpi-title">
-          Espacio con más eventos ({{
-            view() === "groupedByPeriodicId" ? "únicos" : "todos"
-          }})
-        </div>
-        <div class="kpi-value">
-          @if (st.loading) { <app-spinner-loading /> } @else {
-          {{ st.data?.espacioTop }}
-          }
-        </div>
-        <div class="kpi-sub">
-          @if (st.loading) { — } @else { {{ st.data?.espacioPerc }}% de los
-          eventos }
-        </div>
-      </article>
-
-      <article class="card kpi flex-1">
-        <div class="kpi-title">
-          Categoría más frecuente ({{
-            view() === "groupedByPeriodicId" ? "únicos" : "todos"
-          }})
-        </div>
-        <div class="kpi-value">
-          @if (st.loading) { <app-spinner-loading /> } @else {
-          {{ st.data?.categoriaTop | dictTranslate : dictType.Categories }}
-          }
-        </div>
-        <div class="kpi-sub">
-          @if (st.loading) { — } @else { {{ st.data?.categoriaPerc }}% de los
-          eventos }
-        </div>
-      </article>
-
-      <article class="card kpi flex-1">
-        <div class="kpi-title">
-          Mes con más eventos ({{
-            view() === "groupedByPeriodicId" ? "únicos" : "todos"
-          }})
-        </div>
-        <div class="kpi-value">
-          @if (st.loading) { <app-spinner-loading /> } @else {
-          {{ st.data?.mesTop }} }
-        </div>
-        <div class="kpi-sub">
-          @if (st.loading) { — } @else { {{ st.data?.mesPerc }}% de los eventos
-          }
-        </div>
-      </article>
-    </div>
-    }
-
-    <!-- Donuts: Público / Acceso / Categorías -->
-    <div class="flex gap-6 container-charts">
-      <!-- Público -->
-      <app-chart-card
-        class="flex-1"
-        [title]="'Público de los eventos (' + yearLabel() + ')'"
-        [subtitle]="
-          view() === 'groupedByPeriodicId'
-            ? 'Solo eventos únicos'
-            : 'Todos los eventos'
-        "
-      >
-        <div card-actions>
-          <app-icon-action
-            [icon]="'uil-print'"
-            [tooltip]="'Imprimir card'"
-            (click)="
-              printClosestCard(
-                $event,
-                'Público de los eventos (' + yearLabel() + ')'
-              )
-            "
-          >
-          </app-icon-action>
-        </div>
-
-        @if (audienceYearState$ | async; as st) { @if (st.loading) {
-        <app-spinner-loading /> } @else if (st.error) {
-        <div class="error">No se pudo cargar el gráfico.</div>
-        } @else if (st.data?.length) {
-        <app-donut-chart
-          [data]="st.data"
+      <!-- Donuts: Público / Acceso / Categorías -->
+      <div class="flex gap-6 container-charts">
+        <!-- Público -->
+        <app-chart-card
+          class="flex-1"
           [title]="'Público de los eventos (' + yearLabel() + ')'"
-        />
-        } @else {
-        <div class="muted">Sin datos.</div>
-        } }
-      </app-chart-card>
+          [subtitle]="
+            view() === 'groupedByPeriodicId'
+              ? 'Solo eventos únicos'
+              : 'Todos los eventos'
+          "
+        >
+          <div card-actions>
+            <app-icon-action
+              [icon]="'uil-print'"
+              [tooltip]="'Imprimir card'"
+              (click)="
+                printClosestCard(
+                  $event,
+                  'Público de los eventos (' + yearLabel() + ')'
+                )
+              "
+            >
+            </app-icon-action>
+          </div>
 
-      <!-- Acceso -->
-      <app-chart-card
-        class="flex-1"
-        [title]="'Acceso a los eventos (' + yearLabel() + ')'"
-        [subtitle]="
-          view() === 'groupedByPeriodicId'
-            ? 'Solo eventos únicos'
-            : 'Todos los eventos'
-        "
-      >
-        <div card-actions>
-          <app-icon-action
-            [icon]="'uil-print'"
-            [tooltip]="'Imprimir card'"
-            (click)="
-              printClosestCard(
-                $event,
-                'Acceso a los eventos (' + yearLabel() + ')'
-              )
-            "
-          >
-          </app-icon-action>
-        </div>
+          @if (audienceYearState$ | async; as st) { @if (st.loading) {
+          <app-spinner-loading /> } @else if (st.error) {
+          <div class="error">No se pudo cargar el gráfico.</div>
+          } @else if (st.data?.length) {
+          <app-donut-chart
+            [data]="st.data"
+            [title]="'Público de los eventos (' + yearLabel() + ')'"
+          />
+          } @else {
+          <div class="muted">Sin datos.</div>
+          } }
+        </app-chart-card>
 
-        @if (eventsByAccessYearState$ | async; as st) { @if (st.loading) {
-        <app-spinner-loading /> } @else if (st.error) {
-        <div class="error">No se pudo cargar el gráfico.</div>
-        } @else if (st.data?.length) {
-        <app-donut-chart
-          [data]="st.data"
-          [labelType]="dictType.AccessType"
+        <!-- Acceso -->
+        <app-chart-card
+          class="flex-1"
           [title]="'Acceso a los eventos (' + yearLabel() + ')'"
-        />
-        } @else {
-        <div class="muted">Sin datos.</div>
-        } }
-      </app-chart-card>
+          [subtitle]="
+            view() === 'groupedByPeriodicId'
+              ? 'Solo eventos únicos'
+              : 'Todos los eventos'
+          "
+        >
+          <div card-actions>
+            <app-icon-action
+              [icon]="'uil-print'"
+              [tooltip]="'Imprimir card'"
+              (click)="
+                printClosestCard(
+                  $event,
+                  'Acceso a los eventos (' + yearLabel() + ')'
+                )
+              "
+            >
+            </app-icon-action>
+          </div>
 
-      <!-- Categorías -->
-      <app-chart-card
-        class="flex-1"
-        [title]="'Categorías de eventos (' + yearLabel() + ')'"
-        [subtitle]="
-          view() === 'groupedByPeriodicId'
-            ? 'Solo eventos únicos'
-            : 'Todos los eventos'
-        "
-      >
-        <div card-actions>
-          <app-icon-action
-            [icon]="'uil-print'"
-            [tooltip]="'Imprimir card'"
-            (click)="
-              printClosestCard(
-                $event,
-                'Categorías de eventos (' + yearLabel() + ')'
-              )
-            "
-          >
-          </app-icon-action>
-        </div>
+          @if (eventsByAccessYearState$ | async; as st) { @if (st.loading) {
+          <app-spinner-loading /> } @else if (st.error) {
+          <div class="error">No se pudo cargar el gráfico.</div>
+          } @else if (st.data?.length) {
+          <app-donut-chart
+            [data]="st.data"
+            [labelType]="dictType.AccessType"
+            [title]="'Acceso a los eventos (' + yearLabel() + ')'"
+          />
+          } @else {
+          <div class="muted">Sin datos.</div>
+          } }
+        </app-chart-card>
 
-        @if (eventsByCategoryYearState$ | async; as st) { @if (st.loading) {
-        <app-spinner-loading /> } @else if (st.error) {
-        <div class="error">No se pudo cargar el gráfico.</div>
-        } @else if (st.data?.length) {
-        <app-donut-chart
-          [data]="st.data"
-          [labelType]="dictType.Categories"
+        <!-- Categorías -->
+        <app-chart-card
+          class="flex-1"
           [title]="'Categorías de eventos (' + yearLabel() + ')'"
-        />
-        } @else {
-        <div class="muted">Sin datos.</div>
-        } }
-      </app-chart-card>
-    </div>
+          [subtitle]="
+            view() === 'groupedByPeriodicId'
+              ? 'Solo eventos únicos'
+              : 'Todos los eventos'
+          "
+        >
+          <div card-actions>
+            <app-icon-action
+              [icon]="'uil-print'"
+              [tooltip]="'Imprimir card'"
+              (click)="
+                printClosestCard(
+                  $event,
+                  'Categorías de eventos (' + yearLabel() + ')'
+                )
+              "
+            >
+            </app-icon-action>
+          </div>
 
-    <!-- EVENTOS -->
-    <div class="flex flex-wrap gap-6 items-stretch">
-      <!-- Eventos por mes -->
-      <app-chart-card
-        class="flex-[1] min-w-[320px]"
-        [title]="'Eventos por mes (' + yearLabel() + ')'"
-        [subtitle]="
-          view() === 'groupedByPeriodicId'
-            ? 'Solo eventos únicos'
-            : 'Todos los eventos'
-        "
-      >
-        <div card-actions>
-          <app-icon-action
-            [icon]="'uil-print'"
-            [tooltip]="'Imprimir card'"
-            (click)="
-              printClosestCard($event, 'Eventos por mes (' + yearLabel() + ')')
-            "
-          >
-          </app-icon-action>
-        </div>
-
-        @if (eventsByMonthState$ | async; as s) { @if (s.loading) {
-        <app-spinner-loading /> } @else if (s.error) {
-        <div class="error">No se pudo cargar el gráfico.</div>
-        } @else {
-        <app-monthly-chart
-          [data]="s.data"
+          @if (eventsByCategoryYearState$ | async; as st) { @if (st.loading) {
+          <app-spinner-loading /> } @else if (st.error) {
+          <div class="error">No se pudo cargar el gráfico.</div>
+          } @else if (st.data?.length) {
+          <app-donut-chart
+            [data]="st.data"
+            [labelType]="dictType.Categories"
+            [title]="'Categorías de eventos (' + yearLabel() + ')'"
+          />
+          } @else {
+          <div class="muted">Sin datos.</div>
+          } }
+        </app-chart-card>
+      </div>
+      <div class="page-break"></div>
+      <!-- EVENTOS -->
+      <div class="flex flex-wrap gap-6 items-stretch container-charts">
+        <!-- Eventos por mes -->
+        <app-chart-card
+          class="flex-[1] min-w-[320px]"
           [title]="'Eventos por mes (' + yearLabel() + ')'"
-          [width]="0"
-        />
-        } }
-      </app-chart-card>
+          [subtitle]="
+            view() === 'groupedByPeriodicId'
+              ? 'Solo eventos únicos'
+              : 'Todos los eventos'
+          "
+        >
+          <div card-actions>
+            <app-icon-action
+              [icon]="'uil-print'"
+              [tooltip]="'Imprimir card'"
+              (click)="
+                printClosestCard(
+                  $event,
+                  'Eventos por mes (' + yearLabel() + ')'
+                )
+              "
+            >
+            </app-icon-action>
+          </div>
 
-      <!-- Eventos por espacio -->
-      <app-chart-card
-        class="flex-[2] min-w-[320px]"
-        [title]="'Eventos por espacio (' + yearLabel() + ')'"
-        [subtitle]="
-          view() === 'groupedByPeriodicId'
-            ? 'Solo eventos únicos'
-            : 'Todos los eventos'
-        "
-        ariaDescription="Gráfico de barras horizontales con el total de eventos por espacio durante el año seleccionado"
-        [footer]="false"
-      >
-        <div card-actions>
-          <app-icon-action
-            [icon]="'uil-print'"
-            [tooltip]="'Imprimir card'"
-            (click)="
-              printClosestCard(
-                $event,
-                'Eventos por espacio (' + yearLabel() + ')'
-              )
-            "
-          >
-          </app-icon-action>
-        </div>
+          @if (eventsByMonthState$ | async; as s) { @if (s.loading) {
+          <app-spinner-loading /> } @else if (s.error) {
+          <div class="error">No se pudo cargar el gráfico.</div>
+          } @else {
+          <app-monthly-chart
+            [data]="s.data"
+            [title]="'Eventos por mes (' + yearLabel() + ')'"
+            [width]="0"
+          />
+          } }
+        </app-chart-card>
 
-        @if (eventsByPlaceHBarState$ | async; as s) { @if (s.loading) {
-        <app-spinner-loading /> } @else if (s.error) {
-        <div class="error">No se pudo cargar el gráfico.</div>
-        } @else { <app-horizontal-bar-chart [data]="s.data" /> } }
-      </app-chart-card>
-    </div>
-    <!-- Histórico: serie anual -->
-    @if (viewYear() === 'historic') {
-    <div class="flex flex-wrap gap-6 items-stretch">
-      <app-chart-card
-        class="flex-[2] min-w-[320px]"
-        [title]="'Eventos por año (Histórico 2018–' + currentYear + ')'"
-        [subtitle]="
-          view() === 'groupedByPeriodicId'
-            ? 'Solo eventos únicos'
-            : 'Todos los eventos'
-        "
-      >
-        <div card-actions>
-          <app-icon-action
-            [icon]="'uil-print'"
-            [tooltip]="'Imprimir card'"
-            (click)="
-              printClosestCard(
-                $event,
-                'Eventos por año (Histórico 2018–' + currentYear + ')'
-              )
-            "
-          >
-          </app-icon-action>
-        </div>
+        <!-- Eventos por espacio -->
+        <app-chart-card
+          class="flex-[2] min-w-[320px]"
+          [title]="'Eventos por espacio (' + yearLabel() + ')'"
+          [subtitle]="
+            view() === 'groupedByPeriodicId'
+              ? 'Solo eventos únicos'
+              : 'Todos los eventos'
+          "
+          ariaDescription="Gráfico de barras horizontales con el total de eventos por espacio durante el año seleccionado"
+          [footer]="false"
+        >
+          <div card-actions>
+            <app-icon-action
+              [icon]="'uil-print'"
+              [tooltip]="'Imprimir card'"
+              (click)="
+                printClosestCard(
+                  $event,
+                  'Eventos por espacio (' + yearLabel() + ')'
+                )
+              "
+            >
+            </app-icon-action>
+          </div>
 
-        @if (annualState$ | async; as series) { @if (series.loading) {
-        <app-spinner-loading /> } @else if (series.error) {
-        <div class="error">No se pudo cargar el gráfico.</div>
-        } @else {
-        <app-annual-line-chart
-          [data]="series.data"
-          [innerHeight]="110"
-          [margin]="{ top: 6, right: 12, bottom: 18, left: 18 }"
-          [yGridLines]="3"
-          [compact]="true"
-          [xTickFontSize]="6"
-        />
-        } }
-      </app-chart-card>
-    </div>
-    }
+          @if (eventsByPlaceHBarState$ | async; as s) { @if (s.loading) {
+          <app-spinner-loading /> } @else if (s.error) {
+          <div class="error">No se pudo cargar el gráfico.</div>
+          } @else { <app-horizontal-bar-chart [data]="s.data" /> } }
+        </app-chart-card>
+      </div>
+      <!-- Histórico: serie anual -->
+      @if (viewYear() === 'historic') {
+      <div class="flex flex-wrap gap-6 items-stretch container-charts">
+        <app-chart-card
+          class="flex-[2] min-w-[320px]"
+          [title]="'Eventos por año (Histórico 2018–' + currentYear + ')'"
+          [subtitle]="
+            view() === 'groupedByPeriodicId'
+              ? 'Solo eventos únicos'
+              : 'Todos los eventos'
+          "
+        >
+          <div card-actions>
+            <app-icon-action
+              [icon]="'uil-print'"
+              [tooltip]="'Imprimir card'"
+              (click)="
+                printClosestCard(
+                  $event,
+                  'Eventos por año (Histórico 2018–' + currentYear + ')'
+                )
+              "
+            >
+            </app-icon-action>
+          </div>
+
+          @if (annualState$ | async; as series) { @if (series.loading) {
+          <app-spinner-loading /> } @else if (series.error) {
+          <div class="error">No se pudo cargar el gráfico.</div>
+          } @else {
+          <app-annual-line-chart
+            [data]="series.data"
+            [innerHeight]="110"
+            [margin]="{ top: 6, right: 12, bottom: 18, left: 18 }"
+            [yGridLines]="3"
+            [compact]="true"
+            [xTickFontSize]="6"
+          />
+          } }
+        </app-chart-card>
+      </div>
+      }
+    </section>
+    <div class="page-break"></div>
     <!-- Libros, películas y recetas -->
     <section class="mt-16">
       <h1 class="title">Libros, películas, recetas y Piteras</h1>
       @if (cultureKpisState$ | async; as st) {
-      <div class="flex gap-6 justify-between flex-wrap">
+      <div class="flex gap-6 justify-between">
         <!-- Libros -->
         <article class="card kpi flex-1 min-w-[220px]">
           <div class="kpi-title">Libros donados ({{ yearLabel() }})</div>
@@ -433,7 +441,7 @@
       <div class="flex flex-wrap gap-6 items-stretch w-full">
         <!-- Libros -->
         <app-chart-card
-          class="flex-[1] min-w-[320px]"
+          class="flex-[1] min-w-[320px] chart-print-2"
           [title]="'Libros donados por género (' + yearLabel() + ')'"
         >
           <div card-actions>
@@ -468,7 +476,7 @@
 
         <!-- Películas -->
         <app-chart-card
-          class="flex-[1] min-w-[320px]"
+          class="flex-[1] min-w-[320px] chart-print-2"
           [title]="'Películas donadas por género (' + yearLabel() + ')'"
         >
           <div card-actions>
@@ -503,7 +511,7 @@
 
         <!-- Recetas -->
         <app-chart-card
-          class="flex-[1] min-w-[320px]"
+          class="flex-[1] min-w-[320px] chart-print-2"
           [title]="'Recetas por categoría (' + yearLabel() + ')'"
         >
           <div card-actions>
@@ -537,7 +545,7 @@
         </app-chart-card>
       </div>
       @if (viewYear() === 'historic') {
-      <div class="flex gap-6 container-charts">
+      <div class="flex gap-6">
         <!-- Páginas por número (Pitera) -->
         <app-chart-card
           class="flex-[3] min-w-[320px]"
@@ -574,7 +582,7 @@
       </div>
       }
     </section>
-
+    <div class="page-break"></div>
     <!-- Socias -->
     <section class="mt-16 flex flex-col gap-y-6">
       <h1 class="title">Socias</h1>
@@ -751,6 +759,7 @@
       </div>
       }
     </section>
+    <div class="page-break"></div>
     <!-- Ingresos, gastos y subvenciones -->
     <section class="mt-16 flex flex-col gap-y-6">
       <h1 class="title">Ingresos, gastos y subvenciones</h1>
@@ -789,7 +798,7 @@
         </article>
       </div>
       }
-      <div class="flex flex-wrap gap-6 items-stretch w-full">
+      <div class="flex flex-wrap gap-6 items-stretch w-full container-charts">
         <!-- Distribución económica -->
         <app-chart-card
           class="flex-[1] min-w-[320px]"
@@ -837,6 +846,7 @@
           <div class="muted">Sin datos.</div>
           } }
         </app-chart-card>
+
         <!-- Gastos por proyecto -->
         <app-chart-card
           class="flex-[1] min-w-[320px]"
@@ -870,6 +880,7 @@
           <div class="muted">Sin datos.</div>
           } }
         </app-chart-card>
+        <div class="page-break"></div>
         <!-- Gastos -->
         <app-chart-card
           class="flex-[1] min-w-[320px]"
@@ -905,7 +916,7 @@
         </app-chart-card>
       </div>
 
-      <div class="flex flex-wrap gap-6 items-stretch w-full">
+      <div class="flex flex-wrap gap-6 items-stretch w-full container-charts">
         <!-- Ingresos -->
         <app-chart-card
           class="flex-[1] min-w-[320px]"
@@ -939,7 +950,7 @@
           <div class="muted">Sin datos.</div>
           } }
         </app-chart-card>
-
+        <div class="page-break"></div>
         <!-- Subvenciones por tipo -->
         <app-chart-card
           class="flex-[1] min-w-[320px]"
@@ -1007,7 +1018,7 @@
         </app-chart-card>
       </div>
       } @if (viewYear() === 'historic') {
-      <div class="flex flex-wrap gap-6 items-stretch w-full">
+      <div class="flex flex-wrap gap-6 items-stretch w-full container-charts">
         <!-- Comparativo -->
         <app-chart-card
           class="flex-[2] min-w-[320px]"

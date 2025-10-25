@@ -4,6 +4,7 @@
 }
 .title {
   margin: 0;
+  margin-bottom: 10px;
   font-weight: 600;
   color: #2f2f61;
   font-size: 35px;
@@ -193,30 +194,38 @@
 }
 @media print {
   /* Oculta controles/acciones en el PDF */
+  .noPrint,
   header .control,
   header app-icon-action,
   .chart-card__actions,
   [card-actions] {
     display: none !important;
   }
-
+  .kpi-event {
+    flex: none;
+    width: 30%;
+  }
   /* Una sola columna para evitar cortes raros */
   .container-charts {
-    flex-direction: column !important;
-  }
-  .container-articles {
-    flex-direction: row !important;
-    justify-content: space-between;
-    width: 100%;
+    display: block !important;
   }
 
-  .card,
-  .chart-card,
-  article {
-    break-inside: avoid-page;
+  .chart-card {
+    display: block !important;
+    width: 100% !important;
+    margin-bottom: 20mm !important;
     box-shadow: none !important;
+    break-inside: avoid-page !important;
+    page-break-inside: avoid !important;
   }
-
+  .chart-print-2 {
+    flex: none;
+    width: 48%;
+  }
+  .page-break {
+    page-break-before: always; /* o page-break-after: always; */
+    break-before: page; /* estándar moderno */
+  }
   /* Márgenes de página “amables” */
   @page {
     size: A4;
