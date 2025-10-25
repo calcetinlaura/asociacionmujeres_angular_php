@@ -20,11 +20,11 @@ import { PiteraModel } from 'src/app/core/interfaces/pitera.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { PiterasService } from 'src/app/core/services/piteras.services';
 
+import { PdfPrintService } from 'src/app/core/services/PdfPrintService.service';
 import { DashboardHeaderComponent } from 'src/app/shared/components/dashboard-header/dashboard-header.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { StickyZoneComponent } from 'src/app/shared/components/sticky-zone/sticky-zone.component';
 import { TableComponent } from 'src/app/shared/components/table/table.component';
-import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
 
 // Reutilizables
 import { PageToolbarComponent } from 'src/app/shared/components/page-toolbar/page-toolbar.component';

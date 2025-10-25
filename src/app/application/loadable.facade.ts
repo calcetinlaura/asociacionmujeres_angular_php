@@ -10,7 +10,7 @@ import {
   observeOn,
   tap,
 } from 'rxjs';
-import { GeneralService } from 'src/app/shared/services/generalService.service';
+import { GeneralService } from 'src/app/core/services/generalService.service';
 
 export abstract class LoadableFacade {
   protected readonly destroyRef = inject(DestroyRef);

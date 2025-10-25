@@ -13,11 +13,11 @@ import { filter, tap } from 'rxjs';
 import { PiterasFacade } from 'src/app/application/piteras.facade';
 import { PiteraModel } from 'src/app/core/interfaces/pitera.interface';
 import { TypeList } from 'src/app/core/models/general.model';
+import { GeneralService } from 'src/app/core/services/generalService.service';
 import { ImageControlComponent } from 'src/app/shared/components/image-control/image-control.component';
 import { PdfControlComponent } from 'src/app/shared/components/pdf-control/pdf-control.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { ScrollToFirstErrorDirective } from 'src/app/shared/directives/scroll-to-first-error.directive';
-import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
   selector: 'app-form-pitera',

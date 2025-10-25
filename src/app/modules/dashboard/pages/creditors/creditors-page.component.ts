@@ -30,7 +30,7 @@ import {
 
 import { CreditorsService } from 'src/app/core/services/creditors.services';
 import { InvoicesService } from 'src/app/core/services/invoices.services';
-import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
+import { PdfPrintService } from 'src/app/core/services/PdfPrintService.service';
 
 import { DashboardHeaderComponent } from 'src/app/shared/components/dashboard-header/dashboard-header.component';
 import { FiltersComponent } from 'src/app/shared/components/filters/filters.component';

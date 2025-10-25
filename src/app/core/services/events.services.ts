@@ -6,7 +6,7 @@ import {
   EventModel,
   EventModelFullData,
 } from 'src/app/core/interfaces/event.interface';
-import { GeneralService } from 'src/app/shared/services/generalService.service';
+import { GeneralService } from 'src/app/core/services/generalService.service';
 import { environments } from 'src/environments/environments';
 import { AgentEventsQuery } from '../interfaces/agent.interface';
 

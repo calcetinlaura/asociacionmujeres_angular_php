@@ -32,9 +32,9 @@ import { DashboardHeaderComponent } from 'src/app/shared/components/dashboard-he
 import { FiltersComponent } from 'src/app/shared/components/filters/filters.component';
 import { TableComponent } from 'src/app/shared/components/table/table.component';
 
+import { GeneralService } from 'src/app/core/services/generalService.service';
+import { PdfPrintService } from 'src/app/core/services/PdfPrintService.service';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
-import { GeneralService } from 'src/app/shared/services/generalService.service';
-import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
 
 import { PageToolbarComponent } from 'src/app/shared/components/page-toolbar/page-toolbar.component';
 import { StickyZoneComponent } from 'src/app/shared/components/sticky-zone/sticky-zone.component';

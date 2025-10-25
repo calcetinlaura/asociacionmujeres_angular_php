@@ -1,9 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { GeneralService } from 'src/app/core/services/generalService.service';
 import { SocialIconPipe } from 'src/app/shared/pipe/social-icon.pipe';
 import { SocialUrlPipe } from 'src/app/shared/pipe/social-url.pipe';
-import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 @Component({
   selector: 'app-footer',

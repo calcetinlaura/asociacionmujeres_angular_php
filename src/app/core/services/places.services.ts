@@ -3,7 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { PlaceModel, SalaModel } from 'src/app/core/interfaces/place.interface';
-import { GeneralService } from 'src/app/shared/services/generalService.service';
+import { GeneralService } from 'src/app/core/services/generalService.service';
 import { environments } from 'src/environments/environments';
 
 @Injectable({

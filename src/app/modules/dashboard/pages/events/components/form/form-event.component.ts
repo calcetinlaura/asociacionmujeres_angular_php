@@ -56,6 +56,7 @@ import { PlaceModel, SalaModel } from 'src/app/core/interfaces/place.interface';
 import { ProjectModel } from 'src/app/core/interfaces/project.interface';
 import { TypeList } from 'src/app/core/models/general.model';
 import { AgentsService } from 'src/app/core/services/agents.services';
+import { GeneralService } from 'src/app/core/services/generalService.service';
 import { MacroeventsService } from 'src/app/core/services/macroevents.services';
 import { ProjectsService } from 'src/app/core/services/projects.services';
 import { ButtonCategoryComponent } from 'src/app/shared/components/buttons/button-category/button-category.component';
@@ -65,7 +66,6 @@ import { ImageControlComponent } from 'src/app/shared/components/image-control/i
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { ScrollToFirstErrorDirective } from 'src/app/shared/directives/scroll-to-first-error.directive';
 import { FilterTransformCodePipe } from 'src/app/shared/pipe/filterTransformCode.pipe';
-import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { SocialNetwork } from 'src/app/shared/utils/social.utils';
 import {
   dateBetween,

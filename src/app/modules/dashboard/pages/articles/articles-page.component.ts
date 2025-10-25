@@ -21,10 +21,10 @@ import {
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { ArticlesService } from 'src/app/core/services/articles.services';
 
+import { PdfPrintService } from 'src/app/core/services/PdfPrintService.service';
 import { DashboardHeaderComponent } from 'src/app/shared/components/dashboard-header/dashboard-header.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { TableComponent } from 'src/app/shared/components/table/table.component';
-import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
 
 // Reutilizables
 import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';

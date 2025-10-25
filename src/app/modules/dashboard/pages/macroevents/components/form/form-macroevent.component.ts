@@ -24,10 +24,10 @@ import { filter, take, tap } from 'rxjs'; // 👈 añade take
 import { MacroeventsFacade } from 'src/app/application/macroevents.facade';
 import { MacroeventModel } from 'src/app/core/interfaces/macroevent.interface';
 import { TypeList } from 'src/app/core/models/general.model';
+import { GeneralService } from 'src/app/core/services/generalService.service';
 import { ImageControlComponent } from 'src/app/shared/components/image-control/image-control.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { ScrollToFirstErrorDirective } from 'src/app/shared/directives/scroll-to-first-error.directive';
-import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { dateRangeValidator } from 'src/app/shared/utils/validators.utils';
 
 @Component({

@@ -12,7 +12,7 @@ import {
   inject,
 } from '@angular/core';
 import { TypeActionModal } from 'src/app/core/models/general.model';
-import { BodyScrollLockService } from 'src/app/shared/services/body-scroll-lock.service';
+import { BodyScrollLockService } from 'src/app/core/services/body-scroll-lock.service';
 
 @Component({
   selector: 'app-ui-modal',

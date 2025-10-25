@@ -17,6 +17,7 @@ import {
   TypeList,
 } from 'src/app/core/models/general.model';
 import { EventsService } from 'src/app/core/services/events.services';
+import { GeneralService } from 'src/app/core/services/generalService.service';
 import { MacroeventsService } from 'src/app/core/services/macroevents.services';
 import { FiltersComponent } from 'src/app/shared/components/filters/filters.component';
 import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
@@ -25,7 +26,6 @@ import { NoResultsComponent } from 'src/app/shared/components/no-results/no-resu
 import { SectionGenericComponent } from 'src/app/shared/components/section-generic/section-generic.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
-import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { CalendarComponent } from '../../../../shared/components/calendar/calendar.component';
 
 @Component({

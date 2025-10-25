@@ -18,12 +18,12 @@ import {
 } from 'src/app/core/interfaces/book.interface';
 import { Filter, TypeList } from 'src/app/core/models/general.model';
 import { BooksService } from 'src/app/core/services/books.services';
+import { GeneralService } from 'src/app/core/services/generalService.service';
 import { FiltersComponent } from 'src/app/shared/components/filters/filters.component';
 import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
 import { NoResultsComponent } from 'src/app/shared/components/no-results/no-results.component';
 import { SectionGenericComponent } from 'src/app/shared/components/section-generic/section-generic.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
-import { GeneralService } from 'src/app/shared/services/generalService.service';
 
 // Reutilizable
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';

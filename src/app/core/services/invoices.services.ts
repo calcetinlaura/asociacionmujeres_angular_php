@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
-import { GeneralService } from 'src/app/shared/services/generalService.service';
+import { GeneralService } from 'src/app/core/services/generalService.service';
 import { environments } from 'src/environments/environments';
 import {
   InvoiceModelFullData,

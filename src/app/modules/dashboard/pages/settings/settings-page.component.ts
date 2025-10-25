@@ -2,12 +2,12 @@ import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 
-import { GeneralService } from 'src/app/shared/services/generalService.service';
+import { GeneralService } from 'src/app/core/services/generalService.service';
 @Component({
-    selector: 'app-recipes-page',
-    imports: [MatCheckboxModule, FormsModule],
-    templateUrl: './settings-page.component.html',
-    styleUrl: './settings-page.component.css'
+  selector: 'app-recipes-page',
+  imports: [MatCheckboxModule, FormsModule],
+  templateUrl: './settings-page.component.html',
+  styleUrl: './settings-page.component.css',
 })
 export class SettingsPageComponent implements OnInit {
   private generalService = inject(GeneralService);

@@ -6,7 +6,7 @@ import {
   CreditorModel,
   CreditorWithInvoices,
 } from 'src/app/core/interfaces/creditor.interface';
-import { GeneralService } from 'src/app/shared/services/generalService.service';
+import { GeneralService } from 'src/app/core/services/generalService.service';
 import { environments } from 'src/environments/environments';
 
 @Injectable({

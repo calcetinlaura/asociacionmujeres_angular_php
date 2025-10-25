@@ -27,10 +27,10 @@ import {
 } from 'src/app/core/models/general.model';
 
 import { EventsService } from 'src/app/core/services/events.services';
+import { GeneralService } from 'src/app/core/services/generalService.service';
 import { InvoicesService } from 'src/app/core/services/invoices.services';
+import { PdfPrintService } from 'src/app/core/services/PdfPrintService.service';
 import { ProjectsService } from 'src/app/core/services/projects.services';
-import { GeneralService } from 'src/app/shared/services/generalService.service';
-import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
 
 import { DashboardHeaderComponent } from 'src/app/shared/components/dashboard-header/dashboard-header.component';
 import { FiltersComponent } from 'src/app/shared/components/filters/filters.component';

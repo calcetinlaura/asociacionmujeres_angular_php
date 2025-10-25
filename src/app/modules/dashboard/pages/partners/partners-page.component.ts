@@ -26,13 +26,13 @@ import {
 } from 'src/app/core/models/general.model';
 import { PartnersService } from 'src/app/core/services/partners.services';
 
+import { GeneralService } from 'src/app/core/services/generalService.service';
+import { PdfPrintService } from 'src/app/core/services/PdfPrintService.service';
 import { DashboardHeaderComponent } from 'src/app/shared/components/dashboard-header/dashboard-header.component';
 import { FiltersComponent } from 'src/app/shared/components/filters/filters.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { StickyZoneComponent } from 'src/app/shared/components/sticky-zone/sticky-zone.component';
 import { TableComponent } from 'src/app/shared/components/table/table.component';
-import { GeneralService } from 'src/app/shared/services/generalService.service';
-import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
 import { normalizeCuotas } from 'src/app/shared/utils/cuotas.utils';
 
 // Shell de modal

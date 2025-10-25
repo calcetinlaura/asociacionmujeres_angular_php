@@ -29,6 +29,7 @@ import {
 } from 'src/app/core/models/general.model';
 import { AgentsService } from 'src/app/core/services/agents.services';
 import { EventsService } from 'src/app/core/services/events.services';
+import { PdfPrintService } from 'src/app/core/services/PdfPrintService.service';
 import { DashboardHeaderComponent } from 'src/app/shared/components/dashboard-header/dashboard-header.component';
 import { FiltersComponent } from 'src/app/shared/components/filters/filters.component';
 import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
@@ -39,7 +40,6 @@ import { StickyZoneComponent } from 'src/app/shared/components/sticky-zone/stick
 import { TableComponent } from 'src/app/shared/components/table/table.component';
 import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
-import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
 
 type ModalState = {
   typeModal: TypeList;

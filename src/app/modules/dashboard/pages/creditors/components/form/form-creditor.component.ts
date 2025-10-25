@@ -23,9 +23,9 @@ import {
   categoryFilterCreditors,
   CreditorModel,
 } from 'src/app/core/interfaces/creditor.interface';
+import { GeneralService } from 'src/app/core/services/generalService.service';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { ScrollToFirstErrorDirective } from 'src/app/shared/directives/scroll-to-first-error.directive';
-import { GeneralService } from 'src/app/shared/services/generalService.service';
 @Component({
   selector: 'app-form-creditor',
   imports: [
