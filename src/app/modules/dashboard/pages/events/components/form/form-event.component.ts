@@ -58,10 +58,10 @@ import { TypeList } from 'src/app/core/models/general.model';
 import { AgentsService } from 'src/app/core/services/agents.services';
 import { MacroeventsService } from 'src/app/core/services/macroevents.services';
 import { ProjectsService } from 'src/app/core/services/projects.services';
-import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
 import { ButtonCategoryComponent } from 'src/app/shared/components/buttons/button-category/button-category.component';
 import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
 import { ButtonSelectComponent } from 'src/app/shared/components/buttons/button-select/button-select.component';
+import { ImageControlComponent } from 'src/app/shared/components/image-control/image-control.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { ScrollToFirstErrorDirective } from 'src/app/shared/directives/scroll-to-first-error.directive';
 import { FilterTransformCodePipe } from 'src/app/shared/pipe/filterTransformCode.pipe';
@@ -163,7 +163,7 @@ export function audienceValidatorFactory(
     LinkItemComponent,
   ],
   templateUrl: './form-event.component.html',
-  styleUrls: ['../../../../components/form/form.component.css'],
+  styleUrls: ['./../../../../../../shared/components/form/form.component.css'],
 })
 export class FormEventComponent implements OnInit, OnChanges {
   private readonly destroyRef = inject(DestroyRef);

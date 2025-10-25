@@ -18,7 +18,7 @@ import { merge, of, Subscription } from 'rxjs';
   selector: 'app-date-array-control',
   imports: [CommonModule, ReactiveFormsModule, TitleCasePipe, MatInputModule],
   templateUrl: './array-dates.component.html',
-  styleUrls: ['../../../../components/form/form.component.css'],
+  styleUrls: ['./../../../../../../shared/components/form/form.component.css'],
 })
 export class DateArrayControlComponent
   implements OnChanges, AfterViewInit, OnDestroy

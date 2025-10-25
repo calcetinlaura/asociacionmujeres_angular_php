@@ -10,12 +10,11 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { InvoiceModelFullData } from 'src/app/core/interfaces/invoice.interface';
 import { TypeList } from 'src/app/core/models/general.model';
 import { TextBackgroundComponent } from 'src/app/shared/components/text/text-background/text-background.component';
-import { TextEditorComponent } from 'src/app/shared/components/text/text-editor/text-editor.component';
 import { TextSubTitleComponent } from 'src/app/shared/components/text/text-subTitle/text-subtitle.component';
 import { TextTitleComponent } from 'src/app/shared/components/text/text-title/text-title.component';
 import { TypeInvoiceBadgeComponent } from 'src/app/shared/components/type-invoice-badge/type-invoice-badge.component';
 import { EurosFormatPipe } from 'src/app/shared/pipe/eurosFormat.pipe';
-import { SafeHtmlPipe } from '../../../../../../shared/pipe/safe-html.pipe';
+import { SafeHtmlPipe } from 'src/app/shared/pipe/safe-html.pipe';
 
 type PdfKind = 'invoice' | 'proof';
 
@@ -26,7 +25,6 @@ type PdfKind = 'invoice' | 'proof';
     CommonModule,
     TextBackgroundComponent,
     TextTitleComponent,
-    TextEditorComponent,
     EurosFormatPipe,
     TextSubTitleComponent,
     TypeInvoiceBadgeComponent,

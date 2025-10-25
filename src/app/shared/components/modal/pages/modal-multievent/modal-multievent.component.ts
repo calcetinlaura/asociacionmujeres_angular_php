@@ -28,7 +28,7 @@ import { ConfirmDialogComponent } from '../modal-confirm-dialog/modal-confirm-di
 
 // ✅ Nuevas utilidades para no duplicar lógica
 
-import { CardEventMiniComponent } from 'src/app/modules/landing/components/cards/card-events-min/card-events.min.component';
+import { CardEventMiniComponent } from 'src/app/shared/components/cards/card-events-min/card-events.min.component';
 import {
   isDraft,
   isScheduled,

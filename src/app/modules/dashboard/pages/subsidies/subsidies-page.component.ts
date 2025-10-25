@@ -37,15 +37,15 @@ import {
 } from 'src/app/core/models/general.model';
 
 import { SubsidiesService } from 'src/app/core/services/subsidies.services';
-import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
-import { FiltersComponent } from 'src/app/modules/landing/components/filters/filters.component';
+import { DashboardHeaderComponent } from 'src/app/shared/components/dashboard-header/dashboard-header.component';
+import { FiltersComponent } from 'src/app/shared/components/filters/filters.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
 
-import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.component';
-import { ColumnVisibilityStore } from '../../components/table/column-visibility.store';
-import { TableComponent } from '../../components/table/table.component';
+import { StickyZoneComponent } from 'src/app/shared/components/sticky-zone/sticky-zone.component';
+import { ColumnVisibilityStore } from 'src/app/shared/components/table/column-visibility.store';
+import { TableComponent } from 'src/app/shared/components/table/table.component';
 
 import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
 import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
@@ -55,13 +55,12 @@ import { ProjectModelFullData } from 'src/app/core/interfaces/project.interface'
 import { InvoicesService } from 'src/app/core/services/invoices.services';
 import { ProjectsService } from 'src/app/core/services/projects.services';
 import { ModalNavService } from 'src/app/shared/components/modal/services/modal-nav.service';
-import { ModalShowSubsidyComponent } from './components/tab-subsidy/tab-subsidies.component';
 
 // hooks
+import { PageToolbarComponent } from 'src/app/shared/components/page-toolbar/page-toolbar.component';
 import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
-import { PageToolbarComponent } from '../../components/page-toolbar/page-toolbar.component';
-
+import { ModalShowSubsidyComponent } from './components/tab-subsidy/tab-subsidies.component';
 type ModalItem =
   | SubsidyModel
   | SubsidyModelFullData
@@ -81,11 +80,11 @@ type ModalItem =
     MatTabsModule,
     SpinnerLoadingComponent,
     TableComponent,
-    ModalShowSubsidyComponent,
     MatMenuModule,
     MatCheckboxModule,
     StickyZoneComponent,
     PageToolbarComponent,
+    ModalShowSubsidyComponent,
   ],
   providers: [SubsidiesService],
   templateUrl: './subsidies-page.component.html',

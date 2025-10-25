@@ -28,16 +28,16 @@ import {
 import { EventsService } from 'src/app/core/services/events.services';
 import { MacroeventsService } from 'src/app/core/services/macroevents.services';
 
-import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
-import { TableComponent } from 'src/app/modules/dashboard/components/table/table.component';
-import { FiltersComponent } from 'src/app/modules/landing/components/filters/filters.component';
+import { DashboardHeaderComponent } from 'src/app/shared/components/dashboard-header/dashboard-header.component';
+import { FiltersComponent } from 'src/app/shared/components/filters/filters.component';
+import { TableComponent } from 'src/app/shared/components/table/table.component';
 
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
 
-import { PageToolbarComponent } from '../../components/page-toolbar/page-toolbar.component';
-import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.component';
+import { PageToolbarComponent } from 'src/app/shared/components/page-toolbar/page-toolbar.component';
+import { StickyZoneComponent } from 'src/app/shared/components/sticky-zone/sticky-zone.component';
 
 // Hooks reutilizables
 import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';

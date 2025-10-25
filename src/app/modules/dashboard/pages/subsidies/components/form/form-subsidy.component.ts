@@ -55,7 +55,7 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
     ScrollToFirstErrorDirective,
   ],
   templateUrl: './form-subsidy.component.html',
-  styleUrls: ['../../../../components/form/form.component.css'],
+  styleUrls: ['./../../../../../../shared/components/form/form.component.css'],
   providers: [SubsidiesService],
 })
 export class FormSubsidyComponent implements OnInit {

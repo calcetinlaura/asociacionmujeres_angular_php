@@ -31,7 +31,6 @@ import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { InvoicesService } from 'src/app/core/services/invoices.services';
 import { SubsidiesService } from 'src/app/core/services/subsidies.services';
 
-import { PdfPrintComponent } from 'src/app/modules/dashboard/components/pdf-print/pdf-print.component';
 import {
   ActionBarComponent,
   ActionItem,
@@ -39,10 +38,11 @@ import {
 } from 'src/app/shared/components/action-bar/action-bar.component';
 import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
 import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
+import { PdfPrintComponent } from 'src/app/shared/components/pdf-print/pdf-print.component';
+import { ColumnVisibilityStore } from 'src/app/shared/components/table/column-visibility.store';
+import { TableComponent } from 'src/app/shared/components/table/table.component';
 import { TextEditorComponent } from 'src/app/shared/components/text/text-editor/text-editor.component';
 import { EurosFormatPipe } from 'src/app/shared/pipe/eurosFormat.pipe';
-import { ColumnVisibilityStore } from '../../../../components/table/column-visibility.store';
-import { TableComponent } from '../../../../components/table/table.component';
 
 @Component({
   selector: 'app-tab-subsidy',

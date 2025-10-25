@@ -38,7 +38,7 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
     ScrollToFirstErrorDirective,
   ],
   templateUrl: './form-place.component.html',
-  styleUrls: ['../../../../components/form/form.component.css'],
+  styleUrls: ['./../../../../../../shared/components/form/form.component.css'],
 })
 export class FormPlaceComponent {
   private placesFacade = inject(PlacesFacade);

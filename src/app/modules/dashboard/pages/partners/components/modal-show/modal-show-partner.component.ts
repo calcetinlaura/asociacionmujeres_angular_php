@@ -11,18 +11,18 @@ import { TextBackgroundComponent } from 'src/app/shared/components/text/text-bac
 import { TextBorderComponent } from 'src/app/shared/components/text/text-border/text-border.component';
 import { TextIconComponent } from 'src/app/shared/components/text/text-icon/text-icon.component';
 import { TextTitleComponent } from 'src/app/shared/components/text/text-title/text-title.component';
+import { AgePipe } from 'src/app/shared/pipe/caculate_age.pipe';
+import {
+  DictTranslatePipe,
+  DictType,
+} from 'src/app/shared/pipe/dict-translate.pipe';
+import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
+import { PhoneFormatPipe } from 'src/app/shared/pipe/phoneFormat.pipe';
 import {
   getMembershipYearsText,
   methodLabel,
   normalizeCuotas,
 } from 'src/app/shared/utils/cuotas.utils';
-import { AgePipe } from '../../../../../../shared/pipe/caculate_age.pipe';
-import {
-  DictTranslatePipe,
-  DictType,
-} from '../../../../../../shared/pipe/dict-translate.pipe';
-import { ItemImagePipe } from '../../../../../../shared/pipe/item-img.pipe';
-import { PhoneFormatPipe } from '../../../../../../shared/pipe/phoneFormat.pipe';
 
 @Component({
   selector: 'app-modal-show-partner',

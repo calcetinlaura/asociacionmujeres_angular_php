@@ -9,7 +9,7 @@ import {
   OnDestroy,
   ViewChild,
 } from '@angular/core';
-import { EurosFormatPipe } from '../../../../../../shared/pipe/eurosFormat.pipe';
+import { EurosFormatPipe } from 'src/app/shared/pipe/eurosFormat.pipe';
 import { YearlyDatum } from '../yearly-comparison-chart/yearly-comparison-chart.component';
 
 @Component({

@@ -27,15 +27,15 @@ import {
   DictTranslatePipe,
   DictType,
 } from 'src/app/shared/pipe/dict-translate.pipe';
+import { EnsureArrayPipe } from 'src/app/shared/pipe/ensure-array.pipe';
 import { FilterTransformCodePipe } from 'src/app/shared/pipe/filterTransformCode.pipe';
 import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
+import { SafeHtmlPipe } from 'src/app/shared/pipe/safe-html.pipe';
+import { SocialIconPipe } from 'src/app/shared/pipe/social-icon.pipe';
+import { SocialUrlPipe } from 'src/app/shared/pipe/social-url.pipe';
+import { YoutubeEmbedPipe } from 'src/app/shared/pipe/youtube-embed.pipe';
 import { buildShareUrl } from 'src/app/shared/utils/share-url.util';
 import { environments } from 'src/environments/environments';
-import { EnsureArrayPipe } from '../../../../../../shared/pipe/ensure-array.pipe';
-import { SafeHtmlPipe } from '../../../../../../shared/pipe/safe-html.pipe';
-import { SocialIconPipe } from '../../../../../../shared/pipe/social-icon.pipe';
-import { SocialUrlPipe } from '../../../../../../shared/pipe/social-url.pipe';
-import { YoutubeEmbedPipe } from '../../../../../../shared/pipe/youtube-embed.pipe';
 import { EventPublishPillComponent } from '../publish-pill/publish-pill.component';
 
 @Component({

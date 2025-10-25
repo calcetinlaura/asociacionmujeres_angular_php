@@ -16,9 +16,9 @@ import { SubsidyModelFullData } from 'src/app/core/interfaces/subsidy.interface'
 import { TypeList } from 'src/app/core/models/general.model';
 import { InvoicesService } from 'src/app/core/services/invoices.services';
 import { SubsidiesService } from 'src/app/core/services/subsidies.services';
-import { PdfPrintComponent } from 'src/app/modules/dashboard/components/pdf-print/pdf-print.component';
-import { TableInvoicesComponent } from 'src/app/modules/dashboard/components/table/table-invoice/table-invoice.component';
 import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
+import { PdfPrintComponent } from 'src/app/shared/components/pdf-print/pdf-print.component';
+import { TableInvoicesComponent } from 'src/app/shared/components/table/table-invoice/table-invoice.component';
 import { TextEditorComponent } from 'src/app/shared/components/text/text-editor/text-editor.component';
 import { TextTitleComponent } from 'src/app/shared/components/text/text-title/text-title.component';
 import { EurosFormatPipe } from 'src/app/shared/pipe/eurosFormat.pipe';

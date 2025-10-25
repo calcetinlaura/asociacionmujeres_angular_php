@@ -21,18 +21,18 @@ import { PlaceModel } from 'src/app/core/interfaces/place.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { PlacesService } from 'src/app/core/services/places.services';
 
-import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
-import { TableComponent } from 'src/app/modules/dashboard/components/table/table.component';
+import { DashboardHeaderComponent } from 'src/app/shared/components/dashboard-header/dashboard-header.component';
 import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
 import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
+import { StickyZoneComponent } from 'src/app/shared/components/sticky-zone/sticky-zone.component';
+import { TableComponent } from 'src/app/shared/components/table/table.component';
 import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
-import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.component';
 
 // Hooks comunes
+import { PageToolbarComponent } from 'src/app/shared/components/page-toolbar/page-toolbar.component';
 import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
-import { PageToolbarComponent } from '../../components/page-toolbar/page-toolbar.component';
 
 @Component({
   selector: 'app-places-page',

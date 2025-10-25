@@ -6,7 +6,7 @@ import { AgentModel } from 'src/app/core/interfaces/agent.interface';
   selector: 'app-agent-array-control',
   imports: [ReactiveFormsModule],
   templateUrl: './array-agents.component.html',
-  styleUrls: ['../../../../components/form/form.component.css'],
+  styleUrls: ['./../../../../../../shared/components/form/form.component.css'],
 })
 export class AgentArrayControlComponent {
   @Input() formArray!: FormArray;

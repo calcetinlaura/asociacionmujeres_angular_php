@@ -26,14 +26,14 @@ import {
 } from 'src/app/core/models/general.model';
 import { PartnersService } from 'src/app/core/services/partners.services';
 
-import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
-import { FiltersComponent } from 'src/app/modules/landing/components/filters/filters.component';
+import { DashboardHeaderComponent } from 'src/app/shared/components/dashboard-header/dashboard-header.component';
+import { FiltersComponent } from 'src/app/shared/components/filters/filters.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
+import { StickyZoneComponent } from 'src/app/shared/components/sticky-zone/sticky-zone.component';
+import { TableComponent } from 'src/app/shared/components/table/table.component';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
 import { normalizeCuotas } from 'src/app/shared/utils/cuotas.utils';
-import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.component';
-import { TableComponent } from '../../components/table/table.component';
 
 // Shell de modal
 import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
@@ -42,7 +42,7 @@ import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility'
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
 // Servicio para abrir/cerrar modal
 import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
-import { PageToolbarComponent } from '../../components/page-toolbar/page-toolbar.component';
+import { PageToolbarComponent } from 'src/app/shared/components/page-toolbar/page-toolbar.component';
 
 @Component({
   selector: 'app-partners-page',

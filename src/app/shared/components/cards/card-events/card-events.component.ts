@@ -5,11 +5,11 @@ import { TypeList } from 'src/app/core/models/general.model';
 import { TextBackgroundComponent } from 'src/app/shared/components/text/text-background/text-background.component';
 import { FitTextDirective } from 'src/app/shared/directives/fit-text.directive';
 import { ImgBrokenDirective } from 'src/app/shared/directives/img-broken.directive';
-import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
 import {
   DictTranslatePipe,
   DictType,
-} from '../../../../../shared/pipe/dict-translate.pipe';
+} from 'src/app/shared/pipe/dict-translate.pipe';
+import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
 
 @Component({
   selector: 'app-card-events',

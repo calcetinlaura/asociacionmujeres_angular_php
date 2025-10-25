@@ -10,8 +10,8 @@ import {
 } from '@angular/core';
 import { InvoiceModelFullData } from 'src/app/core/interfaces/invoice.interface';
 import { TypeInvoiceBadgeComponent } from 'src/app/shared/components/type-invoice-badge/type-invoice-badge.component';
-import { EurosFormatPipe } from '../../../../../shared/pipe/eurosFormat.pipe';
-import { SafeHtmlPipe } from '../../../../../shared/pipe/safe-html.pipe';
+import { EurosFormatPipe } from 'src/app/shared/pipe/eurosFormat.pipe';
+import { SafeHtmlPipe } from 'src/app/shared/pipe/safe-html.pipe';
 
 @Component({
   selector: 'app-invoices-table',

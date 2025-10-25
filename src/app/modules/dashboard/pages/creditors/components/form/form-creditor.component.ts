@@ -36,7 +36,7 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
     ScrollToFirstErrorDirective,
   ],
   templateUrl: './form-creditor.component.html',
-  styleUrls: ['../../../../components/form/form.component.css'],
+  styleUrls: ['./../../../../../../shared/components/form/form.component.css'],
 })
 export class FormCreditorComponent {
   private creditorsFacade = inject(CreditorsFacade);

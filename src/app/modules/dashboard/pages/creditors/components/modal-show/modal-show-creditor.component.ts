@@ -11,8 +11,8 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 import { CreditorWithInvoices } from 'src/app/core/interfaces/creditor.interface';
 import { TypeList } from 'src/app/core/models/general.model';
-import { TableInvoicesComponent } from 'src/app/modules/dashboard/components/table/table-invoice/table-invoice.component';
-import { TotalsByYearTableComponent } from 'src/app/modules/dashboard/components/table/table-total-years/table-total-years.component';
+import { TableInvoicesComponent } from 'src/app/shared/components/table/table-invoice/table-invoice.component';
+import { TotalsByYearTableComponent } from 'src/app/shared/components/table/table-total-years/table-total-years.component';
 import { TextBackgroundComponent } from 'src/app/shared/components/text/text-background/text-background.component';
 import { TextEditorComponent } from 'src/app/shared/components/text/text-editor/text-editor.component';
 import { TextIconComponent } from 'src/app/shared/components/text/text-icon/text-icon.component';

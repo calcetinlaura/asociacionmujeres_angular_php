@@ -21,16 +21,16 @@ import { PodcastModel } from 'src/app/core/interfaces/podcast.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { PodcastsService } from 'src/app/core/services/podcasts.services';
 
-import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
-import { TableComponent } from 'src/app/modules/dashboard/components/table/table.component';
+import { DashboardHeaderComponent } from 'src/app/shared/components/dashboard-header/dashboard-header.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
+import { StickyZoneComponent } from 'src/app/shared/components/sticky-zone/sticky-zone.component';
+import { TableComponent } from 'src/app/shared/components/table/table.component';
 import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
-import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.component';
 
 // Reutilizables
+import { PageToolbarComponent } from 'src/app/shared/components/page-toolbar/page-toolbar.component';
 import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
-import { PageToolbarComponent } from '../../components/page-toolbar/page-toolbar.component';
 
 // Modal shell + service
 import { map } from 'rxjs';

@@ -7,7 +7,7 @@ import {
   WritableSignal,
 } from '@angular/core';
 import { ColumnModel } from 'src/app/core/interfaces/column.interface';
-import { ColumnVisibilityStore } from 'src/app/modules/dashboard/components/table/column-visibility.store';
+import { ColumnVisibilityStore } from 'src/app/shared/components/table/column-visibility.store';
 
 type WithKey<K extends string> = ColumnModel & { key: K };
 

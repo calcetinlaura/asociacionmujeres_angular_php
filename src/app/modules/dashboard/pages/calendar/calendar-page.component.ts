@@ -20,11 +20,11 @@ import {
 import { EventsService } from 'src/app/core/services/events.services';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
 
-import { FiltersComponent } from 'src/app/modules/landing/components/filters/filters.component';
 import { CalendarComponent } from 'src/app/shared/components/calendar/calendar.component';
+import { DashboardHeaderComponent } from 'src/app/shared/components/dashboard-header/dashboard-header.component';
+import { FiltersComponent } from 'src/app/shared/components/filters/filters.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
-import { DashboardHeaderComponent } from '../../components/dashboard-header/dashboard-header.component';
-import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.component';
+import { StickyZoneComponent } from 'src/app/shared/components/sticky-zone/sticky-zone.component';
 
 // Modal
 import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';

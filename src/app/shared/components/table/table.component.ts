@@ -21,6 +21,7 @@ import { ColumnModel } from 'src/app/core/interfaces/column.interface';
 import { ProjectModelFullData } from 'src/app/core/interfaces/project.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { SubsidiesService } from 'src/app/core/services/subsidies.services';
+import { EventPublishPillComponent } from 'src/app/modules/dashboard/pages/events/components/publish-pill/publish-pill.component';
 import {
   ActionBarComponent,
   ActionItem,
@@ -28,20 +29,19 @@ import {
 } from 'src/app/shared/components/action-bar/action-bar.component';
 import { TypeInvoiceBadgeComponent } from 'src/app/shared/components/type-invoice-badge/type-invoice-badge.component';
 import { AgePipe } from 'src/app/shared/pipe/caculate_age.pipe';
+import {
+  DictTranslatePipe,
+  DictType,
+} from 'src/app/shared/pipe/dict-translate.pipe';
 import { EurosFormatPipe } from 'src/app/shared/pipe/eurosFormat.pipe';
 import { FilterTransformCodePipe } from 'src/app/shared/pipe/filterTransformCode.pipe';
 import { HasValuePipe } from 'src/app/shared/pipe/hasValue.pipe';
 import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
 import { PhoneFormatPipe } from 'src/app/shared/pipe/phoneFormat.pipe';
+import { SafeHtmlPipe } from 'src/app/shared/pipe/safe-html.pipe';
 import { isDraft, isScheduled } from 'src/app/shared/utils/events.utils';
-import { AudienceBadgesPipe } from '../../../../shared/pipe/audience-badges.pipe';
-import { HmsPipe } from '../../../../shared/pipe/dateTime_form.pipe';
-import {
-  DictTranslatePipe,
-  DictType,
-} from '../../../../shared/pipe/dict-translate.pipe';
-import { SafeHtmlPipe } from '../../../../shared/pipe/safe-html.pipe';
-import { EventPublishPillComponent } from '../../pages/events/components/publish-pill/publish-pill.component';
+import { AudienceBadgesPipe } from '../../pipe/audience-badges.pipe';
+import { HmsPipe } from '../../pipe/dateTime_form.pipe';
 import { CircleIndicatorComponent } from '../circle-indicator/circle-indicator.component';
 @Component({
   standalone: true,

@@ -4,7 +4,7 @@ import {
   ChartColors,
   PALETTE_PASTEL,
 } from 'src/app/core/interfaces/general.interface';
-import { EurosFormatPipe } from '../../../../../../shared/pipe/eurosFormat.pipe';
+import { EurosFormatPipe } from 'src/app/shared/pipe/eurosFormat.pipe';
 
 export type PieDatum = { label: string; value: number };
 

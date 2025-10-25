@@ -14,14 +14,14 @@ import { EventModelFullData } from 'src/app/core/interfaces/event.interface';
 import { ProjectModelFullData } from 'src/app/core/interfaces/project.interface';
 import { TypeList } from 'src/app/core/models/general.model';
 import { EventsService } from 'src/app/core/services/events.services';
-import { TableInvoicesComponent } from 'src/app/modules/dashboard/components/table/table-invoice/table-invoice.component';
-import { CardEventMiniComponent } from 'src/app/modules/landing/components/cards/card-events-min/card-events.min.component';
 import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
+import { CardEventMiniComponent } from 'src/app/shared/components/cards/card-events-min/card-events.min.component';
+import { TableInvoicesComponent } from 'src/app/shared/components/table/table-invoice/table-invoice.component';
 import { TextBackgroundComponent } from 'src/app/shared/components/text/text-background/text-background.component';
 import { TextEditorComponent } from 'src/app/shared/components/text/text-editor/text-editor.component';
 import { TextTitleComponent } from 'src/app/shared/components/text/text-title/text-title.component';
-import { EurosFormatPipe } from '../../../../../../shared/pipe/eurosFormat.pipe';
-import { SafeHtmlPipe } from '../../../../../../shared/pipe/safe-html.pipe';
+import { EurosFormatPipe } from 'src/app/shared/pipe/eurosFormat.pipe';
+import { SafeHtmlPipe } from 'src/app/shared/pipe/safe-html.pipe';
 
 @Component({
   selector: 'app-modal-show-project',

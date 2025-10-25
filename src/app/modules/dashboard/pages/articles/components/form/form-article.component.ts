@@ -21,7 +21,7 @@ import { filter, tap } from 'rxjs';
 import { ArticlesFacade } from 'src/app/application/articles.facade';
 import { ArticleModel } from 'src/app/core/interfaces/article.interface';
 import { TypeList } from 'src/app/core/models/general.model';
-import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
+import { ImageControlComponent } from 'src/app/shared/components/image-control/image-control.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { ScrollToFirstErrorDirective } from 'src/app/shared/directives/scroll-to-first-error.directive';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
@@ -38,7 +38,7 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
     ScrollToFirstErrorDirective,
   ],
   templateUrl: './form-article.component.html',
-  styleUrls: ['../../../../components/form/form.component.css'],
+  styleUrls: ['./../../../../../../shared/components/form/form.component.css'],
 })
 export class FormArticleComponent {
   private articlesFacade = inject(ArticlesFacade);

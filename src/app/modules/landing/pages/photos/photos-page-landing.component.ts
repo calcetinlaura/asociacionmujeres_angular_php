@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { Filter, filterPhotos } from 'src/app/core/models/general.model';
-import { FiltersComponent } from '../../components/filters/filters.component';
+import { FiltersComponent } from 'src/app/shared/components/filters/filters.component';
 
 @Component({
   selector: 'app-photos-page-landing',

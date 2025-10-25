@@ -8,10 +8,10 @@ import { TextBackgroundComponent } from 'src/app/shared/components/text/text-bac
 import { TextEditorComponent } from 'src/app/shared/components/text/text-editor/text-editor.component';
 import { TextSubTitleComponent } from 'src/app/shared/components/text/text-subTitle/text-subtitle.component';
 import { TextTitleComponent } from 'src/app/shared/components/text/text-title/text-title.component';
+import { HmsPipe } from 'src/app/shared/pipe/dateTime_form.pipe';
+import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
 import { buildShareUrl } from 'src/app/shared/utils/share-url.util';
 import { environments } from 'src/environments/environments';
-import { HmsPipe } from '../../../../../../shared/pipe/dateTime_form.pipe';
-import { ItemImagePipe } from '../../../../../../shared/pipe/item-img.pipe';
 
 @Component({
   selector: 'app-modal-show-podcast',

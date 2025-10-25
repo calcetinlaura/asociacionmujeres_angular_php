@@ -9,29 +9,21 @@ import {
 } from '@angular/forms';
 import { Router } from '@angular/router';
 import { tap } from 'rxjs';
-import { AuthService } from 'src/app/modules/auth/services/auth.service';
+import { AuthService } from 'src/app/core/services/auth.service';
+
 import { ScrollToFirstErrorDirective } from 'src/app/shared/directives/scroll-to-first-error.directive';
 
 @Component({
   selector: 'app-login-page',
   templateUrl: './login-page.component.html',
   styleUrls: ['./login-page.component.css'],
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    ScrollToFirstErrorDirective,
-    // RouterOutlet
-  ],
+  imports: [CommonModule, ReactiveFormsModule, ScrollToFirstErrorDirective],
 })
 export class LoginPageComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
   submitted: boolean = false;
 
-  constructor(
-    private authService: AuthService,
-    // private cookie: CookieService,
-    private router: Router
-  ) {}
+  constructor(private authService: AuthService, private router: Router) {}
   formLogin = new FormGroup({
     name: new FormControl('', Validators.required),
     password: new FormControl('', [

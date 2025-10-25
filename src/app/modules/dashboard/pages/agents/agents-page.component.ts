@@ -29,24 +29,17 @@ import {
 } from 'src/app/core/models/general.model';
 import { AgentsService } from 'src/app/core/services/agents.services';
 import { EventsService } from 'src/app/core/services/events.services';
-
-import { DashboardHeaderComponent } from 'src/app/modules/dashboard/components/dashboard-header/dashboard-header.component';
-import { TableComponent } from 'src/app/modules/dashboard/components/table/table.component';
-import { FiltersComponent } from 'src/app/modules/landing/components/filters/filters.component';
-import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
-import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
-import { StickyZoneComponent } from '../../components/sticky-zone/sticky-zone.component';
-
-import { PageToolbarComponent } from '../../components/page-toolbar/page-toolbar.component';
-// Shell de modal unificado
+import { DashboardHeaderComponent } from 'src/app/shared/components/dashboard-header/dashboard-header.component';
+import { FiltersComponent } from 'src/app/shared/components/filters/filters.component';
 import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
 import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
-
-// Hooks reutilizables
+import { PageToolbarComponent } from 'src/app/shared/components/page-toolbar/page-toolbar.component';
+import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
+import { StickyZoneComponent } from 'src/app/shared/components/sticky-zone/sticky-zone.component';
+import { TableComponent } from 'src/app/shared/components/table/table.component';
 import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
-
-// Toolbar reusable
+import { PdfPrintService } from 'src/app/shared/services/PdfPrintService.service';
 
 type ModalState = {
   typeModal: TypeList;
@@ -58,7 +51,6 @@ type ModalState = {
   selector: 'app-agents-page',
   standalone: true,
   imports: [
-    // UI
     DashboardHeaderComponent,
     SpinnerLoadingComponent,
     StickyZoneComponent,
@@ -66,7 +58,6 @@ type ModalState = {
     FiltersComponent,
     ModalShellComponent,
     PageToolbarComponent,
-    // Angular
     CommonModule,
     MatMenuModule,
     MatCheckboxModule,

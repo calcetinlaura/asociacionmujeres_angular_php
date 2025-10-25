@@ -4,7 +4,7 @@ import { PiterasFacade } from 'src/app/application/piteras.facade';
 import { PiteraModel } from 'src/app/core/interfaces/pitera.interface';
 import { TypeList } from 'src/app/core/models/general.model';
 import { PiterasService } from 'src/app/core/services/piteras.services';
-import { SectionGenericComponent } from 'src/app/modules/landing/components/section-generic/section-generic.component';
+import { SectionGenericComponent } from 'src/app/shared/components/section-generic/section-generic.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 
 // Hook reutilizable

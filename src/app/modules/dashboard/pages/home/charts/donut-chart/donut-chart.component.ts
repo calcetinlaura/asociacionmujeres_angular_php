@@ -8,7 +8,7 @@ import {
   DictTranslatePipe,
   DictType,
 } from 'src/app/shared/pipe/dict-translate.pipe';
-import { EurosFormatPipe } from '../../../../../../shared/pipe/eurosFormat.pipe';
+import { EurosFormatPipe } from 'src/app/shared/pipe/eurosFormat.pipe';
 
 export type PieDatum = { label: string; value: number };
 

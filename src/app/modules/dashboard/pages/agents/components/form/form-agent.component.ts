@@ -25,10 +25,11 @@ import {
   CategoryFilterAgents,
 } from 'src/app/core/interfaces/agent.interface';
 import { TypeList } from 'src/app/core/models/general.model';
+import { ImageControlComponent } from 'src/app/shared/components/image-control/image-control.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { ScrollToFirstErrorDirective } from 'src/app/shared/directives/scroll-to-first-error.directive';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
-import { ImageControlComponent } from '../../../../components/image-control/image-control.component';
+
 @Component({
   selector: 'app-form-agent',
   imports: [
@@ -41,7 +42,7 @@ import { ImageControlComponent } from '../../../../components/image-control/imag
     ScrollToFirstErrorDirective,
   ],
   templateUrl: './form-agent.component.html',
-  styleUrls: ['../../../../components/form/form.component.css'],
+  styleUrls: ['./../../../../../../shared/components/form/form.component.css'],
 })
 export class FormAgentComponent {
   private agentsFacade = inject(AgentsFacade);

@@ -27,9 +27,9 @@ import { ProjectModelFullData } from 'src/app/core/interfaces/project.interface'
 import { SubsidyModelFullData } from 'src/app/core/interfaces/subsidy.interface';
 import { TypeList } from 'src/app/core/models/general.model';
 import { SubsidiesService } from 'src/app/core/services/subsidies.services';
-import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
-import { CardEventMiniComponent } from 'src/app/modules/landing/components/cards/card-events-min/card-events.min.component';
 import { ButtonSelectComponent } from 'src/app/shared/components/buttons/button-select/button-select.component';
+import { CardEventMiniComponent } from 'src/app/shared/components/cards/card-events-min/card-events.min.component';
+import { ImageControlComponent } from 'src/app/shared/components/image-control/image-control.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { ScrollToFirstErrorDirective } from 'src/app/shared/directives/scroll-to-first-error.directive';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
@@ -52,7 +52,7 @@ import { ButtonIconComponent } from '../../../../../../shared/components/buttons
     CardEventMiniComponent,
   ],
   templateUrl: './form-project.component.html',
-  styleUrls: ['../../../../components/form/form.component.css'],
+  styleUrls: ['./../../../../../../shared/components/form/form.component.css'],
 })
 export class FormProjectComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);

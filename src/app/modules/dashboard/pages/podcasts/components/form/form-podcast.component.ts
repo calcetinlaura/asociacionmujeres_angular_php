@@ -20,8 +20,8 @@ import { filter, tap } from 'rxjs';
 import { PodcastsFacade } from 'src/app/application/podcasts.facade';
 import { PodcastModel } from 'src/app/core/interfaces/podcast.interface';
 import { TypeList } from 'src/app/core/models/general.model';
-import { AudioControlComponent } from 'src/app/modules/dashboard/components/audio-control//audio-control.component';
-import { ImageControlComponent } from 'src/app/modules/dashboard/components/image-control/image-control.component';
+import { AudioControlComponent } from 'src/app/shared/components/audio-control//audio-control.component';
+import { ImageControlComponent } from 'src/app/shared/components/image-control/image-control.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { ScrollToFirstErrorDirective } from 'src/app/shared/directives/scroll-to-first-error.directive';
 import { GeneralService } from 'src/app/shared/services/generalService.service';
@@ -39,7 +39,7 @@ import { GeneralService } from 'src/app/shared/services/generalService.service';
     ScrollToFirstErrorDirective,
   ],
   templateUrl: './form-podcast.component.html',
-  styleUrls: ['../../../../components/form/form.component.css'],
+  styleUrls: ['./../../../../../../shared/components/form/form.component.css'],
 })
 export class FormPodcastComponent implements OnInit {
   private podcastsFacade = inject(PodcastsFacade);
