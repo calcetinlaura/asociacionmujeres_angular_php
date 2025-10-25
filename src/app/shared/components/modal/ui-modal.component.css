@@ -103,9 +103,9 @@
   .modal_body {
     --modal-w: 95vw;
     --modal-max-w: 95vw;
-    --modal-max-h: 80vh;
+    --modal-max-h: 85vh;
   }
   .modal_body > section {
-    padding: 10% 8% 6% 8%;
+    padding: 7% 8% 6% 8%;
   }
 }

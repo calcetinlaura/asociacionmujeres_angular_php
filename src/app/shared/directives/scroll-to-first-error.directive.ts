@@ -7,6 +7,7 @@ import {
   Optional,
 } from '@angular/core';
 import { FormGroupDirective, NgForm } from '@angular/forms';
+import { FormErrorNavigatorService } from 'src/app/core/services/form-error-navigator.service';
 
 @Directive({
   selector: 'form[appScrollToFirstError]',
@@ -20,7 +21,8 @@ export class ScrollToFirstErrorDirective {
     private host: ElementRef<HTMLElement>,
     @Optional() private formGroupDir: FormGroupDirective | null,
     @Optional() private ngForm: NgForm | null,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private nav: FormErrorNavigatorService
   ) {}
 
   @HostListener('submit')
@@ -33,28 +35,13 @@ export class ScrollToFirstErrorDirective {
       form.markAllAsTouched();
       this.cdr.detectChanges();
 
-      requestAnimationFrame(() => {
-        const root = this.host.nativeElement;
-        const candidate =
-          root.querySelector('.is-invalid') ||
-          root.querySelector('[formcontrolname].ng-invalid.ng-touched') ||
-          root.querySelector('.is-invalid-text');
-
-        if (candidate instanceof HTMLElement) {
-          const rect = candidate.getBoundingClientRect();
-          const top = window.scrollY + rect.top - this.offset;
-          window.scrollTo({ top, behavior: 'smooth' });
-
-          if (this.focus) {
-            const focusable = candidate.matches('input,select,textarea')
-              ? candidate
-              : (candidate.querySelector(
-                  'input,select,textarea'
-                ) as HTMLElement | null);
-            focusable?.focus?.();
-          }
-        }
-      });
+      // ⏳ Espera un tick más para que Angular renderice los errores
+      setTimeout(() => {
+        this.nav.scrollToFirstError(this.host.nativeElement, {
+          offset: this.offset,
+          focus: this.focus,
+        });
+      }, 0);
     }
   }
 }

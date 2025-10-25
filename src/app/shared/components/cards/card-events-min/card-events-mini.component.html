@@ -5,7 +5,7 @@
   (keyup.enter)="onOpenEvent(event.id)"
 >
   <div
-    class="w-28 h-auto overflow-hidden flex-shrink-0 rounded-lg flex items-center bg-gray-300"
+    class="w-28 h-auto overflow-hidden flex-shrink-0 rounded-lg flex items-center"
   >
     @if (event.img) {
     <img
@@ -13,6 +13,8 @@
       [alt]="event.title || ''"
       class="object-cover w-full h-autor transition-transform duration-300 ease-out group-hover:scale-[1.03]"
     />
+    }@else {
+    <div class="w-full h-full bg-gray-300"></div>
     }
   </div>
 

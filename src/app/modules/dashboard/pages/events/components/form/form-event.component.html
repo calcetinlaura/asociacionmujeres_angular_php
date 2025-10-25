@@ -562,6 +562,7 @@
         [attr.aria-invalid]="
           submitted && !!audienceErrorMessage ? 'true' : null
         "
+        data-error="audience"
       >
         <h2 class="font-bold text-lilaText mt-4 uppercase">Público</h2>
 
@@ -1272,7 +1273,7 @@
         }
       </div>
 
-      @if (formEvent.invalid && submitted) {
+      @if ((formEvent.invalid || audienceForm.invalid) && submitted) {
       <div class="flex justify-center">
         <div class="error">Hay algún campo incorrecto</div>
       </div>

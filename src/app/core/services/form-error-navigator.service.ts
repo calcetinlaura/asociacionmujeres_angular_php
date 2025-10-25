@@ -1,4 +1,3 @@
-// shared/services/form-error-navigator.service.ts
 import { Injectable } from '@angular/core';
 
 @Injectable({ providedIn: 'root' })
@@ -12,12 +11,20 @@ export class FormErrorNavigatorService {
     const candidate =
       root.querySelector('.is-invalid') ||
       root.querySelector('[formcontrolname].ng-invalid.ng-touched') ||
-      root.querySelector('.is-invalid-text');
+      root.querySelector('.is-invalid-text') ||
+      root.querySelector('[aria-invalid="true"]') ||
+      root.querySelector('[data-error]');
 
     if (candidate instanceof HTMLElement) {
-      const rect = candidate.getBoundingClientRect();
-      const absoluteY = window.scrollY + rect.top - offset;
-      window.scrollTo({ top: absoluteY, behavior: 'smooth' });
+      const isVisible = !!(
+        candidate.offsetWidth ||
+        candidate.offsetHeight ||
+        candidate.getClientRects().length
+      );
+      if (!isVisible) return;
+
+      // ✅ versión más estable del scroll
+      candidate.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
       if (focus) {
         const focusable = candidate.matches('input,select,textarea')
@@ -25,7 +32,7 @@ export class FormErrorNavigatorService {
           : (candidate.querySelector(
               'input,select,textarea'
             ) as HTMLElement | null);
-        focusable?.focus?.();
+        focusable?.focus?.({ preventScroll: true });
       }
     }
   }

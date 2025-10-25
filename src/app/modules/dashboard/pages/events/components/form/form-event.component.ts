@@ -56,6 +56,7 @@ import { PlaceModel, SalaModel } from 'src/app/core/interfaces/place.interface';
 import { ProjectModel } from 'src/app/core/interfaces/project.interface';
 import { TypeList } from 'src/app/core/models/general.model';
 import { AgentsService } from 'src/app/core/services/agents.services';
+import { FormErrorNavigatorService } from 'src/app/core/services/form-error-navigator.service';
 import { GeneralService } from 'src/app/core/services/generalService.service';
 import { MacroeventsService } from 'src/app/core/services/macroevents.services';
 import { ProjectsService } from 'src/app/core/services/projects.services';
@@ -175,6 +176,7 @@ export class FormEventComponent implements OnInit, OnChanges {
   private readonly generalService = inject(GeneralService);
   private readonly fb = inject(FormBuilder);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly formErrorNav = inject(FormErrorNavigatorService);
 
   readonly minDate = new Date(2018, 0, 1);
   readonly maxDate = (() => {
@@ -1612,6 +1614,11 @@ export class FormEventComponent implements OnInit, OnChanges {
     // ¿Hay errores?
     if (this.formEvent.invalid || this.audienceForm.invalid) {
       if (this.formEvent.invalid) this.logFormErrors();
+      // 👇 scroll manual si solo Público está inválido
+      this.formErrorNav.scrollToFirstError(document.body, {
+        offset: 100,
+        focus: false,
+      });
       return;
     }
 

@@ -81,8 +81,8 @@
 /* Móvil */
 @media (max-width: 768px) {
   .card:hover {
-    transform: 0;
-    box-shadow: 0;
+    transform: none;
+    box-shadow: none;
     cursor: pointer;
   }
 }

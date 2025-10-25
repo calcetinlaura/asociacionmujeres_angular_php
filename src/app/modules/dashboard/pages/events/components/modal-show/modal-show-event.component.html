@@ -25,7 +25,13 @@
     >
       <app-text-title [text]="item.title" />
       @if (item.placeData?.name) {
-      <app-text-subtitle [text]="item.placeData?.name + ' | ' + item.town" />
+      <div class="flex flex-col md:flex-row items-center">
+        <app-text-subtitle [text]="item.placeData?.name" />
+        @if (item.town) {
+        <span class="hidden md:inline-block mx-3" aria-hidden="true">|</span>
+        <app-text-subtitle [text]="item.town" />
+        }
+      </div>
       } @if (item.macroeventData && item.macroeventData.title) {
       <p
         class="macro cursor-pointer my-2"
@@ -94,66 +100,80 @@
         }
       </div>
       } @if (item.periodicEvents && item.periodicEvents.length > 0) {
-      <p
-        class="text-[16px] leading-[16px] uppercase text-lilaOscuro font-semibold"
-      >
-        Pases
-      </p>
-      <div class="pl-6 flex flex-col gap-y-4">
-        @for (func of item.periodicEvents; track (func?.id ?? (func.start + '-'
-        + (func.time_start ?? '') + '-' + $index))) {
-        <div class="flex sm:flex-row gap-x-4 items-center">
-          <p
-            class="text-[9px] md:text-[12px] px-[6px] pt-1 pb-[3px] rounded-[4px] border-[1px] border-lilaOscuro"
-          >
-            {{ func.start | date : "EEEE dd MMMM yyyy" }}
-          </p>
+      <div class="flex">
+        <div
+          class="border-r-[1px] border-lilaOscuro w-[80px] md:w-[120px] text-[10px] flex justify-start items-center mr-4"
+        >
+          Pases
+        </div>
+        <div class="pl-6 flex flex-col gap-y-4">
+          @for (func of item.periodicEvents; track (func?.id ?? (func.start +
+          '-' + (func.time_start ?? '') + '-' + $index))) {
+          <div class="flex sm:flex-row gap-x-4 items-center">
+            <p
+              class="text-[9px] md:text-[12px] px-[6px] pt-1 pb-[3px] rounded-[4px] border-[1px] border-lilaOscuro"
+            >
+              {{ func.start | date : "EEEE dd MMMM yyyy" }}
+            </p>
 
-          @if (func.time_start !== '00:00:00') {
-          <p
-            class="text-[9px] md:text-[12px] px-[6px] pt-1 pb-[3px] rounded-[4px] border-[1px] border-lilaClaro"
-          >
-            {{ func.time_start.slice(0, 5) + " h" }}
-          </p>
+            @if (func.time_start !== '00:00:00') {
+            <p
+              class="text-[9px] md:text-[12px] px-[6px] pt-1 pb-[3px] rounded-[4px] border-[1px] border-lilaClaro"
+            >
+              {{ func.time_start.slice(0, 5) + " h" }}
+            </p>
+            }
+          </div>
           }
         </div>
-        }
       </div>
-      }@if(item.access === 'FREE'){
-      <app-text-background [text]="'Acceso gratuito'"></app-text-background>}
-      @if (item.access === 'TICKETS'){
-      <p
-        class="text-[16px] leading-[16px] uppercase text-lilaOscuro font-semibold"
-      >
-        Precio
-      </p>
-      <div class="pl-6 flex flex-col gap-y-4">
-        @for (ticket of item.ticket_prices; track (ticket.type + '-' +
-        ticket.price + '-' + $index)){
-        <div class="flex sm:flex-row gap-x-4 items-center">
-          <p
-            class="text-[9px] md:text-[12px] px-[6px] pt-1 pb-[3px] rounded-[4px] border-[1px] border-lilaClaro"
-          >
-            {{ ticket.type }}
-          </p>
+      } @if (item.access === 'FREE') {
+      <div class="flex">
+        <div
+          class="border-r-[1px] border-lilaOscuro w-[80px] md:w-[120px] text-[10px] flex justify-start items-center mr-4"
+        >
+          Acceso
+        </div>
+        <app-text-background
+          [text]="'Gratis'"
+          colorBack="#bed8f7"
+        ></app-text-background>
+      </div>
 
-          @if (ticket.price!.toString() !== "0") {
-          <p
-            class="text-[9px] md:text-[12px] px-[6px] pt-1 pb-[3px] rounded-[4px] border-[1px] border-lilaClaro"
-          >
-            {{ ticket.price + " €" }}
-          </p>
-          }@if (ticket.price!.toString() === "0") {
-          <p
-            class="text-[9px] md:text-[12px] px-[6px] pt-1 pb-[3px] rounded-[4px] border-[1px] border-lilaClaro"
-          >
-            Gratis
-          </p>
+      } @if (item.access === 'TICKETS'){
+      <div class="flex">
+        <div
+          class="border-r-[1px] border-lilaOscuro w-[80px] md:w-[120px] text-[10px] flex justify-start items-center mr-4"
+        >
+          Acceso
+        </div>
+        <div class="pl-6 flex flex-col gap-y-4">
+          @for (ticket of item.ticket_prices; track (ticket.type + '-' +
+          ticket.price + '-' + $index)){
+          <div class="flex sm:flex-row gap-x-4 items-center">
+            <p
+              class="text-[9px] md:text-[12px] px-[6px] pt-1 pb-[3px] rounded-[4px] border-[1px] border-lilaClaro"
+            >
+              {{ ticket.type }}
+            </p>
+
+            @if (ticket.price!.toString() !== "0") {
+            <p
+              class="text-[9px] md:text-[12px] px-[6px] pt-1 pb-[3px] rounded-[4px] border-[1px] border-lilaClaro"
+            >
+              {{ ticket.price + " €" }}
+            </p>
+            }@if (ticket.price!.toString() === "0") {
+            <p
+              class="text-[9px] md:text-[12px] px-[6px] pt-1 pb-[3px] rounded-[4px] border-[1px] border-lilaClaro"
+            >
+              Gratis
+            </p>
+            }
+          </div>
           }
         </div>
-        }
       </div>
-
       }@if (item.audience) {
       <div class="flex">
         <div
