@@ -2,17 +2,18 @@ import { CdkTrapFocus } from '@angular/cdk/a11y';
 import { NgClass } from '@angular/common';
 import {
   Component,
+  DOCUMENT,
   ElementRef,
   EventEmitter,
   HostListener,
   Input,
   NgZone,
   Output,
+  SimpleChanges,
   ViewChild,
   inject,
 } from '@angular/core';
 import { TypeActionModal } from 'src/app/core/models/general.model';
-import { BodyScrollLockService } from 'src/app/core/services/body-scroll-lock.service';
 
 @Component({
   selector: 'app-ui-modal',
@@ -53,7 +54,7 @@ export class UiModalComponent {
   private scrollArea?: ElementRef<HTMLElement>;
   @ViewChild('focusAnchor') private focusAnchor?: ElementRef<HTMLElement>;
 
-  private scrollLock = inject(BodyScrollLockService);
+  private doc = inject(DOCUMENT);
   private ngZone = inject(NgZone);
 
   // Petición pendiente de scroll si el ViewChild aún no existe
@@ -87,12 +88,25 @@ export class UiModalComponent {
 
   // ----- Scroll helpers -------------------------------------------------
 
-  /** Pide subir al top: si aún no hay ViewChild, lo haremos en cuanto exista */
-  private requestScrollTop(behavior: ScrollBehavior) {
-    this.pendingScroll = behavior;
-    this.tryFlushPendingScroll();
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['open']) {
+      const isOpen = changes['open'].currentValue;
+      const html = this.doc.documentElement;
+      const body = this.doc.body;
+      if (isOpen) {
+        html.classList.add('modal-open');
+        body.classList.add('modal-open');
+      }
+      // Do NOT remove the class here on close; let ngOnDestroy do it.
+    }
   }
 
+  ngOnDestroy() {
+    const html = this.doc.documentElement;
+    const body = this.doc.body;
+    html.classList.remove('modal-open');
+    body.classList.remove('modal-open');
+  }
   /** Si tenemos petición pendiente y ya existe el contenedor, hacemos scroll estable */
   private tryFlushPendingScroll() {
     if (!this.open || !this.pendingScroll || !this.scrollArea) {
@@ -139,6 +153,77 @@ export class UiModalComponent {
 
   // ----- UX -------------------------------------------------------------
 
+  /** Helper to know if event happened inside the scrollable section */
+  private eventInsideScrollArea(ev: Event): boolean {
+    const area = this.scrollArea?.nativeElement;
+    if (!area) return false;
+    const path = (ev as any).composedPath?.() as EventTarget[] | undefined;
+    if (path && path.length)
+      return (
+        path.includes(area) ||
+        path.some((n) => n instanceof Node && area.contains(n as Node))
+      );
+    // Fallback
+    const t = ev.target as Node | null;
+    return !!(t && area.contains(t));
+  }
+
+  /** Prevent the page from scrolling unless we're scrolling the section,
+   * and even then, block at the edges to avoid chain scrolling. */
+  @HostListener('wheel', ['$event'])
+  onWheel(e: WheelEvent) {
+    if (!this.open) return;
+
+    const area = this.scrollArea?.nativeElement;
+    const inside = this.eventInsideScrollArea(e);
+
+    // If the event is NOT in the scrollable section, block it (header, overlay, etc.)
+    if (!inside) {
+      e.preventDefault();
+      return;
+    }
+
+    if (!area) {
+      e.preventDefault();
+      return;
+    }
+
+    // Inside the section: allow normal scroll, but prevent chaining at edges
+    const atTop = area.scrollTop <= 0 && e.deltaY < 0;
+    const atBottom =
+      Math.ceil(area.scrollTop + area.clientHeight) >= area.scrollHeight &&
+      e.deltaY > 0;
+
+    if (atTop || atBottom) {
+      e.preventDefault();
+    }
+  }
+
+  @HostListener('touchmove', ['$event'])
+  onTouchMove(e: TouchEvent) {
+    if (!this.open) return;
+
+    const area = this.scrollArea?.nativeElement;
+    const inside = this.eventInsideScrollArea(e);
+
+    if (!inside) {
+      e.preventDefault();
+      return;
+    }
+
+    if (!area) {
+      e.preventDefault();
+      return;
+    }
+
+    // iOS “bounce” can still try to chain at edges — block it there too
+    const atTop = area.scrollTop <= 0;
+    const atBottom =
+      Math.ceil(area.scrollTop + area.clientHeight) >= area.scrollHeight;
+    if (atTop || atBottom) {
+      e.preventDefault();
+    }
+  }
   @HostListener('document:keydown.escape', ['$event'])
   onEsc(ev: KeyboardEvent) {
     if (this.open && this.closeOnEscape) {

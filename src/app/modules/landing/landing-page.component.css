@@ -1,7 +1,6 @@
 .home-wrapper {
   margin-top: 18vh;
   min-height: 82vh;
-  overflow-y: auto;
 }
 @media (max-width: 1200px) {
 }

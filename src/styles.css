@@ -29,7 +29,12 @@ body {
   color: var(--color-3);
   font-size: 12px;
 }
-
+html.modal-open,
+body.modal-open {
+  overflow: hidden !important;
+  position: fixed !important;
+  width: 100%;
+}
 /*EDITOR DE TEXTO*/
 .box-modal-show ol {
   list-style: decimal !important;

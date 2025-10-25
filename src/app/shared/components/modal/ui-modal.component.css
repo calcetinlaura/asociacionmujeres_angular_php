@@ -1,16 +1,16 @@
 .modal {
   position: fixed;
   inset: 0;
-  height: 100vh;
   height: 100dvh;
-  width: 100%;
-  background-color: rgba(130, 128, 128, 0.597);
+  width: 100vw;
+  background-color: rgba(130, 128, 128, 0.6);
   z-index: 1000;
   display: flex;
   justify-content: center;
   align-items: center;
-  overflow: hidden; /* bloquea fondo */
-  overscroll-behavior: none;
+
+  overscroll-behavior: none; /* stop chaining to body */
+  touch-action: none; /* block background touch scroll */
 }
 
 /* PANEL */
@@ -23,16 +23,14 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+
   background-color: #f6f0ff;
   border-radius: 16px;
   contain: content;
 }
 .modal_body > section {
-  overflow: auto;
-  -webkit-overflow-scrolling: touch; /* inercia iOS */
-  overscroll-behavior: contain;
-  touch-action: pan-y;
+  overflow-y: auto;
+  overscroll-behavior: contain; /* stop chaining from section to overlay/body */
   flex: 1 1 auto;
   min-height: 0;
   padding: 45px 64px;
@@ -69,10 +67,7 @@
   margin: 0 !important;
   border-radius: 0 !important;
 }
-.modal_body,
-.modal_body > section {
-  overflow-anchor: none; /* 👈 evita “scroll anchoring” del navegador */
-}
+
 /* Media Queries */
 @media (max-width: 1200px) {
   .modal_body {
