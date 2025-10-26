@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { TypeList } from 'src/app/core/models/general.model';
-import { UiModalComponent } from 'src/app/shared/components/modal/ui-modal.component';
+import { UiModalComponent } from 'src/app/shared/components/modal/modal-ui.component';
 
 @Component({
   selector: 'app-modal-pdf',
@@ -21,7 +21,6 @@ import { UiModalComponent } from 'src/app/shared/components/modal/ui-modal.compo
 export class ModalPdfComponent implements OnChanges {
   @Input() open = false;
   @Output() openChange = new EventEmitter<boolean>();
-
   @Input() pdfUrl!: string;
   @Input() year: string | number | null = null;
   @Input() type: TypeList = TypeList.Invoices;

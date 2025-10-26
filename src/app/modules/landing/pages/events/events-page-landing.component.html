@@ -1,18 +1,24 @@
 <div class="flex flex-col mx-3 md:mx-8 mt-4">
+  <!-- 🔹 Filtros de año -->
   <app-filters
     [filters]="filters"
     [(selected)]="selectedFilter"
     (filterClicked)="filterSelected($event)"
-  >
-  </app-filters>
+  ></app-filters>
 
+  <!-- 🔹 Variables locales -->
   @let loading = (eventsFacade.isListLoading$ | async) ?? false; @let yearEvents
   = calendarList.sortedSig(); @let upcoming = upcomingListSig(); @let past =
-  pastListSig(); @if (loading) {
+  pastListSig();
+
+  <!-- 🔹 Cargando -->
+  @if (loading) {
   <div class="mt-24">
     <app-spinner-loading />
   </div>
-  } @else { @if (yearEvents.length > 0 && filterYearForCalendar !== null) {
+  } @else {
+  <!-- 🔹 Calendario (solo si hay eventos del año filtrado) -->
+  @if (yearEvents.length > 0 && filterYearForCalendar !== null) {
   <app-calendar
     [events]="yearEvents"
     [filterYear]="filterYearForCalendar"
@@ -20,45 +26,46 @@
     [deepLinkMultiDate]="deepLinkMultiDate"
     (viewEvent)="onOpenEvent($event)"
     (openMulti)="onOpenMulti($event)"
-  >
-  </app-calendar>
+  ></app-calendar>
   }
 
-  <!-- Próximos -->
+  <!-- 🔹 Próximos eventos -->
   @if (upcoming.length > 0) {
   <app-section-generic
     [typeSection]="typeList.Events"
-    [typeModal]="typeList.Events"
     [data]="upcoming"
     [total]="upcoming.length"
+    (itemClicked)="onOpenEvent($event)"
   />
   }
 
-  <!-- Pasados -->
+  <!-- 🔹 Eventos pasados -->
   @if (past.length > 0) {
   <p class="mt-6 mb-2 font-semibold">Eventos pasados</p>
   <app-section-generic
     [typeSection]="typeList.Events"
-    [typeModal]="typeList.Events"
     [data]="past"
     [total]="past.length"
   />
-  } @else { @if (upcoming.length === 0) {
+  } @else {
+  <!-- 🔹 Si no hay próximos ni pasados -->
+  @if (upcoming.length === 0) {
   <app-no-results [text]="'eventos' | lowercase" />
   } } }
 </div>
 
-<!-- 🔹 Modal genérica para MultiEvent / Evento / MacroEvent -->
+<!-- 🔹 Modal genérica (MultiEvent / Evento / MacroEvent) -->
+@if (modalFacade.isVisibleSig()) {
 <app-modal-shell
-  [visible]="isModalVisible"
+  [visible]="modalFacade.isOpenSig()"
   [isDashboard]="isDashboard"
-  [typeModal]="typeModal"
-  [action]="currentModalAction"
-  [item]="item"
-  [canGoBack]="canGoBack()"
-  (back)="onBackModal()"
-  (close)="onCloseModal()"
+  [typeModal]="modalFacade.typeSig()"
+  [action]="modalFacade.actionSig()"
+  [item]="modalFacade.itemSig()"
+  [canGoBack]="modalFacade.canGoBack()"
+  (back)="modalFacade.back()"
+  (close)="modalFacade.close()"
   (openEvent)="onOpenEvent($event)"
   (openMacroevent)="onOpenMacroEvent($event)"
-  [contentVersion]="contentVersion"
 />
+}

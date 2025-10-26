@@ -4,8 +4,6 @@
     [(selected)]="selectedFilter"
     (filterClicked)="filterSelected($event)"
   />
-
-  <!-- Mantengo tu salida de evento (onDebounce) -->
   <app-input-search (onDebounce)="applyFilterWord($event)" class="my-8" />
 
   @if (booksFacade.isLoadingList$ | async) {
@@ -17,8 +15,18 @@
     [typeSection]="typeList.Books"
     [data]="list.sortedSig()"
     [total]="totalSig()"
+    (itemClicked)="openBookDetails($event)"
   />
   } @else {
   <app-no-results [text]="'libros' | lowercase" />
-  } }
+  } } @if (modalFacade.isVisibleSig()) {
+
+  <app-modal-shell
+    [visible]="modalFacade.isOpenSig()"
+    [typeModal]="modalFacade.typeSig()"
+    [action]="modalFacade.actionSig()"
+    [item]="modalFacade.itemSig()"
+    (close)="modalFacade.close()"
+  />
+  }
 </div>

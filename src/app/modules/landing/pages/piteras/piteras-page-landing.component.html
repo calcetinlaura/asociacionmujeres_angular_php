@@ -1,12 +1,25 @@
 <div class="flex flex-col mx-3 md:mx-8 mt-4">
   @if (piterasFacade.isLoadingList$ | async) {
   <app-spinner-loading />
-  } @else {
+  } @else { @if (hasResultsSig()) {
   <app-section-generic
     [typeSection]="typeList.Piteras"
-    [typeModal]="typeList.Piteras"
     [data]="list.sortedSig()"
     [total]="totalSig()"
+    (itemClicked)="openPiteraDetails($event)"
+  />
+  } @else {
+  <app-no-results [text]="'piteras' | lowercase" />
+  } }
+
+  <!-- 🔹 Modal global controlada por la ModalFacade -->
+  @if (modalFacade.isVisibleSig()) {
+  <app-modal-shell
+    [visible]="modalFacade.isOpenSig()"
+    [typeModal]="modalFacade.typeSig()"
+    [action]="modalFacade.actionSig()"
+    [item]="modalFacade.itemSig()"
+    (close)="modalFacade.close()"
   />
   }
 </div>

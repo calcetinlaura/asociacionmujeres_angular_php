@@ -9,21 +9,23 @@ import {
   switchMap,
   tap,
 } from 'rxjs';
+
 import { EventsFacade } from 'src/app/application/events.facade';
+import { ModalFacade } from 'src/app/application/modal.facade';
 import { EventModel } from 'src/app/core/interfaces/event.interface';
 import { Filter } from 'src/app/core/interfaces/general.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { EventsService } from 'src/app/core/services/events.services';
 import { GeneralService } from 'src/app/core/services/generalService.service';
 import { MacroeventsService } from 'src/app/core/services/macroevents.services';
+
+import { CalendarComponent } from 'src/app/shared/components/calendar/calendar.component';
 import { FiltersComponent } from 'src/app/shared/components/filters/filters.component';
 import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
-import { ModalNavService } from 'src/app/shared/components/modal/services/modal-nav.service';
 import { NoResultsComponent } from 'src/app/shared/components/no-results/no-results.component';
 import { SectionGenericComponent } from 'src/app/shared/components/section-generic/section-generic.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
-import { CalendarComponent } from '../../../../shared/components/calendar/calendar.component';
 
 @Component({
   selector: 'app-events-page-landing',
@@ -32,62 +34,51 @@ import { CalendarComponent } from '../../../../shared/components/calendar/calend
     CommonModule,
     FiltersComponent,
     SectionGenericComponent,
-    NoResultsComponent,
     SpinnerLoadingComponent,
+    NoResultsComponent,
     CalendarComponent,
     ModalShellComponent,
   ],
   templateUrl: './events-page-landing.component.html',
-  styleUrls: ['./events-page-landing.component.css'],
 })
 export class EventsPageLandingComponent implements OnInit {
-  // ─── Inyecciones ──────────────────────────────────────────────
+  // === Inyecciones ===
   readonly eventsFacade = inject(EventsFacade);
+  readonly modalFacade = inject(ModalFacade);
   private readonly eventsService = inject(EventsService);
   private readonly macroeventsService = inject(MacroeventsService);
+  private readonly generalService = inject(GeneralService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly generalService = inject(GeneralService);
-  readonly modalNav = inject(ModalNavService<any>);
 
-  // ─── Estado general ───────────────────────────────────────────
+  // === Estado general ===
+  readonly typeList = TypeList;
+  readonly TypeActionModal = TypeActionModal;
+  readonly isDashboard = false;
+
   filters: Filter[] = [];
-  typeList = TypeList;
   selectedFilter: string | number = '';
-  currentYear = this.generalService.currentYear;
-  isDashboard = false;
   deepLinkMultiDate: string | null = null;
+  currentYear = this.generalService.currentYear;
 
-  // Modal
-  isModalVisible = false;
-  item: any = null;
-  currentModalAction: TypeActionModal = TypeActionModal.Show;
-  typeModal: TypeList = TypeList.Events;
-  private openedWithNavigation = false;
-
-  contentVersion = 0;
-
-  // Año seleccionado (para sincronizar UI; el backend ya filtra por año)
   private readonly selectedYear$ = new BehaviorSubject<number | null>(null);
 
-  // ─── Bases desde la fachada (nuevos nombres) ──────────────────
-  private readonly allBase$ = this.eventsFacade.allEvents$; // no agrupados (calendar)
-  private readonly groupedBase$ = this.eventsFacade.groupedEvents$; // agrupados (section)
+  // === Datos base desde la fachada ===
+  private readonly allBase$ = this.eventsFacade.allEvents$; // sin agrupar (para calendario)
+  private readonly groupedBase$ = this.eventsFacade.groupedEvents$; // agrupados (para secciones)
 
-  // ─── Listas derivadas ─────────────────────────────────────────
-  // Calendario: no agrupados, publicados del año cargado
+  // === Derivados ===
   private readonly allForCalendar$ = this.allBase$.pipe(
     map((list) => this.eventsService.sortEventsByDate(list ?? []))
   );
 
-  // Sección: agrupados, publicados del año cargado
   private readonly groupedForSection$ = this.groupedBase$.pipe(
-    // processNonRepeated mantiene tu split y ordenaciones por año actual
     map((list) =>
       this.processNonRepeated(list ?? [], this.filterYearForCalendar)
     )
   );
 
+  // === Hooks reutilizables ===
   readonly calendarList = useEntityList<EventModel>({
     filtered$: this.allForCalendar$,
     sort: (arr) => this.eventsService.sortEventsByDate(arr),
@@ -96,7 +87,7 @@ export class EventsPageLandingComponent implements OnInit {
 
   readonly sectionList = useEntityList<EventModel>({
     filtered$: this.groupedForSection$,
-    map: (arr) => arr, // ya viene mapeado/ordenado en processNonRepeated
+    map: (arr) => arr,
     sort: (arr) => arr,
     count: (arr) => arr.length,
   });
@@ -108,7 +99,7 @@ export class EventsPageLandingComponent implements OnInit {
     this.sectionList.sortedSig().filter((e) => e.isPast)
   );
 
-  // ─── Ciclo de vida ────────────────────────────────────────────
+  // === Ciclo de vida ===
   ngOnInit(): void {
     this.filters = this.generalService.getYearFilters(
       2018,
@@ -123,7 +114,7 @@ export class EventsPageLandingComponent implements OnInit {
       this.loadEvents(this.currentYear);
     }
 
-    // --- A) Detectar /events/:id o /macroevents/:id ---
+    // A) Detectar /events/:id o /macroevents/:id
     this.route.paramMap
       .pipe(
         map((pm) => pm.get('id')),
@@ -131,8 +122,8 @@ export class EventsPageLandingComponent implements OnInit {
         switchMap((id) => {
           if (!id) return EMPTY;
           const numericId = Number(id);
-          const routePath = this.route.snapshot.routeConfig?.path ?? '';
-          const isMacro = routePath.startsWith('macroevents');
+          const path = this.route.snapshot.routeConfig?.path ?? '';
+          const isMacro = path.startsWith('macroevents');
 
           if (isMacro) {
             return this.eventsService.getEventsByMacroevent(numericId).pipe(
@@ -159,7 +150,7 @@ export class EventsPageLandingComponent implements OnInit {
       )
       .subscribe();
 
-    // --- B) Detectar ?multiDate=YYYY-MM-DD ---
+    // B) Detectar ?multiDate=YYYY-MM-DD
     this.route.queryParamMap
       .pipe(
         map((q) => q.get('multiDate')),
@@ -177,7 +168,7 @@ export class EventsPageLandingComponent implements OnInit {
       });
   }
 
-  // ─── Filtros / UI ─────────────────────────────────────────────
+  // === Filtros / UI ===
   get filterYearForCalendar(): number | null {
     const val =
       typeof this.selectedFilter === 'number'
@@ -189,7 +180,6 @@ export class EventsPageLandingComponent implements OnInit {
   loadEvents(year: number): void {
     this.selectedFilter = year;
     this.selectedYear$.next(year);
-    // Landing: queremos publicados en ambas vistas (calendar = no agrupado, section = agrupado)
     this.eventsFacade.loadYearBundle(year, 'published');
   }
 
@@ -204,7 +194,7 @@ export class EventsPageLandingComponent implements OnInit {
     this.loadEvents(year);
   }
 
-  // ─── Helpers ─────────────────────────────────────────────────
+  // === Procesamiento de eventos (divide pasado/futuro) ===
   private processNonRepeated(
     events: EventModel[],
     selectedYear: number | null
@@ -213,18 +203,18 @@ export class EventsPageLandingComponent implements OnInit {
       ? (selectedYear as number)
       : this.currentYear;
 
-    // Para el año actual: split future/past
-    if (targetYear === this.currentYear) {
-      const todayT = this.truncateTime(new Date()).getTime();
-      const flagged = (events ?? []).map((e) => {
-        const t = this.truncateTime(new Date(e.start)).getTime();
-        const isPast = t < todayT;
-        return { ...e, isPast, __t: t } as EventModel & {
-          __t: number;
-          isPast: boolean;
-        };
-      });
+    const todayT = this.truncateTime(new Date()).getTime();
 
+    const flagged = (events ?? []).map((e) => {
+      const t = this.truncateTime(new Date(e.start)).getTime();
+      const isPast = t < todayT;
+      return { ...e, isPast, __t: t } as EventModel & {
+        __t: number;
+        isPast: boolean;
+      };
+    });
+
+    if (targetYear === this.currentYear) {
       const future = flagged
         .filter((e) => !e.isPast)
         .sort((a, b) => a.__t - b.__t);
@@ -232,13 +222,13 @@ export class EventsPageLandingComponent implements OnInit {
         .filter((e) => e.isPast)
         .sort((a, b) => b.__t - a.__t);
       return [...future, ...past].map(({ __t, ...r }) => r);
+    } else {
+      // Para otros años: orden descendente y sin flag de pasado
+      return flagged
+        .map((e) => ({ ...e, isPast: false }))
+        .sort((a, b) => b.__t - a.__t)
+        .map(({ __t, ...r }) => r);
     }
-
-    // Para otros años: orden descendente y sin flag de pasado (para tu UI)
-    const sortedDesc = [...(events ?? [])]
-      .sort((a, b) => new Date(b.start).getTime() - new Date(a.start).getTime())
-      .map((e) => ({ ...e, isPast: false } as EventModel));
-    return sortedDesc;
   }
 
   private truncateTime(d: Date): Date {
@@ -248,109 +238,30 @@ export class EventsPageLandingComponent implements OnInit {
   private pickYearFromMacro(events: { start: string }[]): number {
     if (!events?.length) return this.currentYear;
     const today = this.truncateTime(new Date()).getTime();
-    const byDate = [...events].sort(
+    const sorted = [...events].sort(
       (a, b) => new Date(a.start).getTime() - new Date(b.start).getTime()
     );
-    const future = byDate.find(
+    const future = sorted.find(
       (e) => this.truncateTime(new Date(e.start)).getTime() >= today
     );
-    const candidate = future ?? byDate[0];
-    return new Date(candidate.start).getFullYear();
+    return new Date((future ?? sorted[0]).start).getFullYear();
   }
 
-  // ─── Modal Navigation ─────────────────────────────────────────
-  canGoBack(): boolean {
-    return (
-      this.openedWithNavigation && this.modalNav.canGoBack() && !!this.item
-    );
-  }
-  private bumpKeys() {
-    this.contentVersion++;
-  }
-
-  onBackModal(): void {
-    const prev = this.modalNav.pop();
-    if (!prev) return;
-    if (prev.item === this.item && prev.typeModal === this.typeModal) return;
-    this.currentModalAction = prev.action;
-    this.item = prev.item;
-    this.typeModal = prev.typeModal;
-    this.bumpKeys();
-  }
-
-  onCloseModal(): void {
-    this.item = null;
-    this.isModalVisible = false;
-    this.modalNav.clear();
-    this.openedWithNavigation = false;
-  }
-
-  // ─── Apertura de modales ──────────────────────────────────────
-  onOpenEvent(eventId: number): void {
-    const hasPrev = !!this.item;
-    if (hasPrev) {
-      this.modalNav.push({
-        typeModal: this.typeModal,
-        action: this.currentModalAction,
-        item: this.item,
-      });
-      this.openedWithNavigation = true;
-    } else {
-      this.openedWithNavigation = false; // apertura inicial desde calendario
-    }
-
-    this.typeModal = TypeList.Events;
-    this.currentModalAction = TypeActionModal.Show;
-    this.item = null;
-    this.isModalVisible = true;
-
-    this.eventsService.getEventById(eventId).subscribe({
-      next: (ev) => {
-        this.item = ev;
-        this.bumpKeys(); // 👈 AQUI
-      },
-      error: (err) => console.error('Error loading event', err),
+  // === Apertura de modales centralizada (usando ModalFacade) ===
+  onOpenEvent(ev: EventModel | number): void {
+    const id = typeof ev === 'number' ? ev : ev.id;
+    this.eventsService.getEventById(id).subscribe((event) => {
+      this.modalFacade.open(TypeList.Events, TypeActionModal.Show, event);
     });
   }
 
-  onOpenMacroEvent(macroId: number): void {
-    const hasPrev = !!this.item;
-    if (hasPrev) {
-      this.modalNav.push({
-        typeModal: this.typeModal,
-        action: this.currentModalAction,
-        item: this.item,
-      });
-      this.openedWithNavigation = true;
-    } else {
-      this.openedWithNavigation = false; // apertura directa desde calendario
-    }
-
-    this.typeModal = TypeList.Macroevents;
-    this.currentModalAction = TypeActionModal.Show;
-    this.item = null;
-    this.isModalVisible = true;
-
-    this.macroeventsService.getMacroeventById(macroId).subscribe({
-      next: (macro) => {
-        this.item = macro;
-        this.bumpKeys(); // 👈 AQUI
-      },
-      error: (err) => console.error('Error loading macroevent', err),
+  onOpenMacroEvent(id: number): void {
+    this.macroeventsService.getMacroeventById(id).subscribe((macro) => {
+      this.modalFacade.open(TypeList.Macroevents, TypeActionModal.Show, macro);
     });
   }
 
   onOpenMulti(payload: { date: Date; events: any[] }): void {
-    this.modalNav.push({
-      typeModal: this.typeModal,
-      action: this.currentModalAction,
-      item: this.item,
-    });
-
-    this.typeModal = TypeList.MultiEvents;
-    this.currentModalAction = TypeActionModal.Show;
-    this.item = payload;
-    this.bumpKeys();
-    this.isModalVisible = true;
+    this.modalFacade.open(TypeList.MultiEvents, TypeActionModal.Show, payload);
   }
 }

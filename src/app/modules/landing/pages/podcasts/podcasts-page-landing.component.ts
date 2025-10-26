@@ -1,65 +1,79 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, inject, OnInit } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { tap } from 'rxjs';
+import { Component, OnInit, computed, inject } from '@angular/core';
+import { ModalFacade } from 'src/app/application/modal.facade';
+
 import { PodcastsFacade } from 'src/app/application/podcasts.facade';
 import { PodcastModel } from 'src/app/core/interfaces/podcast.interface';
-import { TypeList } from 'src/app/core/models/general.model';
+import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { PodcastsService } from 'src/app/core/services/podcasts.services';
+
 import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
 import { NoResultsComponent } from 'src/app/shared/components/no-results/no-results.component';
 import { SectionGenericComponent } from 'src/app/shared/components/section-generic/section-generic.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 
+import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
+import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
+
 @Component({
   selector: 'app-podcasts-page-landing',
+  standalone: true,
   imports: [
     CommonModule,
     SectionGenericComponent,
     InputSearchComponent,
     NoResultsComponent,
     SpinnerLoadingComponent,
+    ModalShellComponent,
   ],
   templateUrl: './podcasts-page-landing.component.html',
 })
 export class PodcastsPageLandingComponent implements OnInit {
-  private readonly destroyRef = inject(DestroyRef);
-  readonly podcastsFacade = inject(PodcastsFacade);
+  // ===== Inyección de dependencias =====
   private readonly podcastsService = inject(PodcastsService);
 
-  podcasts: PodcastModel[] = [];
-  filteredPodcasts: PodcastModel[] = [];
-  areThereResults = false;
-  typeList = TypeList;
-  number = 0;
-  selectedFilter: string | number = '';
+  readonly podcastsFacade = inject(PodcastsFacade);
+  readonly modalFacade = inject(ModalFacade);
 
+  typeList = TypeList;
+
+  // ===== Lista reactiva con useEntityList =====
+  readonly list = useEntityList<PodcastModel>({
+    filtered$: this.podcastsFacade.filteredPodcasts$,
+    map: (arr) => arr,
+    sort: (arr) => this.podcastsService.sortPodcastsByTitle(arr),
+    count: (arr) => this.podcastsService.countPodcasts(arr),
+  });
+
+  readonly totalSig = this.list.countSig;
+  readonly hasResultsSig = computed(() => this.totalSig() > 0);
+
+  // ======================================================
+  // 🧭 Ciclo de vida
+  // ======================================================
   ngOnInit(): void {
     this.loadAllPodcasts();
   }
 
   loadAllPodcasts(): void {
     this.podcastsFacade.loadAllPodcasts();
-    this.podcastsFacade.filteredPodcasts$
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((podcasts) => {
-          this.updatePodcastState(podcasts);
-        })
-      )
-      .subscribe();
   }
 
+  // ======================================================
+  // 🔎 Filtro por palabra clave
+  // ======================================================
   applyFilterWord(keyword: string): void {
     this.podcastsFacade.applyFilterWord(keyword);
   }
 
-  updatePodcastState(podcasts: PodcastModel[] | null): void {
-    if (!podcasts) return;
+  // ======================================================
+  // 🎧 Acciones con modal
+  // ======================================================
+  openPodcastDetails(podcast: PodcastModel): void {
+    this.modalFacade.open(TypeList.Podcasts, TypeActionModal.Show, podcast);
+  }
 
-    this.podcasts = this.podcastsService.sortPodcastsByTitle(podcasts);
-    this.filteredPodcasts = [...this.podcasts];
-    this.number = this.podcastsService.countPodcasts(podcasts);
-    this.areThereResults = this.podcastsService.hasResults(podcasts);
+  closeModal(): void {
+    this.modalFacade.close();
   }
 }

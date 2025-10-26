@@ -232,7 +232,10 @@ ${contentHtml}
       try {
         if (d.readyState !== 'complete') {
           await new Promise<void>((res) =>
-            iframe.addEventListener('load', () => res(), { once: true })
+            iframe.addEventListener('load', () => res(), {
+              once: true,
+              passive: true,
+            })
           );
         }
         const f = (d as any).fonts;

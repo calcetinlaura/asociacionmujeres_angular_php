@@ -1,15 +1,29 @@
 <div class="flex flex-col mx-3 md:mx-8 mt-4">
+  <!-- 🔹 Buscador -->
   <app-input-search (onDebounce)="applyFilterWord($event)" class="my-8" />
+
+  <!-- 🔹 Carga y resultados -->
   @if (podcastsFacade.isLoadingList$ | async) {
   <app-spinner-loading />
-  } @else { @if (areThereResults) {
+  } @else { @if (hasResultsSig()) {
   <app-section-generic
     [typeSection]="typeList.Podcasts"
-    [typeModal]="typeList.Podcasts"
-    [data]="filteredPodcasts"
-    [total]="number"
+    [data]="list.sortedSig()"
+    [total]="totalSig()"
+    (itemClicked)="openPodcastDetails($event)"
   />
   } @else {
   <app-no-results [text]="'podcasts' | lowercase" />
   } }
+
+  <!-- 🔹 Modal global -->
+  @if (modalFacade.isVisibleSig()) {
+  <app-modal-shell
+    [visible]="modalFacade.isOpenSig()"
+    [typeModal]="modalFacade.typeSig()"
+    [action]="modalFacade.actionSig()"
+    [item]="modalFacade.itemSig()"
+    (close)="modalFacade.close()"
+  />
+  }
 </div>

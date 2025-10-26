@@ -2,39 +2,27 @@
   <div class="flex flex-row justify-start section--generic--total">
     Total: <span>{{ total }} {{ typeSection }}</span>
   </div>
+
   <div class="section--generic--list">
     <ul class="list">
-      @if (typeSection === TypeList.Events){ @for (item of data; track item) {
+      @if (typeSection === TypeList.Events) { @for (item of data; track
+      item.id){
       <li [ngClass]="{ 'opacity-50 grayscale': item.isPast }">
         <app-card-events
           [item]="item"
           [type]="typeSection"
-          (click)="openModalView(item)"
-        ></app-card-events>
+          (click)="onClickItem(item)"
+        />
       </li>
-      }} @else{ @for (item of data; track item) {
+      } } @else { @for (item of data; track item.id){
       <li>
         <app-card
           [item]="item"
           [type]="typeSection"
-          (click)="openModalView(item)"
-        ></app-card>
+          (click)="onClickItem(item)"
+        />
       </li>
       } }
     </ul>
   </div>
 </div>
-
-@if (showModalView) {
-<app-modal
-  [item]="selectedItem"
-  [typeModal]="selectedTypeModal"
-  [action]="TypeActionModal.Show"
-  (closeModal)="onCloseModal()"
-  (openMacroevent)="onOpenMacroevent($event)"
-  (openEvent)="onOpenEvent($event)"
-  [canGoBack]="canGoBack"
-  (back)="onBackModal()"
-  [isDashboard]="false"
-></app-modal>
-}

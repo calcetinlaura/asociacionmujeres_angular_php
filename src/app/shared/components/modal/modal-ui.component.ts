@@ -1,13 +1,15 @@
 import { CdkTrapFocus } from '@angular/cdk/a11y';
 import { NgClass } from '@angular/common';
 import {
+  AfterViewInit,
   Component,
   DOCUMENT,
   ElementRef,
   EventEmitter,
-  HostListener,
   Input,
   NgZone,
+  OnChanges,
+  OnDestroy,
   Output,
   SimpleChanges,
   ViewChild,
@@ -19,10 +21,13 @@ import { TypeActionModal } from 'src/app/core/models/general.model';
   selector: 'app-ui-modal',
   standalone: true,
   imports: [NgClass, CdkTrapFocus],
-  templateUrl: './ui-modal.component.html',
-  styleUrls: ['./ui-modal.component.css'],
+  templateUrl: './modal-ui.component.html',
+  styleUrls: ['./modal-ui.component.css'],
 })
-export class UiModalComponent {
+export class UiModalComponent implements AfterViewInit, OnChanges, OnDestroy {
+  // ==============================
+  // 📥 Inputs / Outputs
+  // ==============================
   @Input() open = false;
   @Input() contentVersion = 0;
 
@@ -43,23 +48,32 @@ export class UiModalComponent {
   @Input() showClose = true;
   @Input() panelClass: string | string[] | Record<string, boolean> = '';
 
-  // ⬇️ NOTA: usamos un setter para enterarnos EXACTAMENTE cuando aparece el scroller
+  // ==============================
+  // 🧱 Refs / Dependencias
+  // ==============================
   @ViewChild('scrollArea') set scrollerRef(
     el: ElementRef<HTMLElement> | undefined
   ) {
     this.scrollArea = el;
-
     this.tryFlushPendingScroll();
   }
   private scrollArea?: ElementRef<HTMLElement>;
+
   @ViewChild('focusAnchor') private focusAnchor?: ElementRef<HTMLElement>;
 
-  private doc = inject(DOCUMENT);
-  private ngZone = inject(NgZone);
+  private readonly doc = inject(DOCUMENT);
+  private readonly ngZone = inject(NgZone);
 
-  // Petición pendiente de scroll si el ViewChild aún no existe
+  // ==============================
+  // ⚙️ Estado interno
+  // ==============================
   private pendingScroll: ScrollBehavior | null = null;
+  private removeWheel?: () => void;
+  private removeTouch?: () => void;
 
+  // ==============================
+  // 🎨 Clases dinámicas
+  // ==============================
   get sizeClass() {
     if (this.isPdfPanel) return 'w-[96vw] max-w-[96vw] h-[92vh]';
     switch (this.size) {
@@ -75,6 +89,7 @@ export class UiModalComponent {
         return 'max-w-2xl';
     }
   }
+
   get isPdfPanel(): boolean {
     const pc = this.panelClass;
     if (typeof pc === 'string') return pc.split(/\s+/).includes('pdf-panel');
@@ -82,12 +97,14 @@ export class UiModalComponent {
     if (pc && typeof pc === 'object') return !!pc['pdf-panel'];
     return false;
   }
+
   get variantClass(): string {
     return this.variant && this.size == null ? `modal-${this.variant}` : '';
   }
 
-  // ----- Scroll helpers -------------------------------------------------
-
+  // ==============================
+  // 🔄 Ciclo de vida
+  // ==============================
   ngOnChanges(changes: SimpleChanges) {
     if (changes['open']) {
       const isOpen = changes['open'].currentValue;
@@ -97,8 +114,27 @@ export class UiModalComponent {
         html.classList.add('modal-open');
         body.classList.add('modal-open');
       }
-      // Do NOT remove the class here on close; let ngOnDestroy do it.
     }
+  }
+
+  ngAfterViewInit() {
+    // ✅ Registramos listeners manuales con passive: false
+    this.ngZone.runOutsideAngular(() => {
+      const doc = this.doc;
+
+      const onWheel = (e: WheelEvent) => this.handleWheel(e);
+      const onTouch = (e: TouchEvent) => this.handleTouch(e);
+      const onEsc = (e: KeyboardEvent) => this.handleEscape(e);
+
+      doc.addEventListener('wheel', onWheel, { passive: false });
+      doc.addEventListener('touchmove', onTouch, { passive: false });
+      doc.addEventListener('keydown', onEsc, { passive: false });
+
+      // Limpieza
+      this.removeWheel = () => doc.removeEventListener('wheel', onWheel);
+      this.removeTouch = () => doc.removeEventListener('touchmove', onTouch);
+      this.removeEsc = () => doc.removeEventListener('keydown', onEsc);
+    });
   }
 
   ngOnDestroy() {
@@ -106,25 +142,22 @@ export class UiModalComponent {
     const body = this.doc.body;
     html.classList.remove('modal-open');
     body.classList.remove('modal-open');
+
+    this.removeWheel?.();
+    this.removeTouch?.();
+    this.removeEsc?.();
   }
-  /** Si tenemos petición pendiente y ya existe el contenedor, hacemos scroll estable */
+
+  // ==============================
+  // 🔧 Scroll control
+  // ==============================
+  /** Si hay una petición pendiente y ya existe el contenedor, hacemos scroll estable */
   private tryFlushPendingScroll() {
-    if (!this.open || !this.pendingScroll || !this.scrollArea) {
-      return;
-    }
+    if (!this.open || !this.pendingScroll || !this.scrollArea) return;
 
     const behavior = this.pendingScroll;
     this.pendingScroll = null;
-
     const el = this.scrollArea.nativeElement;
-    console.log('[UI-MODAL] tryFlushPendingScroll START', {
-      behavior,
-      before: {
-        scrollTop: el.scrollTop,
-        h: el.scrollHeight,
-        ch: el.clientHeight,
-      },
-    });
 
     this.focusAnchor?.nativeElement?.focus({ preventScroll: true } as any);
 
@@ -132,111 +165,94 @@ export class UiModalComponent {
       sub.unsubscribe();
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          // golpe doble
           el.scrollTop = 0;
           el.scrollTo({ top: 0, left: 0, behavior });
           requestAnimationFrame(() => {
-            console.log('[UI-MODAL] after rAF 1', { scrollTop: el.scrollTop });
             el.scrollTop = 0;
-            requestAnimationFrame(() => {
-              console.log('[UI-MODAL] after rAF 2 (final)', {
-                scrollTop: el.scrollTop,
-                canScroll: el.scrollHeight > el.clientHeight,
-              });
-            });
           });
         });
       });
     });
   }
-  // ----- Ciclo de vida --------------------------------------------------
 
-  // ----- UX -------------------------------------------------------------
-
-  /** Helper to know if event happened inside the scrollable section */
+  // ==============================
+  // 🧭 Control de eventos
+  // ==============================
   private eventInsideScrollArea(ev: Event): boolean {
     const area = this.scrollArea?.nativeElement;
     if (!area) return false;
+
+    // `composedPath()` devuelve EventTarget[]
     const path = (ev as any).composedPath?.() as EventTarget[] | undefined;
-    if (path && path.length)
-      return (
-        path.includes(area) ||
-        path.some((n) => n instanceof Node && area.contains(n as Node))
+
+    if (Array.isArray(path) && path.length > 0) {
+      return path.some(
+        (t: EventTarget) =>
+          t === area || (t instanceof Node && area.contains(t as Node))
       );
-    // Fallback
-    const t = ev.target as Node | null;
-    return !!(t && area.contains(t));
+    }
+
+    // Fallback cuando no hay composedPath
+    const target = ev.target as EventTarget | null;
+    return !!(target && target instanceof Node && area.contains(target));
   }
 
-  /** Prevent the page from scrolling unless we're scrolling the section,
-   * and even then, block at the edges to avoid chain scrolling. */
-  @HostListener('wheel', ['$event'])
-  onWheel(e: WheelEvent) {
+  private handleWheel(e: WheelEvent) {
     if (!this.open) return;
-
     const area = this.scrollArea?.nativeElement;
     const inside = this.eventInsideScrollArea(e);
 
-    // If the event is NOT in the scrollable section, block it (header, overlay, etc.)
-    if (!inside) {
+    if (!inside || !area) {
       e.preventDefault();
       return;
     }
 
-    if (!area) {
-      e.preventDefault();
-      return;
-    }
-
-    // Inside the section: allow normal scroll, but prevent chaining at edges
     const atTop = area.scrollTop <= 0 && e.deltaY < 0;
     const atBottom =
       Math.ceil(area.scrollTop + area.clientHeight) >= area.scrollHeight &&
       e.deltaY > 0;
 
-    if (atTop || atBottom) {
-      e.preventDefault();
-    }
+    if (atTop || atBottom) e.preventDefault();
   }
 
-  @HostListener('touchmove', ['$event'])
-  onTouchMove(e: TouchEvent) {
+  private handleTouch(e: TouchEvent) {
     if (!this.open) return;
-
     const area = this.scrollArea?.nativeElement;
     const inside = this.eventInsideScrollArea(e);
 
-    if (!inside) {
+    if (!inside || !area) {
       e.preventDefault();
       return;
     }
 
-    if (!area) {
-      e.preventDefault();
-      return;
-    }
-
-    // iOS “bounce” can still try to chain at edges — block it there too
     const atTop = area.scrollTop <= 0;
     const atBottom =
       Math.ceil(area.scrollTop + area.clientHeight) >= area.scrollHeight;
-    if (atTop || atBottom) {
-      e.preventDefault();
-    }
+    if (atTop || atBottom) e.preventDefault();
   }
-  @HostListener('document:keydown.escape', ['$event'])
-  onEsc(ev: KeyboardEvent) {
-    if (this.open && this.closeOnEscape) {
-      ev.preventDefault();
+
+  private handleEscape(e: KeyboardEvent) {
+    if (e.key === 'Escape' && this.open && this.closeOnEscape) {
+      e.preventDefault();
       this.close();
     }
   }
 
+  // ==============================
+  // 🧩 Acciones públicas
+  // ==============================
   close() {
     this.open = false;
     this.openChange.emit(false);
+    this.closed.emit();
   }
+
   onBack() {
     this.back.emit();
   }
+
+  // ==============================
+  // 🔒 Limpieza
+  // ==============================
+  private removeEsc?: () => void;
 }

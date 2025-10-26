@@ -51,7 +51,10 @@ export class PinchZoomDirective {
     if (this.el.complete && this.el.naturalWidth) {
       this.initSize();
     } else {
-      this.el.addEventListener('load', () => this.initSize(), { once: true });
+      this.el.addEventListener('load', () => this.initSize(), {
+        once: true,
+        passive: true,
+      });
     }
   }
 

@@ -2,69 +2,56 @@ import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   EventEmitter,
+  inject,
   Input,
   Output,
+  SimpleChanges,
+  ViewChild,
 } from '@angular/core';
+import { ModalFacade } from 'src/app/application/modal.facade';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
-import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
+import { ModalRouterComponent } from './modal-router.component';
+import { UiModalComponent } from './modal-ui.component';
+import { ModalPdfComponent } from './pages/modal-pdf/modal-pdf.component';
 
 @Component({
   standalone: true,
   selector: 'app-modal-shell',
-  imports: [CommonModule, ModalComponent],
+  imports: [
+    CommonModule,
+    UiModalComponent,
+    ModalRouterComponent,
+    ModalPdfComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `<div class="modal-shell-wrapper">
-    @if (visible) {
-    <app-modal
-      [item]="item"
-      [contentVersion]="contentVersion"
-      [typeModal]="typeModal"
-      [typePage]="typeModal"
-      [action]="action"
-      [canGoBack]="canGoBack"
-      [isDashboard]="isDashboard"
-      (back)="back.emit()"
-      (closeModal)="close.emit()"
-      (confirmDelete)="confirmDelete.emit($event)"
-      (openEvent)="openEvent.emit($event)"
-      (openMacroevent)="openMacroevent.emit($event)"
-      (openProject)="openProject.emit($event)"
-      (openInvoice)="openInvoice.emit($event)"
-      (openPdf)="openPdf.emit($event)"
-      (viewEvent)="viewEvent.emit($event)"
-      (editEvent)="editEvent.emit($event)"
-      (removeEvent)="removeEvent.emit($event)"
-      (addEvent)="addEvent.emit($event)"
-      (sendFormEventData)="sendFormEventData.emit($event)"
-      (sendFormEventReportData)="sendFormEventReportData.emit($event)"
-      (sendFormMacroeventData)="sendFormMacroeventData.emit($event)"
-      (sendFormBookData)="sendFormBookData.emit($event)"
-      (sendFormMovieData)="sendFormMovieData.emit($event)"
-      (sendFormAgentData)="sendFormAgentData.emit($event)"
-      (sendFormArticleData)="sendFormArticleData.emit($event)"
-      (sendFormRecipeData)="sendFormRecipeData.emit($event)"
-      (sendFormPiteraData)="sendFormPiteraData.emit($event)"
-      (sendFormPartnerData)="sendFormPartnerData.emit($event)"
-      (sendFormInvoiceData)="sendFormInvoiceData.emit($event)"
-      (sendFormSubsidyData)="sendFormSubsidyData.emit($event)"
-      (sendFormCreditorData)="sendFormCreditorData.emit($event)"
-      (sendFormPlaceData)="sendFormPlaceData.emit($event)"
-      (sendFormProjectData)="sendFormProjectData.emit($event)"
-      (sendFormPodcastData)="sendFormPodcastData.emit($event)"
-    />
-    }
-  </div> `,
+  templateUrl: './modal-shell.component.html',
 })
 export class ModalShellComponent<T> {
+  readonly modalFacade = inject(ModalFacade);
+  // === Inputs ===
   @Input({ required: true }) visible!: boolean;
   @Input({ required: true }) typeModal!: TypeList;
   @Input({ required: true }) action!: TypeActionModal;
   @Input() item: T | null = null;
   @Input() canGoBack = false;
-  @Input() isDashboard = true;
+  @Input() isDashboard = false;
   @Input() contentVersion = 0;
 
+  // === Internal ===
+  isOpen = true;
+  pdfState = {
+    open: false,
+    url: '' as string,
+    year: null as number | null,
+    type: TypeList.Piteras as TypeList,
+  };
+
+  @ViewChild(UiModalComponent) ui?: UiModalComponent;
+  @ViewChild('host', { read: ElementRef }) host?: ElementRef<HTMLElement>;
+
+  // === Outputs ===
   @Output() back = new EventEmitter<void>();
   @Output() close = new EventEmitter<void>();
   @Output() confirmDelete = new EventEmitter<any>();
@@ -81,6 +68,7 @@ export class ModalShellComponent<T> {
   @Output() editEvent = new EventEmitter<number>();
   @Output() removeEvent = new EventEmitter<number>();
   @Output() addEvent = new EventEmitter<string>();
+
   @Output() sendFormEventData = new EventEmitter<any>();
   @Output() sendFormEventReportData = new EventEmitter<{
     itemId: number;
@@ -90,16 +78,11 @@ export class ModalShellComponent<T> {
   @Output() sendFormBookData = new EventEmitter<any>();
   @Output() sendFormMovieData = new EventEmitter<any>();
   @Output() sendFormAgentData = new EventEmitter<any>();
-
   @Output() sendFormArticleData = new EventEmitter<{
     itemId: number;
     formData: FormData;
   }>();
   @Output() sendFormRecipeData = new EventEmitter<{
-    itemId: number;
-    formData: FormData;
-  }>();
-  @Output() sendFormPodcastData = new EventEmitter<{
     itemId: number;
     formData: FormData;
   }>();
@@ -131,4 +114,51 @@ export class ModalShellComponent<T> {
     itemId: number;
     formData: FormData;
   }>();
+  @Output() sendFormPodcastData = new EventEmitter<{
+    itemId: number;
+    formData: FormData;
+  }>();
+
+  // === Métodos ===
+
+  // Método seguro para retroceder
+  onBackModal() {
+    if (this.modalFacade.canGoBack()) {
+      // Retrocede a la modal anterior
+      this.modalFacade.back();
+    } else {
+      // No hay historial: cerramos la modal
+      this.onCloseModal();
+    }
+  }
+  onCloseModal() {
+    this.isOpen = false;
+    this.modalFacade.close(); // 🔹 Cierra y limpia la pila
+    this.close.emit();
+  }
+  onOpenPdfFromRouter(e: { url: string; year: number | null; type: TypeList }) {
+    this.pdfState = { open: true, url: e.url, year: e.year, type: e.type };
+  }
+
+  onConfirmDelete(payload: { type: TypeList; id: number; item?: any }) {
+    this.confirmDelete.emit(payload);
+    this.onCloseModal();
+  }
+
+  private forceScrollTop(behavior: ScrollBehavior = 'auto') {
+    queueMicrotask(() => {
+      requestAnimationFrame(() => {
+        const scroller = this.host?.nativeElement.querySelector<HTMLElement>(
+          '.modal_body > section'
+        );
+        if (scroller) scroller.scrollTo({ top: 0, behavior });
+      });
+    });
+  }
+
+  ngOnChanges(ch: SimpleChanges) {
+    if (ch['contentVersion'] || ch['item'] || ch['typeModal']) {
+      this.forceScrollTop('smooth');
+    }
+  }
 }

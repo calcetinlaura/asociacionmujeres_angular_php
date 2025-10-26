@@ -1,16 +1,17 @@
+@if (visible) {
 <div #host>
   <app-ui-modal
     [(open)]="isOpen"
     [variant]="action"
     (openChange)="!$event && onCloseModal()"
-    [canGoBack]="canGoBack"
-    (back)="back.emit()"
+    [canGoBack]="modalFacade.canGoBack()"
+    (back)="onBackModal()"
     [contentVersion]="contentVersion"
   >
     <app-modal-router
       [item]="item"
       [typeModal]="typeModal"
-      [typePage]="typePage"
+      [typePage]="typeModal"
       [action]="action"
       [isDashboard]="isDashboard"
       (closeRequested)="onCloseModal()"
@@ -42,11 +43,12 @@
       (sendFormPodcastData)="sendFormPodcastData.emit($event)"
     />
   </app-ui-modal>
+
   <app-modal-pdf
     [(open)]="pdfState.open"
     [pdfUrl]="pdfState.url"
     [year]="pdfState.year"
     [type]="pdfState.type"
-  >
-  </app-modal-pdf>
+  />
 </div>
+}
