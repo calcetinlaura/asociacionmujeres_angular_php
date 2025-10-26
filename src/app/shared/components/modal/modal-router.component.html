@@ -60,7 +60,15 @@
   <app-spinner-loading />
 </div>
 } } }
-
+<!-- EVENTS REPORTS -->
+@case (TypeList.EventsReports) {
+<app-form-event-report
+  [eventId]="item?.id"
+  [itemId]="item?.id"
+  [action]="action"
+  (submitForm)="sendFormEventReportData.emit($event)"
+/>
+}
 <!-- MACROEVENTS -->
 @case (TypeList.Macroevents) { @if (action === TypeActionModal.Show) {
 <app-modal-show-macroevent

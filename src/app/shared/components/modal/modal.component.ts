@@ -71,6 +71,10 @@ export class ModalComponent {
     itemId: number;
     formData: FormData;
   }>();
+  @Output() sendFormEventReportData = new EventEmitter<{
+    itemId: number;
+    formData: FormData;
+  }>();
   @Output() sendFormMacroeventData = new EventEmitter<{
     itemId: number;
     formData: FormData;

@@ -4,11 +4,7 @@ import {
   Component,
   EventEmitter,
   Input,
-  OnChanges,
-  OnDestroy,
-  OnInit,
   Output,
-  SimpleChanges,
 } from '@angular/core';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { ModalComponent } from 'src/app/shared/components/modal/modal.component';
@@ -41,6 +37,7 @@ import { ModalComponent } from 'src/app/shared/components/modal/modal.component'
       (removeEvent)="removeEvent.emit($event)"
       (addEvent)="addEvent.emit($event)"
       (sendFormEventData)="sendFormEventData.emit($event)"
+      (sendFormEventReportData)="sendFormEventReportData.emit($event)"
       (sendFormMacroeventData)="sendFormMacroeventData.emit($event)"
       (sendFormBookData)="sendFormBookData.emit($event)"
       (sendFormMovieData)="sendFormMovieData.emit($event)"
@@ -59,7 +56,7 @@ import { ModalComponent } from 'src/app/shared/components/modal/modal.component'
     }
   </div> `,
 })
-export class ModalShellComponent<T> implements OnInit, OnChanges, OnDestroy {
+export class ModalShellComponent<T> {
   @Input({ required: true }) visible!: boolean;
   @Input({ required: true }) typeModal!: TypeList;
   @Input({ required: true }) action!: TypeActionModal;
@@ -85,10 +82,15 @@ export class ModalShellComponent<T> implements OnInit, OnChanges, OnDestroy {
   @Output() removeEvent = new EventEmitter<number>();
   @Output() addEvent = new EventEmitter<string>();
   @Output() sendFormEventData = new EventEmitter<any>();
+  @Output() sendFormEventReportData = new EventEmitter<{
+    itemId: number;
+    formData: FormData;
+  }>();
   @Output() sendFormMacroeventData = new EventEmitter<any>();
   @Output() sendFormBookData = new EventEmitter<any>();
   @Output() sendFormMovieData = new EventEmitter<any>();
   @Output() sendFormAgentData = new EventEmitter<any>();
+
   @Output() sendFormArticleData = new EventEmitter<{
     itemId: number;
     formData: FormData;
@@ -129,27 +131,4 @@ export class ModalShellComponent<T> implements OnInit, OnChanges, OnDestroy {
     itemId: number;
     formData: FormData;
   }>();
-
-  // Logs de ciclo de vida
-  ngOnInit() {
-    console.log(
-      '%c🧱 ModalShellComponent → ngOnInit',
-      'color: lightgreen; font-weight:bold'
-    );
-  }
-
-  ngOnChanges(changes: SimpleChanges) {
-    console.log(
-      '%c🧱 ModalShellComponent → ngOnChanges',
-      'color: lightblue; font-weight:bold',
-      changes
-    );
-  }
-
-  ngOnDestroy() {
-    console.log(
-      '%c💥 ModalShellComponent → ngOnDestroy',
-      'color: red; font-weight:bold'
-    );
-  }
 }

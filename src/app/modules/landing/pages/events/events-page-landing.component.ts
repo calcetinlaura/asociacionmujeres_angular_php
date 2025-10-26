@@ -269,11 +269,8 @@ export class EventsPageLandingComponent implements OnInit {
   }
   private bumpKeys() {
     this.contentVersion++;
-
-    console.log('[PARENT] bumpKeys →', {
-      contentVersion: this.contentVersion,
-    });
   }
+
   onBackModal(): void {
     const prev = this.modalNav.pop();
     if (!prev) return;

@@ -56,11 +56,7 @@ export class CardEventMiniComponent {
   onOpenEvent(id: number) {
     if (id) this.openEvent.emit(id);
   }
-  ngOnChanges(): void {
-    if (this.event) {
-      console.log('🟣 Event recibido en CardEventMiniComponent:', this.event);
-    }
-  }
+
   handleAction(action: { type: ActionType }) {
     if (action?.type) {
       this.actionEvent.emit({

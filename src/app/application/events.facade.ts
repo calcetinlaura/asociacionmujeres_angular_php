@@ -237,13 +237,6 @@ export class EventsFacade extends LoadableFacade {
       )
       .subscribe((list) => {
         const scoped = this.applyScopeFallback(list) ?? [];
-        // 🔎 logs de diagnóstico
-        console.log('[EventsFacade] loaded', {
-          year,
-          view,
-          scope,
-          count: scoped.length,
-        });
 
         if (view === 'all') {
           this.allEventsSubject.next(scoped);

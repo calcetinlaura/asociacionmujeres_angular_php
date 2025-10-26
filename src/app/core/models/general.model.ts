@@ -16,6 +16,7 @@ export enum TypeList {
   Podcasts = 'PODCASTS',
   Articles = 'ARTICLES',
   MultiEvents = 'MULTIEVENTS',
+  EventsReports = 'EVENTSREPORTS',
 }
 
 export enum TypeActionModal {

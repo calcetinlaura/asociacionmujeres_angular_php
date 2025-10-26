@@ -93,6 +93,7 @@ export class TableComponent {
   @Input() printIncludeNumber = true; // si quieres imprimir la columna de numeración
   @Input() showFooterEnabled = true;
   @Input() printIncludeActions = false;
+  @Input() eventsWithReport: Set<number> = new Set<number>();
   @Output() openModal = new EventEmitter<{
     typeModal: TypeList;
     action: TypeActionModal;
@@ -146,6 +147,7 @@ export class TableComponent {
 
     this.dataSource = new MatTableDataSource(this.data || []);
     this.dataSource.sort = this.sort;
+    console.log('LISTADO DE EVENTOS', this.eventsWithReport);
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -189,12 +191,18 @@ export class TableComponent {
   }
   initDisplayedColumns(): void {
     this.displayedColumns = this.getVisibleColumns();
+
+    // Añadimos columna de informe solo para eventos
+    if (this.typeSection === this.TypeList.Events) {
+      this.displayedColumns.push('report');
+    }
+
     this.displayedColumns.push('actions');
+
     if (this.showNumberColumn) {
       this.displayedColumns.unshift('number');
     }
   }
-
   announceSortChange(sortState: Sort): void {
     if (sortState.direction) {
       this._liveAnnouncer.announce(`Sorted ${sortState.direction}ending`);
@@ -433,5 +441,24 @@ export class TableComponent {
         this.onOpenModal(this.typeModal, this.typeActionModal.Delete, element);
         break;
     }
+  }
+  onAddReport(event: any): void {
+    const hasReport = this.hasReport(event);
+    console.log('🟢 [TableComponent] Añadir informe', {
+      event,
+      hasReport,
+    });
+
+    // Si el evento ya tiene informe, lo abrimos en modo edición
+    this.openModal.emit({
+      typeModal: this.TypeList.EventsReports,
+      action: hasReport
+        ? this.typeActionModal.Edit
+        : this.typeActionModal.Create,
+      item: event,
+    });
+  }
+  hasReport(row: any): boolean {
+    return this.eventsWithReport.has(row.id);
   }
 }

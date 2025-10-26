@@ -30,11 +30,12 @@
 </app-sticky-zone>
 
 <div class="flex flex-col px-8">
-  @if (eventsFacade.isListLoading$ | async) {
+  @if (isLoadingSig()) {
   <app-spinner-loading />
   } @else { @if (list.processedSig().length > 0) {
   <div class="pb-4" #printArea>
-    <h2 class="only-on-pdf print-title">Listado eventos</h2>
+    <h2 class="only-on-pdf print-title">Listado de eventos</h2>
+
     <app-table
       [data]="list.processedSig()"
       [typeSection]="typeSection"
@@ -43,6 +44,7 @@
       [columnVisibility]="col.columnVisSig()"
       [displayedColumns]="col.displayedColumnsSig()"
       (openModal)="onOpenModal($event)"
+      [eventsWithReport]="eventsWithReportSet"
     />
   </div>
   } @else {
@@ -64,4 +66,5 @@
   (openEvent)="onOpenEvent($event)"
   (openMacroevent)="onOpenMacroevent($event)"
   (sendFormEventData)="sendFormEvent($event)"
+  (sendFormEventReportData)="sendFormEventReport($event)"
 />

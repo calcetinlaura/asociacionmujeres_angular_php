@@ -1,11 +1,5 @@
 // src/app/shared/hooks/use-column-visibility.ts
-import {
-  computed,
-  inject,
-  isDevMode,
-  Signal,
-  WritableSignal,
-} from '@angular/core';
+import { computed, inject, Signal, WritableSignal } from '@angular/core';
 import { ColumnModel } from 'src/app/core/interfaces/column.interface';
 import { ColumnVisibilityStore } from 'src/app/shared/components/table/column-visibility.store';
 
@@ -23,17 +17,6 @@ export function useColumnVisibility<K extends string>(
   isColumnVisible: (colKey: K) => boolean;
 } {
   const store = inject(ColumnVisibilityStore);
-
-  if (isDevMode()) {
-    const keys = new Set(columns.map((c) => c.key));
-    const unknown = hidden.filter((h) => !keys.has(h));
-    if (unknown.length) {
-      console.warn(
-        `[useColumnVisibility:${storeKey}] Claves ocultas no presentes en columnas:`,
-        unknown
-      );
-    }
-  }
 
   // 👇 Copias mutables para encajar con la firma del store (evita TS2352)
   const columnsMutable: ColumnModel[] = [...columns];

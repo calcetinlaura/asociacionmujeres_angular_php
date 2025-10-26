@@ -1,0 +1,143 @@
+<div class="flex flex-col">
+  <div class="text-center pb-5 uppercase">
+    <p class="text-2xl">{{ titleForm }}</p>
+  </div>
+
+  @if (eventsReportsFacade.isLoadingItem$ | async) {
+  <div class="spinner-container">
+    <app-spinner-loading />
+  </div>
+  } @else {
+  <form
+    appScrollToFirstError
+    (ngSubmit)="onSendFormReport()"
+    [formGroup]="formReport"
+    class="login-auth-form"
+  >
+    <div class="flex flex-col gap-y-4">
+      <!-- Nº asistentes reales -->
+      <div class="box-input gap-x-4">
+        <label for="attendance_real">Asistencia real</label>
+        <div class="flex flex-col flex-1">
+          <input
+            formControlName="attendance_real"
+            type="number"
+            placeholder="Número de asistentes reales"
+            [ngClass]="{
+              'is-invalid':
+                submitted && formReport.get('attendance_real')?.invalid
+            }"
+          />
+        </div>
+      </div>
+
+      <!-- Satisfacción media -->
+      <div class="box-input gap-x-4">
+        <label for="satisfaction_avg">Satisfacción media</label>
+        <div class="flex flex-col flex-1">
+          <input
+            formControlName="satisfaction_avg"
+            placeholder="Ejemplo: 8.5 / Muy buena"
+            type="text"
+          />
+        </div>
+      </div>
+
+      <hr />
+
+      <!-- Incidencias -->
+      <div class="flex flex-col gap-y-2">
+        <label for="incidents">Incidencias</label>
+        <div class="box-input">
+          <textarea
+            formControlName="incidents"
+            rows="3"
+            maxlength="1000"
+            placeholder="Describe incidencias ocurridas durante el evento"
+          ></textarea>
+        </div>
+        <div class="w-full text-right text-xs text-gray-500">
+          {{ incidentsLen() }} / 1000
+        </div>
+      </div>
+
+      <!-- Aspectos positivos -->
+      <div class="flex flex-col gap-y-2">
+        <label for="highlights">Aspectos positivos</label>
+        <div class="box-input">
+          <textarea
+            formControlName="highlights"
+            rows="3"
+            maxlength="1000"
+            placeholder="Qué funcionó bien o fue especialmente positivo"
+          ></textarea>
+        </div>
+        <div class="w-full text-right text-xs text-gray-500">
+          {{ highlightsLen() }} / 1000
+        </div>
+      </div>
+
+      <!-- Aspectos a mejorar -->
+      <div class="flex flex-col gap-y-2">
+        <label for="improvements">Aspectos a mejorar</label>
+        <div class="box-input">
+          <textarea
+            formControlName="improvements"
+            rows="3"
+            maxlength="1000"
+            placeholder="Qué podría mejorarse en futuras ediciones"
+          ></textarea>
+        </div>
+        <div class="w-full text-right text-xs text-gray-500">
+          {{ improvementsLen() }} / 1000
+        </div>
+      </div>
+
+      <!-- Valoración de colaboradores -->
+      <div class="flex flex-col gap-y-2">
+        <label for="collaborators_eval">Valoración de colaboradores</label>
+        <div class="box-input">
+          <textarea
+            formControlName="collaborators_eval"
+            rows="3"
+            maxlength="1000"
+            placeholder="Comentarios sobre artistas, colaboradores, etc."
+          ></textarea>
+        </div>
+        <div class="w-full text-right text-xs text-gray-500">
+          {{ collaboratorsEvalLen() }} / 1000
+        </div>
+      </div>
+
+      <!-- Notas generales -->
+      <div class="flex flex-col gap-y-2">
+        <label for="notes">Notas generales</label>
+        <div class="box-input">
+          <textarea
+            formControlName="notes"
+            rows="4"
+            maxlength="2000"
+            placeholder="Observaciones o resumen general del evento"
+          ></textarea>
+        </div>
+        <div class="w-full text-right text-xs text-gray-500">
+          {{ notesLen() }} / 2000
+        </div>
+      </div>
+
+      @if (formReport.invalid && submitted) {
+      <div class="flex justify-center">
+        <div class="error">Revisa los campos antes de guardar</div>
+      </div>
+      }
+
+      <!-- Botón de envío -->
+      <div class="flex justify-center">
+        <button class="bg-black p-4 text-white" type="submit">
+          {{ buttonAction }}
+        </button>
+      </div>
+    </div>
+  </form>
+  }
+</div>

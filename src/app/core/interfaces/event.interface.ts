@@ -202,7 +202,23 @@ export interface EventModel {
   publish_day?: string | null;
   publish_time?: string | null;
 }
+export interface EventReport {
+  id?: number; // ID del informe (autoincremental)
+  event_id: number; // ID del evento al que pertenece
 
+  attendance_real?: number; // Nº de asistentes reales
+  satisfaction_avg?: string; // Satisfacción media (ej. "8.5" o "Muy buena")
+
+  incidents?: string; // Incidencias registradas
+  highlights?: string; // Aspectos positivos
+  improvements?: string; // Aspectos a mejorar
+  collaborators_eval?: string; // Valoración de colaboradores / artistas
+  notes?: string; // Notas generales o comentarios libres
+
+  created_at?: string; // Fecha de creación (ISO o timestamp)
+  updated_at?: string; // Fecha de última actualización
+  author?: number;
+}
 /* ===== Modelo extendido con relaciones resueltas ===== */
 
 export interface EventModelFullData extends EventModel {

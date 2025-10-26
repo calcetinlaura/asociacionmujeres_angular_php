@@ -106,6 +106,10 @@ export class ModalDeleteComponent implements OnInit {
       label: 'los multieventos',
       value: `${item?.name} ${item?.year}`,
     }),
+    [TypeList.EventsReports]: (item) => ({
+      label: 'el informe del evento ',
+      value: `${item?.name} ${item?.year}`,
+    }),
   };
 
   getDeleteLabel(): string {

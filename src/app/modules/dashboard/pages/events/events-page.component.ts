@@ -5,6 +5,7 @@ import {
   ElementRef,
   OnInit,
   ViewChild,
+  computed,
   inject,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
@@ -44,6 +45,8 @@ import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility'
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
 
 // Shell modal + navegación
+import { EventsReportsFacade } from 'src/app/application/events-reports.facade';
+import { EventsReportsService } from 'src/app/core/services/events-reports.service';
 import { ButtonFilterComponent } from 'src/app/shared/components/buttons/button-filter/button-filter.component';
 import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
 import { ModalNavService } from 'src/app/shared/components/modal/services/modal-nav.service';
@@ -75,16 +78,37 @@ export class EventsPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly modalService = inject(ModalService);
   private readonly eventsService = inject(EventsService);
+  private readonly eventsReportsService = inject(EventsReportsService);
   private readonly macroeventsService = inject(MacroeventsService);
   private readonly generalService = inject(GeneralService);
   private readonly pdfPrintService = inject(PdfPrintService);
-
-  // Facade pública (para isListLoading$ en template si lo usas)
+  // ── Facades
   readonly eventsFacade = inject(EventsFacade);
+  readonly eventsReportsFacade = inject(EventsReportsFacade);
+
+  // ── Signals de estado de carga
+  readonly isEventsLoadingSig = toSignal(this.eventsFacade.isListLoading$, {
+    initialValue: false,
+  });
+  readonly isReportsLoadingSig = toSignal(
+    this.eventsReportsFacade.isLoadingList$,
+    { initialValue: false }
+  );
+
+  // 👇 Señal combinada (reemplaza el `||` en el HTML)
+  readonly isLoadingSig = computed(
+    () => this.isEventsLoadingSig() || this.isReportsLoadingSig()
+  );
+
+  // ── Event IDs con informe
+  readonly eventIdsWithReportSig = toSignal(
+    this.eventsReportsFacade.eventIdsWithReport$,
+    { initialValue: [] }
+  );
   private activeScope: 'all' | 'drafts' | 'scheduled' = 'all';
   // ── Columnas
   headerListEvents: ColumnModel[] = [
-    { title: 'Cartel', key: 'img', sortable: false },
+    { title: 'Cartel', key: 'img', sortable: true },
     { title: 'Título', key: 'title', sortable: true, width: ColumnWidth.XL },
     { title: 'Fecha', key: 'start', sortable: true, width: ColumnWidth.SM },
     {
@@ -116,7 +140,7 @@ export class EventsPageComponent implements OnInit {
     },
     {
       title: 'Espacio',
-      key: 'espacioTable',
+      key: 'place_id',
       sortable: true,
       showIndicatorOnEmpty: true,
       width: ColumnWidth.LG,
@@ -196,8 +220,6 @@ export class EventsPageComponent implements OnInit {
     filtered$: this.eventsFacade.visibleEvents$,
     sort: (arr) => this.eventsService.sortEventsById(arr),
     count: (arr) => this.eventsService.countEvents(arr),
-    // map opcional para proyectar 'espacioTable'
-    // map: (arr) => arr.map(e => ({ ...e, espacioTable: e?.place?.name ?? e?.space ?? '' }) as any),
     initial: [],
   });
 
@@ -205,6 +227,7 @@ export class EventsPageComponent implements OnInit {
   filters: Filter[] = [];
   selectedFilter: string | number = '';
   currentYear = this.generalService.currentYear;
+  eventsWithReport = new Set<number>();
   private lastYearSelected = this.currentYear; // recordar el último año para drafts/scheduled
 
   // ── Modal
@@ -244,6 +267,8 @@ export class EventsPageComponent implements OnInit {
     this.eventsFacade.visibleEvents$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe();
+    //  carga de informes centralizada
+    this.eventsReportsFacade.loadEventIdsWithReport();
   }
 
   // ── Filtros / búsqueda
@@ -306,9 +331,15 @@ export class EventsPageComponent implements OnInit {
   onOpenModal(event: {
     typeModal: TypeList;
     action: TypeActionModal;
-    item?: EventModelFullData;
+    item?: any;
   }): void {
-    this.openModal(event.typeModal, event.action, event.item ?? null);
+    if (event.typeModal === TypeList.EventsReports) {
+      // 👉 abrir informe sin tocar el tipoModal principal
+      this.openReportModal(event.action, event.item);
+    } else {
+      // 👉 eventos normales
+      this.openModal(event.typeModal, event.action, event.item ?? null);
+    }
   }
 
   private openModal(
@@ -326,7 +357,23 @@ export class EventsPageComponent implements OnInit {
     this.modalKey++;
     this.modalService.openModal();
   }
+  private openReportModal(action: TypeActionModal, item: any): void {
+    // No tocamos this.typeModal principal
+    this.currentModalAction = action;
+    this.item = item;
+    this.modalKey++;
 
+    // Abrir modal directamente
+    this.modalService.openModal();
+
+    // Forzar contexto temporal de report
+    this.typeModal = TypeList.EventsReports;
+
+    // Si usas facades separadas, puedes iniciar carga aquí
+    if (action === TypeActionModal.Edit && item?.id) {
+      this.eventsReportsFacade.loadReportByEventId(item.id);
+    }
+  }
   onOpenEvent = (eventId: number) => {
     // Guardar estado actual
     this.modalNav.push({
@@ -376,6 +423,9 @@ export class EventsPageComponent implements OnInit {
     this.modalService.closeModal();
     this.item = null;
     this.modalNav.clear();
+
+    // 🔹 Restaurar tipo principal
+    this.typeModal = TypeList.Events;
   }
 
   // ── CRUD (borrado por periodic_id si aplica)
@@ -437,6 +487,18 @@ export class EventsPageComponent implements OnInit {
       )
       .subscribe();
   }
+  sendFormEventReport(event: { itemId: number; formData: FormData }): void {
+    this.eventsReportsService.add(event.formData).subscribe({
+      next: () => {
+        console.log('✅ Informe guardado correctamente');
+        this.onCloseModal();
+        this.filterSelected(
+          String(this.selectedFilter ?? this.lastYearSelected)
+        );
+      },
+      error: (err) => console.error('❌ Error al guardar el informe', err),
+    });
+  }
 
   // ── Impresión
   async printTableAsPdf(): Promise<void> {
@@ -452,5 +514,8 @@ export class EventsPageComponent implements OnInit {
 
   get canGoBack(): boolean {
     return this.modalNav.canGoBack() && !!this.item;
+  }
+  get eventsWithReportSet(): Set<number> {
+    return new Set(this.eventIdsWithReportSig());
   }
 }

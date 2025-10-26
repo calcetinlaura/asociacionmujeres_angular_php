@@ -57,7 +57,6 @@ export class TableInvoicesComponent {
     inv.id ?? inv.number_invoice;
 
   onRowClick(invId: number) {
-    console.log('ID INVOICE TABLA', invId);
     this.rowClick!.emit(invId);
   }
 }
