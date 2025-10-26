@@ -1,4 +1,4 @@
-import { Filter } from 'src/app/core/models/general.model';
+import { Filter } from 'src/app/core/interfaces/general.interface';
 import { InvoiceModelFullData } from './invoice.interface';
 
 export interface CreditorModel {

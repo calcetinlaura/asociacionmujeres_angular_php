@@ -17,7 +17,7 @@ import {
   categoryFilterRecipes,
   RecipeModel,
 } from 'src/app/core/interfaces/recipe.interface';
-import { Filter, TypeList } from 'src/app/core/models/general.model';
+import { TypeList } from 'src/app/core/models/general.model';
 import { RecipesService } from 'src/app/core/services/recipes.services';
 
 import { GeneralService } from 'src/app/core/services/generalService.service';
@@ -28,6 +28,7 @@ import { SectionGenericComponent } from 'src/app/shared/components/section-gener
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 
 // Hook reutilizable
+import { Filter } from 'src/app/core/interfaces/general.interface';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
 
 @Component({

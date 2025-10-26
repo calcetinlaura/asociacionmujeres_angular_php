@@ -7,7 +7,7 @@ import { Injectable } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { catchError, Observable, throwError } from 'rxjs';
 import { ColumnModel } from 'src/app/core/interfaces/column.interface';
-import { Filter } from 'src/app/core/models/general.model';
+import { Filter } from 'src/app/core/interfaces/general.interface';
 
 @Injectable({
   providedIn: 'root',

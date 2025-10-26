@@ -16,15 +16,12 @@ import {
   ColumnModel,
   ColumnWidth,
 } from 'src/app/core/interfaces/column.interface';
+import { Filter } from 'src/app/core/interfaces/general.interface';
 import {
   MovieModel,
   genderFilterMovies,
 } from 'src/app/core/interfaces/movie.interface';
-import {
-  Filter,
-  TypeActionModal,
-  TypeList,
-} from 'src/app/core/models/general.model';
+import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { MoviesService } from 'src/app/core/services/movies.services';
 
 import { GeneralService } from 'src/app/core/services/generalService.service';

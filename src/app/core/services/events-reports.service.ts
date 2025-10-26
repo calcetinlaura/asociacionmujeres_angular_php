@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { catchError, map } from 'rxjs';
 import { environments } from 'src/environments/environments';
-import { EventReport } from '../interfaces/event.interface';
+import { EventReportModel } from '../interfaces/event.interface';
 import { GeneralService } from './generalService.service';
 
 @Injectable({ providedIn: 'root' })
@@ -15,14 +15,16 @@ export class EventsReportsService {
   /** 🔹 Obtener todos los informes */
   getAllReports() {
     return this.http
-      .get<EventReport[]>(this.apiUrl)
+      .get<EventReportModel[]>(this.apiUrl)
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
   /** 🔹 Obtener un informe por event_id */
   getReportByEventId(eventId: number) {
     return this.http
-      .get<EventReport[]>(this.apiUrl, { params: { event_id: eventId } as any })
+      .get<EventReportModel[]>(this.apiUrl, {
+        params: { event_id: eventId } as any,
+      })
       .pipe(
         map((reports) =>
           Array.isArray(reports) && reports.length > 0 ? reports[0] : null

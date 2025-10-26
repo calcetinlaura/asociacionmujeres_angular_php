@@ -22,11 +22,7 @@ import {
   CreditorWithInvoices,
 } from 'src/app/core/interfaces/creditor.interface';
 import { InvoiceModelFullData } from 'src/app/core/interfaces/invoice.interface';
-import {
-  Filter,
-  TypeActionModal,
-  TypeList,
-} from 'src/app/core/models/general.model';
+import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 
 import { CreditorsService } from 'src/app/core/services/creditors.services';
 import { InvoicesService } from 'src/app/core/services/invoices.services';
@@ -42,6 +38,7 @@ import { StickyZoneComponent } from 'src/app/shared/components/sticky-zone/stick
 import { TableComponent } from 'src/app/shared/components/table/table.component';
 
 // hooks reutilizables
+import { Filter } from 'src/app/core/interfaces/general.interface';
 import { PageToolbarComponent } from 'src/app/shared/components/page-toolbar/page-toolbar.component';
 import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';

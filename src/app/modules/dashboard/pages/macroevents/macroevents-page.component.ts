@@ -23,11 +23,7 @@ import {
 } from 'src/app/core/interfaces/column.interface';
 import { EventModelFullData } from 'src/app/core/interfaces/event.interface';
 import { MacroeventModelFullData } from 'src/app/core/interfaces/macroevent.interface';
-import {
-  Filter,
-  TypeActionModal,
-  TypeList,
-} from 'src/app/core/models/general.model';
+import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { EventsService } from 'src/app/core/services/events.services';
 import { MacroeventsService } from 'src/app/core/services/macroevents.services';
 
@@ -43,6 +39,7 @@ import { StickyZoneComponent } from 'src/app/shared/components/sticky-zone/stick
 import { TableComponent } from 'src/app/shared/components/table/table.component';
 
 // hooks reutilizables
+import { Filter } from 'src/app/core/interfaces/general.interface';
 import { PageToolbarComponent } from 'src/app/shared/components/page-toolbar/page-toolbar.component';
 import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';

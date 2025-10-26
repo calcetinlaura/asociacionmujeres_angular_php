@@ -12,11 +12,8 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { finalize, map, of, switchMap } from 'rxjs';
 
 import { EventsFacade } from 'src/app/application/events.facade';
-import {
-  Filter,
-  TypeActionModal,
-  TypeList,
-} from 'src/app/core/models/general.model';
+import { Filter } from 'src/app/core/interfaces/general.interface';
+import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { EventsService } from 'src/app/core/services/events.services';
 import { GeneralService } from 'src/app/core/services/generalService.service';
 

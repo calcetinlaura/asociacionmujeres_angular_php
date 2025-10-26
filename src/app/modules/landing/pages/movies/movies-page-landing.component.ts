@@ -13,11 +13,12 @@ import { ActivatedRoute } from '@angular/router';
 import { take } from 'rxjs';
 
 import { MoviesFacade } from 'src/app/application/movies.facade';
+import { Filter } from 'src/app/core/interfaces/general.interface';
 import {
   genderFilterMovies,
   MovieModel,
 } from 'src/app/core/interfaces/movie.interface';
-import { Filter, TypeList } from 'src/app/core/models/general.model';
+import { TypeList } from 'src/app/core/models/general.model';
 import { MoviesService } from 'src/app/core/services/movies.services';
 
 import { GeneralService } from 'src/app/core/services/generalService.service';

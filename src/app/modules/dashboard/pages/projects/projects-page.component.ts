@@ -18,13 +18,10 @@ import {
   ColumnWidth,
 } from 'src/app/core/interfaces/column.interface';
 import { EventModelFullData } from 'src/app/core/interfaces/event.interface';
+import { Filter } from 'src/app/core/interfaces/general.interface';
 import { InvoiceModelFullData } from 'src/app/core/interfaces/invoice.interface';
 import { ProjectModel } from 'src/app/core/interfaces/project.interface';
-import {
-  Filter,
-  TypeActionModal,
-  TypeList,
-} from 'src/app/core/models/general.model';
+import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 
 import { EventsService } from 'src/app/core/services/events.services';
 import { GeneralService } from 'src/app/core/services/generalService.service';

@@ -21,11 +21,8 @@ import {
   ColumnModel,
   ColumnWidth,
 } from 'src/app/core/interfaces/column.interface';
-import {
-  Filter,
-  TypeActionModal,
-  TypeList,
-} from 'src/app/core/models/general.model';
+import { Filter } from 'src/app/core/interfaces/general.interface';
+import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { BooksService } from 'src/app/core/services/books.services';
 
 import { DashboardHeaderComponent } from 'src/app/shared/components/dashboard-header/dashboard-header.component';

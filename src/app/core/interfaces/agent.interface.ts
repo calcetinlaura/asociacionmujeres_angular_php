@@ -1,4 +1,4 @@
-import { Filter } from 'src/app/core/models/general.model';
+import { Filter } from 'src/app/core/interfaces/general.interface';
 import { EventModelFullData } from './event.interface';
 
 export interface AgentModel {

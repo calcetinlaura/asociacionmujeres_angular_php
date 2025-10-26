@@ -22,11 +22,8 @@ import {
   ColumnWidth,
 } from 'src/app/core/interfaces/column.interface';
 import { EventModelFullData } from 'src/app/core/interfaces/event.interface';
-import {
-  Filter,
-  TypeActionModal,
-  TypeList,
-} from 'src/app/core/models/general.model';
+import { Filter } from 'src/app/core/interfaces/general.interface';
+import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { AgentsService } from 'src/app/core/services/agents.services';
 import { EventsService } from 'src/app/core/services/events.services';
 import { PdfPrintService } from 'src/app/core/services/PdfPrintService.service';

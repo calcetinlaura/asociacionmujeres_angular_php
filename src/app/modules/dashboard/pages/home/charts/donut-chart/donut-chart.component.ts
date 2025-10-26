@@ -3,7 +3,8 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import {
   ChartColors,
   PALETTE_PASTEL,
-} from 'src/app/core/interfaces/general.interface';
+} from 'src/app/core/models/chart-colors.model';
+
 import {
   DictTranslatePipe,
   DictType,

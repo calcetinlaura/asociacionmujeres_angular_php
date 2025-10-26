@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { MatGridListModule } from '@angular/material/grid-list';
-import { Filter, filterPhotos } from 'src/app/core/models/general.model';
+import { Filter } from 'src/app/core/interfaces/general.interface';
+import { filterPhotos } from 'src/app/core/models/general.model';
 import { FiltersComponent } from 'src/app/shared/components/filters/filters.component';
 
 @Component({

@@ -1,6 +1,7 @@
 // src/app/core/interfaces/event.interface.ts
 import { SocialNetwork } from 'src/app/shared/utils/social.utils';
-import { Filter } from '../models/general.model';
+
+import { Filter } from 'src/app/core/interfaces/general.interface';
 import { AgentAutocompleteModel } from './agent.interface';
 import { MacroeventModel } from './macroevent.interface';
 import { PlaceModel, SalaModel } from './place.interface';
@@ -202,7 +203,7 @@ export interface EventModel {
   publish_day?: string | null;
   publish_time?: string | null;
 }
-export interface EventReport {
+export interface EventReportModel {
   id?: number; // ID del informe (autoincremental)
   event_id: number; // ID del evento al que pertenece
 

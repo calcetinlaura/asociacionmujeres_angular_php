@@ -30,11 +30,7 @@ import {
   SubsidyModel,
   SubsidyModelFullData,
 } from 'src/app/core/interfaces/subsidy.interface';
-import {
-  Filter,
-  TypeActionModal,
-  TypeList,
-} from 'src/app/core/models/general.model';
+import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 
 import { GeneralService } from 'src/app/core/services/generalService.service';
 import { PdfPrintService } from 'src/app/core/services/PdfPrintService.service';
@@ -57,6 +53,7 @@ import { ProjectsService } from 'src/app/core/services/projects.services';
 import { ModalNavService } from 'src/app/shared/components/modal/services/modal-nav.service';
 
 // hooks
+import { Filter } from 'src/app/core/interfaces/general.interface';
 import { PageToolbarComponent } from 'src/app/shared/components/page-toolbar/page-toolbar.component';
 import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';

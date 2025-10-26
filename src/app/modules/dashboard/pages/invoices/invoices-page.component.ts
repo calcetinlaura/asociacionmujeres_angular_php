@@ -19,11 +19,7 @@ import {
   ColumnWidth,
 } from 'src/app/core/interfaces/column.interface';
 import { InvoiceModelFullData } from 'src/app/core/interfaces/invoice.interface';
-import {
-  Filter,
-  TypeActionModal,
-  TypeList,
-} from 'src/app/core/models/general.model';
+import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { InvoicesService } from 'src/app/core/services/invoices.services';
 
 import { GeneralService } from 'src/app/core/services/generalService.service';
@@ -43,6 +39,7 @@ import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
 
 // toolbar común
 
+import { Filter } from 'src/app/core/interfaces/general.interface';
 import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
 import { PageToolbarComponent } from 'src/app/shared/components/page-toolbar/page-toolbar.component';
 

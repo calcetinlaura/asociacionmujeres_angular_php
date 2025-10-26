@@ -16,7 +16,8 @@ import {
   BookModel,
   genderFilterBooks,
 } from 'src/app/core/interfaces/book.interface';
-import { Filter, TypeList } from 'src/app/core/models/general.model';
+import { Filter } from 'src/app/core/interfaces/general.interface';
+import { TypeList } from 'src/app/core/models/general.model';
 import { BooksService } from 'src/app/core/services/books.services';
 import { GeneralService } from 'src/app/core/services/generalService.service';
 import { FiltersComponent } from 'src/app/shared/components/filters/filters.component';

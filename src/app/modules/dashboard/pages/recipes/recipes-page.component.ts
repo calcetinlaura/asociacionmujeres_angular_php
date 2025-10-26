@@ -22,11 +22,7 @@ import {
   categoryFilterRecipes,
   RecipeModel,
 } from 'src/app/core/interfaces/recipe.interface';
-import {
-  Filter,
-  TypeActionModal,
-  TypeList,
-} from 'src/app/core/models/general.model';
+import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { RecipesService } from 'src/app/core/services/recipes.services';
 
 import { PdfPrintService } from 'src/app/core/services/PdfPrintService.service';
@@ -42,6 +38,7 @@ import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility'
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
 
 // Modal shell + service
+import { Filter } from 'src/app/core/interfaces/general.interface';
 import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
 import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
 

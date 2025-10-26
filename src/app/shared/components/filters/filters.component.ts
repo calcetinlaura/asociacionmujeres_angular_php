@@ -8,7 +8,7 @@ import {
   Output,
   SimpleChanges,
 } from '@angular/core';
-import { Filter } from 'src/app/core/models/general.model';
+import { Filter } from 'src/app/core/interfaces/general.interface';
 import { ButtonFilterComponent } from 'src/app/shared/components/buttons/button-filter/button-filter.component';
 
 @Component({

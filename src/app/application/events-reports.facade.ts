@@ -3,7 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, catchError, finalize, Observable, tap } from 'rxjs';
 import { EventsReportsService } from 'src/app/core/services/events-reports.service';
 import { GeneralService } from 'src/app/core/services/generalService.service';
-import { EventReport } from '../core/interfaces/event.interface';
+import { EventReportModel } from '../core/interfaces/event.interface';
 
 @Injectable({ providedIn: 'root' })
 export class EventsReportsFacade {
@@ -14,11 +14,11 @@ export class EventsReportsFacade {
   // ─────────────────────────────────────────────
   // STATE
   // ─────────────────────────────────────────────
-  private readonly reportsSubject = new BehaviorSubject<EventReport[] | null>(
-    null
-  );
+  private readonly reportsSubject = new BehaviorSubject<
+    EventReportModel[] | null
+  >(null);
   private readonly selectedReportSubject =
-    new BehaviorSubject<EventReport | null>(null);
+    new BehaviorSubject<EventReportModel | null>(null);
   private readonly listLoadingSubject = new BehaviorSubject<boolean>(false);
   private readonly itemLoadingSubject = new BehaviorSubject<boolean>(false);
   private readonly eventIdsWithReportSubject = new BehaviorSubject<number[]>(

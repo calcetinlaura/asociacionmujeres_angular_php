@@ -1,4 +1,5 @@
-// export type TypeActionModal = 'EDIT' | 'DELETE' | 'SHOW' | 'CREATE';
+import { Filter } from '../interfaces/general.interface';
+
 export enum TypeList {
   Events = 'EVENTS',
   Books = 'BOOKS',
@@ -25,10 +26,6 @@ export enum TypeActionModal {
   Show = 'SHOW',
   Create = 'CREATE',
   Duplicate = 'DUPLICATE',
-}
-export interface Filter {
-  code: string | number;
-  name: string | number;
 }
 
 export const filterPhotos: Filter[] = [

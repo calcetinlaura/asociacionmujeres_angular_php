@@ -1,12 +1,12 @@
 import { Pipe, PipeTransform } from '@angular/core'; // Asegúrate que la ruta es correcta
 import { CategoryFilterAgents } from 'src/app/core/interfaces/agent.interface';
+import { Filter } from 'src/app/core/interfaces/general.interface';
 import {
   ManagementFilterPlaces,
   RoomFilterPlaces,
   RoomLocationFilterPlaces,
   TypeFilterPlaces,
 } from 'src/app/core/interfaces/place.interface';
-import { Filter } from 'src/app/core/models/general.model';
 
 @Pipe({
   name: 'filterTransformCode',
