@@ -70,6 +70,10 @@ export class UiModalComponent implements AfterViewInit, OnChanges, OnDestroy {
   private pendingScroll: ScrollBehavior | null = null;
   private removeWheel?: () => void;
   private removeTouch?: () => void;
+  private removeEsc?: () => void;
+
+  // NUEVO: gestión de scroll del body
+  private pageScrollY = 0;
 
   // ==============================
   // 🎨 Clases dinámicas
@@ -107,12 +111,11 @@ export class UiModalComponent implements AfterViewInit, OnChanges, OnDestroy {
   // ==============================
   ngOnChanges(changes: SimpleChanges) {
     if (changes['open']) {
-      const isOpen = changes['open'].currentValue;
-      const html = this.doc.documentElement;
-      const body = this.doc.body;
+      const isOpen = changes['open'].currentValue as boolean;
       if (isOpen) {
-        html.classList.add('modal-open');
-        body.classList.add('modal-open');
+        this.lockBodyScroll();
+      } else {
+        this.unlockBodyScroll();
       }
     }
   }
@@ -138,11 +141,7 @@ export class UiModalComponent implements AfterViewInit, OnChanges, OnDestroy {
   }
 
   ngOnDestroy() {
-    const html = this.doc.documentElement;
-    const body = this.doc.body;
-    html.classList.remove('modal-open');
-    body.classList.remove('modal-open');
-
+    this.unlockBodyScroll();
     this.removeWheel?.();
     this.removeTouch?.();
     this.removeEsc?.();
@@ -182,7 +181,6 @@ export class UiModalComponent implements AfterViewInit, OnChanges, OnDestroy {
     const area = this.scrollArea?.nativeElement;
     if (!area) return false;
 
-    // `composedPath()` devuelve EventTarget[]
     const path = (ev as any).composedPath?.() as EventTarget[] | undefined;
 
     if (Array.isArray(path) && path.length > 0) {
@@ -192,7 +190,6 @@ export class UiModalComponent implements AfterViewInit, OnChanges, OnDestroy {
       );
     }
 
-    // Fallback cuando no hay composedPath
     const target = ev.target as EventTarget | null;
     return !!(target && target instanceof Node && area.contains(target));
   }
@@ -245,6 +242,8 @@ export class UiModalComponent implements AfterViewInit, OnChanges, OnDestroy {
     this.open = false;
     this.openChange.emit(false);
     this.closed.emit();
+    // Garantiza liberar scroll si no pasa por ngOnChanges
+    this.unlockBodyScroll();
   }
 
   onBack() {
@@ -252,7 +251,56 @@ export class UiModalComponent implements AfterViewInit, OnChanges, OnDestroy {
   }
 
   // ==============================
-  // 🔒 Limpieza
+  // 🔒 Scroll del body (fix salto al abrir)
   // ==============================
-  private removeEsc?: () => void;
+  private lockBodyScroll() {
+    if (!this.lockScroll) return;
+
+    const body = this.doc.body as HTMLElement;
+    const html = this.doc.documentElement as HTMLElement;
+
+    // Guarda la posición Y actual
+    this.pageScrollY =
+      window.scrollY ||
+      this.doc.documentElement.scrollTop ||
+      body.scrollTop ||
+      0;
+
+    // Compensa desaparición de scrollbar vertical para evitar “salto” horizontal
+    const scrollBarComp = window.innerWidth - html.clientWidth;
+    if (scrollBarComp > 0) {
+      body.style.paddingRight = `${scrollBarComp}px`;
+    }
+
+    // Fija el body en su sitio sin permitir scroll
+    body.style.position = 'fixed';
+    body.style.top = `-${this.pageScrollY}px`;
+    body.style.left = '0';
+    body.style.right = '0';
+    body.style.width = '100%';
+
+    html.classList.add('modal-open');
+    body.classList.add('modal-open');
+  }
+
+  private unlockBodyScroll() {
+    const body = this.doc.body as HTMLElement;
+    const html = this.doc.documentElement as HTMLElement;
+
+    // Limpia estilos aplicados
+    body.style.position = '';
+    body.style.top = '';
+    body.style.left = '';
+    body.style.right = '';
+    body.style.width = '';
+    body.style.paddingRight = '';
+
+    html.classList.remove('modal-open');
+    body.classList.remove('modal-open');
+
+    // Restaura la posición exacta previa a abrir la modal
+    if (this.pageScrollY > 0) {
+      window.scrollTo(0, this.pageScrollY);
+    }
+  }
 }

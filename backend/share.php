@@ -76,9 +76,9 @@ $jsonLd = null;
 
 switch($type){
 
-  case 'events':
+case 'events':
     $title = $item['title'] ?? 'Evento';
-    $desc  = trim_text($item['description'] ?? '');
+    $desc  = trim_text($item['summary'] ?? $item['description'] ?? '');
     $img   = basename_safe($item['img'] ?? '');
     if($img){
       $year = !empty($item['start']) && ($ts=strtotime($item['start']))!==false ? date('Y',$ts) : null;
@@ -107,9 +107,9 @@ switch($type){
     }
     break;
 
-  case 'books':
+case 'books':
   $title = trim(($item['title'] ?? 'Libro') . (!empty($item['author']) ? ' — '.$item['author'] : ''));
-  $desc  = trim_text($item['description'] ?? '');
+  $desc  = trim_text($item['summary'] ?? $item['description'] ?? '');
   $img   = basename_safe($item['img'] ?? '');
   if($img){
     $image = "/uploads/img/BOOKS/$img";
@@ -119,7 +119,7 @@ switch($type){
 
 case 'movies':
   $title = trim(($item['title'] ?? 'Película') . (!empty($item['director']) ? ' — '.$item['director'] : ''));
-  $desc  = trim_text($item['description'] ?? '');
+  $desc  = trim_text($item['summary'] ?? $item['description'] ?? '');
   $img   = basename_safe($item['img'] ?? '');
   if($img){
     $image = "/uploads/img/MOVIES/$img";
@@ -129,7 +129,7 @@ case 'movies':
 
 case 'recipes':
   $title = trim(($item['title'] ?? 'Receta') . (!empty($item['owner']) ? ' — '.$item['owner'] : ''));
-  $desc  = trim_text($item['introduction'] ?? $item['recipe'] ?? $item['description'] ?? '');
+  $desc  = trim_text($item['summary'] ?? $item['introduction'] ?? $item['recipe']?? '');
   $img   = basename_safe($item['img'] ?? '');
   if($img){
     $image = "/uploads/img/RECIPES/$img";
@@ -137,10 +137,9 @@ case 'recipes':
   if(!$image) $image = '/assets/img/default-recipe.jpg';
   break;
 
-  case 'macroevents':
-    // Título/desc
+case 'macroevents':
     $title = $item['title'] ?? 'Macroevento';
-    $desc  = trim_text($item['description'] ?? $item['subtitle'] ?? '');
+    $desc  = trim_text($item['summary'] ?? $item['description'] ?? '');
 
     // Imagen: intenta macroevent img; si no, cae al primer evento
     $img   = basename_safe($item['img'] ?? $item['banner'] ?? '');
@@ -185,23 +184,19 @@ case 'recipes':
         'startDate'=>date(DATE_ATOM,$firstStart),
       ];
     }
-    break;case 'podcasts':
-  // Título: "Título — Ponente/Autor/Host" si hay dato
-  $speaker = $item['speaker'] ?? $item['author'] ?? $item['owner'] ?? $item['host'] ?? '';
-  $title = trim(($item['title'] ?? 'Podcast') . ($speaker ? ' — '.$speaker : ''));
-  // Descripción: intenta summary/description
-  $desc  = trim_text($item['summary'] ?? $item['description'] ?? '');
-  // Imagen
-  $img   = basename_safe($item['img'] ?? $item['cover'] ?? '');
-  if($img){
-    $image = "/uploads/img/PODCASTS/$img";
-  }
-  if(!$image) $image = '/assets/img/default-podcast.jpg';
-  break;
+    break;
+case 'podcasts':
+    $speaker = $item['speaker'] ?? $item['author'] ?? $item['owner'] ?? $item['host'] ?? '';
+    $title = trim(($item['title'] ?? 'Podcast') . ($speaker ? ' — '.$speaker : ''));
+    $desc  = trim_text($item['summary'] ?? $item['description'] ?? '');
+    $img   = basename_safe($item['img'] ?? $item['cover'] ?? '');
+    if($img){$image = "/uploads/img/PODCASTS/$img";}
+    if(!$image) $image = '/assets/img/default-podcast.jpg';
+    break;
 
 case 'piteras':
   $title = $item['title'] ?? 'Piteras';
-  $desc  = trim_text($item['description'] ?? $item['subtitle'] ?? '');
+  $desc  = trim_text($item['summary'] ?? $item['description'] ?? '');
   $img   = basename_safe($item['img'] ?? $item['banner'] ?? '');
   if($img){
     $image = "/uploads/img/PITERAS/$img";
