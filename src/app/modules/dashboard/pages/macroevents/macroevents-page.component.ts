@@ -211,6 +211,26 @@ export class MacroeventsPageComponent implements OnInit {
       )
       .subscribe();
   }
+  onOpenMacroEvent(macroId: number): void {
+    if (!macroId) return;
+
+    this.macroeventsFacade.loadMacroeventById(macroId);
+
+    this.macroeventsFacade.selectedMacroevent$
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        filter((m): m is MacroeventModelFullData => !!m), // ignora null inicial
+        take(1), // solo la primera emisión válida
+        tap((macro) =>
+          this.modalFacade.open(
+            TypeList.Macroevents,
+            TypeActionModal.Show,
+            macro
+          )
+        )
+      )
+      .subscribe();
+  }
 
   onBackModal(): void {
     this.modalFacade.back();

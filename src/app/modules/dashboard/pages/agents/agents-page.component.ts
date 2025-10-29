@@ -32,8 +32,10 @@ import { StickyZoneComponent } from 'src/app/shared/components/sticky-zone/stick
 import { TableComponent } from 'src/app/shared/components/table/table.component';
 
 import { EventsFacade } from 'src/app/application/events.facade';
+import { MacroeventsFacade } from 'src/app/application/macroevents.facade';
 import { ModalFacade } from 'src/app/application/modal.facade';
 import { EventModelFullData } from 'src/app/core/interfaces/event.interface';
+import { MacroeventModelFullData } from 'src/app/core/interfaces/macroevent.interface';
 import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
 import { count, sortById } from 'src/app/shared/utils/facade.utils';
@@ -59,6 +61,7 @@ export class AgentsPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly modalFacade = inject(ModalFacade);
   private readonly eventsFacade = inject(EventsFacade);
+  private readonly macroeventsFacade = inject(MacroeventsFacade);
   private readonly pdfPrintService = inject(PdfPrintService);
   readonly agentsFacade = inject(AgentsFacade);
   readonly filtersFacade = inject(FiltersFacade);
@@ -203,7 +206,26 @@ export class AgentsPageComponent implements OnInit {
       )
       .subscribe();
   }
+  onOpenMacroEvent(macroId: number): void {
+    if (!macroId) return;
 
+    this.macroeventsFacade.loadMacroeventById(macroId);
+
+    this.macroeventsFacade.selectedMacroevent$
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        filter((m): m is MacroeventModelFullData => !!m),
+        take(1),
+        tap((macro) =>
+          this.modalFacade.open(
+            TypeList.Macroevents,
+            TypeActionModal.Show,
+            macro
+          )
+        )
+      )
+      .subscribe();
+  }
   onCloseModal(): void {
     this.modalFacade.close();
   }
