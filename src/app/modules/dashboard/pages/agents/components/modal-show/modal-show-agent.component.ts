@@ -8,12 +8,14 @@ import {
   SimpleChanges,
   inject,
 } from '@angular/core';
+import { AgentsFacade } from 'src/app/application/agents.facade';
+import { EventsFacade } from 'src/app/application/events.facade';
 import { AgentsModelFullData } from 'src/app/core/interfaces/agent.interface';
 import { EventModelFullData } from 'src/app/core/interfaces/event.interface';
 import { TypeList } from 'src/app/core/models/general.model';
-import { EventsService } from 'src/app/core/services/events.services';
 
 // UI/Utils
+import { CardEventMiniComponent } from 'src/app/shared/components/cards/card-events-min/card-events.min.component';
 import { ImageZoomOverlayComponent } from 'src/app/shared/components/image-zoom-overlay/image-zoom-overlay.component';
 import { TotalsByYearTableComponent } from 'src/app/shared/components/table/table-total-years/table-total-years.component';
 import { TextBackgroundComponent } from 'src/app/shared/components/text/text-background/text-background.component';
@@ -39,12 +41,14 @@ type SortOrder = 'asc' | 'desc';
     ItemImagePipe,
     TotalsByYearTableComponent,
     ImageZoomOverlayComponent,
+    CardEventMiniComponent,
   ],
   templateUrl: './modal-show-agent.component.html',
   styleUrl: './modal-show-agent.component.css',
 })
 export class ModalShowAgentComponent implements OnChanges {
-  private readonly eventsService = inject(EventsService);
+  readonly agentsFacade = inject(AgentsFacade);
+  readonly eventsFacade = inject(EventsFacade);
 
   @Input() item!: AgentsModelFullData;
 
@@ -59,7 +63,6 @@ export class ModalShowAgentComponent implements OnChanges {
   readonly typeModal = TypeList.Agents;
   readonly typeEvent = TypeList.Events;
 
-  loading = false;
   eventsOfAgent: EventModelFullData[] = [];
 
   // Agrupaciones y totales
@@ -76,9 +79,8 @@ export class ModalShowAgentComponent implements OnChanges {
   }
 
   private fetchEvents(): void {
-    this.loading = true;
-    this.eventsService
-      .getEventsByAgent(this.item.id, {
+    this.eventsFacade
+      .loadEventsByAgent(this.item.id, {
         role: this.role,
         year: this.year,
         order: this.order,
@@ -87,13 +89,11 @@ export class ModalShowAgentComponent implements OnChanges {
         next: (events) => {
           this.eventsOfAgent = (events ?? []).slice();
           this.groupByYear();
-          this.loading = false;
         },
         error: () => {
           this.eventsOfAgent = [];
           this.eventsByYear.clear();
           this.totalEvents = 0;
-          this.loading = false;
         },
       });
   }

@@ -16,8 +16,8 @@ import {
 } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { QuillModule } from 'ngx-quill';
-
 import { filter, tap } from 'rxjs';
+
 import { ArticlesFacade } from 'src/app/application/articles.facade';
 import { ArticleModel } from 'src/app/core/interfaces/article.interface';
 import { TypeList } from 'src/app/core/models/general.model';
@@ -41,11 +41,13 @@ import { ScrollToFirstErrorDirective } from 'src/app/shared/directives/scroll-to
   styleUrls: ['./../../../../../../shared/components/form/form.component.css'],
 })
 export class FormArticleComponent {
-  private articlesFacade = inject(ArticlesFacade);
-  private destroyRef = inject(DestroyRef);
-  private generalService = inject(GeneralService);
+  readonly articlesFacade = inject(ArticlesFacade);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly generalService = inject(GeneralService);
 
   @Input() itemId!: number;
+  @Input() item: ArticleModel | null = null;
+
   @Output() submitForm = new EventEmitter<{
     itemId: number;
     formData: FormData;
@@ -65,51 +67,48 @@ export class FormArticleComponent {
   titleForm = 'Registrar artículo';
   buttonAction = 'Guardar';
   typeList = TypeList.Articles;
-  isLoading = true;
-  quillModules = {
-    toolbar: [
-      [{ header: [1, 2, false] }],
-      ['bold', 'italic', 'underline'],
-      ['image', 'code-block'],
-      [{ color: [] }, { background: [] }],
-      [{ list: 'ordered' }, { list: 'bullet' }],
-      [{ align: [] }],
-      ['link', 'clean'],
-      [{ indent: '-1' }, { indent: '+1' }],
-    ],
-  };
+
+  quillModules = this.generalService.defaultQuillModules;
+
   ngOnInit(): void {
-    this.isLoading = true;
+    // ✅ Caso 1: el artículo completo ya llega desde la modal
+    if (this.item) {
+      this.patchForm(this.item);
+      return;
+    }
+
+    // ✅ Caso 2: carga asíncrona desde backend por ID
     if (this.itemId) {
       this.articlesFacade.loadArticleById(this.itemId);
       this.articlesFacade.selectedArticle$
         .pipe(
           takeUntilDestroyed(this.destroyRef),
-          filter((a): a is ArticleModel => !!a),
-          tap((article: ArticleModel | null) => {
-            if (article) {
-              this.formArticle.patchValue({
-                title: article.title || null,
-                date: article.date || null,
-                description: article.description || null,
-                summary: article.summary || null,
-                img: article.img || null,
-              });
-
-              this.titleForm = 'Editar artículo';
-              this.buttonAction = 'Guardar cambios';
-
-              if (article.img) {
-                this.imageSrc = article.img;
-                this.selectedImageFile = null;
-              }
-            }
-            this.isLoading = false;
+          filter(
+            (article: ArticleModel | null): article is ArticleModel => !!article
+          ),
+          tap((article) => {
+            this.patchForm(article);
           })
         )
         .subscribe();
-    } else {
-      this.isLoading = false;
+    }
+  }
+
+  private patchForm(article: ArticleModel) {
+    this.formArticle.patchValue({
+      title: article.title || '',
+      date: article.date || '',
+      description: article.description || '',
+      summary: article.summary || '',
+      img: article.img || '',
+    });
+
+    this.titleForm = 'Editar artículo';
+    this.buttonAction = 'Guardar cambios';
+
+    if (article.img) {
+      this.imageSrc = article.img;
+      this.selectedImageFile = null;
     }
   }
 
@@ -130,22 +129,20 @@ export class FormArticleComponent {
     if (rawValues.description) {
       rawValues.description = rawValues.description.replace(/&nbsp;/g, ' ');
     }
+
     const formData = this.generalService.createFormData(
       rawValues,
-      {
-        img: this.selectedImageFile,
-      },
+      { img: this.selectedImageFile },
       this.itemId
     );
 
-    this.submitForm.emit({
-      itemId: this.itemId,
-      formData,
-    });
+    this.submitForm.emit({ itemId: this.itemId, formData });
   }
+
   descriptionLen(): number {
     return (this.formArticle.get('description')?.value || '').length;
   }
+
   summaryLen(): number {
     return (this.formArticle.get('summary')?.value || '').length;
   }

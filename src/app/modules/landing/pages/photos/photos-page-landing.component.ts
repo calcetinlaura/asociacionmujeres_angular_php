@@ -1,8 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { MatGridListModule } from '@angular/material/grid-list';
-import { Filter } from 'src/app/core/interfaces/general.interface';
-import { filterPhotos } from 'src/app/core/models/general.model';
+import { FiltersFacade } from 'src/app/application/filters.facade';
+import {
+  GalleryCode,
+  GalleryFilterCode,
+} from 'src/app/core/interfaces/gallery.interface';
+import { TypeList } from 'src/app/core/models/general.model';
 import { FiltersComponent } from 'src/app/shared/components/filters/filters.component';
 
 @Component({
@@ -12,47 +16,93 @@ import { FiltersComponent } from 'src/app/shared/components/filters/filters.comp
   templateUrl: './photos-page-landing.component.html',
 })
 export class PhotosPageLandingComponent implements OnInit {
+  readonly filtersFacade = inject(FiltersFacade);
+
   photos: { url: string; text: string }[] = [];
 
-  // Fuente de filtros (ya la tenías)
-  filterGenderPhotos: Filter[] = filterPhotos;
-
-  // Valor controlado por el padre para <app-filters>
-  selectedFilter: string | number | null = 'CONCENTRACIONES';
-
   ngOnInit(): void {
-    // Carga inicial
-    this.filterSelected(String(this.selectedFilter ?? 'CONCENTRACIONES'));
+    // Carga filtros de galería y selecciona código tipado. Retrasa la ejecución un ciclo de detección de cambios:
+    this.filtersFacade.loadFiltersFor(TypeList.Gallery);
+  }
+  ngAfterViewInit(): void {
+    // lo llamamos cuando el input ya existe
+    setTimeout(() => {
+      this.filterSelected(GalleryCode.CONCENTRACIONES);
+    });
+  }
+  /**
+   * Convierte una entrada arbitraria (string/number) a GalleryFilterCode
+   * Devuelve null si no es un código válido (por si el output del componente emite string suelto)
+   */
+  private toGalleryCode(v: unknown): GalleryFilterCode | null {
+    const val = String(v) as GalleryFilterCode;
+    return (Object.values(GalleryCode) as string[]).includes(val) ? val : null;
   }
 
-  filterSelected(filter: string): void {
-    const loaders: Record<string, () => void> = {
-      CONCENTRACIONES: () =>
+  /**
+   * Maneja el cambio de filtro. No hay "Todas", solo códigos válidos.
+   */
+  filterSelected(input: unknown): void {
+    const code = this.toGalleryCode(input);
+    if (!code) return; // ignora valores no válidos
+
+    // sincroniza selección para que el botón quede activo
+    this.filtersFacade.selectFilter(code);
+
+    const loaders: Record<GalleryFilterCode, () => void> = {
+      [GalleryCode.CONCENTRACIONES]: () =>
         this.loadPhotos(
-          'CONCENTRACIONES',
+          GalleryCode.CONCENTRACIONES,
           30,
           'concentracion',
           'Imagen retrato concentraciones condena violencia de género'
         ),
-      COCINA: () =>
-        this.loadPhotos('COCINA', 148, 'cocina', 'Imagen retrato socia'),
-      COSTURA: () => this.loadPhotos('COSTURA', 16, 'costura', 'Imagen taller'),
-      BAILE: () => this.loadPhotos('BAILE', 17, 'baile', 'Imagen taller'),
-      GANCHILLO: () =>
-        this.loadPhotos('GANCHILLO', 19, 'ganchillo', 'Imagen taller'),
-      GIMNASIA: () =>
-        this.loadPhotos('GIMNASIA', 1, 'gimnasia', 'Imagen taller'),
-      LECTURA: () => this.loadPhotos('LECTURA', 12, 'lectura', 'Imagen taller'),
-      CHARLAS: () => this.loadPhotos('CHARLAS', 0, 'charla', 'Imagen taller'),
-      PITERA: () =>
-        this.loadPhotos('PITERA', 159, 'pitera', 'Imagen Fiesta Pitera'),
-      RETRATOS: () =>
-        this.loadPhotos('RETRATOS', 102, 'retrato', 'Imagen retrato socia'),
+      [GalleryCode.COCINA]: () =>
+        this.loadPhotos(
+          GalleryCode.COCINA,
+          148,
+          'cocina',
+          'Imagen retrato socia'
+        ),
+      [GalleryCode.COSTURA]: () =>
+        this.loadPhotos(GalleryCode.COSTURA, 16, 'costura', 'Imagen taller'),
+      [GalleryCode.BAILE]: () =>
+        this.loadPhotos(GalleryCode.BAILE, 17, 'baile', 'Imagen taller'),
+      [GalleryCode.GANCHILLO]: () =>
+        this.loadPhotos(
+          GalleryCode.GANCHILLO,
+          19,
+          'ganchillo',
+          'Imagen taller'
+        ),
+      [GalleryCode.GIMNASIA]: () =>
+        this.loadPhotos(GalleryCode.GIMNASIA, 1, 'gimnasia', 'Imagen taller'),
+      [GalleryCode.LECTURA]: () =>
+        this.loadPhotos(GalleryCode.LECTURA, 12, 'lectura', 'Imagen taller'),
+      [GalleryCode.CHARLAS]: () =>
+        this.loadPhotos(GalleryCode.CHARLAS, 0, 'charla', 'Imagen taller'),
+      [GalleryCode.PITERA]: () =>
+        this.loadPhotos(
+          GalleryCode.PITERA,
+          159,
+          'pitera',
+          'Imagen Fiesta Pitera'
+        ),
+      [GalleryCode.RETRATOS]: () =>
+        this.loadPhotos(
+          GalleryCode.RETRATOS,
+          102,
+          'retrato',
+          'Imagen retrato socia'
+        ),
     };
 
-    (loaders[filter] || loaders['CONCENTRACIONES'])();
+    loaders[code](); // ejecuta el loader del código seleccionado
   }
 
+  /**
+   * Carga un conjunto de fotos de una carpeta concreta
+   */
   private loadPhotos(
     folder: string,
     count: number,
@@ -67,6 +117,9 @@ export class PhotosPageLandingComponent implements OnInit {
     }));
   }
 
+  /**
+   * Divide el array de fotos en columnas para el grid
+   */
   splitPhotos<T>(photos: T[], columns: number): T[][] {
     const result: T[][] = Array.from({ length: columns }, () => []);
     photos.forEach((photo, index) => {

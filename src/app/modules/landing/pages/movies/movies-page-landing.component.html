@@ -1,10 +1,9 @@
 <div class="flex flex-col mx-3 md:mx-8 mt-4">
-  <!-- 🔹 Filtros -->
   <app-filters
-    [filters]="filters"
-    [(selected)]="selectedFilter"
+    [filters]="filtersFacade.filtersSig"
+    [selected]="filtersFacade.selectedSig"
     (filterClicked)="filterSelected($event)"
-  />
+  ></app-filters>
 
   <!-- 🔹 Buscador -->
   <app-input-search (onDebounce)="applyFilterWord($event)" class="my-8" />
@@ -16,7 +15,7 @@
   </div>
   } @else { @if (hasResultsSig()) {
   <app-section-generic
-    [typeSection]="typeList.Movies"
+    [typeSection]="TypeList.Movies"
     [data]="list.sortedSig()"
     [total]="totalSig()"
     (itemClicked)="openMovieDetails($event)"
@@ -24,15 +23,11 @@
   } @else {
   <app-no-results [text]="'películas' | lowercase" />
   } }
-
-  <!-- 🔹 Modal global -->
-  @if (modalFacade.isVisibleSig()) {
   <app-modal-shell
-    [visible]="modalFacade.isOpenSig()"
+    [visible]="modalFacade.isVisibleSig()"
     [typeModal]="modalFacade.typeSig()"
     [action]="modalFacade.actionSig()"
     [item]="modalFacade.itemSig()"
     (close)="modalFacade.close()"
   />
-  }
 </div>

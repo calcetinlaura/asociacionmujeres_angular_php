@@ -1,6 +1,12 @@
-// src/app/shared/components/page-toolbar/page-toolbar.component.ts
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output, Signal } from '@angular/core';
+import {
+  Component,
+  EventEmitter,
+  Input,
+  Output,
+  Signal,
+  ViewChild,
+} from '@angular/core';
 import { ColumnModel } from 'src/app/core/interfaces/column.interface';
 import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
 import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
@@ -30,4 +36,15 @@ export class PageToolbarComponent {
   @Output() search = new EventEmitter<string>();
   @Output() print = new EventEmitter<void>();
   @Output() toggle = new EventEmitter<string>();
+
+  // 👇 Añade esto
+  @ViewChild(InputSearchComponent)
+  private searchInput!: InputSearchComponent;
+
+  /** Permite limpiar el buscador desde el componente padre */
+  clearSearch(): void {
+    if (this.searchInput) {
+      this.searchInput.clear();
+    }
+  }
 }

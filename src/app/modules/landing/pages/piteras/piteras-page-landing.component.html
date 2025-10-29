@@ -3,7 +3,7 @@
   <app-spinner-loading />
   } @else { @if (hasResultsSig()) {
   <app-section-generic
-    [typeSection]="typeList.Piteras"
+    [typeSection]="TypeList.Piteras"
     [data]="list.sortedSig()"
     [total]="totalSig()"
     (itemClicked)="openPiteraDetails($event)"
@@ -12,14 +12,11 @@
   <app-no-results [text]="'piteras' | lowercase" />
   } }
 
-  <!-- 🔹 Modal global controlada por la ModalFacade -->
-  @if (modalFacade.isVisibleSig()) {
   <app-modal-shell
-    [visible]="modalFacade.isOpenSig()"
+    [visible]="modalFacade.isVisibleSig()"
     [typeModal]="modalFacade.typeSig()"
     [action]="modalFacade.actionSig()"
     [item]="modalFacade.itemSig()"
     (close)="modalFacade.close()"
   />
-  }
 </div>

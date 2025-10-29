@@ -7,8 +7,8 @@
   />
   <div class="flex flex-1 flex-col justify-start p-8 gap-y-8">
     <app-filters
-      [filters]="filters"
-      [(selected)]="selectedFilter"
+      [filters]="filtersFacade.filtersSig"
+      [selected]="filtersFacade.selectedSig"
       (filterClicked)="filterSelected($event)"
     />
     @if (showAllSubsidies) {
@@ -33,14 +33,13 @@
     <h2 class="only-on-pdf print-title">Listado subvenciones</h2>
 
     @for (group of (groupedByYearSig() | keyvalue : sortYearsDesc); track
-    group.key) {
+    group.key) { @if (group.value.length > 0) {
     <div class="pb-4">
       <h3 class="year-title text-[14px] font-bold mb-4">Año {{ group.key }}</h3>
       <div class="pb-4 flex">
         <app-table
           [data]="group.value"
-          [typeSection]="typeModal"
-          [typeModal]="typeModal"
+          [typeSection]="TypeList.Subsidies"
           [headerColumns]="col.getVisibleColumns()"
           [columnVisibility]="col.columnVisSig()"
           [displayedColumns]="col.displayedColumnsSig()"
@@ -48,7 +47,7 @@
         />
       </div>
     </div>
-    }
+    } }
   </div>
   <hr />
   } @else { @if (visibleTabs.length > 0) {
@@ -75,13 +74,12 @@
 
 <app-modal-shell
   [visible]="modalVisibleSig()"
-  [typeModal]="typeModal"
-  [action]="currentModalAction"
-  [item]="item"
+  [typeModal]="currentModalTypeSig()"
+  [action]="currentModalActionSig()"
+  [item]="currentItemSig()"
   (close)="onCloseModal()"
-  (confirmDelete)="onDelete($event)"
-  [canGoBack]="canGoBack"
   (back)="onBackModal()"
+  (confirmDelete)="onDelete($event)"
   (sendFormSubsidyData)="sendFormSubsidy($event)"
   (sendFormProjectData)="sendFormProject($event)"
   (sendFormInvoiceData)="sendFormInvoice($event)"

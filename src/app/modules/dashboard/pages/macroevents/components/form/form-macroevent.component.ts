@@ -20,7 +20,7 @@ import {
 import { MatCardModule } from '@angular/material/card';
 import townsData from 'data/towns.json';
 import { QuillModule } from 'ngx-quill';
-import { filter, take, tap } from 'rxjs'; // 👈 añade take
+import { filter, take, tap } from 'rxjs';
 import { MacroeventsFacade } from 'src/app/application/macroevents.facade';
 import { MacroeventModel } from 'src/app/core/interfaces/macroevent.interface';
 import { TypeList } from 'src/app/core/models/general.model';
@@ -46,11 +46,12 @@ import { dateRangeValidator } from 'src/app/shared/utils/validators.utils';
   styleUrls: ['./../../../../../../shared/components/form/form.component.css'],
 })
 export class FormMacroeventComponent implements OnInit, OnChanges {
+  readonly macroeventsFacade = inject(MacroeventsFacade);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly macroeventsFacade = inject(MacroeventsFacade);
   private readonly generalService = inject(GeneralService);
 
   @Input() itemId!: number;
+  @Input() item: MacroeventModel | null = null;
   @Output() submitForm = new EventEmitter<{
     itemId: number;
     formData: FormData;
@@ -83,28 +84,17 @@ export class FormMacroeventComponent implements OnInit, OnChanges {
     towns: { label: string; code: string }[];
   }[] = [];
   municipios: { label: string; code: string }[] = [];
-  isLoading = true;
 
-  quillModules = {
-    toolbar: [
-      [{ header: [1, 2, false] }],
-      ['bold', 'italic', 'underline'],
-      ['image', 'code-block'],
-      [{ color: [] }, { background: [] }],
-      [{ list: 'ordered' }, { list: 'bullet' }],
-      [{ align: [] }],
-      ['link', 'clean'],
-      [{ indent: '-1' }, { indent: '+1' }],
-    ],
-  };
+  quillModules = this.generalService.defaultQuillModules;
 
   ngOnInit(): void {
-    // Provincias/municipios
     this.provincias = townsData
       .flatMap((r) => r.provinces)
       .sort((a, b) => a.label.localeCompare(b.label));
 
-    if (this.itemId) {
+    if (this.item) {
+      this.populateFrom(this.item);
+    } else if (this.itemId) {
       this.loadById(this.itemId);
     } else {
       this.setupCreateMode();
@@ -120,7 +110,6 @@ export class FormMacroeventComponent implements OnInit, OnChanges {
   }
 
   private setupCreateMode(): void {
-    this.isLoading = false;
     this.titleForm = 'Registrar macroevento';
     this.buttonAction = 'Guardar';
     this.imageSrc = '';
@@ -139,20 +128,14 @@ export class FormMacroeventComponent implements OnInit, OnChanges {
   }
 
   private loadById(id: number): void {
-    this.isLoading = true;
-
-    // Evita una primera emisión "vieja"
     this.macroeventsFacade.clearSelectedMacroevent();
     this.macroeventsFacade.loadMacroeventById(id);
 
     this.macroeventsFacade.selectedMacroevent$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        filter(
-          (m: MacroeventModel | null): m is MacroeventModel =>
-            !!m && m.id === id
-        ),
-        take(1), // 👈 sólo el valor fresco del back
+        filter((m): m is MacroeventModel => !!m && m.id === id),
+        take(1),
         tap((m) => this.populateFrom(m))
       )
       .subscribe();
@@ -164,7 +147,7 @@ export class FormMacroeventComponent implements OnInit, OnChanges {
     );
     this.municipios = province?.towns ?? [];
 
-    this.formMacroevent.reset(); // limpia touched/dirty
+    this.formMacroevent.reset();
     this.formMacroevent.patchValue({
       title: macroevent.title ?? '',
       start: macroevent.start ?? '',
@@ -176,13 +159,10 @@ export class FormMacroeventComponent implements OnInit, OnChanges {
       img: macroevent.img ?? '',
     });
 
-    this.titleForm = 'Editar Macroevento';
+    this.titleForm = 'Editar macroevento';
     this.buttonAction = 'Guardar cambios';
-
     this.imageSrc = macroevent.img || '';
     this.selectedImageFile = null;
-
-    this.isLoading = false;
   }
 
   onProvinceChange(): void {
@@ -218,9 +198,11 @@ export class FormMacroeventComponent implements OnInit, OnChanges {
 
     this.submitForm.emit({ itemId: this.itemId, formData });
   }
+
   descriptionLen(): number {
     return (this.formMacroevent.get('description')?.value || '').length;
   }
+
   summaryLen(): number {
     return (this.formMacroevent.get('summary')?.value || '').length;
   }

@@ -21,7 +21,7 @@ import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
 export class CardComponent {
   @Input() type: TypeList = TypeList.Books;
   @Input() item: any = {};
-  typeList = TypeList;
+  readonly TypeList = TypeList;
   formattedStartDate: string | null = null;
   formattedEndDate: string | null = null;
   datesEquals = false;

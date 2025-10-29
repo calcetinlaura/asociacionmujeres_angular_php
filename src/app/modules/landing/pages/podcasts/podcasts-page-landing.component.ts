@@ -12,6 +12,7 @@ import { NoResultsComponent } from 'src/app/shared/components/no-results/no-resu
 import { SectionGenericComponent } from 'src/app/shared/components/section-generic/section-generic.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 
+import { FiltersFacade } from 'src/app/application/filters.facade';
 import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
 
@@ -31,11 +32,11 @@ import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
 export class PodcastsPageLandingComponent implements OnInit {
   // ===== Inyección de dependencias =====
   private readonly podcastsService = inject(PodcastsService);
-
   readonly podcastsFacade = inject(PodcastsFacade);
   readonly modalFacade = inject(ModalFacade);
+  readonly filtersFacade = inject(FiltersFacade);
 
-  typeList = TypeList;
+  readonly TypeList = TypeList;
 
   // ===== Lista reactiva con useEntityList =====
   readonly list = useEntityList<PodcastModel>({
@@ -49,7 +50,7 @@ export class PodcastsPageLandingComponent implements OnInit {
   readonly hasResultsSig = computed(() => this.totalSig() > 0);
 
   // ======================================================
-  // 🧭 Ciclo de vida
+  //  Ciclo de vida
   // ======================================================
   ngOnInit(): void {
     this.loadAllPodcasts();
@@ -63,11 +64,12 @@ export class PodcastsPageLandingComponent implements OnInit {
   // 🔎 Filtro por palabra clave
   // ======================================================
   applyFilterWord(keyword: string): void {
+    this.filtersFacade.setSearch(keyword);
     this.podcastsFacade.applyFilterWord(keyword);
   }
 
   // ======================================================
-  // 🎧 Acciones con modal
+  //  Acciones con modal
   // ======================================================
   openPodcastDetails(podcast: PodcastModel): void {
     this.modalFacade.open(TypeList.Podcasts, TypeActionModal.Show, podcast);

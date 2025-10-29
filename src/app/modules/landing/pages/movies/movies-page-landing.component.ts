@@ -13,13 +13,8 @@ import { ActivatedRoute } from '@angular/router';
 import { filter, map, take, tap } from 'rxjs';
 
 import { MoviesFacade } from 'src/app/application/movies.facade';
-import { Filter } from 'src/app/core/interfaces/general.interface';
-import {
-  genderFilterMovies,
-  MovieModel,
-} from 'src/app/core/interfaces/movie.interface';
+import { MovieModel } from 'src/app/core/interfaces/movie.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
-import { GeneralService } from 'src/app/core/services/generalService.service';
 import { MoviesService } from 'src/app/core/services/movies.services';
 
 import { FiltersComponent } from 'src/app/shared/components/filters/filters.component';
@@ -29,6 +24,7 @@ import { SectionGenericComponent } from 'src/app/shared/components/section-gener
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 
 // Hook reutilizable
+import { FiltersFacade } from 'src/app/application/filters.facade';
 import { ModalFacade } from 'src/app/application/modal.facade';
 import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
@@ -48,14 +44,13 @@ import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
   templateUrl: './movies-page-landing.component.html',
 })
 export class MoviesPageLandingComponent implements OnInit {
-  // ===== Inyección de dependencias =====
   private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
   private readonly moviesService = inject(MoviesService);
-  private readonly generalService = inject(GeneralService);
 
-  readonly moviesFacade = inject(MoviesFacade);
   readonly modalFacade = inject(ModalFacade);
+  readonly filtersFacade = inject(FiltersFacade);
+  readonly moviesFacade = inject(MoviesFacade);
 
   // ===== Signals derivadas con useEntityList =====
   readonly list = useEntityList<MovieModel>({
@@ -67,11 +62,7 @@ export class MoviesPageLandingComponent implements OnInit {
 
   readonly totalSig = this.list.countSig;
   readonly hasResultsSig = computed(() => this.totalSig() > 0);
-
-  // ===== Filtros / UI =====
-  filters: Filter[] = [];
-  selectedFilter: string | number = '';
-  typeList = TypeList;
+  readonly TypeList = TypeList;
 
   @ViewChild(InputSearchComponent)
   private inputSearchComponent!: InputSearchComponent;
@@ -80,35 +71,33 @@ export class MoviesPageLandingComponent implements OnInit {
   printArea!: ElementRef<HTMLElement>;
 
   // ======================================================
-  // 🧭 Ciclo de vida
+  //  Ciclo de vida
   // ======================================================
   ngOnInit(): void {
-    // 1️⃣ Filtros iniciales
-    this.filters = [{ code: '', name: 'Todos' }, ...genderFilterMovies];
+    // Carga inicial de filtros globales desde la FiltersFacade
+    this.filtersFacade.loadFiltersFor(TypeList.Movies);
 
-    // 2️⃣ Deep-link inicial (/movies/:id)
-    const initialId = this.route.snapshot.paramMap.get('id');
-    if (initialId) {
-      this.handleDeepLinkById(Number(initialId));
-    } else {
-      this.filterSelected('');
-    }
-
-    // 3️⃣ Reacciona a cambios en la ruta (si navegas entre /movies/23, /movies/45, etc.)
+    //  Reacciona a cambios en la ruta (si navegas entre /movies/23, /movies/45, etc.)
     this.route.paramMap
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         map((pm) => pm.get('id')),
         tap((id) => {
           if (id) this.handleDeepLinkById(Number(id));
-          else this.filterSelected('');
         })
       )
       .subscribe();
   }
+  ngAfterViewInit(): void {
+    //  Solo se llama si NO hay id en la URL
+    const initialId = this.route.snapshot.paramMap.get('id');
+    if (!initialId) {
+      setTimeout(() => this.filterSelected(''));
+    }
+  }
 
   // ======================================================
-  // 🎯 Deep-link: carga película por ID y filtra por género
+  //  Deep-link: carga película por ID y filtra por género
   // ======================================================
   private handleDeepLinkById(id: number): void {
     if (!Number.isFinite(id)) {
@@ -120,30 +109,33 @@ export class MoviesPageLandingComponent implements OnInit {
     this.moviesFacade.selectedMovie$
       .pipe(
         filter((m): m is MovieModel => !!m),
+        take(1),
         takeUntilDestroyed(this.destroyRef),
-        take(1)
+        tap((movie) => {
+          const genreCode = this.pickGenreFilterCode(movie);
+
+          if (genreCode) {
+            this.filtersFacade.selectFilter(genreCode);
+            this.moviesFacade.loadMoviesByFilter(genreCode);
+          } else {
+            this.filterSelected('');
+          }
+
+          // 👉 Abre automáticamente la modal con la película
+          this.modalFacade.open(TypeList.Movies, TypeActionModal.Show, movie);
+        })
       )
-      .subscribe((movie) => {
-        const genreCode = this.pickGenreFilterCode(movie);
-
-        if (genreCode) {
-          this.selectedFilter = genreCode;
-          this.moviesFacade.loadMoviesByFilter(genreCode);
-        } else {
-          this.filterSelected('');
-        }
-
-        // 👉 Abre automáticamente la modal con la película
-        this.modalFacade.open(TypeList.Movies, TypeActionModal.Show, movie);
-      });
+      .subscribe();
   }
 
   // ======================================================
-  // 🎬 Filtros y búsqueda
+  //  Filtros y búsqueda
   // ======================================================
   filterSelected(filter: string): void {
-    this.selectedFilter = filter;
-    this.generalService.clearSearchInput(this.inputSearchComponent);
+    this.filtersFacade.selectFilter(filter);
+    if (this.inputSearchComponent) {
+      this.filtersFacade.clearSearchInput(this.inputSearchComponent);
+    }
 
     if (filter === '') {
       this.moviesFacade.loadAllMovies();
@@ -153,11 +145,12 @@ export class MoviesPageLandingComponent implements OnInit {
   }
 
   applyFilterWord(keyword: string): void {
+    this.filtersFacade.setSearch(keyword);
     this.moviesFacade.applyFilterWord(keyword);
   }
 
   // ======================================================
-  // 🎥 Acciones con modal
+  //  Acciones con modal
   // ======================================================
   openMovieDetails(movie: MovieModel): void {
     this.modalFacade.open(TypeList.Movies, TypeActionModal.Show, movie);
@@ -168,7 +161,7 @@ export class MoviesPageLandingComponent implements OnInit {
   }
 
   // ======================================================
-  // 🧠 Helpers
+  //  Helpers
   // ======================================================
   private pickGenreFilterCode(m: MovieModel): string | null {
     const code = (m as any)?.gender;

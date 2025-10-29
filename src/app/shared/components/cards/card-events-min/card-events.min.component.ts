@@ -45,7 +45,7 @@ export class CardEventMiniComponent {
   }>();
 
   dictType = DictType;
-  typeList = TypeList;
+  readonly TypeList = TypeList;
 
   readonly actionsForSection: ActionItem[] = [
     { icon: 'uil-eye', tooltip: 'Ver', type: 'view' },

@@ -9,7 +9,7 @@
   >
     @if (event.img) {
     <img
-      [src]="event.img | itemImage : typeList.Events"
+      [src]="event.img | itemImage : TypeList.Events"
       [alt]="event.title || ''"
       class="object-cover w-full h-autor transition-transform duration-300 ease-out group-hover:scale-[1.03]"
     />
@@ -67,7 +67,7 @@
       <span>{{ event.placeData?.address }}, </span> }
       {{ event.town }}
     </p>
-    }@if (showButtonsActions) {
+    }@if (isDashboard && showButtonsActions) {
     <app-action-bar
       [id]="event.id!"
       [actions]="actionsForSection"

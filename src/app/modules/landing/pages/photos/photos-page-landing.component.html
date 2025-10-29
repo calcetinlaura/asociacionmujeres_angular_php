@@ -1,14 +1,14 @@
 <div class="flex flex-col mx-3 md:mx-8 mt-4">
   <app-filters
-    [filters]="filterGenderPhotos"
-    [(selected)]="selectedFilter"
+    [filters]="filtersFacade.filtersSig"
+    [selected]="filtersFacade.selectedSig"
     (filterClicked)="filterSelected($event)"
   />
   <!-- Galería de imágenes con Grid -->
   <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4 mt-8">
-    @for (column of splitPhotos(photos, 4); track column) {
+    @for (column of splitPhotos(photos, 4); track $index) {
     <div class="flex flex-col gap-4">
-      @for (photo of column; track photo) {
+      @for (photo of column; track photo.url) {
       <div>
         <img
           [src]="photo.url"

@@ -182,7 +182,7 @@ export class ModalRouterComponent {
   }>();
 
   TypeActionModal = TypeActionModal;
-  TypeList = TypeList;
+  readonly TypeList = TypeList;
   showInlineDelete = false;
   deleteCandidate: any = null;
 

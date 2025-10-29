@@ -1,38 +1,37 @@
 <app-sticky-zone>
   <app-dashboard-header
-    [icon]="'uil-comments'"
-    [title]="'Entidades colaboradoras'"
+    [icon]="'uil-users-alt'"
+    [title]="'Agentes'"
     [number]="list.countSig()"
-    [type]="'agentes'"
+    [type]="'Agentes'"
   />
-  <app-page-toolbar
-    [addText]="'Nuevo agente'"
-    [columns]="headerListAgents"
-    [visibility]="col.columnVisSig"
-    (add)="addNewAgentModal()"
-    (search)="applyFilterWord($event)"
-    (print)="printTableAsPdf()"
-    (toggle)="col.toggleColumn($event)"
-  >
+  <div class="flex flex-1 flex-col justify-start p-8 gap-y-8">
     <app-filters
-      [filters]="filters"
-      [(selected)]="selectedFilter"
+      [filters]="filtersFacade.filtersSig"
+      [selected]="filtersFacade.selectedSig"
       (filterClicked)="filterSelected($event)"
-      class="ml-2"
     />
-  </app-page-toolbar>
+    <app-page-toolbar
+      [columns]="headerListAgents"
+      [visibility]="col.columnVisSig"
+      [addText]="'Añadir agente'"
+      (add)="addNewAgentModal()"
+      (search)="applyFilterWord($event)"
+      (print)="printTableAsPdf()"
+      (toggle)="col.toggleColumn($event)"
+    />
+  </div>
 </app-sticky-zone>
 
 <div class="flex flex-col px-8">
   @if (agentsFacade.isLoadingList$ | async) {
   <app-spinner-loading />
-  } @else { @if (list.processedSig().length > 0) {
-  <div class="pb-4" #printArea>
-    <h2 class="only-on-pdf print-title">Listado agentes</h2>
+  } @else { @if (hasRowsSig()) {
+  <div #printArea>
+    <h2 class="only-on-pdf print-title">Listado de agentes</h2>
     <app-table
       [data]="list.processedSig()"
-      [typeSection]="typeSection"
-      [typeModal]="typeModal"
+      [typeSection]="TypeList.Agents"
       [headerColumns]="col.getVisibleColumns()"
       [columnVisibility]="col.columnVisSig()"
       [displayedColumns]="col.displayedColumnsSig()"
@@ -46,16 +45,14 @@
   } }
 </div>
 
-<!-- Modal -->
 <app-modal-shell
   [visible]="modalVisibleSig()"
-  [typeModal]="typeModal"
-  [action]="currentModalAction"
-  [item]="item"
-  [canGoBack]="canGoBack"
-  (back)="onBackModal()"
+  [typeModal]="currentModalTypeSig()"
+  [action]="currentModalActionSig()"
+  [item]="currentItemSig()"
   (close)="onCloseModal()"
-  (openEvent)="onOpenEvent($event)"
   (confirmDelete)="onDelete($event)"
   (sendFormAgentData)="sendFormAgent($event)"
+  (back)="onBackModal()"
+  (openEvent)="onOpenEvent($event)"
 />

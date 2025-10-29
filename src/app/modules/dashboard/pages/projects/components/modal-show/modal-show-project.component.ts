@@ -139,7 +139,6 @@ export class ModalShowProjectComponent {
     if (id) this.openEvent.emit(id);
   }
   onOpenInvoice(id: number) {
-    console.log('ID INVOICE MODAL', id);
     if (id) this.openInvoice.emit(id);
   }
 }

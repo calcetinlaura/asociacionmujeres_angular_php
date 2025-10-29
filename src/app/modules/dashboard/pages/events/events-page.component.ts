@@ -9,12 +9,13 @@ import {
   inject,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { ReactiveFormsModule } from '@angular/forms';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
 import { finalize, of, switchMap, tap } from 'rxjs';
 
 import { EventsFacade } from 'src/app/application/events.facade';
+import { ModalFacade } from 'src/app/application/modal.facade';
 import {
   ColumnModel,
   ColumnWidth,
@@ -26,64 +27,59 @@ import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { EventsService } from 'src/app/core/services/events.services';
 import { MacroeventsService } from 'src/app/core/services/macroevents.services';
 
-import { DashboardHeaderComponent } from 'src/app/shared/components/dashboard-header/dashboard-header.component';
-import { FiltersComponent } from 'src/app/shared/components/filters/filters.component';
-import { TableComponent } from 'src/app/shared/components/table/table.component';
-
 import { GeneralService } from 'src/app/core/services/generalService.service';
 import { PdfPrintService } from 'src/app/core/services/PdfPrintService.service';
-import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
-
+import { DashboardHeaderComponent } from 'src/app/shared/components/dashboard-header/dashboard-header.component';
+import { FiltersComponent } from 'src/app/shared/components/filters/filters.component';
 import { PageToolbarComponent } from 'src/app/shared/components/page-toolbar/page-toolbar.component';
+import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { StickyZoneComponent } from 'src/app/shared/components/sticky-zone/sticky-zone.component';
-
-// Hooks reutilizables
+import { TableComponent } from 'src/app/shared/components/table/table.component';
 import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
 
-// Shell modal + navegación
 import { EventsReportsFacade } from 'src/app/application/events-reports.facade';
+import { FiltersFacade } from 'src/app/application/filters.facade';
 import { EventsReportsService } from 'src/app/core/services/events-reports.service';
 import { ButtonFilterComponent } from 'src/app/shared/components/buttons/button-filter/button-filter.component';
 import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
-import { ModalNavService } from 'src/app/shared/components/modal/services/modal-nav.service';
-import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
 
 @Component({
   selector: 'app-events-page',
   standalone: true,
   imports: [
-    // UI
     DashboardHeaderComponent,
     SpinnerLoadingComponent,
     StickyZoneComponent,
     TableComponent,
     FiltersComponent,
     PageToolbarComponent,
-    ModalShellComponent,
-    // Angular
     CommonModule,
     ReactiveFormsModule,
     MatMenuModule,
     MatCheckboxModule,
     ButtonFilterComponent,
+    ModalShellComponent,
   ],
   templateUrl: './events-page.component.html',
 })
 export class EventsPageComponent implements OnInit {
-  // ── Servicios
   private readonly destroyRef = inject(DestroyRef);
-  private readonly modalService = inject(ModalService);
   private readonly eventsService = inject(EventsService);
   private readonly eventsReportsService = inject(EventsReportsService);
   private readonly macroeventsService = inject(MacroeventsService);
   private readonly generalService = inject(GeneralService);
   private readonly pdfPrintService = inject(PdfPrintService);
-  // ── Facades
+
   readonly eventsFacade = inject(EventsFacade);
   readonly eventsReportsFacade = inject(EventsReportsFacade);
+  readonly modalFacade = inject(ModalFacade);
+  readonly filtersFacade = inject(FiltersFacade);
 
-  // ── Signals de estado de carga
+  readonly TypeList = TypeList;
+  currentYear = this.generalService.currentYear;
+
+  // ── Señales de carga
   readonly isEventsLoadingSig = toSignal(this.eventsFacade.isListLoading$, {
     initialValue: false,
   });
@@ -91,19 +87,25 @@ export class EventsPageComponent implements OnInit {
     this.eventsReportsFacade.isLoadingList$,
     { initialValue: false }
   );
-
-  // 👇 Señal combinada (reemplaza el `||` en el HTML)
   readonly isLoadingSig = computed(
     () => this.isEventsLoadingSig() || this.isReportsLoadingSig()
   );
 
-  // ── Event IDs con informe
+  // ── Señales de modal
+  readonly modalVisibleSig = this.modalFacade.isVisibleSig;
+  readonly currentModalTypeSig = this.modalFacade.typeSig;
+  readonly currentModalActionSig = this.modalFacade.actionSig;
+  readonly currentItemSig = this.modalFacade.itemSig;
+
+  // ── IDs con informe
   readonly eventIdsWithReportSig = toSignal(
     this.eventsReportsFacade.eventIdsWithReport$,
     { initialValue: [] }
   );
-  private activeScope: 'all' | 'drafts' | 'scheduled' = 'all';
-  // ── Columnas
+
+  @ViewChild(PageToolbarComponent)
+  private toolbarComponent!: PageToolbarComponent;
+
   headerListEvents: ColumnModel[] = [
     { title: 'Cartel', key: 'img', sortable: true },
     { title: 'Título', key: 'title', sortable: true, width: ColumnWidth.XL },
@@ -201,7 +203,6 @@ export class EventsPageComponent implements OnInit {
     },
   ];
 
-  // ── Column visibility (hook)
   readonly col = useColumnVisibility('events-table', this.headerListEvents, [
     'capacity',
     'organizer',
@@ -212,91 +213,72 @@ export class EventsPageComponent implements OnInit {
     'published',
   ]);
 
-  // ── Lista de entidades (hook) -> la facade controla visibleEvents$ según la carga
+  // ── Lista
   readonly list = useEntityList<EventModelFullData>({
     filtered$: this.eventsFacade.visibleEvents$,
     sort: (arr) => this.eventsService.sortEventsById(arr),
     count: (arr) => this.eventsService.countEvents(arr),
-    initial: [],
   });
 
-  // ── Filtros
-  filters: Filter[] = [];
-  selectedFilter: string | number = '';
-  currentYear = this.generalService.currentYear;
-  eventsWithReport = new Set<number>();
-  private lastYearSelected = this.currentYear; // recordar el último año para drafts/scheduled
-
-  // ── Modal
-  readonly modalVisibleSig = toSignal(this.modalService.modalVisibility$, {
-    initialValue: false,
-  });
+  // ── Estado local
+  activeScope: 'all' | 'drafts' | 'scheduled' = 'all';
+  private lastYearSelected = this.currentYear;
   item: EventModelFullData | MacroeventModelFullData | null = null;
-  currentModalAction: TypeActionModal = TypeActionModal.Create;
-  typeSection = TypeList.Events;
-  typeModal = TypeList.Events;
-  modalKey = 0;
 
-  // Form
-  searchForm!: FormGroup;
-
-  // Refs
+  // ── View ref
   @ViewChild('printArea', { static: false })
   printArea!: ElementRef<HTMLElement>;
 
-  // Navegación modal (volver)
-  private readonly modalNav = inject(
-    ModalNavService<EventModelFullData | MacroeventModelFullData>
-  );
-
-  // ──────────────────────────────────────────────────────────────
-  // Lifecycle
-  // ──────────────────────────────────────────────────────────────
+  // ── Lifecycle
   ngOnInit(): void {
-    // Filtros = años + extras "Borradores"/"Programados"
-    const years = this.generalService.getYearFilters(2018, this.currentYear);
-    this.filters = [...years];
+    // Inicializa los filtros desde la fachada
+    this.filtersFacade.loadFiltersFor(
+      TypeList.Events,
+      this.currentYear.toString(),
+      2018
+    );
 
-    // Carga inicial: año actual, AGRUPADO y scope=all
-    this.filterSelected(this.currentYear.toString());
+    // Selección inicial
+    this.filterSelected(String(this.filtersFacade.selectedSig()));
 
-    // Mantener viva la suscripción si hace falta
+    this.eventsReportsFacade.loadEventIdsWithReport();
+
     this.eventsFacade.visibleEvents$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe();
-    //  carga de informes centralizada
-    this.eventsReportsFacade.loadEventIdsWithReport();
   }
 
-  // ── Filtros / búsqueda
-  filterSelected = (filter: string): void => {
-    // Botones especiales siguen funcionando si te llega el string
-    if (filter === 'drafts') {
-      this.showDrafts();
-      return;
-    }
-    if (filter === 'scheduled') {
-      this.showScheduled();
-      return;
-    }
+  // ── Getters reactivos de filtros
+  get filters(): Filter[] {
+    return this.filtersFacade.filtersSig();
+  }
 
-    // Filtro por año
-    // Si es año → agrupado y TODOS los estados (published + drafts + scheduled)
+  get selectedFilter(): string | number {
+    return this.filtersFacade.selectedSig();
+  }
+
+  // ── Filtro principal
+  filterSelected(filter: string): void {
+    if (this.toolbarComponent) {
+      this.toolbarComponent.clearSearch();
+    }
+    if (filter === 'drafts') return this.showDrafts();
+    if (filter === 'scheduled') return this.showScheduled();
+
     const year = Number(filter);
     if (!Number.isFinite(year)) return;
 
-    this.selectedFilter = year;
+    this.filtersFacade.selectFilter(String(year));
     this.lastYearSelected = year;
+    this.activeScope = 'all';
     this.eventsFacade.applyFilterWord('');
     this.eventsFacade.loadDashboardAllGrouped(year);
-  };
+  }
+
   showDrafts(): void {
-    this.selectedFilter = 'drafts';
     this.activeScope = 'drafts';
+    this.filtersFacade.selectFilter('drafts');
     this.eventsFacade.applyFilterWord('');
-    // ⬇️ Si quieres TODOS LOS AÑOS, usa el método “AllYears”:
-    // this.eventsFacade.loadDashboardDraftsAllYears('groupedByPeriodicId');
-    // ⬇️ Si prefieres el año actual/último seleccionado, deja esta línea:
     this.eventsFacade.loadDashboardDrafts(
       this.lastYearSelected,
       'groupedByPeriodicId'
@@ -304,12 +286,9 @@ export class EventsPageComponent implements OnInit {
   }
 
   showScheduled(): void {
-    this.selectedFilter = 'scheduled';
     this.activeScope = 'scheduled';
+    this.filtersFacade.selectFilter('scheduled');
     this.eventsFacade.applyFilterWord('');
-    // ⬇️ Todos los años:
-    // this.eventsFacade.loadDashboardScheduledAllYears('groupedByPeriodicId');
-    // ⬇️ Solo por año seleccionado:
     this.eventsFacade.loadDashboardScheduled(
       this.lastYearSelected,
       'groupedByPeriodicId'
@@ -322,7 +301,8 @@ export class EventsPageComponent implements OnInit {
 
   // ── Modal + navegación
   addNewEventModal(): void {
-    this.openModal(TypeList.Events, TypeActionModal.Create, null);
+    this.eventsFacade.clearSelectedEvent();
+    this.modalFacade.open(TypeList.Events, TypeActionModal.Create, null);
   }
 
   onOpenModal(event: {
@@ -331,126 +311,72 @@ export class EventsPageComponent implements OnInit {
     item?: any;
   }): void {
     if (event.typeModal === TypeList.EventsReports) {
-      // 👉 abrir informe sin tocar el tipoModal principal
       this.openReportModal(event.action, event.item);
     } else {
-      // 👉 eventos normales
-      this.openModal(event.typeModal, event.action, event.item ?? null);
+      this.modalFacade.open(event.typeModal, event.action, event.item ?? null);
     }
   }
 
-  private openModal(
-    typeModal: TypeList,
-    action: TypeActionModal,
-    item: EventModelFullData | MacroeventModelFullData | null
-  ): void {
-    this.currentModalAction = action;
-    this.item = item;
-    this.typeModal = typeModal;
-
-    if (typeModal === TypeList.Events && action === TypeActionModal.Create) {
-      this.eventsFacade.clearSelectedEvent();
-    }
-    this.modalKey++;
-    this.modalService.openModal();
-  }
   private openReportModal(action: TypeActionModal, item: any): void {
-    // No tocamos this.typeModal principal
-    this.currentModalAction = action;
-    this.item = item;
-    this.modalKey++;
-
-    // Abrir modal directamente
-    this.modalService.openModal();
-
-    // Forzar contexto temporal de report
-    this.typeModal = TypeList.EventsReports;
-
-    // Si usas facades separadas, puedes iniciar carga aquí
+    this.modalFacade.open(TypeList.EventsReports, action, item);
     if (action === TypeActionModal.Edit && item?.id) {
       this.eventsReportsFacade.loadReportByEventId(item.id);
     }
   }
-  onOpenEvent = (eventId: number) => {
-    // Guardar estado actual
-    this.modalNav.push({
-      typeModal: this.typeModal,
-      action: this.currentModalAction,
-      item: this.item,
-    });
 
+  onOpenEvent(eventId: number): void {
     this.eventsService
       .getEventById(eventId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (ev: EventModelFullData) => {
-          this.openModal(TypeList.Events, TypeActionModal.Show, ev);
-        },
-        error: (err) => console.error('Error cargando evento', err),
+        next: (ev) =>
+          this.modalFacade.open(TypeList.Events, TypeActionModal.Show, ev),
       });
-  };
+  }
 
-  onOpenMacroevent(macroId: number) {
-    this.modalNav.push({
-      typeModal: this.typeModal,
-      action: this.currentModalAction,
-      item: this.item,
-    });
-
+  onOpenMacroevent(macroId: number): void {
     this.macroeventsService
       .getMacroeventById(macroId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (macro: MacroeventModelFullData) => {
-          this.openModal(TypeList.Macroevents, TypeActionModal.Show, macro);
-        },
-        error: (err) => console.error('Error cargando macroevento', err),
+        next: (macro) =>
+          this.modalFacade.open(
+            TypeList.Macroevents,
+            TypeActionModal.Show,
+            macro
+          ),
       });
   }
 
   onBackModal(): void {
-    const prev = this.modalNav.pop();
-    if (!prev) return;
-    this.currentModalAction = prev.action;
-    this.item = prev.item;
-    this.typeModal = prev.typeModal;
+    this.modalFacade.back();
   }
 
   onCloseModal(): void {
-    this.modalService.closeModal();
+    this.modalFacade.close();
     this.item = null;
-    this.modalNav.clear();
-
-    // 🔹 Restaurar tipo principal
-    this.typeModal = TypeList.Events;
   }
 
-  // ── CRUD (borrado por periodic_id si aplica)
+  // ── CRUD
   onDelete({ type, id, item }: { type: TypeList; id: number; item?: any }) {
-    const actions: Partial<Record<TypeList, (id: number, item?: any) => void>> =
-      {
-        [TypeList.Events]: (x, it) => {
-          const periodicId = this.isEvent(it) ? it.periodic_id : null;
-          if (periodicId) {
-            this.eventsService
-              .deleteEventsByPeriodicId(periodicId)
-              .pipe(
-                takeUntilDestroyed(this.destroyRef),
-                tap(() =>
-                  // recargar con el filtro actual
-                  this.filterSelected(
-                    String(this.selectedFilter ?? this.lastYearSelected)
-                  )
-                )
+    if (type === TypeList.Events) {
+      const periodicId = this.isEvent(item) ? item.periodic_id : null;
+      if (periodicId) {
+        this.eventsService
+          .deleteEventsByPeriodicId(periodicId)
+          .pipe(
+            takeUntilDestroyed(this.destroyRef),
+            tap(() =>
+              this.filterSelected(
+                String(this.selectedFilter ?? this.lastYearSelected)
               )
-              .subscribe();
-          } else {
-            this.eventsFacade.deleteEvent(x);
-          }
-        },
-      };
-
-    actions[type]?.(id, item);
+            )
+          )
+          .subscribe();
+      } else {
+        this.eventsFacade.deleteEvent(id);
+      }
+    }
   }
 
   isEvent(item: unknown): item is EventModelFullData {
@@ -484,10 +410,10 @@ export class EventsPageComponent implements OnInit {
       )
       .subscribe();
   }
+
   sendFormEventReport(event: { itemId: number; formData: FormData }): void {
     this.eventsReportsService.add(event.formData).subscribe({
       next: () => {
-        console.log('✅ Informe guardado correctamente');
         this.onCloseModal();
         this.filterSelected(
           String(this.selectedFilter ?? this.lastYearSelected)
@@ -509,9 +435,6 @@ export class EventsPageComponent implements OnInit {
     });
   }
 
-  get canGoBack(): boolean {
-    return this.modalNav.canGoBack() && !!this.item;
-  }
   get eventsWithReportSet(): Set<number> {
     return new Set(this.eventIdsWithReportSig());
   }

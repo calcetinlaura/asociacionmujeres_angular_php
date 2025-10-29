@@ -15,10 +15,10 @@ import {
   Validators,
 } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
-
-import townsData from 'data/towns.json';
 import { QuillModule } from 'ngx-quill';
 import { filter, tap } from 'rxjs';
+
+import townsData from 'data/towns.json';
 import { AgentsFacade } from 'src/app/application/agents.facade';
 import {
   AgentModel,
@@ -45,34 +45,24 @@ import { ScrollToFirstErrorDirective } from 'src/app/shared/directives/scroll-to
   styleUrls: ['./../../../../../../shared/components/form/form.component.css'],
 })
 export class FormAgentComponent {
-  private agentsFacade = inject(AgentsFacade);
-  private destroyRef = inject(DestroyRef);
-  private generalService = inject(GeneralService);
+  readonly agentsFacade = inject(AgentsFacade);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly generalService = inject(GeneralService);
 
   @Input() itemId!: number;
+  @Input() item: AgentModel | null = null;
   @Output() submitForm = new EventEmitter<{
     itemId: number;
     formData: FormData;
   }>();
-  selectedImageFile: File | null = null;
-  agentData: any;
-  imageSrc: string = '';
-  submitted = false;
-  titleForm: string = 'Registrar agente colaborador';
-  buttonAction: string = 'Guardar';
-  CategoryFilterAgents = CategoryFilterAgents;
-  typeList = TypeList.Agents;
+
   formAgent = new FormGroup({
     name: new FormControl('', [Validators.required]),
     contact: new FormControl(''),
     phone: new FormControl('', [
-      // Permite vacío; si hay valor, debe cumplir el patrón
       Validators.pattern(/^\s*(\+?\d[\d\s\-().]{6,14}\d)\s*$/),
     ]),
-    email: new FormControl('', [
-      // Permite vacío; si hay valor, debe ser email válido
-      Validators.email,
-    ]),
+    email: new FormControl('', [Validators.email]),
     province: new FormControl(''),
     town: new FormControl(''),
     address: new FormControl(''),
@@ -83,30 +73,35 @@ export class FormAgentComponent {
     observations: new FormControl('', [Validators.maxLength(300)]),
     img: new FormControl(''),
   });
+
+  selectedImageFile: File | null = null;
+  imageSrc = '';
+  submitted = false;
+  titleForm = 'Registrar agente colaborador';
+  buttonAction = 'Guardar';
+  CategoryFilterAgents = CategoryFilterAgents;
+  typeList = TypeList.Agents;
   provincias: {
     label: string;
     code: string;
     towns: { label: string; code: string }[];
   }[] = [];
   municipios: { label: string; code: string }[] = [];
-  isLoading = true;
-  quillModules = {
-    toolbar: [
-      [{ header: [1, 2, false] }],
-      ['bold', 'italic', 'underline'],
-      ['image', 'code-block'],
-      [{ color: [] }, { background: [] }],
-      [{ list: 'ordered' }, { list: 'bullet' }],
-      [{ align: [] }],
-      ['link', 'clean'],
-      [{ indent: '-1' }, { indent: '+1' }],
-    ],
-  };
+
+  quillModules = this.generalService.defaultQuillModules;
+
   ngOnInit(): void {
-    this.isLoading = true;
     this.provincias = townsData
       .flatMap((region) => region.provinces)
       .sort((a, b) => a.label.localeCompare(b.label));
+
+    // ✅ Caso 1: si el item completo ya llega desde la modal
+    if (this.item) {
+      this.patchForm(this.item);
+      return;
+    }
+
+    // ✅ Caso 2: si solo tenemos el id
     if (this.itemId) {
       this.agentsFacade.loadAgentById(this.itemId);
       this.agentsFacade.selectedAgent$
@@ -115,28 +110,27 @@ export class FormAgentComponent {
           filter((agent: AgentModel | null) => agent !== null),
           tap((agent: AgentModel | null) => {
             if (agent) {
-              // 🔹 Primero actualizamos los municipios basándonos en la provincia recibida
-              const province = this.provincias.find(
-                (p) => p.label === agent.province
-              );
-              this.municipios = province?.towns ?? [];
-
-              // 🔹 Luego seteamos los valores del formulario
-              this.formAgent.patchValue(agent);
-
-              this.titleForm = 'Editar Acreedor/a';
-              this.buttonAction = 'Guardar cambios';
-              if (agent.img) {
-                this.imageSrc = agent.img;
-                this.selectedImageFile = null;
-              }
+              this.patchForm(agent);
             }
-            this.isLoading = false;
           })
         )
         .subscribe();
-    } else {
-      this.isLoading = false;
+    }
+  }
+
+  private patchForm(agent: AgentModel) {
+    // 🔹 Carga de municipios según provincia
+    const province = this.provincias.find((p) => p.label === agent.province);
+    this.municipios = province?.towns ?? [];
+
+    this.formAgent.patchValue(agent);
+
+    this.titleForm = 'Editar agente colaborador';
+    this.buttonAction = 'Guardar cambios';
+
+    if (agent.img) {
+      this.imageSrc = agent.img;
+      this.selectedImageFile = null;
     }
   }
 
@@ -144,7 +138,7 @@ export class FormAgentComponent {
     const selectedProvince = this.formAgent.value.province;
     const province = this.provincias.find((p) => p.label === selectedProvince);
     this.municipios = province?.towns ?? [];
-    this.formAgent.patchValue({ town: '' }); // limpia el municipio
+    this.formAgent.patchValue({ town: '' });
   }
 
   async onImageSelected(file: File) {
@@ -152,6 +146,7 @@ export class FormAgentComponent {
     this.selectedImageFile = result.file;
     this.imageSrc = result.imageSrc;
   }
+
   onSendFormAgent(): void {
     if (this.formAgent.invalid) {
       this.submitted = true;
@@ -160,19 +155,20 @@ export class FormAgentComponent {
     }
 
     const rawValues = { ...this.formAgent.getRawValue() } as any;
-    if (rawValues.description) {
-      rawValues.description = rawValues.description.replace(/&nbsp;/g, ' ');
+
+    if (rawValues.observations) {
+      rawValues.observations = rawValues.observations.replace(/&nbsp;/g, ' ');
     }
+
     const formData = this.generalService.createFormData(
       rawValues,
-      {
-        img: this.selectedImageFile,
-      },
+      { img: this.selectedImageFile },
       this.itemId
     );
 
-    this.submitForm.emit({ itemId: this.itemId, formData: formData });
+    this.submitForm.emit({ itemId: this.itemId, formData });
   }
+
   observationsLen(): number {
     return (this.formAgent.get('observations')?.value || '').length;
   }

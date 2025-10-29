@@ -20,8 +20,8 @@ export class SectionGenericComponent {
   @Output() editClicked = new EventEmitter<any>();
   @Output() deleteClicked = new EventEmitter<any>();
 
-  TypeList = TypeList;
-  TypeActionModal = TypeActionModal;
+  readonly TypeList = TypeList;
+  readonly TypeActionModal = TypeActionModal;
 
   onClickItem(item: any) {
     this.itemClicked.emit(item);

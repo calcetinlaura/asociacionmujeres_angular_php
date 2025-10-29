@@ -1,10 +1,10 @@
 @if (visible) {
 <div #host>
   <app-ui-modal
-    [(open)]="isOpen"
+    [open]="visible"
     [variant]="action"
     (openChange)="!$event && onCloseModal()"
-    [canGoBack]="modalFacade.canGoBack()"
+    [canGoBack]="canGoBackSig()"
     (back)="onBackModal()"
     [contentVersion]="contentVersion"
   >

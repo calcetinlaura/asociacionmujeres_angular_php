@@ -243,4 +243,43 @@ export class GeneralService {
     // Actualiza las columnas visibles después del toggle
     return this.updateDisplayedColumns(headerList, columnVisibility);
   }
+  //quillModules textarea para edición
+  readonly baseQuillModules: Record<string, any> = {
+    toolbar: [
+      [{ header: [1, 2, false] }],
+      ['bold', 'italic', 'underline'],
+      ['image', 'code-block'],
+      [{ color: [] }, { background: [] }],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      [{ align: [] }],
+      ['link', 'clean'],
+      [{ indent: '-1' }, { indent: '+1' }],
+    ],
+  };
+
+  get defaultQuillModules(): Record<string, any> {
+    // devuelve una copia para evitar mutaciones accidentales
+    return JSON.parse(JSON.stringify(this.baseQuillModules));
+  }
+
+  /** Permite añadir o quitar herramientas por componente */
+  buildQuillModules(
+    override: Partial<Record<string, any>> = {}
+  ): Record<string, any> {
+    return { ...this.defaultQuillModules, ...override };
+  }
+  toggleInputControls(
+    form: FormGroup,
+    controls: string[],
+    enable: unknown
+  ): void {
+    const on = !!enable;
+    controls.forEach((name) => {
+      const control = form.get(name);
+      if (!control) return;
+      on
+        ? control.enable({ emitEvent: false })
+        : control.disable({ emitEvent: false });
+    });
+  }
 }

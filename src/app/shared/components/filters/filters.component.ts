@@ -6,6 +6,7 @@ import {
   OnChanges,
   OnInit,
   Output,
+  Signal,
   SimpleChanges,
 } from '@angular/core';
 import { Filter } from 'src/app/core/interfaces/general.interface';
@@ -20,14 +21,11 @@ import { ButtonFilterComponent } from 'src/app/shared/components/buttons/button-
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FiltersComponent implements OnInit, OnChanges {
-  /** Lista de filtros a pintar */
-  @Input() filters: Filter[] = [];
-  /** Valor controlado desde el padre */
-  @Input() selected: string | number | null = null;
-  /** Two-way binding opcional: [(selected)] */
-  @Output() selectedChange = new EventEmitter<string | number>();
-  /** Evento clásico para pedir al padre que cargue datos */
+  @Input({ required: true }) filters!: Signal<Filter[]>;
+  @Input({ required: true }) selected!: Signal<string | number>;
+
   @Output() filterClicked = new EventEmitter<string>();
+  @Output() selectedChange = new EventEmitter<string | number>();
 
   /** Selección mostrada (sólo UI). No auto-emite en ngOnInit. */
   selectedFilter: string | number = '';
@@ -43,11 +41,6 @@ export class FiltersComponent implements OnInit, OnChanges {
   }
 
   filterSelected(filter: string | number): void {
-    if (this.selectedFilter === filter) return;
-    this.selectedFilter = filter;
-    // two-way
-    this.selectedChange.emit(filter);
-    // notifica al padre para que cargue datos
     this.filterClicked.emit(String(filter));
   }
 

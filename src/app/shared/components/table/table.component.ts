@@ -84,7 +84,7 @@ export class TableComponent {
   @Input() displayedColumns: string[] = [];
   @Input() columnVisibility: { [key: string]: boolean } = {};
   @Input() typeSection: TypeList = TypeList.Books;
-  @Input() typeModal: TypeList = TypeList.Books;
+
   @Input() data: any[] = [];
   @Input() headerColumns: ColumnModel[] = [];
   @Input() topHeader = 246;
@@ -99,13 +99,14 @@ export class TableComponent {
     action: TypeActionModal;
     item: any;
   }>();
+
   nameMovement = this.subsidiesService.movementMap;
   nameSubsidy = this.subsidiesService.subsidiesMap;
 
   dataSource = new MatTableDataSource();
-  typeActionModal = TypeActionModal;
+  readonly TypeActionModal = TypeActionModal;
   searchKeywordFilter = new FormControl();
-  TypeList = TypeList;
+  readonly TypeList = TypeList;
   dictType = DictType;
   readonly baseActions: ActionItem[] = [
     { icon: 'uil-eye', tooltip: 'Ver', type: 'view' },
@@ -144,10 +145,8 @@ export class TableComponent {
 
   ngOnInit(): void {
     this.initDisplayedColumns();
-
     this.dataSource = new MatTableDataSource(this.data || []);
     this.dataSource.sort = this.sort;
-    console.log('LISTADO DE EVENTOS', this.eventsWithReport);
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -209,10 +208,6 @@ export class TableComponent {
     } else {
       this._liveAnnouncer.announce('Sorting cleared');
     }
-  }
-
-  onOpenModal(typeModal: TypeList, action: TypeActionModal, item: any): void {
-    this.openModal.emit({ typeModal, action, item });
   }
 
   areDatesEqual(date1: string | Date, date2: string | Date): boolean {
@@ -422,42 +417,36 @@ export class TableComponent {
   handleAction(ev: ActionPayload, element: any) {
     switch (ev.type) {
       case 'view':
-        this.onOpenModal(this.typeModal, this.typeActionModal.Show, element);
+        this.onOpenModal(this.typeSection, TypeActionModal.Show, element);
         break;
       case 'edit':
-        this.onOpenModal(this.typeModal, this.typeActionModal.Edit, element);
+        this.onOpenModal(this.typeSection, TypeActionModal.Edit, element);
         break;
       case 'duplicate':
-        this.onOpenModal(
-          this.typeModal,
-          this.typeActionModal.Duplicate,
-          element
-        );
+        this.onOpenModal(this.typeSection, TypeActionModal.Duplicate, element);
         break;
       case 'download-image':
         this.downloadImg(element);
         break;
       case 'remove':
-        this.onOpenModal(this.typeModal, this.typeActionModal.Delete, element);
+        this.onOpenModal(this.typeSection, TypeActionModal.Delete, element);
         break;
     }
   }
+
+  onOpenModal(typeModal: TypeList, action: TypeActionModal, item: any): void {
+    this.openModal.emit({ typeModal, action, item });
+  }
+
   onAddReport(event: any): void {
     const hasReport = this.hasReport(event);
-    console.log('🟢 [TableComponent] Añadir informe', {
-      event,
-      hasReport,
-    });
-
-    // Si el evento ya tiene informe, lo abrimos en modo edición
     this.openModal.emit({
-      typeModal: this.TypeList.EventsReports,
-      action: hasReport
-        ? this.typeActionModal.Edit
-        : this.typeActionModal.Create,
+      typeModal: TypeList.EventsReports,
+      action: hasReport ? TypeActionModal.Edit : TypeActionModal.Create,
       item: event,
     });
   }
+
   hasReport(row: any): boolean {
     return this.eventsWithReport.has(row.id);
   }

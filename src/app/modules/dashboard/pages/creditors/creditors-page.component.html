@@ -7,8 +7,8 @@
   />
   <div class="flex flex-col gap-y-10">
     <app-filters
-      [filters]="filters"
-      [(selected)]="selectedFilter"
+      [filters]="filtersFacade.filtersSig"
+      [selected]="filtersFacade.selectedSig"
       (filterClicked)="filterSelected($event)"
     />
     <app-page-toolbar
@@ -32,8 +32,7 @@
     <h2 class="only-on-pdf print-title">Listado acreedores</h2>
     <app-table
       [data]="list.processedSig()"
-      [typeSection]="typeSection"
-      [typeModal]="typeModal"
+      [typeSection]="TypeList.Creditors"
       [headerColumns]="col.getVisibleColumns()"
       [columnVisibility]="col.columnVisSig()"
       [displayedColumns]="col.displayedColumnsSig()"
@@ -50,10 +49,9 @@
 <!-- Modal -->
 <app-modal-shell
   [visible]="modalVisibleSig()"
-  [typeModal]="typeModal"
-  [action]="currentModalAction"
-  [item]="item"
-  [canGoBack]="canGoBack"
+  [typeModal]="currentModalTypeSig()"
+  [action]="currentModalActionSig()"
+  [item]="currentItemSig()"
   (back)="onBackModal()"
   (close)="onCloseModal()"
   (confirmDelete)="onDelete($event)"

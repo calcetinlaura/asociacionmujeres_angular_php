@@ -68,6 +68,9 @@ export type ModalItemByType = {
     | InvoiceModelFullData
     | { id: number }
     | null;
+} & {
+  // 👇 Esta segunda parte (intersección) permite indexar por cualquier valor de TypeList
+  [key in TypeList]: unknown;
 };
 
 export type ModalStateByType<T extends keyof ModalItemByType> = {

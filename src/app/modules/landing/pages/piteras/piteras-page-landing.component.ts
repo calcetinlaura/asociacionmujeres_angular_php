@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, OnInit, computed, inject } from '@angular/core';
+import { Component, OnInit, computed, inject } from '@angular/core';
 import { ModalFacade } from 'src/app/application/modal.facade';
 
 import { PiterasFacade } from 'src/app/application/piteras.facade';
@@ -30,14 +30,11 @@ import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
   providers: [PiterasService],
 })
 export class PiterasPageLandingComponent implements OnInit {
-  // ===== Inyección de dependencias =====
-  private readonly destroyRef = inject(DestroyRef);
   private readonly piterasService = inject(PiterasService);
-
   readonly piterasFacade = inject(PiterasFacade);
   readonly modalFacade = inject(ModalFacade);
 
-  typeList = TypeList;
+  readonly TypeList = TypeList;
 
   // ===== Signals derivadas con useEntityList =====
   readonly list = useEntityList<PiteraModel>({
@@ -51,7 +48,7 @@ export class PiterasPageLandingComponent implements OnInit {
   readonly hasResultsSig = computed(() => this.totalSig() > 0);
 
   // ======================================================
-  // 🧭 Ciclo de vida
+  //  Ciclo de vida
   // ======================================================
   ngOnInit(): void {
     this.loadAllPiteras();
@@ -62,7 +59,7 @@ export class PiterasPageLandingComponent implements OnInit {
   }
 
   // ======================================================
-  // 💬 Acciones con modal
+  //  Acciones con modal
   // ======================================================
   openPiteraDetails(pitera: PiteraModel): void {
     this.modalFacade.open(TypeList.Piteras, TypeActionModal.Show, pitera);

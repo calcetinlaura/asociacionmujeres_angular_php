@@ -76,9 +76,9 @@
           [iconClass]="'uil-plus'"
           (addClicked)="
             openModal.emit({
-              typePage: typeList.Subsidies,
-              typeModal: typeList.Projects,
-              action: typeActionModal.Create,
+              typePage: TypeList.Subsidies,
+              typeModal: TypeList.Projects,
+              action: TypeActionModal.Create,
               item: item
             })
           "
@@ -103,34 +103,35 @@
                 {{ project.title }}
                 <div class="flex mt-1 gap-1">
                   <app-icon-action
-                    [icon]="'uil-edit'"
-                    [tooltip]="'Editar'"
+                    [icon]="'uil-eye'"
+                    [tooltip]="'Ver'"
                     (click)="
                       openModal.emit({
-                        typeModal: typeList.Projects,
-                        action: typeActionModal.Edit,
+                        typeModal: TypeList.Projects,
+                        action: TypeActionModal.Show,
                         item: project
                       })
                     "
                   />
                   <app-icon-action
-                    [icon]="'uil-eye'"
-                    [tooltip]="'Ver'"
+                    [icon]="'uil-edit'"
+                    [tooltip]="'Editar'"
                     (click)="
                       openModal.emit({
-                        typeModal: typeList.Projects,
-                        action: typeActionModal.Show,
+                        typeModal: TypeList.Projects,
+                        action: TypeActionModal.Edit,
                         item: project
                       })
                     "
                   />
+
                   <app-icon-action
                     [icon]="'uil-trash-alt'"
                     [tooltip]="'Eliminar'"
                     (click)="
                       openModal.emit({
-                        typeModal: typeList.Projects,
-                        action: typeActionModal.Delete,
+                        typeModal: TypeList.Projects,
+                        action: TypeActionModal.Delete,
                         item: project
                       })
                     "
@@ -183,8 +184,8 @@
                     [tooltip]="'Editar'"
                     (click)="
                       openModal.emit({
-                        typeModal: typeList.Projects,
-                        action: typeActionModal.Edit,
+                        typeModal: TypeList.Projects,
+                        action: TypeActionModal.Edit,
                         item: project
                       })
                     "
@@ -194,8 +195,8 @@
                     [tooltip]="'Ver'"
                     (click)="
                       openModal.emit({
-                        typeModal: typeList.Projects,
-                        action: typeActionModal.Show,
+                        typeModal: TypeList.Projects,
+                        action: TypeActionModal.Show,
                         item: project
                       })
                     "
@@ -205,8 +206,8 @@
                     [tooltip]="'Eliminar'"
                     (click)="
                       openModal.emit({
-                        typeModal: typeList.Projects,
-                        action: typeActionModal.Delete,
+                        typeModal: TypeList.Projects,
+                        action: TypeActionModal.Delete,
                         item: project
                       })
                     "
@@ -304,14 +305,13 @@
     <div class="py-4 flex">
       @if (!loading) {
       <app-table
-        [typeSection]="typeList.Invoices"
-        [typeModal]="typeList.Invoices"
+        [typeSection]="TypeList.Invoices"
         [data]="filteredInvoices"
         [headerColumns]="getVisibleColumns()"
         [columnVisibility]="columnVisSig()"
         (openModal)="
           openModal.emit({
-            typeModal: typeList.Invoices,
+            typeModal: TypeList.Invoices,
             action: $event.action,
             item: $event.item
           })

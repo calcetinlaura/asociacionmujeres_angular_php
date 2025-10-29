@@ -8,7 +8,7 @@ import {
   computed,
   inject,
 } from '@angular/core';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
 import { map, tap } from 'rxjs';
@@ -18,28 +18,25 @@ import {
   ColumnModel,
   ColumnWidth,
 } from 'src/app/core/interfaces/column.interface';
-import { Filter } from 'src/app/core/interfaces/general.interface';
 import { PartnerModel } from 'src/app/core/interfaces/partner.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
-import { PartnersService } from 'src/app/core/services/partners.services';
-
 import { GeneralService } from 'src/app/core/services/generalService.service';
+import { PartnersService } from 'src/app/core/services/partners.services';
 import { PdfPrintService } from 'src/app/core/services/PdfPrintService.service';
+
 import { DashboardHeaderComponent } from 'src/app/shared/components/dashboard-header/dashboard-header.component';
 import { FiltersComponent } from 'src/app/shared/components/filters/filters.component';
+import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
+import { PageToolbarComponent } from 'src/app/shared/components/page-toolbar/page-toolbar.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { StickyZoneComponent } from 'src/app/shared/components/sticky-zone/sticky-zone.component';
 import { TableComponent } from 'src/app/shared/components/table/table.component';
 import { normalizeCuotas } from 'src/app/shared/utils/cuotas.utils';
 
-// Shell de modal
-import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
-// Hooks reutilizables
+import { FiltersFacade } from 'src/app/application/filters.facade';
+import { ModalFacade } from 'src/app/application/modal.facade';
 import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
-// Servicio para abrir/cerrar modal
-import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
-import { PageToolbarComponent } from 'src/app/shared/components/page-toolbar/page-toolbar.component';
 
 @Component({
   selector: 'app-partners-page',
@@ -60,15 +57,21 @@ import { PageToolbarComponent } from 'src/app/shared/components/page-toolbar/pag
 })
 export class PartnersPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
-  private readonly modalService = inject(ModalService);
   private readonly partnersService = inject(PartnersService);
   private readonly generalService = inject(GeneralService);
   private readonly pdfPrintService = inject(PdfPrintService);
-
-  // Facade
+  private readonly modalFacade = inject(ModalFacade);
   readonly partnersFacade = inject(PartnersFacade);
+  readonly filtersFacade = inject(FiltersFacade);
 
-  // Columnas (config)
+  //  Toolbar (para limpiar buscador)
+  @ViewChild(PageToolbarComponent)
+  private toolbarComponent!: PageToolbarComponent;
+
+  // Ref impresión
+  @ViewChild('printArea', { static: false })
+  printArea!: ElementRef<HTMLElement>;
+
   headerListPartners: ColumnModel[] = [
     { title: 'Imagen', key: 'img', sortable: false },
     {
@@ -89,8 +92,8 @@ export class PartnersPageComponent implements OnInit {
       title: 'Fecha nacimiento',
       key: 'birthday',
       sortable: true,
-      width: ColumnWidth.LG,
       textAlign: 'center',
+      width: ColumnWidth.LG,
     },
     {
       title: 'Dirección',
@@ -141,6 +144,9 @@ export class PartnersPageComponent implements OnInit {
     },
   ];
 
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Hooks reutilizables
+  // ──────────────────────────────────────────────────────────────────────────────
   readonly col = useColumnVisibility('partners-table', this.headerListPartners);
 
   readonly list = useEntityList<PartnerModel>({
@@ -149,14 +155,12 @@ export class PartnersPageComponent implements OnInit {
     count: (arr) => this.partnersService.countPartners(arr),
   });
 
-  readonly modalVisibleSig = toSignal(this.modalService.modalVisibility$, {
-    initialValue: false,
-  });
-
-  // Año actual
   readonly currentYear = this.generalService.currentYear;
+  readonly TypeList = TypeList;
 
-  // Enriquecidos a partir de la lista ordenada del hook
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Enriquecimiento de datos (cuotas)
+  // ──────────────────────────────────────────────────────────────────────────────
   private mapPaymentMethodLabel(
     method?: 'cash' | 'domiciliation' | null
   ): string {
@@ -193,52 +197,41 @@ export class PartnersPageComponent implements OnInit {
         lastCuotaPaid,
         lastPaidYear,
         lastMethodPaid,
-      } as PartnerModel & {
-        years: number;
-        lastCuotaPaid: boolean;
-        lastPaidYear: number | null;
-        lastMethodPaid: string;
       };
     });
   });
 
-  // Recuento (del hook)
   readonly countPartnersSig = this.list.countSig;
 
-  // Filtros
-  filters: Filter[] = [];
-  selectedFilter: number | null = null;
-
-  // Modal
-  item: PartnerModel | null = null;
-  currentModalAction: TypeActionModal = TypeActionModal.Create;
-
-  typeModal = TypeList.Partners;
-  typeSection = TypeList.Partners;
-
-  @ViewChild('printArea', { static: false })
-  printArea!: ElementRef<HTMLElement>;
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Modal controlado por facade
+  // ──────────────────────────────────────────────────────────────────────────────
+  readonly modalVisibleSig = this.modalFacade.isVisibleSig;
+  readonly currentModalTypeSig = this.modalFacade.typeSig;
+  readonly currentModalActionSig = this.modalFacade.actionSig;
+  readonly currentItemSig = this.modalFacade.itemSig;
 
   // ──────────────────────────────────────────────────────────────────────────────
   // Lifecycle
   // ──────────────────────────────────────────────────────────────────────────────
   ngOnInit(): void {
-    this.filters = [
-      { code: '', name: 'Histórico' },
-      ...this.generalService.getYearFilters(1995, this.currentYear),
-    ];
+    this.filtersFacade.loadFiltersFor(TypeList.Partners, '', 1996);
+  }
 
-    // Filtro por año inicial
-    this.filterSelected(this.currentYear.toString());
+  ngAfterViewInit(): void {
+    // Se aplica filtro inicial al cargar
+    setTimeout(() => this.filterSelected(this.currentYear.toString()));
   }
 
   // ──────────────────────────────────────────────────────────────────────────────
   // Filtros / búsqueda
   // ──────────────────────────────────────────────────────────────────────────────
   filterSelected(filter: string): void {
-    this.selectedFilter = filter === '' ? null : Number(filter);
+    this.filtersFacade.selectFilter(filter);
 
-    this.partnersFacade.applyFilterWord('');
+    if (this.toolbarComponent) {
+      this.toolbarComponent.clearSearch();
+    }
 
     if (!filter) {
       this.partnersFacade.loadAllPartners();
@@ -248,6 +241,7 @@ export class PartnersPageComponent implements OnInit {
   }
 
   applyFilterWord(keyword: string): void {
+    this.filtersFacade.setSearch(keyword);
     this.partnersFacade.applyFilterWord(keyword);
   }
 
@@ -255,7 +249,8 @@ export class PartnersPageComponent implements OnInit {
   // Modal
   // ──────────────────────────────────────────────────────────────────────────────
   addNewPartnerModal(): void {
-    this.openModal(this.typeModal, TypeActionModal.Create, null);
+    this.partnersFacade.clearSelectedPartner();
+    this.modalFacade.open(TypeList.Partners, TypeActionModal.Create, null);
   }
 
   onOpenModal(event: {
@@ -263,29 +258,12 @@ export class PartnersPageComponent implements OnInit {
     action: TypeActionModal;
     item?: PartnerModel;
   }): void {
-    this.openModal(event.typeModal, event.action, event.item ?? null);
-  }
-
-  openModal(
-    typeModal: TypeList,
-    action: TypeActionModal,
-    partner: PartnerModel | null
-  ): void {
-    this.currentModalAction = action;
-    this.item = partner;
-    this.typeModal = typeModal;
-
-    // limpiar seleccionado SOLO en Create
-    if (typeModal === TypeList.Partners && action === TypeActionModal.Create) {
-      this.partnersFacade.clearSelectedPartner();
-    }
-
-    this.modalService.openModal();
+    const { typeModal, action, item } = event;
+    this.modalFacade.open(typeModal, action, item ?? null);
   }
 
   onCloseModal(): void {
-    this.modalService.closeModal();
-    this.item = null;
+    this.modalFacade.close();
   }
 
   // ──────────────────────────────────────────────────────────────────────────────
@@ -306,11 +284,12 @@ export class PartnersPageComponent implements OnInit {
     save$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap(() => this.onCloseModal())
+        tap(() => this.modalFacade.close())
       )
       .subscribe();
   }
 
+  // ──────────────────────────────────────────────────────────────────────────────
   // Impresión
   // ──────────────────────────────────────────────────────────────────────────────
   async printTableAsPdf(): Promise<void> {

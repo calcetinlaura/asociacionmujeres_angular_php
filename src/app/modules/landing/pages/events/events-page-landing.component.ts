@@ -1,19 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import {
-  BehaviorSubject,
-  distinctUntilChanged,
-  EMPTY,
-  map,
-  switchMap,
-  tap,
-} from 'rxjs';
+import { distinctUntilChanged, EMPTY, map, switchMap, tap } from 'rxjs';
 
 import { EventsFacade } from 'src/app/application/events.facade';
+import { FiltersFacade } from 'src/app/application/filters.facade';
 import { ModalFacade } from 'src/app/application/modal.facade';
 import { EventModel } from 'src/app/core/interfaces/event.interface';
-import { Filter } from 'src/app/core/interfaces/general.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { EventsService } from 'src/app/core/services/events.services';
 import { GeneralService } from 'src/app/core/services/generalService.service';
@@ -45,6 +38,7 @@ export class EventsPageLandingComponent implements OnInit {
   // === Inyecciones ===
   readonly eventsFacade = inject(EventsFacade);
   readonly modalFacade = inject(ModalFacade);
+  readonly filtersFacade = inject(FiltersFacade);
   private readonly eventsService = inject(EventsService);
   private readonly macroeventsService = inject(MacroeventsService);
   private readonly generalService = inject(GeneralService);
@@ -52,20 +46,16 @@ export class EventsPageLandingComponent implements OnInit {
   private readonly router = inject(Router);
 
   // === Estado general ===
-  readonly typeList = TypeList;
+  readonly TypeList = TypeList;
   readonly TypeActionModal = TypeActionModal;
   readonly isDashboard = false;
 
-  filters: Filter[] = [];
-  selectedFilter: string | number = '';
   deepLinkMultiDate: string | null = null;
-  currentYear = this.generalService.currentYear;
-
-  private readonly selectedYear$ = new BehaviorSubject<number | null>(null);
+  readonly currentYear = this.generalService.currentYear;
 
   // === Datos base desde la fachada ===
-  private readonly allBase$ = this.eventsFacade.allEvents$; // sin agrupar (para calendario)
-  private readonly groupedBase$ = this.eventsFacade.groupedEvents$; // agrupados (para secciones)
+  private readonly allBase$ = this.eventsFacade.allEvents$;
+  private readonly groupedBase$ = this.eventsFacade.groupedEvents$;
 
   // === Derivados ===
   private readonly allForCalendar$ = this.allBase$.pipe(
@@ -78,7 +68,7 @@ export class EventsPageLandingComponent implements OnInit {
     )
   );
 
-  // === Hooks reutilizables ===
+  // === Hooks reutilizables (compat con tu HTML) ===
   readonly calendarList = useEntityList<EventModel>({
     filtered$: this.allForCalendar$,
     sort: (arr) => this.eventsService.sortEventsByDate(arr),
@@ -88,30 +78,31 @@ export class EventsPageLandingComponent implements OnInit {
   readonly sectionList = useEntityList<EventModel>({
     filtered$: this.groupedForSection$,
     map: (arr) => arr,
-    sort: (arr) => arr,
+    sort: (arr) => arr, // ya viene ordenado
     count: (arr) => arr.length,
   });
 
+  // === Signals derivados ===
   readonly upcomingListSig = computed(() =>
-    this.sectionList.sortedSig().filter((e) => !e.isPast)
+    this.sectionList.sortedSig().filter((e) => !(e as any).isPast)
   );
+
   readonly pastListSig = computed(() =>
-    this.sectionList.sortedSig().filter((e) => e.isPast)
+    this.sectionList.sortedSig().filter((e) => (e as any).isPast)
   );
 
   // === Ciclo de vida ===
   ngOnInit(): void {
-    this.filters = this.generalService.getYearFilters(
-      2018,
-      this.currentYear,
-      'Agenda'
-    );
+    // 1) Carga inicial de filtros
+    this.filtersFacade.loadFiltersFor(TypeList.Events, '', 2018);
 
+    // 2) Deep-links iniciales
     const initialId = this.route.snapshot.paramMap.get('id');
     const initialMulti = this.route.snapshot.queryParamMap.get('multiDate');
 
     if (!initialId && !initialMulti) {
-      this.loadEvents(this.currentYear);
+      const current = Number(this.filtersFacade.selectedSig());
+      this.loadEvents(current);
     }
 
     // A) Detectar /events/:id o /macroevents/:id
@@ -129,9 +120,7 @@ export class EventsPageLandingComponent implements OnInit {
             return this.eventsService.getEventsByMacroevent(numericId).pipe(
               tap((events) => {
                 const y = this.pickYearFromMacro(events ?? []);
-                if (!isNaN(y) && y && y !== this.selectedFilter) {
-                  this.loadEvents(y);
-                }
+                this.loadEvents(y);
                 this.deepLinkMultiDate = null;
               })
             );
@@ -139,9 +128,7 @@ export class EventsPageLandingComponent implements OnInit {
             return this.eventsService.getEventById(numericId).pipe(
               tap((event) => {
                 const y = new Date(event.start).getFullYear();
-                if (!isNaN(y) && y !== this.selectedFilter) {
-                  this.loadEvents(y);
-                }
+                this.loadEvents(y);
                 this.deepLinkMultiDate = null;
               })
             );
@@ -159,50 +146,44 @@ export class EventsPageLandingComponent implements OnInit {
       .subscribe((md) => {
         this.deepLinkMultiDate = md;
         if (md) {
-          const d = new Date(md);
-          const y = d.getFullYear();
-          if (!isNaN(y) && y !== this.selectedFilter) {
-            this.loadEvents(y);
-          }
+          const y = new Date(md).getFullYear();
+          this.loadEvents(y);
         }
       });
   }
 
-  // === Filtros / UI ===
+  // === Año seleccionado (signal -> getter reactivo) ===
   get filterYearForCalendar(): number | null {
-    const val =
-      typeof this.selectedFilter === 'number'
-        ? this.selectedFilter
-        : Number(this.selectedFilter);
-    return Number.isFinite(val) ? (val as number) : null;
+    const val = Number(this.filtersFacade.selectedSig());
+    return Number.isFinite(val) ? val : null;
   }
 
+  // === Carga de eventos por año ===
   loadEvents(year: number): void {
-    this.selectedFilter = year;
-    this.selectedYear$.next(year);
+    this.filtersFacade.selectFilter(String(year));
     this.eventsFacade.loadYearBundle(year, 'published');
   }
 
+  // === Callback del <app-filters> ===
   filterSelected(filter: string): void {
     const year = Number(filter);
     if (!Number.isFinite(year)) return;
+
     this.deepLinkMultiDate = null;
     this.router.navigate(['/events'], {
       queryParams: { eventId: null, multiDate: null },
       queryParamsHandling: 'merge',
     });
+
     this.loadEvents(year);
   }
 
-  // === Procesamiento de eventos (divide pasado/futuro) ===
+  // === Procesamiento de eventos ===
   private processNonRepeated(
     events: EventModel[],
     selectedYear: number | null
   ): EventModel[] {
-    const targetYear = Number.isFinite(selectedYear as number)
-      ? (selectedYear as number)
-      : this.currentYear;
-
+    const targetYear = selectedYear ?? this.currentYear;
     const todayT = this.truncateTime(new Date()).getTime();
 
     const flagged = (events ?? []).map((e) => {
@@ -223,7 +204,6 @@ export class EventsPageLandingComponent implements OnInit {
         .sort((a, b) => b.__t - a.__t);
       return [...future, ...past].map(({ __t, ...r }) => r);
     } else {
-      // Para otros años: orden descendente y sin flag de pasado
       return flagged
         .map((e) => ({ ...e, isPast: false }))
         .sort((a, b) => b.__t - a.__t)
@@ -247,7 +227,12 @@ export class EventsPageLandingComponent implements OnInit {
     return new Date((future ?? sorted[0]).start).getFullYear();
   }
 
-  // === Apertura de modales centralizada (usando ModalFacade) ===
+  get filterYearNumber(): number | null {
+    const val = this.filtersFacade.selectedSig();
+    const num = Number(val);
+    return isNaN(num) ? null : num;
+  }
+  // === Apertura de modales ===
   onOpenEvent(ev: EventModel | number): void {
     const id = typeof ev === 'number' ? ev : ev.id;
     this.eventsService.getEventById(id).subscribe((event) => {

@@ -4,49 +4,45 @@ import {
   Component,
   DestroyRef,
   ElementRef,
-  inject,
   OnInit,
   ViewChild,
+  computed,
+  inject,
 } from '@angular/core';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
 import { map } from 'rxjs';
 
+import { FiltersFacade } from 'src/app/application/filters.facade';
+import { ModalFacade } from 'src/app/application/modal.facade';
 import { RecipesFacade } from 'src/app/application/recipes.facade';
+
 import {
   ColumnModel,
   ColumnWidth,
 } from 'src/app/core/interfaces/column.interface';
-import {
-  categoryFilterRecipes,
-  RecipeModel,
-} from 'src/app/core/interfaces/recipe.interface';
+import { RecipeModel } from 'src/app/core/interfaces/recipe.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
-import { RecipesService } from 'src/app/core/services/recipes.services';
 
 import { PdfPrintService } from 'src/app/core/services/PdfPrintService.service';
+import { RecipesService } from 'src/app/core/services/recipes.services';
+
 import { DashboardHeaderComponent } from 'src/app/shared/components/dashboard-header/dashboard-header.component';
 import { FiltersComponent } from 'src/app/shared/components/filters/filters.component';
+import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
+import { PageToolbarComponent } from 'src/app/shared/components/page-toolbar/page-toolbar.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { StickyZoneComponent } from 'src/app/shared/components/sticky-zone/sticky-zone.component';
 import { TableComponent } from 'src/app/shared/components/table/table.component';
 
-// Reutilizables
-import { PageToolbarComponent } from 'src/app/shared/components/page-toolbar/page-toolbar.component';
 import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
-
-// Modal shell + service
-import { Filter } from 'src/app/core/interfaces/general.interface';
-import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
-import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
 
 @Component({
   selector: 'app-recipes-page',
   standalone: true,
   imports: [
-    // UI
     DashboardHeaderComponent,
     SpinnerLoadingComponent,
     StickyZoneComponent,
@@ -54,30 +50,31 @@ import { ModalService } from 'src/app/shared/components/modal/services/modal.ser
     FiltersComponent,
     ModalShellComponent,
     PageToolbarComponent,
-    // Angular
     CommonModule,
-    MatCheckboxModule,
     MatMenuModule,
+    MatCheckboxModule,
   ],
   templateUrl: './recipes-page.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RecipesPageComponent implements OnInit {
-  // Servicios
+  // ─────────────── Inyecciones ───────────────
   private readonly destroyRef = inject(DestroyRef);
-  private readonly modalService = inject(ModalService);
+  private readonly modalFacade = inject(ModalFacade);
   private readonly recipesService = inject(RecipesService);
   private readonly pdfPrintService = inject(PdfPrintService);
-
-  // Facade
   readonly recipesFacade = inject(RecipesFacade);
+  readonly filtersFacade = inject(FiltersFacade);
 
-  // Columnas
+  @ViewChild(PageToolbarComponent)
+  private toolbarComponent!: PageToolbarComponent;
+
+  // ─────────────── Columnas ───────────────
   headerListRecipes: ColumnModel[] = [
     { title: 'Portada', key: 'img', sortable: false },
-    { title: 'Titulo', key: 'title', sortable: true },
+    { title: 'Título', key: 'title', sortable: true },
     {
-      title: 'Categoria',
+      title: 'Categoría',
       key: 'category',
       sortable: true,
       backColor: true,
@@ -121,133 +118,83 @@ export class RecipesPageComponent implements OnInit {
     },
   ];
 
-  // Reutilizables (columnas + lista)
   readonly col = useColumnVisibility('recipes-table', this.headerListRecipes);
 
+  // ─────────────── Lista derivada ───────────────
   readonly list = useEntityList<RecipeModel>({
     filtered$: this.recipesFacade.filteredRecipes$.pipe(map((v) => v ?? [])),
     sort: (arr) => this.recipesService.sortRecipesById(arr),
     count: (arr) => this.recipesService.countRecipes(arr),
   });
 
-  // Filtros
-  filters: Filter[] = [];
-  selectedFilter: string | number = '';
+  readonly TypeList = TypeList;
+  readonly hasRowsSig = computed(() => this.list.countSig() > 0);
 
-  // Modal
-  readonly modalVisibleSig = toSignal(this.modalService.modalVisibility$, {
-    initialValue: false,
-  });
-  item: RecipeModel | null = null;
-  currentModalAction: TypeActionModal = TypeActionModal.Create;
-  typeModal = TypeList.Recipes;
-  typeSection = TypeList.Recipes;
+  // ─────────────── Modal (signals) ───────────────
+  readonly modalVisibleSig = this.modalFacade.isVisibleSig;
+  readonly currentModalTypeSig = this.modalFacade.typeSig;
+  readonly currentModalActionSig = this.modalFacade.actionSig;
+  readonly currentItemSig = this.modalFacade.itemSig;
 
-  // Refs
+  // ─────────────── Impresión ───────────────
   @ViewChild('printArea', { static: false })
   printArea!: ElementRef<HTMLElement>;
 
-  // ──────────────────────────────────────────────────────────────────────────────
-  // Lifecycle
-  // ──────────────────────────────────────────────────────────────────────────────
+  // ─────────────── Lifecycle ───────────────
   ngOnInit(): void {
-    this.filters = [
-      { code: 'NOVEDADES', name: 'Novedades' },
-      { code: '', name: 'Histórico' },
-      ...categoryFilterRecipes,
-    ];
-    this.filterSelected('NOVEDADES'); // carga inicial
+    //  Cargar filtros desde FiltersFacade
+    this.filtersFacade.loadFiltersFor(TypeList.Recipes);
   }
 
-  // ──────────────────────────────────────────────────────────────────────────────
-  // Filtros / búsqueda
-  // ──────────────────────────────────────────────────────────────────────────────
-  filterSelected(filter: string): void {
-    this.selectedFilter = filter;
+  ngAfterViewInit(): void {
+    //  Inicializa con filtro por defecto
+    setTimeout(() => this.filterSelected(''));
+  }
 
-    // reset de búsqueda de texto (el input está en PageToolbar)
+  // ─────────────── Filtros / búsqueda ───────────────
+  filterSelected(filter: string): void {
+    this.filtersFacade.selectFilter(filter);
+
+    //  Limpia el buscador del toolbar
+    if (this.toolbarComponent) {
+      this.toolbarComponent.clearSearch();
+    }
+
+    // Limpia búsqueda anterior
+    this.filtersFacade.setSearch('');
     this.recipesFacade.applyFilterWord('');
 
-    if (!filter) {
+    // Carga según el filtro
+    if (!filter || filter === 'HISTÓRICO' || filter === '') {
       this.recipesFacade.loadAllRecipes();
     } else {
       this.recipesFacade.loadRecipesByFilter(filter);
     }
   }
 
-  applyFilterWord = (keyword: string) =>
+  applyFilterWord(keyword: string): void {
+    this.filtersFacade.setSearch(keyword);
     this.recipesFacade.applyFilterWord(keyword);
+  }
 
-  // ──────────────────────────────────────────────────────────────────────────────
-  // Modal
-  // ──────────────────────────────────────────────────────────────────────────────
+  // ─────────────── Modal + CRUD ───────────────
   addNewRecipeModal(): void {
-    this.onOpenModal({
-      typeModal: this.typeModal,
-      action: TypeActionModal.Create,
-    });
+    this.recipesFacade.clearSelectedRecipe();
+    this.modalFacade.open(TypeList.Recipes, TypeActionModal.Create, null);
   }
 
   onOpenModal(event: {
     typeModal: TypeList;
     action: TypeActionModal;
-    item?: RecipeModel | null;
+    item?: RecipeModel;
   }): void {
-    // EDIT/SHOW → refresco por id para traer últimos cambios
-    if (
-      event.typeModal === TypeList.Recipes &&
-      event.action !== TypeActionModal.Create
-    ) {
-      const id = event.item?.id;
-      if (id) {
-        this.recipesService
-          .getRecipeById(id)
-          .pipe(takeUntilDestroyed(this.destroyRef))
-          .subscribe({
-            next: (fresh) => {
-              this.openModal(event.typeModal, event.action, fresh);
-            },
-            error: (err) => {
-              console.error('Error cargando receta', err);
-
-              this.openModal(event.typeModal, event.action, event.item ?? null);
-            },
-          });
-        return;
-      }
-    }
-
-    this.openModal(event.typeModal, event.action, event.item ?? null);
-  }
-
-  private openModal(
-    typeModal: TypeList,
-    action: TypeActionModal,
-    recipe: RecipeModel | null
-  ): void {
-    this.currentModalAction = action;
-    this.typeModal = typeModal;
-
-    // Clonado defensivo
-    this.item = recipe
-      ? structuredClone?.(recipe) ?? JSON.parse(JSON.stringify(recipe))
-      : null;
-
-    if (typeModal === TypeList.Recipes && action === TypeActionModal.Create) {
-      this.recipesFacade.clearSelectedRecipe();
-    }
-
-    this.modalService.openModal();
+    this.modalFacade.open(event.typeModal, event.action, event.item ?? null);
   }
 
   onCloseModal(): void {
-    this.modalService.closeModal();
-    this.item = null;
+    this.modalFacade.close();
   }
 
-  // ──────────────────────────────────────────────────────────────────────────────
-  // CRUD
-  // ──────────────────────────────────────────────────────────────────────────────
   onDelete({ type, id }: { type: TypeList; id: number }) {
     const actions: Partial<Record<TypeList, (id: number) => void>> = {
       [TypeList.Recipes]: (x) => this.recipesFacade.deleteRecipe(x),
@@ -260,14 +207,12 @@ export class RecipesPageComponent implements OnInit {
       ? this.recipesFacade.editRecipe(event.formData)
       : this.recipesFacade.addRecipe(event.formData);
 
-    save$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-      this.onCloseModal();
-    });
+    save$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.modalFacade.close());
   }
 
-  // ──────────────────────────────────────────────────────────────────────────────
-  // Impresión
-  // ──────────────────────────────────────────────────────────────────────────────
+  // ─────────────── Impresión ───────────────
   async printTableAsPdf(): Promise<void> {
     if (!this.printArea) return;
 

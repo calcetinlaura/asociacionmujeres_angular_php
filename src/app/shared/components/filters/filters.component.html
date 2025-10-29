@@ -1,10 +1,8 @@
 <div class="container_filters">
-  @for (item of filters; track item.code) {
+  @for (item of filters(); track item.code) {
   <app-button-filter
     [name]="item.name"
-    [isActive]="
-      item.code === selectedFilter || '' + item.code === '' + selectedFilter
-    "
+    [isActive]="item.code === selected() || '' + item.code === '' + selected()"
     (filterClick)="filterSelected(item.code)"
   ></app-button-filter>
   }

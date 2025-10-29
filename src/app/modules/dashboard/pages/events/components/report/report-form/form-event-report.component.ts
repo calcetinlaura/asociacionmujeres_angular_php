@@ -15,7 +15,7 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { tap } from 'rxjs';
+import { filter, tap } from 'rxjs';
 
 import { EventsReportsFacade } from 'src/app/application/events-reports.facade';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
@@ -36,8 +36,8 @@ import { ScrollToFirstErrorDirective } from 'src/app/shared/directives/scroll-to
   styleUrls: ['../../../../../../../shared/components/form/form.component.css'],
 })
 export class FormEventReportComponent implements OnInit {
-  private destroyRef = inject(DestroyRef);
-  private generalService = inject(GeneralService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly generalService = inject(GeneralService);
   readonly eventsReportsFacade = inject(EventsReportsFacade);
 
   @Input() eventId!: number;
@@ -49,12 +49,17 @@ export class FormEventReportComponent implements OnInit {
     formData: FormData;
   }>();
 
+  // ────────────────────────────────────────────────────────────────
+  // Estado general
+  // ────────────────────────────────────────────────────────────────
   typeList = TypeList.EventsReports;
-  isLoading = true;
   submitted = false;
   titleForm = 'Informe de cierre del evento';
   buttonAction = 'Guardar informe';
 
+  // ────────────────────────────────────────────────────────────────
+  // Formulario
+  // ────────────────────────────────────────────────────────────────
   formReport = new FormGroup({
     attendance_real: new FormControl<number | null>(null, [Validators.min(0)]),
     satisfaction_avg: new FormControl('', [Validators.maxLength(100)]),
@@ -65,36 +70,35 @@ export class FormEventReportComponent implements OnInit {
     notes: new FormControl('', [Validators.maxLength(2000)]),
   });
 
+  // ────────────────────────────────────────────────────────────────
+  // Lifecycle
+  // ────────────────────────────────────────────────────────────────
   ngOnInit(): void {
-    console.log('🟢 Inicializando FormEventReportComponent', {
-      eventId: this.eventId,
-      itemId: this.itemId,
-      action: this.action,
-    });
+    switch (this.action) {
+      case TypeActionModal.Edit:
+        this.loadReport();
+        break;
 
-    if (this.itemId && this.action === TypeActionModal.Edit) {
-      this.loadReport();
-    } else {
-      this.isLoading = false;
+      default:
+        break;
     }
   }
 
+  // ────────────────────────────────────────────────────────────────
+  // Carga del informe existente
+  // ────────────────────────────────────────────────────────────────
   private loadReport(): void {
-    this.isLoading = true;
+    if (!this.itemId) {
+      return;
+    }
+
     this.eventsReportsFacade.loadReportByEventId(this.itemId);
 
     this.eventsReportsFacade.selectedReport$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((report: any) => {
-          console.log('📄 [Componente] Informe recibido:', report);
-
-          if (!report) {
-            // Si no hay informe, salimos del modo carga y dejamos el form vacío
-            this.isLoading = false;
-            return;
-          }
-
+        filter((report): report is any => !!report),
+        tap((report) => {
           this.formReport.patchValue({
             attendance_real: report.attendance_real ?? null,
             satisfaction_avg: report.satisfaction_avg ?? '',
@@ -105,21 +109,21 @@ export class FormEventReportComponent implements OnInit {
             notes: report.notes ?? '',
           });
 
-          // ✅ actualizamos el id real del informe
           this.itemId = report.id;
-
           this.titleForm = 'Editar informe de evento';
           this.buttonAction = 'Guardar cambios';
-          this.isLoading = false;
         })
       )
       .subscribe();
   }
 
+  // ────────────────────────────────────────────────────────────────
+  // Envío del formulario
+  // ────────────────────────────────────────────────────────────────
   onSendFormReport(): void {
     if (this.formReport.invalid) {
       this.submitted = true;
-      console.warn('Formulario inválido', this.formReport.errors);
+      this.formReport.markAllAsTouched();
       return;
     }
 
@@ -130,19 +134,22 @@ export class FormEventReportComponent implements OnInit {
     if (this.action === TypeActionModal.Edit && this.itemId) {
       formData.append('_method', 'PATCH');
       formData.append('id', this.itemId.toString());
-
       this.eventsReportsFacade.edit(formData).subscribe(() => {
-        console.log('✅ Informe actualizado correctamente');
         this.submitForm.emit({ itemId: this.itemId, formData });
       });
     } else {
-      this.eventsReportsFacade.add(formData).subscribe(() => {
-        console.log('✅ Informe creado correctamente');
-        this.submitForm.emit({ itemId: this.itemId, formData });
+      this.eventsReportsFacade.add(formData).subscribe((response) => {
+        this.submitForm.emit({
+          itemId: response?.id || this.itemId,
+          formData,
+        });
       });
     }
   }
-  // ── Contadores de caracteres ───────────────────────────────
+
+  // ────────────────────────────────────────────────────────────────
+  // Contadores de caracteres
+  // ────────────────────────────────────────────────────────────────
   incidentsLen(): number {
     return (this.formReport.get('incidents')?.value || '').length;
   }

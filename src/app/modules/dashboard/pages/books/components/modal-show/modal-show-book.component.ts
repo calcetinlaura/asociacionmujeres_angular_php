@@ -8,8 +8,6 @@ import { TextEditorComponent } from 'src/app/shared/components/text/text-editor/
 import { TextSubTitleComponent } from 'src/app/shared/components/text/text-subTitle/text-subtitle.component';
 import { TextTitleComponent } from 'src/app/shared/components/text/text-title/text-title.component';
 import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
-
-// 👇 añade estos imports
 import { buildShareUrl } from 'src/app/shared/utils/share-url.util';
 import { environments } from 'src/environments/environments';
 

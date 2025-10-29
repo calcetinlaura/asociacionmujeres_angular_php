@@ -22,6 +22,7 @@
 } @else {
 <app-form-book
   [itemId]="item?.id"
+  [item]="item"
   (submitForm)="sendFormBookData.emit($event)"
 />
 } }
@@ -79,6 +80,7 @@
 } @else {
 <app-form-macroevent
   [itemId]="item?.id"
+  [item]="item"
   (submitForm)="sendFormMacroeventData.emit($event)"
 />
 } }
@@ -106,6 +108,7 @@
 } @else {
 <app-form-movie
   [itemId]="item?.id"
+  [item]="item"
   (submitForm)="sendFormMovieData.emit($event)"
 />
 } }
@@ -116,6 +119,7 @@
 } @else {
 <app-form-recipe
   [itemId]="item?.id"
+  [item]="item"
   (submitForm)="sendFormRecipeData.emit($event)"
 />
 } }
@@ -130,6 +134,7 @@
 } @else {
 <app-form-pitera
   [itemId]="item?.id"
+  [item]="item"
   (submitForm)="sendFormPiteraData.emit($event)"
 />
 } }
@@ -140,6 +145,7 @@
 } @else {
 <app-form-invoice
   [itemId]="item?.id"
+  [item]="item"
   (submitForm)="sendFormInvoiceData.emit($event)"
 />
 } }
@@ -154,6 +160,7 @@
 } @else {
 <app-form-subsidy
   [itemId]="item?.id"
+  [item]="item"
   (submitForm)="sendFormSubsidyData.emit($event)"
 />
 } }
@@ -167,6 +174,7 @@
 } @else {
 <app-form-creditor
   [itemId]="item?.id"
+  [item]="item"
   (submitForm)="sendFormCreditorData.emit($event)"
 />
 } }
@@ -180,6 +188,7 @@
 } @else {
 <app-form-agent
   [itemId]="item?.id"
+  [item]="item"
   (submitForm)="sendFormAgentData.emit($event)"
 />
 } }
@@ -190,6 +199,7 @@
 } @else {
 <app-form-place
   [itemId]="item?.id"
+  [item]="item"
   (submitForm)="sendFormPlaceData.emit($event)"
 />
 } }
@@ -200,6 +210,7 @@
 } @else {
 <app-form-podcast
   [itemId]="item?.id"
+  [item]="item"
   (submitForm)="sendFormPodcastData.emit($event)"
 />
 } }
@@ -210,6 +221,7 @@
 } @else {
 <app-form-article
   [itemId]="item?.id"
+  [item]="item"
   (submitForm)="sendFormArticleData.emit($event)"
 />
 } }
@@ -224,6 +236,7 @@
 } @else {
 <app-form-project
   [itemId]="item?.id"
+  [item]="item"
   (submitForm)="sendFormProjectData.emit($event)"
 />
 } }
@@ -233,6 +246,7 @@
 <app-modal-show-partner [item]="item" /> } @else {
 <app-form-partner
   [itemId]="item?.id"
+  [item]="item"
   (submitForm)="sendFormPartnerData.emit($event)"
 />
 } } @default {

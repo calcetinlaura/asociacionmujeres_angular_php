@@ -5,12 +5,13 @@ import {
   ElementRef,
   OnInit,
   ViewChild,
+  computed,
   inject,
 } from '@angular/core';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
-import { map, tap } from 'rxjs';
+import { map } from 'rxjs';
 
 import { ArticlesFacade } from 'src/app/application/articles.facade';
 import { ArticleModel } from 'src/app/core/interfaces/article.interface';
@@ -20,21 +21,19 @@ import {
 } from 'src/app/core/interfaces/column.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { ArticlesService } from 'src/app/core/services/articles.services';
-
 import { PdfPrintService } from 'src/app/core/services/PdfPrintService.service';
+
 import { DashboardHeaderComponent } from 'src/app/shared/components/dashboard-header/dashboard-header.component';
+import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
+import { PageToolbarComponent } from 'src/app/shared/components/page-toolbar/page-toolbar.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
+import { StickyZoneComponent } from 'src/app/shared/components/sticky-zone/sticky-zone.component';
 import { TableComponent } from 'src/app/shared/components/table/table.component';
 
-// Reutilizables
+import { FiltersFacade } from 'src/app/application/filters.facade';
+import { ModalFacade } from 'src/app/application/modal.facade';
 import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
-
-// Modal shell + service
-import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
-import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
-import { PageToolbarComponent } from 'src/app/shared/components/page-toolbar/page-toolbar.component';
-import { StickyZoneComponent } from 'src/app/shared/components/sticky-zone/sticky-zone.component';
 
 @Component({
   selector: 'app-articles-page',
@@ -55,16 +54,19 @@ import { StickyZoneComponent } from 'src/app/shared/components/sticky-zone/stick
   templateUrl: './articles-page.component.html',
 })
 export class ArticlesPageComponent implements OnInit {
-  // Servicios
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Inyecciones
+  // ──────────────────────────────────────────────────────────────────────────────
   private readonly destroyRef = inject(DestroyRef);
-  private readonly modalService = inject(ModalService);
+  private readonly modalFacade = inject(ModalFacade);
   private readonly articlesService = inject(ArticlesService);
   private readonly pdfPrintService = inject(PdfPrintService);
-
-  // Facade
   readonly articlesFacade = inject(ArticlesFacade);
+  readonly filtersFacade = inject(FiltersFacade);
 
+  // ──────────────────────────────────────────────────────────────────────────────
   // Cabecera de tabla
+  // ──────────────────────────────────────────────────────────────────────────────
   headerListArticles: ColumnModel[] = [
     { title: 'Portada', key: 'img', sortable: false, width: ColumnWidth.XS },
     { title: 'Título', key: 'title', sortable: true },
@@ -86,7 +88,9 @@ export class ArticlesPageComponent implements OnInit {
     },
   ];
 
-  // Reutilizables
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Hooks reutilizables
+  // ──────────────────────────────────────────────────────────────────────────────
   readonly col = useColumnVisibility('articles-table', this.headerListArticles);
 
   readonly list = useEntityList<ArticleModel>({
@@ -95,16 +99,18 @@ export class ArticlesPageComponent implements OnInit {
     count: (arr) => this.articlesService.countArticles(arr),
   });
 
-  // Modal
-  readonly modalVisibleSig = toSignal(this.modalService.modalVisibility$, {
-    initialValue: false,
-  });
-  item: ArticleModel | null = null;
-  currentModalAction: TypeActionModal = TypeActionModal.Create;
-  typeModal: TypeList = TypeList.Articles;
-  typeSection: TypeList = TypeList.Articles;
+  readonly TypeList = TypeList;
+  readonly hasRowsSig = computed(() => this.list.countSig() > 0);
 
-  // Refs
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Modal (ModalFacade)
+  // ──────────────────────────────────────────────────────────────────────────────
+  readonly modalVisibleSig = this.modalFacade.isVisibleSig;
+  readonly currentModalTypeSig = this.modalFacade.typeSig;
+  readonly currentModalActionSig = this.modalFacade.actionSig;
+  readonly currentItemSig = this.modalFacade.itemSig;
+
+  // Ref impresión
   @ViewChild('printArea', { static: false })
   printArea!: ElementRef<HTMLElement>;
 
@@ -118,14 +124,17 @@ export class ArticlesPageComponent implements OnInit {
   // ──────────────────────────────────────────────────────────────────────────────
   // Búsqueda
   // ──────────────────────────────────────────────────────────────────────────────
-  applyFilterWord = (keyword: string) =>
+  applyFilterWord(keyword: string): void {
+    this.filtersFacade.setSearch(keyword);
     this.articlesFacade.applyFilterWord(keyword);
+  }
 
   // ──────────────────────────────────────────────────────────────────────────────
-  // Modal
+  // Modal + CRUD
   // ──────────────────────────────────────────────────────────────────────────────
   addNewArticleModal(): void {
-    this.openModal(TypeList.Articles, TypeActionModal.Create, null);
+    this.articlesFacade.clearSelectedArticle();
+    this.modalFacade.open(TypeList.Articles, TypeActionModal.Create, null);
   }
 
   onOpenModal(event: {
@@ -133,33 +142,30 @@ export class ArticlesPageComponent implements OnInit {
     action: TypeActionModal;
     item?: ArticleModel;
   }): void {
-    this.openModal(event.typeModal, event.action, event.item ?? null);
-  }
-
-  openModal(
-    typeModal: TypeList,
-    action: TypeActionModal,
-    article: ArticleModel | null
-  ): void {
-    this.currentModalAction = action;
-    this.item = article;
-    this.typeModal = typeModal;
-
-    if (typeModal === TypeList.Articles && action === TypeActionModal.Create) {
-      this.articlesFacade.clearSelectedArticle();
+    const { typeModal, action, item } = event;
+    if (
+      typeModal === TypeList.Articles &&
+      action !== TypeActionModal.Create &&
+      item?.id
+    ) {
+      this.articlesService
+        .getArticleById(item.id)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (fresh) =>
+            this.modalFacade.open(typeModal, action, fresh ?? item ?? null),
+          error: () => this.modalFacade.open(typeModal, action, item ?? null),
+        });
+      return;
     }
 
-    this.modalService.openModal();
+    this.modalFacade.open(typeModal, action, item ?? null);
   }
 
   onCloseModal(): void {
-    this.modalService.closeModal();
-    this.item = null;
+    this.modalFacade.close();
   }
 
-  // ──────────────────────────────────────────────────────────────────────────────
-  // CRUD
-  // ──────────────────────────────────────────────────────────────────────────────
   onDelete({ type, id }: { type: TypeList; id: number }) {
     const actions: Partial<Record<TypeList, (id: number) => void>> = {
       [TypeList.Articles]: (x) => this.articlesFacade.deleteArticle(x),
@@ -173,11 +179,8 @@ export class ArticlesPageComponent implements OnInit {
       : this.articlesFacade.addArticle(event.formData);
 
     save$
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap(() => this.onCloseModal())
-      )
-      .subscribe();
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.modalFacade.close());
   }
 
   // ──────────────────────────────────────────────────────────────────────────────

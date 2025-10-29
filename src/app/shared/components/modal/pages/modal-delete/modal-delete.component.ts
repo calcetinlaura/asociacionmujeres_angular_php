@@ -12,11 +12,10 @@ export class ModalDeleteComponent implements OnInit {
   @Output() closeModal = new EventEmitter<boolean>();
   @Output() confirmDelete = new EventEmitter<number>();
   @Input() item?: any;
-  @Input() typeModal: TypeList = TypeList.Books;
-  @Input() action: TypeActionModal = TypeActionModal.Show;
+  @Input() typeModal: TypeList = TypeList.None;
+  @Input() action: TypeActionModal = TypeActionModal.None;
 
   TypeActionModal = TypeActionModal;
-  TypeList = TypeList;
 
   constructor() {}
 
@@ -43,8 +42,8 @@ export class ModalDeleteComponent implements OnInit {
 
   messageMap: Record<TypeList, DeleteMessageFormatter> = {
     [TypeList.Agents]: (item) => ({
-      label: 'al organismo',
-      value: item?.company,
+      label: 'al agente',
+      value: item?.name,
     }),
     [TypeList.Articles]: (item) => ({
       label: 'el artículo',
@@ -108,6 +107,14 @@ export class ModalDeleteComponent implements OnInit {
     }),
     [TypeList.EventsReports]: (item) => ({
       label: 'el informe del evento ',
+      value: `${item?.name} ${item?.year}`,
+    }),
+    [TypeList.None]: (item) => ({
+      label: 'error al cargar ',
+      value: `${item?.name} ${item?.year}`,
+    }),
+    [TypeList.Gallery]: (item) => ({
+      label: 'la imagen',
       value: `${item?.name} ${item?.year}`,
     }),
   };

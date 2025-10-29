@@ -8,46 +8,40 @@ import {
   computed,
   inject,
 } from '@angular/core';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
+import { map } from 'rxjs';
 
 import { BooksFacade } from 'src/app/application/books.facade';
-import {
-  BookModel,
-  genderFilterBooks,
-} from 'src/app/core/interfaces/book.interface';
+import { FiltersFacade } from 'src/app/application/filters.facade'; // ← NUEVO
+import { ModalFacade } from 'src/app/application/modal.facade';
+
+import { BookModel } from 'src/app/core/interfaces/book.interface';
 import {
   ColumnModel,
   ColumnWidth,
 } from 'src/app/core/interfaces/column.interface';
-import { Filter } from 'src/app/core/interfaces/general.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
+
 import { BooksService } from 'src/app/core/services/books.services';
+import { PdfPrintService } from 'src/app/core/services/PdfPrintService.service';
 
 import { DashboardHeaderComponent } from 'src/app/shared/components/dashboard-header/dashboard-header.component';
-import { TableComponent } from 'src/app/shared/components/table/table.component';
-
-import { PdfPrintService } from 'src/app/core/services/PdfPrintService.service';
-import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
-import { StickyZoneComponent } from 'src/app/shared/components/sticky-zone/sticky-zone.component';
-
-// Reutilizables
-import { PageToolbarComponent } from 'src/app/shared/components/page-toolbar/page-toolbar.component';
-import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
-import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
-
-// Modal shell + service
-import { map } from 'rxjs';
 import { FiltersComponent } from 'src/app/shared/components/filters/filters.component';
 import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
-import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
+import { PageToolbarComponent } from 'src/app/shared/components/page-toolbar/page-toolbar.component';
+import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
+import { StickyZoneComponent } from 'src/app/shared/components/sticky-zone/sticky-zone.component';
+import { TableComponent } from 'src/app/shared/components/table/table.component';
+
+import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
+import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
 
 @Component({
   selector: 'app-books-page',
   standalone: true,
   imports: [
-    // UI
     DashboardHeaderComponent,
     SpinnerLoadingComponent,
     StickyZoneComponent,
@@ -55,7 +49,6 @@ import { ModalService } from 'src/app/shared/components/modal/services/modal.ser
     FiltersComponent,
     ModalShellComponent,
     PageToolbarComponent,
-    // Angular
     CommonModule,
     MatMenuModule,
     MatCheckboxModule,
@@ -64,14 +57,15 @@ import { ModalService } from 'src/app/shared/components/modal/services/modal.ser
 })
 export class BooksPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
-  private readonly modalService = inject(ModalService);
+  private readonly modalFacade = inject(ModalFacade);
   private readonly booksService = inject(BooksService);
   private readonly pdfPrintService = inject(PdfPrintService);
-
-  // Facade
   readonly booksFacade = inject(BooksFacade);
+  readonly filtersFacade = inject(FiltersFacade);
 
-  // Columnas
+  @ViewChild(PageToolbarComponent)
+  private toolbarComponent!: PageToolbarComponent;
+
   headerListBooks: ColumnModel[] = [
     { title: 'Portada', key: 'img', sortable: false },
     { title: 'Título', key: 'title', sortable: true, width: ColumnWidth.XL },
@@ -87,6 +81,7 @@ export class BooksPageComponent implements OnInit {
       key: 'description',
       sortable: true,
       innerHTML: true,
+      showIndicatorOnEmpty: true,
     },
     {
       title: 'Resumen',
@@ -105,68 +100,48 @@ export class BooksPageComponent implements OnInit {
     { title: 'Año compra', key: 'year', sortable: true, width: ColumnWidth.XS },
   ];
 
-  // Reutilizables (columnas + lista)
   readonly col = useColumnVisibility('books-table', this.headerListBooks, [
     'year',
     'gender',
   ]);
 
-  // Lista derivada con useEntityList
+  // ─────────────── Lista derivada ───────────────
   readonly list = useEntityList<BookModel>({
     filtered$: this.booksFacade.filteredBooks$.pipe(map((v) => v ?? [])),
-    // Normaliza/ajusta datos de salida para la tabla (opcional)
     map: (arr) =>
-      arr.map((b) => ({
-        ...b,
-        // Ejemplo: asegura string en description
-        description: (b.description ?? '').toString(),
-      })),
+      arr.map((b) => ({ ...b, description: (b.description ?? '').toString() })),
     sort: (arr) => this.booksService.sortBooksById(arr),
     count: (arr) => this.booksService.countBooks(arr),
   });
 
-  // Señales derivadas adicionales útiles en plantilla
+  readonly TypeList = TypeList;
   readonly hasRowsSig = computed(() => this.list.countSig() > 0);
 
-  // Filtros
-  filters: Filter[] = [];
-  selectedFilter: string | number = '';
+  // ─────────────── Modal (signals) ───────────────
+  readonly modalVisibleSig = this.modalFacade.isVisibleSig;
+  readonly currentModalTypeSig = this.modalFacade.typeSig;
+  readonly currentModalActionSig = this.modalFacade.actionSig;
+  readonly currentItemSig = this.modalFacade.itemSig;
 
-  // Modal
-  readonly modalVisibleSig = toSignal(this.modalService.modalVisibility$, {
-    initialValue: false,
-  });
-  item: BookModel | null = null;
-  currentModalAction: TypeActionModal = TypeActionModal.Create;
-  typeModal: TypeList = TypeList.Books;
-  typeSection: TypeList = TypeList.Books;
-
-  // Refs
+  // ─────────────── Impresión ───────────────
   @ViewChild('printArea', { static: false })
   printArea!: ElementRef<HTMLElement>;
 
-  // ──────────────────────────────────────────────────────────────────────────────
-  // Lifecycle
-  // ──────────────────────────────────────────────────────────────────────────────
+  // ─────────────── Lifecycle ───────────────
   ngOnInit(): void {
-    this.filters = [
-      { code: 'NOVEDADES', name: 'Novedades' },
-      { code: '', name: 'Todos' },
-      ...genderFilterBooks,
-    ];
-
-    // carga inicial
-    this.filterSelected('');
+    // Cargamos los filtros comunes desde la Facade central
+    this.filtersFacade.loadFiltersFor(TypeList.Books);
   }
-
-  // ──────────────────────────────────────────────────────────────────────────────
-  // Filtros / búsqueda
-  // ──────────────────────────────────────────────────────────────────────────────
+  ngAfterViewInit(): void {
+    setTimeout(() => this.filterSelected('NOVEDADES'));
+  }
+  // ─────────────── Filtros / búsqueda ───────────────
   filterSelected(filter: string): void {
-    this.selectedFilter = filter;
+    this.filtersFacade.selectFilter(filter);
 
-    // Reset búsqueda de texto al cambiar filtro
-    this.booksFacade.applyFilterWord('');
+    if (this.toolbarComponent) {
+      this.toolbarComponent.clearSearch();
+    }
 
     if (!filter) {
       this.booksFacade.loadAllBooks();
@@ -176,14 +151,14 @@ export class BooksPageComponent implements OnInit {
   }
 
   applyFilterWord(keyword: string): void {
+    this.filtersFacade.setSearch(keyword);
     this.booksFacade.applyFilterWord(keyword);
   }
 
-  // ──────────────────────────────────────────────────────────────────────────────
-  // Modal + navegación
-  // ──────────────────────────────────────────────────────────────────────────────
+  // ─────────────── Modal + CRUD ───────────────
   addNewBookModal(): void {
-    this.openModal(TypeList.Books, TypeActionModal.Create, null);
+    this.booksFacade.clearSelectedBook();
+    this.modalFacade.open(TypeList.Books, TypeActionModal.Create, null);
   }
 
   onOpenModal(event: {
@@ -191,33 +166,13 @@ export class BooksPageComponent implements OnInit {
     action: TypeActionModal;
     item?: BookModel;
   }): void {
-    this.openModal(event.typeModal, event.action, event.item ?? null);
-  }
-
-  openModal(
-    typeModal: TypeList,
-    action: TypeActionModal,
-    book: BookModel | null
-  ): void {
-    this.currentModalAction = action;
-    this.item = book;
-    this.typeModal = typeModal;
-
-    if (typeModal === TypeList.Books && action === TypeActionModal.Create) {
-      this.booksFacade.clearSelectedBook();
-    }
-
-    this.modalService.openModal();
+    this.modalFacade.open(event.typeModal, event.action, event.item ?? null);
   }
 
   onCloseModal(): void {
-    this.modalService.closeModal();
-    this.item = null;
+    this.modalFacade.close();
   }
 
-  // ──────────────────────────────────────────────────────────────────────────────
-  // CRUD
-  // ──────────────────────────────────────────────────────────────────────────────
   onDelete({ type, id }: { type: TypeList; id: number }) {
     const actions: Partial<Record<TypeList, (id: number) => void>> = {
       [TypeList.Books]: (x) => this.booksFacade.deleteBook(x),
@@ -232,11 +187,10 @@ export class BooksPageComponent implements OnInit {
 
     save$
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => this.onCloseModal());
+      .subscribe(() => this.modalFacade.close());
   }
 
-  // Impresión
-  // ──────────────────────────────────────────────────────────────────────────────
+  // ─────────────── Impresión ───────────────
   async printTableAsPdf(): Promise<void> {
     if (!this.printArea) return;
 

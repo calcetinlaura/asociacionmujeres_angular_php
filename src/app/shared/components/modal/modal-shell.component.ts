@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   ElementRef,
   EventEmitter,
@@ -30,17 +31,17 @@ import { ModalPdfComponent } from './pages/modal-pdf/modal-pdf.component';
 })
 export class ModalShellComponent<T> {
   readonly modalFacade = inject(ModalFacade);
+  private readonly cdr = inject(ChangeDetectorRef);
   // === Inputs ===
   @Input({ required: true }) visible!: boolean;
   @Input({ required: true }) typeModal!: TypeList;
   @Input({ required: true }) action!: TypeActionModal;
   @Input() item: T | null = null;
-  @Input() canGoBack = false;
+
   @Input() isDashboard = false;
   @Input() contentVersion = 0;
 
   // === Internal ===
-  isOpen = true;
   pdfState = {
     open: false,
     url: '' as string,
@@ -51,6 +52,7 @@ export class ModalShellComponent<T> {
   @ViewChild(UiModalComponent) ui?: UiModalComponent;
   @ViewChild('host', { read: ElementRef }) host?: ElementRef<HTMLElement>;
 
+  readonly canGoBackSig = this.modalFacade.canGoBackSig;
   // === Outputs ===
   @Output() back = new EventEmitter<void>();
   @Output() close = new EventEmitter<void>();
@@ -123,16 +125,16 @@ export class ModalShellComponent<T> {
 
   // Método seguro para retroceder
   onBackModal() {
+    console.log('↩️ [ModalShell] go back pressed');
+    console.log('🧩 stack actual:', this.modalFacade['stackSig']?.());
+
     if (this.modalFacade.canGoBack()) {
-      // Retrocede a la modal anterior
       this.modalFacade.back();
     } else {
-      // No hay historial: cerramos la modal
       this.onCloseModal();
     }
   }
   onCloseModal() {
-    this.isOpen = false;
     this.modalFacade.close(); // 🔹 Cierra y limpia la pila
     this.close.emit();
   }
@@ -157,8 +159,22 @@ export class ModalShellComponent<T> {
   }
 
   ngOnChanges(ch: SimpleChanges) {
+    console.log(
+      '👁️ [ModalShell] visible:',
+      this.visible,
+      'action:',
+      this.action,
+      'item:',
+      this.item
+    );
+
     if (ch['contentVersion'] || ch['item'] || ch['typeModal']) {
       this.forceScrollTop('smooth');
+    }
+
+    // 🔹 Fuerza la actualización de Angular
+    if (ch['action'] || ch['item'] || ch['visible']) {
+      this.cdr.detectChanges();
     }
   }
 }

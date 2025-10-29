@@ -8,8 +8,8 @@
   <div class="flex flex-col gap-y-10">
     <div class="flex justify-center items-center gap-x-32">
       <app-filters
-        [filters]="filters"
-        [(selected)]="selectedFilter"
+        [filters]="filtersFacade.filtersSig"
+        [selected]="filtersFacade.selectedSig"
         (filterClicked)="filterSelected($event)"
       ></app-filters>
       <div class="flex gap-x-4 items-center">
@@ -38,8 +38,7 @@
 
     <app-table
       [data]="list.processedSig()"
-      [typeSection]="typeSection"
-      [typeModal]="typeModal"
+      [typeSection]="TypeList.Events"
       [headerColumns]="col.getVisibleColumns()"
       [columnVisibility]="col.columnVisSig()"
       [displayedColumns]="col.displayedColumnsSig()"
@@ -56,15 +55,14 @@
 
 <app-modal-shell
   [visible]="modalVisibleSig()"
-  [typeModal]="typeModal"
-  [action]="currentModalAction"
-  [item]="item"
-  (close)="onCloseModal()"
-  (confirmDelete)="onDelete($event)"
-  [canGoBack]="canGoBack"
+  [typeModal]="currentModalTypeSig()"
+  [action]="currentModalActionSig()"
+  [item]="currentItemSig()"
   (back)="onBackModal()"
+  (close)="onCloseModal()"
   (openEvent)="onOpenEvent($event)"
   (openMacroevent)="onOpenMacroevent($event)"
+  (confirmDelete)="onDelete($event)"
   (sendFormEventData)="sendFormEvent($event)"
   (sendFormEventReportData)="sendFormEventReport($event)"
 />

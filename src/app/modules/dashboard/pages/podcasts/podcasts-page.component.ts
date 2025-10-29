@@ -4,13 +4,15 @@ import {
   Component,
   DestroyRef,
   ElementRef,
-  inject,
   OnInit,
   ViewChild,
+  computed,
+  inject,
 } from '@angular/core';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
+import { map } from 'rxjs';
 
 import { PodcastsFacade } from 'src/app/application/podcasts.facade';
 import {
@@ -19,23 +21,20 @@ import {
 } from 'src/app/core/interfaces/column.interface';
 import { PodcastModel } from 'src/app/core/interfaces/podcast.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
+import { PdfPrintService } from 'src/app/core/services/PdfPrintService.service';
 import { PodcastsService } from 'src/app/core/services/podcasts.services';
 
-import { PdfPrintService } from 'src/app/core/services/PdfPrintService.service';
 import { DashboardHeaderComponent } from 'src/app/shared/components/dashboard-header/dashboard-header.component';
+import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
+import { PageToolbarComponent } from 'src/app/shared/components/page-toolbar/page-toolbar.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { StickyZoneComponent } from 'src/app/shared/components/sticky-zone/sticky-zone.component';
 import { TableComponent } from 'src/app/shared/components/table/table.component';
 
-// Reutilizables
-import { PageToolbarComponent } from 'src/app/shared/components/page-toolbar/page-toolbar.component';
+import { FiltersFacade } from 'src/app/application/filters.facade';
+import { ModalFacade } from 'src/app/application/modal.facade';
 import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
-
-// Modal shell + service
-import { map } from 'rxjs';
-import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
-import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
 
 @Component({
   selector: 'app-podcasts-page',
@@ -57,16 +56,19 @@ import { ModalService } from 'src/app/shared/components/modal/services/modal.ser
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PodcastsPageComponent implements OnInit {
-  // Servicios
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Inyecciones
+  // ──────────────────────────────────────────────────────────────────────────────
   private readonly destroyRef = inject(DestroyRef);
-  private readonly modalService = inject(ModalService);
+  private readonly modalFacade = inject(ModalFacade);
   private readonly podcastsService = inject(PodcastsService);
   private readonly pdfPrintService = inject(PdfPrintService);
-
-  // Facade pública
   readonly podcastsFacade = inject(PodcastsFacade);
+  readonly filtersFacade = inject(FiltersFacade);
 
+  // ──────────────────────────────────────────────────────────────────────────────
   // Columnas
+  // ──────────────────────────────────────────────────────────────────────────────
   headerListPodcasts: ColumnModel[] = [
     { title: 'Portada', key: 'img', sortable: false },
     { title: 'Título', key: 'title', sortable: true, width: ColumnWidth.XL },
@@ -107,7 +109,7 @@ export class PodcastsPageComponent implements OnInit {
       width: ColumnWidth.XS,
     },
     {
-      title: 'Equipo artistico',
+      title: 'Equipo artístico',
       key: 'artists',
       sortable: true,
       innerHTML: true,
@@ -127,7 +129,9 @@ export class PodcastsPageComponent implements OnInit {
     },
   ];
 
+  // ──────────────────────────────────────────────────────────────────────────────
   // Hooks reutilizables
+  // ──────────────────────────────────────────────────────────────────────────────
   readonly col = useColumnVisibility('podcasts-table', this.headerListPodcasts);
 
   readonly list = useEntityList<PodcastModel>({
@@ -136,15 +140,18 @@ export class PodcastsPageComponent implements OnInit {
     count: (arr) => this.podcastsService.countPodcasts(arr),
   });
 
-  // Modal
-  readonly modalVisibleSig = toSignal(this.modalService.modalVisibility$, {
-    initialValue: false,
-  });
-  item: PodcastModel | null = null;
-  currentModalAction: TypeActionModal = TypeActionModal.Create;
-  typeModal = TypeList.Podcasts;
-  typeSection = TypeList.Podcasts;
+  readonly TypeList = TypeList;
+  readonly hasRowsSig = computed(() => this.list.countSig() > 0);
 
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Modal (ModalFacade)
+  // ──────────────────────────────────────────────────────────────────────────────
+  readonly modalVisibleSig = this.modalFacade.isVisibleSig;
+  readonly currentModalTypeSig = this.modalFacade.typeSig;
+  readonly currentModalActionSig = this.modalFacade.actionSig;
+  readonly currentItemSig = this.modalFacade.itemSig;
+
+  // Ref impresión
   @ViewChild('printArea', { static: false })
   printArea!: ElementRef<HTMLElement>;
 
@@ -152,21 +159,23 @@ export class PodcastsPageComponent implements OnInit {
   // Lifecycle
   // ──────────────────────────────────────────────────────────────────────────────
   ngOnInit(): void {
-    // Carga inicial
     this.podcastsFacade.loadAllPodcasts();
   }
 
   // ──────────────────────────────────────────────────────────────────────────────
-  // Búsqueda
+  // Filtros / búsqueda
   // ──────────────────────────────────────────────────────────────────────────────
-  applyFilterWord = (keyword: string) =>
+  applyFilterWord(keyword: string): void {
+    this.filtersFacade.setSearch(keyword);
     this.podcastsFacade.applyFilterWord(keyword);
+  }
 
   // ──────────────────────────────────────────────────────────────────────────────
-  // Modal
+  // Modal + CRUD
   // ──────────────────────────────────────────────────────────────────────────────
   addNewPodcastModal(): void {
-    this.openModal(this.typeModal, TypeActionModal.Create, null);
+    this.podcastsFacade.clearSelectedPodcast();
+    this.modalFacade.open(TypeList.Podcasts, TypeActionModal.Create, null);
   }
 
   onOpenModal(event: {
@@ -174,50 +183,30 @@ export class PodcastsPageComponent implements OnInit {
     action: TypeActionModal;
     item?: PodcastModel;
   }): void {
+    const { typeModal, action, item } = event;
     if (
-      event.typeModal === TypeList.Podcasts &&
-      event.action !== TypeActionModal.Create &&
-      event.item?.id
+      typeModal === TypeList.Podcasts &&
+      action !== TypeActionModal.Create &&
+      item?.id
     ) {
       this.podcastsService
-        .getPodcastById(event.item.id)
+        .getPodcastById(item.id)
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
-          next: (fresh) => this.openModal(event.typeModal, event.action, fresh),
-          error: () =>
-            this.openModal(event.typeModal, event.action, event.item ?? null),
+          next: (fresh) =>
+            this.modalFacade.open(typeModal, action, fresh ?? item ?? null),
+          error: () => this.modalFacade.open(typeModal, action, item ?? null),
         });
       return;
     }
-    this.openModal(event.typeModal, event.action, event.item ?? null);
-  }
 
-  openModal(
-    typeModal: TypeList,
-    action: TypeActionModal,
-    podcast: PodcastModel | null
-  ): void {
-    this.currentModalAction = action;
-    this.item = podcast
-      ? structuredClone?.(podcast) ?? JSON.parse(JSON.stringify(podcast))
-      : null;
-    this.typeModal = typeModal;
-
-    if (typeModal === TypeList.Podcasts && action === TypeActionModal.Create) {
-      this.podcastsFacade.clearSelectedPodcast();
-    }
-
-    this.modalService.openModal();
+    this.modalFacade.open(typeModal, action, item ?? null);
   }
 
   onCloseModal(): void {
-    this.modalService.closeModal();
-    this.item = null;
+    this.modalFacade.close();
   }
 
-  // ──────────────────────────────────────────────────────────────────────────────
-  // CRUD
-  // ──────────────────────────────────────────────────────────────────────────────
   onDelete({ type, id }: { type: TypeList; id: number }) {
     const actions: Partial<Record<TypeList, (id: number) => void>> = {
       [TypeList.Podcasts]: (x) => this.podcastsFacade.deletePodcast(x),
@@ -230,9 +219,9 @@ export class PodcastsPageComponent implements OnInit {
       ? this.podcastsFacade.editPodcast(event.formData)
       : this.podcastsFacade.addPodcast(event.formData);
 
-    save$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-      this.onCloseModal();
-    });
+    save$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.modalFacade.close());
   }
 
   // ──────────────────────────────────────────────────────────────────────────────

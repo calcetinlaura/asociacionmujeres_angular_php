@@ -1,9 +1,10 @@
 <div class="flex flex-col mx-3 md:mx-8 mt-4">
   <app-filters
-    [filters]="filters"
-    [(selected)]="selectedFilter"
+    [filters]="filtersFacade.filtersSig"
+    [selected]="filtersFacade.selectedSig"
     (filterClicked)="filterSelected($event)"
-  />
+  ></app-filters>
+
   <app-input-search (onDebounce)="applyFilterWord($event)" class="my-8" />
 
   @if (booksFacade.isLoadingList$ | async) {
@@ -12,21 +13,19 @@
   </div>
   } @else { @if (hasResultsSig()) {
   <app-section-generic
-    [typeSection]="typeList.Books"
+    [typeSection]="TypeList.Books"
     [data]="list.sortedSig()"
     [total]="totalSig()"
     (itemClicked)="openBookDetails($event)"
   />
   } @else {
   <app-no-results [text]="'libros' | lowercase" />
-  } } @if (modalFacade.isVisibleSig()) {
-
+  } }
   <app-modal-shell
-    [visible]="modalFacade.isOpenSig()"
+    [visible]="modalFacade.isVisibleSig()"
     [typeModal]="modalFacade.typeSig()"
     [action]="modalFacade.actionSig()"
     [item]="modalFacade.itemSig()"
     (close)="modalFacade.close()"
   />
-  }
 </div>

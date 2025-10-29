@@ -168,7 +168,7 @@ export function audienceValidatorFactory(
 })
 export class FormEventComponent implements OnInit, OnChanges {
   private readonly destroyRef = inject(DestroyRef);
-  private readonly eventsFacade = inject(EventsFacade);
+  readonly eventsFacade = inject(EventsFacade);
   private readonly placesFacade = inject(PlacesFacade);
   private readonly macroeventsService = inject(MacroeventsService);
   private readonly projectsService = inject(ProjectsService);
@@ -340,20 +340,8 @@ export class FormEventComponent implements OnInit, OnChanges {
   dates: DayEventModel[] = [];
   wasPeriodic = false;
   selectedPlaceId: number | null = null;
-  isLoading = true;
 
-  quillModules = {
-    toolbar: [
-      [{ header: [1, 2, false] }],
-      ['bold', 'italic', 'underline'],
-      ['image', 'code-block'],
-      [{ color: [] }, { background: [] }],
-      [{ list: 'ordered' }, { list: 'bullet' }],
-      [{ align: [] }],
-      ['link', 'clean'],
-      [{ indent: '-1' }, { indent: '+1' }],
-    ],
-  };
+  quillModules = this.generalService.defaultQuillModules;
 
   private originalIdForDuplicate: number | null = null;
 
@@ -361,8 +349,6 @@ export class FormEventComponent implements OnInit, OnChanges {
   // Ciclo de vida
   // ------------------------------------------------------
   ngOnInit(): void {
-    this.isLoading = true;
-
     // ---- Suscripciones del audience (coherencia automática de flags)
     // ALL PUBLIC
     this.audienceForm
@@ -445,11 +431,8 @@ export class FormEventComponent implements OnInit, OnChanges {
     // ---- Carga inicial/duplicado
     if (this.itemId === 0 || !this.itemId) {
       if (this.item) {
-        this.populateFormWithEvent(this.item).subscribe(() => {
-          this.isLoading = false;
-        });
+        this.populateFormWithEvent(this.item).subscribe(() => {});
       } else {
-        this.isLoading = false;
         this.formEvent.reset();
         // audience reset también
         this.resetAudienceForm();
@@ -520,7 +503,6 @@ export class FormEventComponent implements OnInit, OnChanges {
       // Se ha reabierto el formulario, forzamos limpieza
       this.formEvent.reset();
       this.resetAudienceForm(); // si tienes públicos, precios, fechas extra
-      this.isLoading = false;
     }
 
     if (changes['item'] && changes['item'].currentValue) {
@@ -528,11 +510,7 @@ export class FormEventComponent implements OnInit, OnChanges {
       console.log('[ngOnChanges] item changed, hydrating form with:', incoming);
       // Solo hidratamos si hay datos válidos
       if (incoming && incoming.id) {
-        this.isLoading = true;
-        this.populateFormWithEvent(incoming).subscribe(() => {
-          console.log('[populateFormWithEvent] hydration done');
-          this.isLoading = false;
-        });
+        this.populateFormWithEvent(incoming).subscribe();
       }
     }
 
@@ -541,7 +519,6 @@ export class FormEventComponent implements OnInit, OnChanges {
       console.log('[ngOnChanges] itemId changed:', newId);
       // Carga desde la fachada si viene sólo un ID
       if (newId !== 0) {
-        this.isLoading = true;
         this.loadEventData(newId);
       }
     }
@@ -723,9 +700,7 @@ export class FormEventComponent implements OnInit, OnChanges {
         debounceTime(300),
         switchMap((event) => this.populateFormWithEvent(event))
       )
-      .subscribe(() => {
-        this.isLoading = false;
-      });
+      .subscribe();
   }
 
   private populateFormWithEvent(event: EventModelFullData): Observable<void> {

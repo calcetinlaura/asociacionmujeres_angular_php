@@ -60,7 +60,7 @@ export class CalendarComponent implements OnChanges {
 
   currentMonth: number = new Date().getMonth();
   currentYear: number = new Date().getFullYear();
-  typeList = TypeList;
+  readonly TypeList = TypeList;
 
   private readonly eventsService = inject(EventsService);
   private readonly grid = inject(CalendarGridService);

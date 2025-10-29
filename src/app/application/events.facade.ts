@@ -15,6 +15,7 @@ import {
 } from 'rxjs';
 import { EventModelFullData } from 'src/app/core/interfaces/event.interface';
 import { EventsService } from 'src/app/core/services/events.services';
+import { AgentEventsQuery } from '../core/interfaces/agent.interface';
 import { includesNormalized, toSearchKey } from '../shared/utils/text.utils';
 import { LoadableFacade } from './loadable.facade';
 
@@ -76,7 +77,7 @@ export class EventsFacade extends LoadableFacade {
   readonly landingPastEvents$ = this.landingPastEventsSubject.asObservable();
 
   readonly isListLoading$ = this.isListLoadingSubject.asObservable();
-  readonly isItemLoading$ = this.isItemLoadingSubject.asObservable();
+  readonly isLoadingItem$ = this.isItemLoadingSubject.asObservable();
 
   private current: CurrentFilter = { kind: 'none' };
 
@@ -412,6 +413,22 @@ export class EventsFacade extends LoadableFacade {
   loadEventsByPeriodicId(periodicId: string): Observable<EventModelFullData[]> {
     this.isItemLoadingSubject.next(true);
     return this.eventsService.getEventsByPeriodicId(periodicId).pipe(
+      takeUntilDestroyed(this.destroyRef),
+      catchError((err) => {
+        this.generalService.handleHttpError(err);
+        return of([] as EventModelFullData[]);
+      }),
+      finalize(() => this.isItemLoadingSubject.next(false))
+    );
+  }
+
+  loadEventsByAgent(
+    agentId: number,
+    opts?: AgentEventsQuery
+  ): Observable<EventModelFullData[]> {
+    this.isItemLoadingSubject.next(true);
+
+    return this.eventsService.getEventsByAgent(agentId, opts).pipe(
       takeUntilDestroyed(this.destroyRef),
       catchError((err) => {
         this.generalService.handleHttpError(err);

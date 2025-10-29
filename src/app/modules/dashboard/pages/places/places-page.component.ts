@@ -5,9 +5,10 @@ import {
   ElementRef,
   OnInit,
   ViewChild,
+  computed,
   inject,
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
 import { map } from 'rxjs';
@@ -19,18 +20,18 @@ import {
 } from 'src/app/core/interfaces/column.interface';
 import { PlaceModel } from 'src/app/core/interfaces/place.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
+import { PdfPrintService } from 'src/app/core/services/PdfPrintService.service';
 import { PlacesService } from 'src/app/core/services/places.services';
 
-import { PdfPrintService } from 'src/app/core/services/PdfPrintService.service';
 import { DashboardHeaderComponent } from 'src/app/shared/components/dashboard-header/dashboard-header.component';
 import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
-import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
+import { PageToolbarComponent } from 'src/app/shared/components/page-toolbar/page-toolbar.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { StickyZoneComponent } from 'src/app/shared/components/sticky-zone/sticky-zone.component';
 import { TableComponent } from 'src/app/shared/components/table/table.component';
 
-// Hooks comunes
-import { PageToolbarComponent } from 'src/app/shared/components/page-toolbar/page-toolbar.component';
+import { FiltersFacade } from 'src/app/application/filters.facade';
+import { ModalFacade } from 'src/app/application/modal.facade';
 import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
 
@@ -38,13 +39,11 @@ import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
   selector: 'app-places-page',
   standalone: true,
   imports: [
-    // UI
     DashboardHeaderComponent,
     SpinnerLoadingComponent,
     StickyZoneComponent,
     TableComponent,
     ModalShellComponent,
-    // Angular
     CommonModule,
     MatMenuModule,
     MatCheckboxModule,
@@ -53,14 +52,16 @@ import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
   templateUrl: './places-page.component.html',
 })
 export class PlacesPageComponent implements OnInit {
-  // Facade / services
-  readonly placesFacade = inject(PlacesFacade);
-  private readonly modalService = inject(ModalService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly placesService = inject(PlacesService);
   private readonly pdfPrintService = inject(PdfPrintService);
+  private readonly placesService = inject(PlacesService);
+  private readonly modalFacade = inject(ModalFacade);
+  readonly placesFacade = inject(PlacesFacade);
+  readonly filtersFacade = inject(FiltersFacade);
 
+  // ──────────────────────────────────────────────────────────────────────────────
   // Columnas de la tabla
+  // ──────────────────────────────────────────────────────────────────────────────
   headerListPlaces: ColumnModel[] = [
     { title: 'Nombre', key: 'name', sortable: true, width: ColumnWidth.FULL },
     {
@@ -112,16 +113,16 @@ export class PlacesPageComponent implements OnInit {
     },
   ];
 
-  // ✅ Hook de columnas (persistencia + helpers)
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Hooks reutilizables
+  // ──────────────────────────────────────────────────────────────────────────────
   readonly col = useColumnVisibility('places-table', this.headerListPlaces, [
     'lat',
     'lon',
   ]);
 
-  // ✅ Hook de lista (mapea, ordena y cuenta)
   readonly list = useEntityList<PlaceModel>({
     filtered$: this.placesFacade.filteredPlaces$.pipe(map((v) => v ?? [])),
-    // normalizamos `salas` (string JSON → array)
     map: (arr) =>
       arr.map((place) => {
         if (typeof place.salas === 'string') {
@@ -134,47 +135,46 @@ export class PlacesPageComponent implements OnInit {
         }
         return place;
       }),
-    // si no quieres cambiar el orden, identidad
     sort: (arr) => arr,
     count: (arr) => this.placesService.countPlaces(arr),
   });
 
-  // Modal
-  readonly modalVisibleSig = toSignal(this.modalService.modalVisibility$, {
-    initialValue: false,
-  });
-  item: PlaceModel | null = null;
-  currentModalAction: TypeActionModal = TypeActionModal.Create;
-  typeModal = TypeList.Places;
-  typeSection = TypeList.Places;
+  readonly TypeList = TypeList;
+  readonly hasRowsSig = computed(() => this.list.countSig() > 0);
 
-  // Refs
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Modal (ModalFacade)
+  // ──────────────────────────────────────────────────────────────────────────────
+  readonly modalVisibleSig = this.modalFacade.isVisibleSig;
+  readonly currentModalTypeSig = this.modalFacade.typeSig;
+  readonly currentModalActionSig = this.modalFacade.actionSig;
+  readonly currentItemSig = this.modalFacade.itemSig;
+
+  // Ref impresión
   @ViewChild('printArea', { static: false })
   printArea!: ElementRef<HTMLElement>;
 
-  // ────────────────────────────────────────────────────────────────────────────
+  // ──────────────────────────────────────────────────────────────────────────────
   // Lifecycle
-  // ────────────────────────────────────────────────────────────────────────────
+  // ──────────────────────────────────────────────────────────────────────────────
   ngOnInit(): void {
-    this.loadAllPlaces();
-  }
-
-  // ────────────────────────────────────────────────────────────────────────────
-  // Carga / búsqueda
-  // ────────────────────────────────────────────────────────────────────────────
-  loadAllPlaces(): void {
     this.placesFacade.loadAllPlaces();
   }
 
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Filtro / búsqueda
+  // ──────────────────────────────────────────────────────────────────────────────
   applyFilterWord(keyword: string): void {
+    this.filtersFacade.setSearch(keyword);
     this.placesFacade.applyFilterWord(keyword);
   }
 
-  // ────────────────────────────────────────────────────────────────────────────
-  // Modal
-  // ────────────────────────────────────────────────────────────────────────────
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Modal CRUD
+  // ──────────────────────────────────────────────────────────────────────────────
   addNewPlaceModal(): void {
-    this.openModal(this.typeModal, TypeActionModal.Create, null);
+    this.placesFacade.clearSelectedPlace();
+    this.modalFacade.open(TypeList.Places, TypeActionModal.Create, null);
   }
 
   onOpenModal(event: {
@@ -182,34 +182,15 @@ export class PlacesPageComponent implements OnInit {
     action: TypeActionModal;
     item?: PlaceModel;
   }): void {
-    this.openModal(event.typeModal, event.action, event.item ?? null);
-  }
-
-  openModal(
-    typeModal: TypeList,
-    action: TypeActionModal,
-    place: PlaceModel | null
-  ): void {
-    this.currentModalAction = action;
-    this.item = place;
-    this.typeModal = typeModal;
-
-    if (typeModal === TypeList.Places && action === TypeActionModal.Create) {
-      this.placesFacade.clearSelectedPlace();
-    }
-
-    this.modalService.openModal();
+    const { typeModal, action, item } = event;
+    this.modalFacade.open(typeModal, action, item ?? null);
   }
 
   onCloseModal(): void {
-    this.modalService.closeModal();
-    this.item = null;
+    this.modalFacade.close();
   }
 
-  // ────────────────────────────────────────────────────────────────────────────
-  // CRUD
-  // ────────────────────────────────────────────────────────────────────────────
-  onDelete({ type, id }: { type: TypeList; id: number }) {
+  onDelete({ type, id }: { type: TypeList; id: number }): void {
     const actions: Partial<Record<TypeList, (id: number) => void>> = {
       [TypeList.Places]: (x) => this.placesFacade.deletePlace(x),
     };
@@ -221,12 +202,14 @@ export class PlacesPageComponent implements OnInit {
       ? this.placesFacade.editPlace(event.formData)
       : this.placesFacade.addPlace(event.formData);
 
-    save$.pipe().subscribe(() => this.onCloseModal());
+    save$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.modalFacade.close());
   }
 
-  // ────────────────────────────────────────────────────────────────────────────
+  // ──────────────────────────────────────────────────────────────────────────────
   // Impresión
-  // ────────────────────────────────────────────────────────────────────────────
+  // ──────────────────────────────────────────────────────────────────────────────
   async printTableAsPdf(): Promise<void> {
     if (!this.printArea) return;
 

@@ -12,17 +12,22 @@ import { FormsModule } from '@angular/forms';
 import { debounceTime, Subject, tap } from 'rxjs';
 
 @Component({
-    selector: 'app-input-search',
-    templateUrl: './input-search.component.html',
-    styleUrls: ['./input-search.component.css'],
-    imports: [CommonModule, FormsModule]
+  selector: 'app-input-search',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  templateUrl: './input-search.component.html',
+  styleUrls: ['./input-search.component.css'],
 })
 export class InputSearchComponent implements OnInit {
-  private destroyRef = inject(DestroyRef);
-  searchTerm: string = '';
-  private debouncer: Subject<string> = new Subject<string>();
+  private readonly destroyRef = inject(DestroyRef);
 
-  // @Output() searchTriggered = new EventEmitter<string>();
+  // Valor actual del input
+  searchTerm = '';
+
+  // Emisor para el debounce
+  private readonly debouncer = new Subject<string>();
+
+  // Eventos hacia el exterior
   @Output() onValue = new EventEmitter<string>();
   @Output() onDebounce = new EventEmitter<string>();
 
@@ -31,17 +36,19 @@ export class InputSearchComponent implements OnInit {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         debounceTime(300),
-        tap((value) => {
-          this.onDebounce.emit(value);
-        })
+        tap((value) => this.onDebounce.emit(value))
       )
       .subscribe();
   }
-  onKeyPress(searchTerm: string) {
+
+  // Evento al escribir
+  onKeyPress(searchTerm: string): void {
     this.debouncer.next(searchTerm);
+    this.onValue.emit(searchTerm);
   }
 
-  clearInput(): void {
+  // ✅ Limpia el campo y notifica hacia afuera
+  clear(): void {
     this.searchTerm = '';
     this.debouncer.next('');
     this.onDebounce.emit('');

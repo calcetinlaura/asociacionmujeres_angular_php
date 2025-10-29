@@ -5,11 +5,13 @@ import {
   ElementRef,
   OnInit,
   ViewChild,
+  computed,
   inject,
 } from '@angular/core';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
+import { map } from 'rxjs';
 
 import { PiterasFacade } from 'src/app/application/piteras.facade';
 import {
@@ -18,23 +20,19 @@ import {
 } from 'src/app/core/interfaces/column.interface';
 import { PiteraModel } from 'src/app/core/interfaces/pitera.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
+import { PdfPrintService } from 'src/app/core/services/PdfPrintService.service';
 import { PiterasService } from 'src/app/core/services/piteras.services';
 
-import { PdfPrintService } from 'src/app/core/services/PdfPrintService.service';
 import { DashboardHeaderComponent } from 'src/app/shared/components/dashboard-header/dashboard-header.component';
+import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
+import { PageToolbarComponent } from 'src/app/shared/components/page-toolbar/page-toolbar.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { StickyZoneComponent } from 'src/app/shared/components/sticky-zone/sticky-zone.component';
 import { TableComponent } from 'src/app/shared/components/table/table.component';
 
-// Reutilizables
-import { PageToolbarComponent } from 'src/app/shared/components/page-toolbar/page-toolbar.component';
+import { ModalFacade } from 'src/app/application/modal.facade';
 import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
-
-// Modal shell + service
-import { map } from 'rxjs';
-import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
-import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
 
 @Component({
   selector: 'app-piteras-page',
@@ -55,16 +53,18 @@ import { ModalService } from 'src/app/shared/components/modal/services/modal.ser
   templateUrl: './piteras-page.component.html',
 })
 export class PiterasPageComponent implements OnInit {
-  // Servicios
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Inyecciones
+  // ──────────────────────────────────────────────────────────────────────────────
   private readonly destroyRef = inject(DestroyRef);
-  private readonly modalService = inject(ModalService);
+  private readonly modalFacade = inject(ModalFacade);
   private readonly piterasService = inject(PiterasService);
   private readonly pdfPrintService = inject(PdfPrintService);
-
-  // Facade
   readonly piterasFacade = inject(PiterasFacade);
 
+  // ──────────────────────────────────────────────────────────────────────────────
   // Columnas
+  // ──────────────────────────────────────────────────────────────────────────────
   headerListPiteras: ColumnModel[] = [
     {
       title: 'Nº',
@@ -84,7 +84,6 @@ export class PiterasPageComponent implements OnInit {
       backColor: true,
     },
     { title: 'Temática', key: 'theme', sortable: true, textAlign: 'center' },
-
     {
       title: 'Resumen',
       key: 'summary',
@@ -93,7 +92,7 @@ export class PiterasPageComponent implements OnInit {
       width: ColumnWidth.XS,
     },
     {
-      title: 'Nº páginas', // ← corregido
+      title: 'Nº páginas',
       key: 'pages',
       sortable: true,
       width: ColumnWidth.XS,
@@ -102,24 +101,26 @@ export class PiterasPageComponent implements OnInit {
     { title: 'Url', key: 'url', sortable: true, textAlign: 'center' },
   ];
 
-  // Reutilizables (columnas + lista)
+  // Columnas visibles + lista procesada
   readonly col = useColumnVisibility('piteras-table', this.headerListPiteras);
-
   readonly list = useEntityList<PiteraModel>({
     filtered$: this.piterasFacade.filteredPiteras$.pipe(map((v) => v ?? [])),
     sort: (arr) => this.piterasService.sortPiterasByYear(arr),
     count: (arr) => this.piterasService.countPiteras(arr),
   });
 
-  // Modal
-  readonly modalVisibleSig = toSignal(this.modalService.modalVisibility$, {
-    initialValue: false,
-  });
-  item: PiteraModel | null = null;
-  currentModalAction: TypeActionModal = TypeActionModal.Create;
-  typeModal: TypeList = TypeList.Piteras;
-  typeSection: TypeList = TypeList.Piteras;
+  readonly TypeList = TypeList;
+  readonly hasRowsSig = computed(() => this.list.countSig() > 0);
 
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Modal (usando ModalFacade)
+  // ──────────────────────────────────────────────────────────────────────────────
+  readonly modalVisibleSig = this.modalFacade.isVisibleSig;
+  readonly currentModalTypeSig = this.modalFacade.typeSig;
+  readonly currentModalActionSig = this.modalFacade.actionSig;
+  readonly currentItemSig = this.modalFacade.itemSig;
+
+  // Ref impresión
   @ViewChild('printArea', { static: false })
   printArea!: ElementRef<HTMLElement>;
 
@@ -137,14 +138,16 @@ export class PiterasPageComponent implements OnInit {
     this.piterasFacade.loadAllPiteras();
   }
 
-  applyFilterWord = (keyword: string) =>
+  applyFilterWord(keyword: string): void {
     this.piterasFacade.applyFilterWord(keyword);
+  }
 
   // ──────────────────────────────────────────────────────────────────────────────
-  // Modal
+  // Modal + CRUD
   // ──────────────────────────────────────────────────────────────────────────────
   addNewPiteraModal(): void {
-    this.openModal(TypeList.Piteras, TypeActionModal.Create, null);
+    this.piterasFacade.clearSelectedPitera();
+    this.modalFacade.open(TypeList.Piteras, TypeActionModal.Create, null);
   }
 
   onOpenModal(event: {
@@ -152,33 +155,13 @@ export class PiterasPageComponent implements OnInit {
     action: TypeActionModal;
     item?: PiteraModel;
   }): void {
-    this.openModal(event.typeModal, event.action, event.item ?? null);
-  }
-
-  openModal(
-    typeModal: TypeList,
-    action: TypeActionModal,
-    pitera: PiteraModel | null
-  ): void {
-    this.currentModalAction = action;
-    this.item = pitera;
-    this.typeModal = typeModal;
-
-    // limpiar seleccionado SOLO en CREATE
-    if (typeModal === TypeList.Piteras && action === TypeActionModal.Create) {
-      this.piterasFacade.clearSelectedPitera();
-    }
-    this.modalService.openModal();
+    this.modalFacade.open(event.typeModal, event.action, event.item ?? null);
   }
 
   onCloseModal(): void {
-    this.modalService.closeModal();
-    this.item = null;
+    this.modalFacade.close();
   }
 
-  // ──────────────────────────────────────────────────────────────────────────────
-  // CRUD
-  // ──────────────────────────────────────────────────────────────────────────────
   onDelete({ type, id }: { type: TypeList; id: number }) {
     const actions: Partial<Record<TypeList, (id: number) => void>> = {
       [TypeList.Piteras]: (x) => this.piterasFacade.deletePitera(x),
@@ -191,9 +174,9 @@ export class PiterasPageComponent implements OnInit {
       ? this.piterasFacade.editPitera(event.formData)
       : this.piterasFacade.addPitera(event.formData);
 
-    save$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-      this.onCloseModal();
-    });
+    save$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.modalFacade.close());
   }
 
   // ──────────────────────────────────────────────────────────────────────────────

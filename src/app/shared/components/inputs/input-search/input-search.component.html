@@ -1,10 +1,23 @@
-<div class="search">
-  <i class="uil" [ngClass]="'uil-search'"></i>
+<div class="search relative w-full">
+  <i class="uil uil-search absolute left-3 pt-1"></i>
+
   <input
     type="text"
+    class="w-full rounded-md border border-gray-300 !px-16 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
     placeholder="Buscar"
     [(ngModel)]="searchTerm"
-    (keyup)="onKeyPress(txtInput.value)"
-    #txtInput
+    (input)="onKeyPress(searchTerm)"
   />
+
+  <!-- Botón para limpiar el campo -->
+  @if(searchTerm){
+
+  <button
+    type="button"
+    class="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+    (click)="clear()"
+  >
+    ✕
+  </button>
+  }
 </div>

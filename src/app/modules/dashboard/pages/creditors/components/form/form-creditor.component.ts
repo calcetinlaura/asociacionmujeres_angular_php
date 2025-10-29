@@ -23,9 +23,11 @@ import {
   categoryFilterCreditors,
   CreditorModel,
 } from 'src/app/core/interfaces/creditor.interface';
+import { TypeList } from 'src/app/core/models/general.model';
 import { GeneralService } from 'src/app/core/services/generalService.service';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { ScrollToFirstErrorDirective } from 'src/app/shared/directives/scroll-to-first-error.directive';
+
 @Component({
   selector: 'app-form-creditor',
   imports: [
@@ -39,11 +41,12 @@ import { ScrollToFirstErrorDirective } from 'src/app/shared/directives/scroll-to
   styleUrls: ['./../../../../../../shared/components/form/form.component.css'],
 })
 export class FormCreditorComponent {
-  private creditorsFacade = inject(CreditorsFacade);
-  private destroyRef = inject(DestroyRef);
-  private generalService = inject(GeneralService);
+  readonly creditorsFacade = inject(CreditorsFacade);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly generalService = inject(GeneralService);
 
   @Input() itemId!: number;
+  @Input() item: CreditorModel | null = null;
   @Output() submitForm = new EventEmitter<{
     itemId: number;
     formData: FormData;
@@ -54,13 +57,9 @@ export class FormCreditorComponent {
     cif: new FormControl(''),
     contact: new FormControl(''),
     phone: new FormControl('', [
-      // Permite vacío; si hay valor, debe cumplir el patrón
       Validators.pattern(/^\s*(\+?\d[\d\s\-().]{6,14}\d)\s*$/),
     ]),
-    email: new FormControl('', [
-      // Permite vacío; si hay valor, debe ser email válido
-      Validators.email,
-    ]),
+    email: new FormControl('', [Validators.email]),
     province: new FormControl(''),
     town: new FormControl(''),
     address: new FormControl(''),
@@ -72,11 +71,11 @@ export class FormCreditorComponent {
     observations: new FormControl('', [Validators.maxLength(300)]),
   });
 
-  creditorData: any;
   submitted = false;
-  titleForm: string = 'Registrar acreedor/a';
-  buttonAction: string = 'Guardar';
+  titleForm = 'Registrar acreedor/a';
+  buttonAction = 'Guardar';
   categoryFilterCreditors = categoryFilterCreditors;
+  typeList = TypeList.Creditors;
 
   provincias: {
     label: string;
@@ -85,65 +84,58 @@ export class FormCreditorComponent {
   }[] = [];
   municipios: { label: string; code: string }[] = [];
 
-  isLoading = true;
-  quillModules = {
-    toolbar: [
-      [{ header: [1, 2, false] }],
-      ['bold', 'italic', 'underline'],
-      ['image', 'code-block'],
-      [{ color: [] }, { background: [] }],
-      [{ list: 'ordered' }, { list: 'bullet' }],
-      [{ align: [] }],
-      ['link', 'clean'],
-      [{ indent: '-1' }, { indent: '+1' }],
-    ],
-  };
-  ngOnInit(): void {
-    this.isLoading = true;
+  quillModules = this.generalService.defaultQuillModules;
 
+  ngOnInit(): void {
     this.provincias = townsData
       .flatMap((region) => region.provinces)
       .sort((a, b) => a.label.localeCompare(b.label));
+
+    // ✅ Caso 1: Si llega el item completo desde la modal
+    if (this.item) {
+      this.patchForm(this.item);
+      return;
+    }
+
+    // ✅ Caso 2: carga por ID
     if (this.itemId) {
       this.creditorsFacade.loadCreditorById(this.itemId);
       this.creditorsFacade.selectedCreditor$
         .pipe(
           takeUntilDestroyed(this.destroyRef),
-          filter((creditor: CreditorModel | null) => creditor !== null),
+          filter((creditor: CreditorModel | null) => !!creditor),
           tap((creditor: CreditorModel | null) => {
             if (creditor) {
-              // 🔹 Primero actualizamos los municipios basándonos en la provincia recibida
-              const province = this.provincias.find(
-                (p) => p.label === creditor.province
-              );
-              this.municipios = province?.towns ?? [];
-
-              // 🔹 Luego seteamos los valores del formulario
-              this.formCreditor.patchValue(creditor);
-
-              this.titleForm = 'Editar Acreedor/a';
-              this.buttonAction = 'Guardar cambios';
+              this.patchForm(creditor);
             }
-            this.isLoading = false;
           })
         )
         .subscribe();
-    } else {
-      this.isLoading = false;
     }
+  }
+
+  private patchForm(creditor: CreditorModel) {
+    // Cargar municipios de la provincia
+    const province = this.provincias.find((p) => p.label === creditor.province);
+    this.municipios = province?.towns ?? [];
+
+    this.formCreditor.patchValue(creditor);
+
+    this.titleForm = 'Editar acreedor/a';
+    this.buttonAction = 'Guardar cambios';
   }
 
   onProvinceChange(): void {
     const selectedProvince = this.formCreditor.value.province;
     const province = this.provincias.find((p) => p.label === selectedProvince);
     this.municipios = province?.towns ?? [];
-    this.formCreditor.patchValue({ town: '' }); // limpia el municipio
+    this.formCreditor.patchValue({ town: '' });
   }
 
   onSendFormCreditor(): void {
     if (this.formCreditor.invalid) {
       this.submitted = true;
-      console.log('Formulario inválido', this.formCreditor.errors);
+      console.warn('Formulario inválido', this.formCreditor.errors);
       return;
     }
 
@@ -158,9 +150,9 @@ export class FormCreditorComponent {
       {},
       this.itemId
     );
-
-    this.submitForm.emit({ itemId: this.itemId, formData: formData });
+    this.submitForm.emit({ itemId: this.itemId, formData });
   }
+
   observationsLen(): number {
     return (this.formCreditor.get('observations')?.value || '').length;
   }

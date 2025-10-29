@@ -7,8 +7,8 @@
   />
   <div class="flex flex-col gap-y-10">
     <app-filters
-      [filters]="filters"
-      [(selected)]="selectedFilter"
+      [filters]="filtersFacade.filtersSig"
+      [selected]="filtersFacade.selectedSig"
       (filterClicked)="filterSelected($event)"
     />
     <app-page-toolbar
@@ -19,8 +19,7 @@
       (search)="applyFilterWord($event)"
       (print)="printTableAsPdf()"
       (toggle)="col.toggleColumn($event)"
-    >
-    </app-page-toolbar>
+    />
   </div>
 </app-sticky-zone>
 
@@ -32,8 +31,7 @@
     <h2 class="only-on-pdf print-title">Listado macroeventos</h2>
     <app-table
       [data]="list.processedSig()"
-      [typeSection]="typeSection"
-      [typeModal]="typeModal"
+      [typeSection]="TypeList.Macroevents"
       [headerColumns]="col.getVisibleColumns()"
       [columnVisibility]="col.columnVisSig()"
       [displayedColumns]="col.displayedColumnsSig()"
@@ -49,14 +47,12 @@
 
 <app-modal-shell
   [visible]="modalVisibleSig()"
-  [typeModal]="typeModal"
-  [action]="currentModalAction"
-  [item]="item"
+  [typeModal]="currentModalTypeSig()"
+  [action]="currentModalActionSig()"
+  [item]="currentItemSig()"
   (close)="onCloseModal()"
   (confirmDelete)="onDelete($event)"
   (sendFormMacroeventData)="sendFormMacroevent($event)"
-  [canGoBack]="canGoBack"
   (back)="onBackModal()"
   (openEvent)="onOpenEvent($event)"
-  [contentVersion]="contentVersion"
 />

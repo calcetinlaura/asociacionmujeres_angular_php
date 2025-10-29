@@ -6,65 +6,63 @@ import {
   ModalStateByType,
 } from 'src/app/core/models/modal-state.model';
 
-/**
- * Facade global para manejar la navegación y estado de modales.
- * Usa Signals, tipado estricto por entidad y una pila para retroceder entre modales.
- */
 @Injectable({ providedIn: 'root' })
 export class ModalFacade {
   constructor(private readonly router: Router) {}
 
   // === Estado principal del modal actual ===
   private readonly modalSig = signal<ModalStateByType<keyof ModalItemByType>>({
-    type: TypeList.Events,
-    action: TypeActionModal.Create,
+    type: TypeList.None as any,
+    action: TypeActionModal.None,
     item: null,
   });
 
-  // === Historial (pila) de estados anteriores ===
-  private readonly stack: ModalStateByType<keyof ModalItemByType>[] = [];
+  // === Historial (pila) de estados anteriores — ahora reactiva ===
+  private readonly stackSig = signal<ModalStateByType<keyof ModalItemByType>[]>(
+    []
+  );
 
   // === Computed ===
-  readonly isOpenSig = computed(
-    () => this.modalSig().action !== TypeActionModal.Create
-  );
   readonly typeSig = computed(() => this.modalSig().type);
   readonly actionSig = computed(() => this.modalSig().action);
   readonly itemSig = computed(() => this.modalSig().item);
-  readonly isVisibleSig = computed(() => !!this.modalSig().item);
+  readonly isVisibleSig = computed(() => {
+    const { action } = this.modalSig();
+    return action !== null && action !== TypeActionModal.None;
+  });
 
-  /** Devuelve el estado completo actual */
-  get state() {
-    return this.modalSig();
-  }
+  // ✅ Nueva señal reactiva — sin bucles y visible desde el shell
+  readonly canGoBackSig = computed(() => this.stackSig().length > 0);
 
-  /** Indica si hay historial disponible */
+  /** Método de compatibilidad */
   canGoBack(): boolean {
-    return this.stack.length > 0;
+    return this.canGoBackSig();
   }
 
   // =====================================================
   // 🧭 MÉTODOS PRINCIPALES
   // =====================================================
 
-  /**
-   * Abre una modal del tipo y acción especificados.
-   * Soporta dos firmas:
-   *   open(type, action, item)
-   *   open(action, item)
-   */
-  open<K extends keyof ModalItemByType>(
+  open<K extends TypeList>(
     typeOrAction: K | TypeActionModal,
     actionOrItem?: TypeActionModal | ModalItemByType[K] | null,
     maybeItem?: ModalItemByType[K] | null
   ): void {
+    console.log('📨 [ModalFacade.open] args:', {
+      typeOrAction,
+      actionOrItem,
+      maybeItem,
+    });
     const current = this.modalSig();
 
     // 🔹 Solo apilamos si ya hay algo abierto
-    if (current.action !== TypeActionModal.Create) {
-      this.stack.push(current);
+    if (
+      current.action !== TypeActionModal.Create &&
+      current.action !== TypeActionModal.None
+    ) {
+      this.stackSig.update((stack) => [...stack, current]);
     } else {
-      this.stack.length = 0;
+      this.stackSig.set([]);
     }
 
     let type: K;
@@ -83,41 +81,43 @@ export class ModalFacade {
       item = (maybeItem ?? null) as ModalItemByType[K];
     }
 
+    console.log('✅ [ModalFacade.open] computed:', { type, action, item });
     this.modalSig.set({ type, action, item } as any);
     this.updateUrl(type, item);
   }
 
-  /**
-   * Reemplaza el contenido del modal actual (sin apilar).
-   */
+  /** Reemplaza el contenido del modal actual (sin apilar). */
   replace<K extends keyof ModalItemByType>(
     type: K,
     action: TypeActionModal,
     item: ModalItemByType[K]
   ): void {
+    console.log('♻️ [ModalFacade.replace]', { type, action, item });
     this.modalSig.set({ type, action, item } as any);
     this.updateUrl(type, item);
   }
 
-  /**
-   * Cierra la modal completamente y limpia la pila.
-   */
+  /** Cierra la modal completamente y limpia la pila. */
   close(): void {
-    this.stack.length = 0;
+    console.log('🔴 [ModalFacade.close] called');
+    const current = this.modalSig();
+    this.stackSig.set([]);
     this.modalSig.set({
-      type: TypeList.Events,
-      action: TypeActionModal.Create,
+      ...current,
+      action: TypeActionModal.None,
       item: null,
     });
     this.clearUrl();
   }
 
-  /**
-   * Retrocede al modal anterior, si lo hay.
-   */
+  /** Retrocede al modal anterior, si lo hay. */
   back(): void {
-    const prev = this.stack.pop();
+    const prevStack = this.stackSig();
+    const prev = prevStack[prevStack.length - 1];
+    console.log('⬅️ [ModalFacade.back]', { prev });
+
     if (prev) {
+      this.stackSig.set(prevStack.slice(0, -1));
       this.modalSig.set(prev);
       this.updateUrl(prev.type, prev.item);
     } else {
@@ -125,24 +125,20 @@ export class ModalFacade {
     }
   }
 
-  /**
-   * Limpia la pila de navegación sin cerrar el modal actual.
-   */
+  /** Limpia la pila de navegación sin cerrar el modal actual. */
   clearStack(): void {
-    this.stack.length = 0;
+    this.stackSig.set([]);
   }
 
   // =====================================================
   // 🔗 Sincronización con URL (opcional)
   // =====================================================
 
-  /** Actualiza los parámetros de la URL para reflejar el modal actual. */
   private updateUrl<T extends keyof ModalItemByType>(
     type: T,
     item: ModalItemByType[T] | null
   ): void {
     try {
-      // ✅ Conversión segura de tipo enum bidireccional
       const modalType =
         (TypeList as any)[type as unknown as keyof typeof TypeList] ?? type;
 
@@ -160,7 +156,6 @@ export class ModalFacade {
     }
   }
 
-  /** Limpia los parámetros de la URL asociados al modal. */
   private clearUrl(): void {
     try {
       this.router.navigate([], {

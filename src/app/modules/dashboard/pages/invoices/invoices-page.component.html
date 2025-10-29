@@ -8,8 +8,8 @@
   />
   <div class="flex flex-1 flex-col justify-start">
     <app-filters
-      [filters]="filters"
-      [(selected)]="selectedFilter"
+      [filters]="filtersFacade.filtersSig"
+      [selected]="filtersFacade.selectedSig"
       (filterClicked)="filterSelected($event)"
     />
   </div>
@@ -21,11 +21,16 @@
   <div class="flex justify-center items-center py-16">
     <app-spinner-loading />
   </div>
-  } @else { @if (hasInvoicesForYearSig()) {
+  } @else {
+  <!-- SIEMPRE mostramos el grupo de pestañas -->
   <mat-tab-group
     (selectedTabChange)="tabActive($event)"
     [selectedIndex]="selectedIndex"
+    class="flex w-full"
   >
+    <!-- ──────────────────────────────── -->
+    <!-- TAB 1: CONTABILIDAD COMPLETA -->
+    <!-- ──────────────────────────────── -->
     <mat-tab label="Contabilidad completa">
       <div class="flex flex-col gap-y-8 py-8">
         <app-page-toolbar
@@ -37,7 +42,6 @@
           (print)="printTableAsPdf()"
           (toggle)="col.toggleColumn($event)"
         >
-          <!-- acciones extra -->
           <app-icon-action
             [icon]="'uil-folder-download'"
             [tooltip]="'Descargar facturas'"
@@ -45,12 +49,16 @@
           />
         </app-page-toolbar>
 
+        @if (noDataYearSig()) {
+        <div class="p-6 text-center text-gray-500 text-[12px]">
+          No hay contabilidad registrada de ese año.
+        </div>
+        } @else {
         <div class="pb-4" #printArea>
           <h2 class="only-on-pdf print-title">Listado contabilidad</h2>
           <app-table
             [data]="list.processedSig()"
-            [typeSection]="typeSection"
-            [typeModal]="typeModal"
+            [typeSection]="TypeList.Invoices"
             [headerColumns]="col.getVisibleColumns()"
             [columnVisibility]="col.columnVisSig()"
             [displayedColumns]="col.displayedColumnsSig()"
@@ -60,9 +68,13 @@
             [showFooterEnabled]="false"
           />
         </div>
+        }
       </div>
     </mat-tab>
 
+    <!-- ──────────────────────────────── -->
+    <!-- TAB 2: FACTURAS -->
+    <!-- ──────────────────────────────── -->
     <mat-tab label="Facturas">
       <div class="flex flex-col gap-y-8 py-8">
         <app-page-toolbar
@@ -81,12 +93,16 @@
           />
         </app-page-toolbar>
 
+        @if (noDataInvoicesSig()) {
+        <div class="p-6 text-center text-gray-500">
+          No hay facturas para el año seleccionado.
+        </div>
+        } @else {
         <div class="pb-4" #printArea>
           <h2 class="only-on-pdf print-title">Listado contabilidad</h2>
           <app-table
             [data]="list.processedSig()"
-            [typeSection]="typeSection"
-            [typeModal]="typeModal"
+            [typeSection]="TypeList.Invoices"
             [headerColumns]="col.getVisibleColumns()"
             [columnVisibility]="col.columnVisSig()"
             [displayedColumns]="col.displayedColumnsSig()"
@@ -95,9 +111,13 @@
             [printExcludeColumns]="['invoice_pdf', 'proof_pdf']"
           />
         </div>
+        }
       </div>
     </mat-tab>
 
+    <!-- ──────────────────────────────── -->
+    <!-- TAB 3: TICKETS -->
+    <!-- ──────────────────────────────── -->
     <mat-tab label="Tickets">
       <div class="flex flex-col gap-y-8 py-8">
         <app-page-toolbar
@@ -115,12 +135,16 @@
           />
         </app-page-toolbar>
 
+        @if (noDataTicketsSig()) {
+        <div class="p-6 text-center text-gray-500">
+          No hay tickets para el año seleccionado.
+        </div>
+        } @else {
         <div class="pb-4" #printArea>
           <h2 class="only-on-pdf print-title">Listado contabilidad</h2>
           <app-table
             [data]="list.processedSig()"
-            [typeSection]="typeSection"
-            [typeModal]="typeModal"
+            [typeSection]="TypeList.Invoices"
             [headerColumns]="col.getVisibleColumns()"
             [columnVisibility]="col.columnVisSig()"
             [displayedColumns]="col.displayedColumnsSig()"
@@ -129,9 +153,13 @@
             [printExcludeColumns]="['invoice_pdf', 'proof_pdf']"
           />
         </div>
+        }
       </div>
     </mat-tab>
 
+    <!-- ──────────────────────────────── -->
+    <!-- TAB 4: INGRESOS -->
+    <!-- ──────────────────────────────── -->
     <mat-tab label="Ingresos">
       <div class="flex flex-col gap-y-8 py-8">
         <app-page-toolbar
@@ -150,12 +178,16 @@
           />
         </app-page-toolbar>
 
+        @if (noDataIncomesSig()) {
+        <div class="p-6 text-center text-gray-500">
+          No hay ingresos para el año seleccionado.
+        </div>
+        } @else{
         <div class="pb-4" #printArea>
           <h2 class="only-on-pdf print-title">Listado contabilidad</h2>
           <app-table
             [data]="list.processedSig()"
-            [typeSection]="typeSection"
-            [typeModal]="typeModal"
+            [typeSection]="TypeList.Invoices"
             [headerColumns]="col.getVisibleColumns()"
             [columnVisibility]="col.columnVisSig()"
             [displayedColumns]="col.displayedColumnsSig()"
@@ -164,24 +196,19 @@
             [printExcludeColumns]="['invoice_pdf', 'proof_pdf']"
           />
         </div>
+        }
       </div>
     </mat-tab>
   </mat-tab-group>
-  } @else {
-  <div class="flex flex-col items-center justify-center py-16">
-    <p class="text-lg text-gray-500 text-center">
-      No hay contabilidad registrada de ese año.
-    </p>
-  </div>
-  } }
+  }
 </div>
 
 <!-- Modal -->
 <app-modal-shell
   [visible]="modalVisibleSig()"
-  [typeModal]="typeModal"
-  [action]="currentModalAction"
-  [item]="item"
+  [typeModal]="currentModalTypeSig()"
+  [action]="currentModalActionSig()"
+  [item]="currentItemSig()"
   (close)="onCloseModal()"
   (confirmDelete)="onDelete($event)"
   (sendFormInvoiceData)="sendFormInvoice($event)"

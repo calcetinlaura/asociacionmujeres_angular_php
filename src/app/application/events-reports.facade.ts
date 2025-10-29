@@ -41,14 +41,12 @@ export class EventsReportsFacade {
   /** 🔹 Cargar informe por event_id */
   loadReportByEventId(eventId: number): void {
     this.itemLoadingSubject.next(true);
-    console.log('📡 [Facade] Cargando informe por event_id:', eventId);
 
     this.eventReportsService
       .getReportByEventId(eventId)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((report) => {
-          console.log('✅ [Facade] Informe recibido:', report);
           this.selectedReportSubject.next(report);
         }),
         catchError((err) => this.generalService.handleHttpError(err)),
@@ -60,14 +58,12 @@ export class EventsReportsFacade {
   /** 🔹 Cargar todos los informes */
   loadAllReports(): void {
     this.listLoadingSubject.next(true);
-    console.log('📡 [Facade] Cargando todos los informes');
 
     this.eventReportsService
       .getAllReports()
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((reports) => {
-          console.log('✅ [Facade] Informes recibidos:', reports);
           this.reportsSubject.next(reports);
         }),
         catchError((err) => this.generalService.handleHttpError(err)),
@@ -79,14 +75,12 @@ export class EventsReportsFacade {
   /** 🔹 Cargar IDs de eventos con informe */
   loadEventIdsWithReport(): void {
     this.listLoadingSubject.next(true);
-    console.log('📡 [Facade] Cargando event_ids con informe');
 
     this.eventReportsService
       .getEventIdsWithReport()
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((ids) => {
-          console.log('✅ [Facade] Event IDs con informe:', ids);
           this.eventIdsWithReportSubject.next(ids);
         }),
         catchError((err) => this.generalService.handleHttpError(err)),
@@ -102,7 +96,6 @@ export class EventsReportsFacade {
   /** 🔹 Crear informe */
   add(formData: FormData): Observable<any> {
     this.itemLoadingSubject.next(true);
-    console.log('📤 [Facade] Creando nuevo informe');
 
     return this.eventReportsService.add(formData).pipe(
       tap(() => {
@@ -117,7 +110,6 @@ export class EventsReportsFacade {
   /** 🔹 Editar informe */
   edit(formData: FormData): Observable<any> {
     this.itemLoadingSubject.next(true);
-    console.log('✏️ [Facade] Editando informe existente');
 
     return this.eventReportsService.edit(formData).pipe(
       tap(() => {
@@ -132,7 +124,6 @@ export class EventsReportsFacade {
   /** 🔹 Eliminar informe */
   delete(id: number): void {
     this.itemLoadingSubject.next(true);
-    console.log('🗑️ [Facade] Eliminando informe id:', id);
 
     this.eventReportsService
       .delete(id)

@@ -83,7 +83,7 @@ export class ModalShowSubsidyComponent implements OnChanges, OnInit {
   displayedColumnsSig!: Signal<string[]>;
 
   itemInvoice?: InvoiceModelFullData;
-  typeList = TypeList;
+  readonly TypeList = TypeList;
   typeModal: TypeList = TypeList.Subsidies;
 
   filteredInvoices: InvoiceModelFullData[] = [];
@@ -93,7 +93,7 @@ export class ModalShowSubsidyComponent implements OnChanges, OnInit {
 
   nameMovement = this.subsidiesService.movementMap;
   nameSubsidy = this.subsidiesService.subsidiesMap;
-  typeActionModal = TypeActionModal;
+  readonly TypeActionModal = TypeActionModal;
 
   private previousKey: string | null = null;
 
@@ -380,22 +380,22 @@ export class ModalShowSubsidyComponent implements OnChanges, OnInit {
     switch (ev.type) {
       case 'view':
         this.openModal.emit({
-          typeModal: this.typeList.Subsidies,
-          action: this.typeActionModal.Show,
+          typeModal: this.TypeList.Subsidies,
+          action: this.TypeActionModal.Show,
           item,
         });
         break;
       case 'edit':
         this.openModal.emit({
-          typeModal: this.typeList.Subsidies,
-          action: this.typeActionModal.Edit,
+          typeModal: this.TypeList.Subsidies,
+          action: this.TypeActionModal.Edit,
           item,
         });
         break;
       case 'remove':
         this.openModal.emit({
-          typeModal: this.typeList.Subsidies,
-          action: this.typeActionModal.Delete,
+          typeModal: this.TypeList.Subsidies,
+          action: this.TypeActionModal.Delete,
           item,
         });
         break;

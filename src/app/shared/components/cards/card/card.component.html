@@ -1,5 +1,5 @@
 <div class="card">
-  @if(type === typeList.Podcasts || type === typeList.Recipes){
+  @if(type === TypeList.Podcasts || type === TypeList.Recipes){
   <div
     class="aspect-square w-full flex items-center justify-center rounded-lg"
     [ngStyle]="{
@@ -22,18 +22,18 @@
   }
 
   <div class="flex flex-col gap-y-1 text-center py-4">
-    @if (type !== typeList.Podcasts && type !== typeList.Recipes && type !==
-    typeList.Piteras){
+    @if (type !== TypeList.Podcasts && type !== TypeList.Recipes && type !==
+    TypeList.Piteras){
     <div class="item-title">{{ item.title }}</div>
-    }@if (type === typeList.Piteras){
+    }@if (type === TypeList.Piteras){
     <div class="item-title">
       {{ item.title + " nº " + item.publication_number }}
     </div>
-    } @if (type !== typeList.Piteras) {
+    } @if (type !== TypeList.Piteras) {
     <div class="item-subTitle">
       {{ item.author || item.director || item.place }}
     </div>
-    @if (type === typeList.Podcasts) {
+    @if (type === TypeList.Podcasts) {
     <div class="flex justify-center">
       <app-text-editor
         [text]="item.artists"
@@ -42,18 +42,18 @@
         [color]="'gray'"
       />
     </div>
-    } } @if (type === typeList.Piteras) {
+    } } @if (type === TypeList.Piteras) {
     <div class="item-subTitle">
       {{ item.year }}
     </div>
     }
     <div class="flex justify-center">
-      @if ( type === typeList.Books || type === typeList.Movies || type ===
-      typeList.Recipes ) {
+      @if ( type === TypeList.Books || type === TypeList.Movies || type ===
+      TypeList.Recipes ) {
       <app-text-background [text]="item.gender || item.category">
       </app-text-background>
       }
-      <!-- @if (type === typeList.Piteras && item.url) {
+      <!-- @if (type === TypeList.Piteras && item.url) {
       <app-text-link
         [text]="'Ver pdf'"
         [url]="'/uploads/pdf/PITERAS/' + item.url"

@@ -24,8 +24,7 @@
     <h2 class="only-on-pdf print-title">Listado espacios</h2>
     <app-table
       [data]="list.processedSig()"
-      [typeSection]="typeSection"
-      [typeModal]="typeModal"
+      [typeSection]="TypeList.Places"
       [headerColumns]="col.getVisibleColumns()"
       [columnVisibility]="col.columnVisSig()"
       [displayedColumns]="col.displayedColumnsSig()"
@@ -40,12 +39,12 @@
   } }
 </div>
 
-<!-- Modal -->
+<!-- Modal controlado por ModalFacade -->
 <app-modal-shell
   [visible]="modalVisibleSig()"
-  [typeModal]="typeModal"
-  [action]="currentModalAction"
-  [item]="item"
+  [typeModal]="currentModalTypeSig()"
+  [action]="currentModalActionSig()"
+  [item]="currentItemSig()"
   (close)="onCloseModal()"
   (confirmDelete)="onDelete($event)"
   (sendFormPlaceData)="sendFormPlace($event)"

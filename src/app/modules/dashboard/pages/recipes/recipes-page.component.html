@@ -7,8 +7,8 @@
   />
   <div class="flex flex-col gap-y-10">
     <app-filters
-      [filters]="filters"
-      [(selected)]="selectedFilter"
+      [filters]="filtersFacade.filtersSig"
+      [selected]="filtersFacade.selectedSig"
       (filterClicked)="filterSelected($event)"
     ></app-filters>
     <app-page-toolbar
@@ -28,11 +28,11 @@
   <app-spinner-loading />
   } @else { @if (list.processedSig().length > 0) {
   <div class="pb-4" #printArea>
-    <h2 class="only-on-pdf print-title">Listado recetas</h2>
+    <h2 class="only-on-pdf print-title">Listado de recetas</h2>
+
     <app-table
       [data]="list.processedSig()"
-      [typeSection]="typeSection"
-      [typeModal]="typeModal"
+      [typeSection]="TypeList.Recipes"
       [headerColumns]="col.getVisibleColumns()"
       [columnVisibility]="col.columnVisSig()"
       [displayedColumns]="col.displayedColumnsSig()"
@@ -46,12 +46,11 @@
   } }
 </div>
 
-<!-- Modal -->
 <app-modal-shell
   [visible]="modalVisibleSig()"
-  [typeModal]="typeModal"
-  [action]="currentModalAction"
-  [item]="item"
+  [typeModal]="currentModalTypeSig()"
+  [action]="currentModalActionSig()"
+  [item]="currentItemSig()"
   (close)="onCloseModal()"
   (confirmDelete)="onDelete($event)"
   (sendFormRecipeData)="sendFormRecipe($event)"

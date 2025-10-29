@@ -4,10 +4,11 @@ export interface RecipeModel {
   id: number;
   title: string;
   category: string;
-  owner: string;
-  introduction: string;
-  ingredients: string;
-  recipe: string;
+  owner?: string;
+  introduction?: string;
+  summary?: string;
+  ingredients?: string;
+  recipe?: string;
   img?: string;
   year: number;
 }

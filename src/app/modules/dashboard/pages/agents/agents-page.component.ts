@@ -5,44 +5,37 @@ import {
   ElementRef,
   OnInit,
   ViewChild,
+  computed,
   inject,
 } from '@angular/core';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
-import { map, tap } from 'rxjs';
+import { map, take } from 'rxjs';
 
 import { AgentsFacade } from 'src/app/application/agents.facade';
-import {
-  AgentsModelFullData,
-  CategoryFilterAgents,
-} from 'src/app/core/interfaces/agent.interface';
+import { FiltersFacade } from 'src/app/application/filters.facade';
+import { AgentsModelFullData } from 'src/app/core/interfaces/agent.interface';
 import {
   ColumnModel,
   ColumnWidth,
 } from 'src/app/core/interfaces/column.interface';
-import { EventModelFullData } from 'src/app/core/interfaces/event.interface';
-import { Filter } from 'src/app/core/interfaces/general.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { AgentsService } from 'src/app/core/services/agents.services';
-import { EventsService } from 'src/app/core/services/events.services';
 import { PdfPrintService } from 'src/app/core/services/PdfPrintService.service';
+
 import { DashboardHeaderComponent } from 'src/app/shared/components/dashboard-header/dashboard-header.component';
 import { FiltersComponent } from 'src/app/shared/components/filters/filters.component';
 import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
-import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
 import { PageToolbarComponent } from 'src/app/shared/components/page-toolbar/page-toolbar.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { StickyZoneComponent } from 'src/app/shared/components/sticky-zone/sticky-zone.component';
 import { TableComponent } from 'src/app/shared/components/table/table.component';
+
+import { ModalFacade } from 'src/app/application/modal.facade';
+import { EventsService } from 'src/app/core/services/events.services';
 import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
-
-type ModalState = {
-  typeModal: TypeList;
-  action: TypeActionModal;
-  item: AgentsModelFullData | EventModelFullData | null;
-};
 
 @Component({
   selector: 'app-agents-page',
@@ -63,14 +56,20 @@ type ModalState = {
 })
 export class AgentsPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
-  private readonly modalService = inject(ModalService);
+  private readonly modalFacade = inject(ModalFacade);
   private readonly agentsService = inject(AgentsService);
-  private readonly pdfPrintService = inject(PdfPrintService);
   private readonly eventsService = inject(EventsService);
-  // Facade
+  private readonly pdfPrintService = inject(PdfPrintService);
   readonly agentsFacade = inject(AgentsFacade);
+  readonly filtersFacade = inject(FiltersFacade);
 
+  //  Referencia al toolbar (para limpiar buscador)
+  @ViewChild(PageToolbarComponent)
+  private toolbarComponent!: PageToolbarComponent;
+
+  // ────────────────────────────────────────────────
   // Columnas
+  // ────────────────────────────────────────────────
   headerListAgents: ColumnModel[] = [
     { title: 'Imagen', key: 'img', sortable: false },
     { title: 'Nombre', key: 'name', sortable: true },
@@ -113,54 +112,53 @@ export class AgentsPageComponent implements OnInit {
     },
   ];
 
-  // ── Column visibility (hook)
   readonly col = useColumnVisibility('agents-table', this.headerListAgents);
 
+  // Lista derivada reactiva
   readonly list = useEntityList<AgentsModelFullData>({
     filtered$: this.agentsFacade.filteredAgents$.pipe(map((v) => v ?? [])),
     sort: (arr) => this.agentsService.sortAgentsById(arr),
     count: (arr) => this.agentsService.countAgents(arr),
   });
+  readonly TypeList = TypeList;
+  readonly hasRowsSig = computed(() => this.list.countSig() > 0);
 
-  // Filtros
-  filters: Filter[] = [];
-  selectedFilter: string | null = null;
+  // ────────────────────────────────────────────────
+  // Modal (usando ModalFacade)
+  // ────────────────────────────────────────────────
+  readonly modalVisibleSig = this.modalFacade.isVisibleSig;
+  readonly currentModalTypeSig = this.modalFacade.typeSig;
+  readonly currentModalActionSig = this.modalFacade.actionSig;
+  readonly currentItemSig = this.modalFacade.itemSig;
+  readonly canGoBackSig = this.modalFacade.canGoBackSig;
 
-  // Modal
-  readonly modalVisibleSig = toSignal(this.modalService.modalVisibility$, {
-    initialValue: false,
-  });
-  item: AgentsModelFullData | EventModelFullData | null = null;
-  currentModalAction: TypeActionModal = TypeActionModal.Create;
-  typeModal: TypeList = TypeList.Agents;
-  typeSection: TypeList = TypeList.Agents;
-  typeList = TypeList;
-
-  // Historial navegación modal (Agente ↔ Evento)
-  modalHistory: ModalState[] = [];
-
+  // Ref impresión
   @ViewChild('printArea', { static: false })
   printArea!: ElementRef<HTMLElement>;
 
-  // ──────────────────────────────────────────────────────────────────────────────
+  // ────────────────────────────────────────────────
   // Lifecycle
-  // ──────────────────────────────────────────────────────────────────────────────
+  // ────────────────────────────────────────────────
   ngOnInit(): void {
-    // Filtros
-    this.filters = [{ code: '', name: 'Todos' }, ...CategoryFilterAgents];
-
-    // Carga inicial
-    this.filterSelected('');
+    //  Cargamos filtros desde la fachada unificada
+    this.filtersFacade.loadFiltersFor(TypeList.Agents);
+  }
+  ngAfterViewInit(): void {
+    //  lo llamamos cuando el input ya existe
+    setTimeout(() => this.filterSelected(''));
   }
 
-  // ──────────────────────────────────────────────────────────────────────────────
+  // ────────────────────────────────────────────────
   // Filtros / búsqueda
-  // ──────────────────────────────────────────────────────────────────────────────
+  // ────────────────────────────────────────────────
   filterSelected(filter: string): void {
-    this.selectedFilter = filter;
-    // Si usas InputSearchComponent en PageToolbar, no hay ref directa aquí;
-    // limpia el filtro de texto invocando el método de la facade si procede (opcional).
-    this.agentsFacade.applyFilterWord('');
+    // Actualiza selección global
+    this.filtersFacade.selectFilter(filter);
+
+    // ✅ Limpia el buscador del toolbar
+    if (this.toolbarComponent) {
+      this.toolbarComponent.clearSearch();
+    }
 
     if (!filter) {
       this.agentsFacade.loadAllAgents();
@@ -170,72 +168,49 @@ export class AgentsPageComponent implements OnInit {
   }
 
   applyFilterWord(keyword: string): void {
+    this.filtersFacade.setSearch(keyword);
     this.agentsFacade.applyFilterWord(keyword);
   }
 
-  // ──────────────────────────────────────────────────────────────────────────────
-  // Modal + navegación
-  // ──────────────────────────────────────────────────────────────────────────────
+  // ────────────────────────────────────────────────
+  // Modal + CRUD
+  // ────────────────────────────────────────────────
   addNewAgentModal(): void {
-    this.openModal(TypeList.Agents, TypeActionModal.Create, null);
+    this.agentsFacade.clearSelectedAgent();
+    this.modalFacade.open(TypeList.Agents, TypeActionModal.Create, null);
   }
 
   onOpenModal(event: {
     typeModal: TypeList;
     action: TypeActionModal;
-    item: AgentsModelFullData;
+    item?: AgentsModelFullData;
   }): void {
-    this.openModal(event.typeModal, event.action, event.item);
+    const { typeModal, action, item } = event;
+    this.modalFacade.open(typeModal, action, item ?? null);
   }
 
-  openModal(typeModal: TypeList, action: TypeActionModal, item: any): void {
-    this.typeModal = typeModal;
-    this.currentModalAction = action;
-    this.item = item;
-
-    if (typeModal === TypeList.Agents && action === TypeActionModal.Create) {
-      this.agentsFacade.clearSelectedAgent();
-    }
-
-    this.modalService.openModal();
-  }
-
-  onOpenEvent(eventId: number) {
-    // Guardar estado actual antes de navegar
-    this.modalHistory.push({
-      typeModal: this.typeModal,
-      action: this.currentModalAction,
-      item: this.item,
-    });
-
+  onOpenEvent(eventId: number): void {
     this.eventsService
       .getEventById(eventId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(take(1))
       .subscribe({
-        next: (event: EventModelFullData) => {
-          this.openModal(TypeList.Events, TypeActionModal.Show, event);
-        },
+        next: (event) =>
+          this.modalFacade.open(TypeList.Events, TypeActionModal.Show, event),
         error: (err) => console.error('Error cargando evento', err),
       });
   }
 
-  onBackModal(): void {
-    const prev = this.modalHistory.pop();
-    if (!prev) return;
-    this.currentModalAction = prev.action;
-    this.item = prev.item;
-    this.typeModal = prev.typeModal;
-  }
-
   onCloseModal(): void {
-    this.modalService.closeModal();
-    this.item = null;
-    this.modalHistory = [];
+    this.modalFacade.close();
   }
 
-  // ──────────────────────────────────────────────────────────────────────────────
+  onBackModal(): void {
+    this.modalFacade.back();
+  }
+
+  // ──────────────────────────────────────────────
   // CRUD
-  // ──────────────────────────────────────────────────────────────────────────────
+  // ──────────────────────────────────────────────
   onDelete({ type, id }: { type: TypeList; id: number }) {
     const actions: Partial<Record<TypeList, (id: number) => void>> = {
       [TypeList.Agents]: (x) => this.agentsFacade.deleteAgent(x),
@@ -244,20 +219,18 @@ export class AgentsPageComponent implements OnInit {
   }
 
   sendFormAgent(event: { itemId: number; formData: FormData }): void {
-    const request$ = event.itemId
+    const save$ = event.itemId
       ? this.agentsFacade.editAgent(event.formData)
       : this.agentsFacade.addAgent(event.formData);
 
-    request$
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap(() => this.onCloseModal())
-      )
-      .subscribe();
+    save$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.modalFacade.close());
   }
 
+  // ────────────────────────────────────────────────
   // Impresión
-  // ──────────────────────────────────────────────────────────────────────────────
+  // ────────────────────────────────────────────────
   async printTableAsPdf(): Promise<void> {
     if (!this.printArea) return;
 
@@ -268,9 +241,5 @@ export class AgentsPageComponent implements OnInit {
       format: 'a4',
       margins: [5, 5, 5, 5],
     });
-  }
-
-  get canGoBack(): boolean {
-    return this.modalHistory.length > 0;
   }
 }

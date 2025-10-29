@@ -21,7 +21,7 @@
   @for (event of events; track trackByEventId($index, event)) {
   <app-card-events-mini
     [event]="event"
-    [isDashboard]="true"
+    [isDashboard]="isDashboard"
     [showButtonsActions]="true"
     (openEvent)="onOpenEvent($event)"
     (actionEvent)="handleEventAction($event)"

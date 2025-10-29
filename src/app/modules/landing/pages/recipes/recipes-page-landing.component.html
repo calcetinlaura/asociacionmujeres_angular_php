@@ -1,12 +1,9 @@
 <div class="flex flex-col mx-3 md:mx-8 mt-4">
-  <!-- 🔹 Filtros -->
   <app-filters
-    [filters]="filters"
-    [(selected)]="selectedFilter"
+    [filters]="filtersFacade.filtersSig"
+    [selected]="filtersFacade.selectedSig"
     (filterClicked)="filterSelected($event)"
   />
-
-  <!-- 🔹 Buscador -->
   <app-input-search (onDebounce)="applyFilterWord($event)" class="my-8" />
 
   <!-- 🔹 Contenido -->
@@ -14,7 +11,7 @@
   <app-spinner-loading />
   } @else { @if (hasResultsSig()) {
   <app-section-generic
-    [typeSection]="typeList.Recipes"
+    [typeSection]="TypeList.Recipes"
     [data]="list.sortedSig()"
     [total]="totalSig()"
     (itemClicked)="openRecipeDetails($event)"
@@ -23,14 +20,11 @@
   <app-no-results [text]="'recetas' | lowercase" />
   } }
 
-  <!-- 🔹 Modal global -->
-  @if (modalFacade.isVisibleSig()) {
   <app-modal-shell
-    [visible]="modalFacade.isOpenSig()"
+    [visible]="modalFacade.isVisibleSig()"
     [typeModal]="modalFacade.typeSig()"
     [action]="modalFacade.actionSig()"
     [item]="modalFacade.itemSig()"
     (close)="modalFacade.close()"
   />
-  }
 </div>

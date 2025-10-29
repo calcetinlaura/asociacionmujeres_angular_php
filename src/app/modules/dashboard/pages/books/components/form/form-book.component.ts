@@ -44,11 +44,12 @@ import { ScrollToFirstErrorDirective } from 'src/app/shared/directives/scroll-to
   styleUrls: ['./../../../../../../shared/components/form/form.component.css'],
 })
 export class FormBookComponent {
-  private booksFacade = inject(BooksFacade);
-  private destroyRef = inject(DestroyRef);
-  private generalService = inject(GeneralService);
+  readonly booksFacade = inject(BooksFacade);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly generalService = inject(GeneralService);
 
   @Input() itemId!: number;
+  @Input() item: BookModel | null = null;
   @Output() submitForm = new EventEmitter<{
     itemId: number;
     formData: FormData;
@@ -78,23 +79,17 @@ export class FormBookComponent {
   typeList = TypeList.Books;
 
   currentYear = this.generalService.currentYear;
-  isLoading = true;
-  quillModules = {
-    toolbar: [
-      [{ header: [1, 2, false] }],
-      ['bold', 'italic', 'underline'],
-      ['image', 'code-block'],
-      [{ color: [] }, { background: [] }],
-      [{ list: 'ordered' }, { list: 'bullet' }],
-      [{ align: [] }],
-      ['link', 'clean'],
-      [{ indent: '-1' }, { indent: '+1' }],
-    ],
-  };
+  quillModules = this.generalService.defaultQuillModules;
   ngOnInit(): void {
-    this.isLoading = true;
     this.years = this.generalService.loadYears(this.currentYear, 2018);
 
+    // ✅ Caso 1: si el item completo ya llega desde la modal
+    if (this.item) {
+      this.patchForm(this.item);
+      return;
+    }
+
+    // ✅ Caso 2: si solo tenemos el id (modo carga asíncrona desde backend)
     if (this.itemId) {
       this.booksFacade.loadBookById(this.itemId);
       this.booksFacade.selectedBook$
@@ -103,33 +98,32 @@ export class FormBookComponent {
           filter((book: BookModel | null) => book !== null),
           tap((book: BookModel | null) => {
             if (book) {
-              this.formBook.patchValue({
-                title: book.title || null,
-                author: book.author || null,
-                description: book.description || null,
-                summary: book.summary || null,
-                gender: book.gender || null,
-                img: book.img || null,
-                year: book.year || 0,
-              });
-
-              this.titleForm = 'Editar Libro';
-              this.buttonAction = 'Guardar cambios';
-
-              if (book.img) {
-                this.imageSrc = book.img;
-                this.selectedImageFile = null;
-              }
+              this.patchForm(book);
             }
-            this.isLoading = false;
           })
         )
         .subscribe();
-    } else {
-      this.isLoading = false;
     }
   }
+  private patchForm(book: BookModel) {
+    this.formBook.patchValue({
+      title: book.title || '',
+      author: book.author || '',
+      description: book.description || '',
+      summary: book.summary || '',
+      gender: book.gender || '',
+      img: book.img || '',
+      year: book.year || null,
+    });
 
+    this.titleForm = 'Editar Libro';
+    this.buttonAction = 'Guardar cambios';
+
+    if (book.img) {
+      this.imageSrc = book.img;
+      this.selectedImageFile = null;
+    }
+  }
   async onImageSelected(file: File) {
     const result = await this.generalService.handleFileSelection(file);
     this.selectedImageFile = result.file;

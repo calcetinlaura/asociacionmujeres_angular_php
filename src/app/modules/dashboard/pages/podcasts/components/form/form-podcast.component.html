@@ -2,7 +2,7 @@
   <div class="text-center pb-5 uppercase">
     <p class="text-2xl">{{ titleForm }}</p>
   </div>
-  @if (isLoading) {
+  @if (podcastsFacade.isLoadingItem$ |async) {
   <div class="spinner-container">
     <app-spinner-loading />
   </div>

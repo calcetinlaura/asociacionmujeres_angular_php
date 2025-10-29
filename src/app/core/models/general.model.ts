@@ -1,6 +1,7 @@
 import { Filter } from '../interfaces/general.interface';
 
 export enum TypeList {
+  None = 'NONE',
   Events = 'EVENTS',
   Books = 'BOOKS',
   Movies = 'MOVIES',
@@ -18,6 +19,7 @@ export enum TypeList {
   Articles = 'ARTICLES',
   MultiEvents = 'MULTIEVENTS',
   EventsReports = 'EVENTSREPORTS',
+  Gallery = 'GALLERY',
 }
 
 export enum TypeActionModal {
@@ -26,6 +28,7 @@ export enum TypeActionModal {
   Show = 'SHOW',
   Create = 'CREATE',
   Duplicate = 'DUPLICATE',
+  None = 'NONE',
 }
 
 export const filterPhotos: Filter[] = [

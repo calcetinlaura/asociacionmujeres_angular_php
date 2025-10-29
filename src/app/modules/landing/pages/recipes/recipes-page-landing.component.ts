@@ -14,13 +14,8 @@ import { filter, map, take, tap } from 'rxjs';
 import { ModalFacade } from 'src/app/application/modal.facade';
 
 import { RecipesFacade } from 'src/app/application/recipes.facade';
-import { Filter } from 'src/app/core/interfaces/general.interface';
-import {
-  categoryFilterRecipes,
-  RecipeModel,
-} from 'src/app/core/interfaces/recipe.interface';
+import { RecipeModel } from 'src/app/core/interfaces/recipe.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
-import { GeneralService } from 'src/app/core/services/generalService.service';
 import { RecipesService } from 'src/app/core/services/recipes.services';
 
 import { FiltersComponent } from 'src/app/shared/components/filters/filters.component';
@@ -30,6 +25,7 @@ import { NoResultsComponent } from 'src/app/shared/components/no-results/no-resu
 import { SectionGenericComponent } from 'src/app/shared/components/section-generic/section-generic.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 
+import { FiltersFacade } from 'src/app/application/filters.facade';
 import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
 
@@ -48,16 +44,15 @@ import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
   templateUrl: './recipes-page-landing.component.html',
 })
 export class RecipesPageLandingComponent implements OnInit {
-  // ===== Inyección de dependencias =====
   private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
   private readonly recipesService = inject(RecipesService);
-  private readonly generalService = inject(GeneralService);
 
-  readonly recipesFacade = inject(RecipesFacade);
   readonly modalFacade = inject(ModalFacade);
+  readonly filtersFacade = inject(FiltersFacade);
+  readonly recipesFacade = inject(RecipesFacade);
 
-  // ===== Signals derivadas con useEntityList =====
+  // ===== Lista derivada con useEntityList =====
   readonly list = useEntityList<RecipeModel>({
     filtered$: this.recipesFacade.filteredRecipes$,
     map: (arr) => arr,
@@ -67,11 +62,7 @@ export class RecipesPageLandingComponent implements OnInit {
 
   readonly totalSig = this.list.countSig;
   readonly hasResultsSig = computed(() => this.totalSig() > 0);
-
-  // ===== Filtros / UI =====
-  filters: Filter[] = [];
-  selectedFilter: string | number = '';
-  typeList = TypeList;
+  readonly TypeList = TypeList;
 
   @ViewChild(InputSearchComponent)
   private inputSearchComponent!: InputSearchComponent;
@@ -83,15 +74,8 @@ export class RecipesPageLandingComponent implements OnInit {
   // 🧭 Ciclo de vida
   // ======================================================
   ngOnInit(): void {
-    this.filters = [{ code: '', name: 'Todas' }, ...categoryFilterRecipes];
-
-    // Deep-link inicial
-    const initialId = this.route.snapshot.paramMap.get('id');
-    if (initialId) {
-      this.handleDeepLinkById(Number(initialId));
-    } else {
-      this.filterSelected('');
-    }
+    // Carga inicial de filtros globales
+    this.filtersFacade.loadFiltersFor(TypeList.Recipes);
 
     // Reacciona a cambios en la URL
     this.route.paramMap
@@ -99,15 +83,24 @@ export class RecipesPageLandingComponent implements OnInit {
         takeUntilDestroyed(this.destroyRef),
         map((pm) => pm.get('id')),
         tap((id) => {
-          if (id) this.handleDeepLinkById(Number(id));
-          else this.filterSelected('');
+          if (id) {
+            this.handleDeepLinkById(Number(id));
+          }
         })
       )
       .subscribe();
   }
 
+  ngAfterViewInit(): void {
+    //  Solo se llama si NO hay id en la URL
+    const initialId = this.route.snapshot.paramMap.get('id');
+    if (!initialId) {
+      setTimeout(() => this.filterSelected(''));
+    }
+  }
+
   // ======================================================
-  // 🎯 Deep-link: carga receta y abre modal
+  //  Deep-link: carga receta y abre modal
   // ======================================================
   private handleDeepLinkById(id: number): void {
     if (!Number.isFinite(id)) {
@@ -119,30 +112,33 @@ export class RecipesPageLandingComponent implements OnInit {
     this.recipesFacade.selectedRecipe$
       .pipe(
         filter((r): r is RecipeModel => !!r),
+        take(1),
         takeUntilDestroyed(this.destroyRef),
-        take(1)
+        tap((recipe) => {
+          const catCode = this.pickCategoryFilterCode(recipe);
+
+          if (catCode) {
+            this.filtersFacade.selectFilter(catCode);
+            this.recipesFacade.loadRecipesByFilter(catCode);
+          } else {
+            this.filterSelected('');
+          }
+
+          // 👉 Abre automáticamente la modal
+          this.modalFacade.open(TypeList.Recipes, TypeActionModal.Show, recipe);
+        })
       )
-      .subscribe((recipe) => {
-        const catCode = this.pickCategoryFilterCode(recipe);
-
-        if (catCode) {
-          this.selectedFilter = catCode;
-          this.recipesFacade.loadRecipesByFilter(catCode);
-        } else {
-          this.filterSelected('');
-        }
-
-        // 👉 Abre automáticamente la modal
-        this.modalFacade.open(TypeList.Recipes, TypeActionModal.Show, recipe);
-      });
+      .subscribe();
   }
 
   // ======================================================
-  // 🧩 Filtros y búsqueda
+  //  Filtros y búsqueda
   // ======================================================
   filterSelected(filter: string): void {
-    this.selectedFilter = filter;
-    this.generalService.clearSearchInput(this.inputSearchComponent);
+    this.filtersFacade.selectFilter(filter);
+    if (this.inputSearchComponent) {
+      this.filtersFacade.clearSearchInput(this.inputSearchComponent);
+    }
 
     if (filter === '') {
       this.recipesFacade.loadAllRecipes();
@@ -152,11 +148,12 @@ export class RecipesPageLandingComponent implements OnInit {
   }
 
   applyFilterWord(keyword: string): void {
+    this.filtersFacade.setSearch(keyword);
     this.recipesFacade.applyFilterWord(keyword);
   }
 
   // ======================================================
-  // 🍳 Acciones con modal
+  //  Acciones con modal
   // ======================================================
   openRecipeDetails(recipe: RecipeModel): void {
     this.modalFacade.open(TypeList.Recipes, TypeActionModal.Show, recipe);
@@ -167,7 +164,7 @@ export class RecipesPageLandingComponent implements OnInit {
   }
 
   // ======================================================
-  // 🧠 Helpers
+  //  Helpers
   // ======================================================
   private pickCategoryFilterCode(r: RecipeModel): string | null {
     const code = (r as any)?.category;

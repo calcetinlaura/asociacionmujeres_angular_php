@@ -5,48 +5,41 @@ import {
   ElementRef,
   OnInit,
   ViewChild,
+  computed,
   inject,
 } from '@angular/core';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
+import { map } from 'rxjs';
 
+import { FiltersFacade } from 'src/app/application/filters.facade';
 import { MoviesFacade } from 'src/app/application/movies.facade';
 import {
   ColumnModel,
   ColumnWidth,
 } from 'src/app/core/interfaces/column.interface';
-import { Filter } from 'src/app/core/interfaces/general.interface';
-import {
-  MovieModel,
-  genderFilterMovies,
-} from 'src/app/core/interfaces/movie.interface';
+import { MovieModel } from 'src/app/core/interfaces/movie.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { MoviesService } from 'src/app/core/services/movies.services';
-
-import { GeneralService } from 'src/app/core/services/generalService.service';
 import { PdfPrintService } from 'src/app/core/services/PdfPrintService.service';
+
 import { DashboardHeaderComponent } from 'src/app/shared/components/dashboard-header/dashboard-header.component';
 import { FiltersComponent } from 'src/app/shared/components/filters/filters.component';
+import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
+import { PageToolbarComponent } from 'src/app/shared/components/page-toolbar/page-toolbar.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { StickyZoneComponent } from 'src/app/shared/components/sticky-zone/sticky-zone.component';
 import { TableComponent } from 'src/app/shared/components/table/table.component';
 
-// Reutilizables
-import { PageToolbarComponent } from 'src/app/shared/components/page-toolbar/page-toolbar.component';
+import { ModalFacade } from 'src/app/application/modal.facade';
 import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
-
-// Modal shell + service
-import { map } from 'rxjs';
-import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
-import { ModalService } from 'src/app/shared/components/modal/services/modal.service';
 
 @Component({
   selector: 'app-movies-page',
   standalone: true,
   imports: [
-    // UI
     DashboardHeaderComponent,
     SpinnerLoadingComponent,
     StickyZoneComponent,
@@ -54,7 +47,6 @@ import { ModalService } from 'src/app/shared/components/modal/services/modal.ser
     FiltersComponent,
     ModalShellComponent,
     PageToolbarComponent,
-    // Angular
     CommonModule,
     MatMenuModule,
     MatCheckboxModule,
@@ -62,17 +54,17 @@ import { ModalService } from 'src/app/shared/components/modal/services/modal.ser
   templateUrl: './movies-page.component.html',
 })
 export class MoviesPageComponent implements OnInit {
-  // Servicios
   private readonly destroyRef = inject(DestroyRef);
-  private readonly modalService = inject(ModalService);
+  private readonly modalFacade = inject(ModalFacade);
   private readonly moviesService = inject(MoviesService);
-  private readonly generalService = inject(GeneralService);
   private readonly pdfPrintService = inject(PdfPrintService);
-
-  // Facade
   readonly moviesFacade = inject(MoviesFacade);
+  readonly filtersFacade = inject(FiltersFacade);
 
-  // Columnas
+  //  Referencia al toolbar (para limpiar buscador)
+  @ViewChild(PageToolbarComponent)
+  private toolbarComponent!: PageToolbarComponent;
+
   headerListMovies: ColumnModel[] = [
     { title: 'Portada', key: 'img', sortable: false },
     { title: 'Título', key: 'title', sortable: true, width: ColumnWidth.XL },
@@ -107,51 +99,55 @@ export class MoviesPageComponent implements OnInit {
     { title: 'Año compra', key: 'year', sortable: true, width: ColumnWidth.XS },
   ];
 
-  // Reutilizables (columnas + lista)
   readonly col = useColumnVisibility('movies-table', this.headerListMovies, [
     'year',
     'gender',
   ]);
 
+  // Lista derivada reactiva
   readonly list = useEntityList<MovieModel>({
-    filtered$: this.moviesFacade.filteredMovies$.pipe(map((v) => v ?? [])), // puede emitir null → hook lo coalescea a []
+    filtered$: this.moviesFacade.filteredMovies$.pipe(map((v) => v ?? [])),
     sort: (arr) => this.moviesService.sortMoviesById(arr),
     count: (arr) => this.moviesService.countMovies(arr),
   });
+  readonly TypeList = TypeList;
+  readonly hasRowsSig = computed(() => this.list.countSig() > 0);
 
-  // Filtros
-  filters: Filter[] = [];
-  selectedFilter: string | number = '';
+  // ────────────────────────────────────────────────
+  // Modal (usando ModalFacade)
+  // ────────────────────────────────────────────────
+  readonly modalVisibleSig = this.modalFacade.isVisibleSig;
+  readonly currentModalTypeSig = this.modalFacade.typeSig;
+  readonly currentModalActionSig = this.modalFacade.actionSig;
+  readonly currentItemSig = this.modalFacade.itemSig;
 
-  // Modal
-  readonly modalVisibleSig = toSignal(this.modalService.modalVisibility$, {
-    initialValue: false,
-  });
-  item: MovieModel | null = null;
-  currentModalAction: TypeActionModal = TypeActionModal.Create;
-  typeModal: TypeList = TypeList.Movies;
-  typeSection: TypeList = TypeList.Movies;
-
-  // Refs
+  // Ref impresión
   @ViewChild('printArea', { static: false })
   printArea!: ElementRef<HTMLElement>;
 
-  // ──────────────────────────────────────────────────────────────────────────────
+  // ────────────────────────────────────────────────
   // Lifecycle
-  // ──────────────────────────────────────────────────────────────────────────────
+  // ────────────────────────────────────────────────
   ngOnInit(): void {
-    this.filters = [{ code: '', name: 'Todos' }, ...genderFilterMovies];
-    this.filterSelected(''); // carga inicial
+    //  Cargamos filtros desde la fachada unificada
+    this.filtersFacade.loadFiltersFor(TypeList.Movies);
+  }
+  ngAfterViewInit(): void {
+    //  lo llamamos cuando el input ya existe
+    setTimeout(() => this.filterSelected(''));
   }
 
-  // ──────────────────────────────────────────────────────────────────────────────
+  // ────────────────────────────────────────────────
   // Filtros / búsqueda
-  // ──────────────────────────────────────────────────────────────────────────────
+  // ────────────────────────────────────────────────
   filterSelected(filter: string): void {
-    this.selectedFilter = filter;
+    // Actualiza selección global
+    this.filtersFacade.selectFilter(filter);
 
-    // resetear búsqueda de texto al cambiar filtro
-    this.moviesFacade.applyFilterWord('');
+    //  Limpia el buscador del toolbar
+    if (this.toolbarComponent) {
+      this.toolbarComponent.clearSearch();
+    }
 
     if (!filter) {
       this.moviesFacade.loadAllMovies();
@@ -160,14 +156,17 @@ export class MoviesPageComponent implements OnInit {
     }
   }
 
-  applyFilterWord = (keyword: string) =>
+  applyFilterWord(keyword: string): void {
+    this.filtersFacade.setSearch(keyword);
     this.moviesFacade.applyFilterWord(keyword);
+  }
 
-  // ──────────────────────────────────────────────────────────────────────────────
-  // Modal
-  // ──────────────────────────────────────────────────────────────────────────────
+  // ────────────────────────────────────────────────
+  // Modal + CRUD
+  // ────────────────────────────────────────────────
   addNewMovieModal(): void {
-    this.openModal(TypeList.Movies, TypeActionModal.Create, null);
+    this.moviesFacade.clearSelectedMovie();
+    this.modalFacade.open(TypeList.Movies, TypeActionModal.Create, null);
   }
 
   onOpenModal(event: {
@@ -175,33 +174,13 @@ export class MoviesPageComponent implements OnInit {
     action: TypeActionModal;
     item?: MovieModel;
   }): void {
-    this.openModal(event.typeModal, event.action, event.item ?? null);
-  }
-
-  openModal(
-    typeModal: TypeList,
-    action: TypeActionModal,
-    movie: MovieModel | null
-  ): void {
-    this.currentModalAction = action;
-    this.item = movie;
-    this.typeModal = typeModal;
-
-    if (typeModal === TypeList.Movies && action === TypeActionModal.Create) {
-      this.moviesFacade.clearSelectedMovie();
-    }
-
-    this.modalService.openModal();
+    this.modalFacade.open(event.typeModal, event.action, event.item ?? null);
   }
 
   onCloseModal(): void {
-    this.modalService.closeModal();
-    this.item = null;
+    this.modalFacade.close();
   }
 
-  // ──────────────────────────────────────────────────────────────────────────────
-  // CRUD
-  // ──────────────────────────────────────────────────────────────────────────────
   onDelete({ type, id }: { type: TypeList; id: number }) {
     const actions: Partial<Record<TypeList, (id: number) => void>> = {
       [TypeList.Movies]: (x) => this.moviesFacade.deleteMovie(x),
@@ -216,12 +195,10 @@ export class MoviesPageComponent implements OnInit {
 
     save$
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => this.onCloseModal());
+      .subscribe(() => this.modalFacade.close());
   }
 
-  // ──────────────────────────────────────────────────────────────────────────────
   // Impresión
-  // ──────────────────────────────────────────────────────────────────────────────
   async printTableAsPdf(): Promise<void> {
     if (!this.printArea) return;
 

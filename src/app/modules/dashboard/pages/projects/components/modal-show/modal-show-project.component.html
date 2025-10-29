@@ -40,7 +40,7 @@
   <app-text-editor [text]="item.description" />
   } @if (item.events && item.events.length > 0) {
   <p class="text-[18px] font-normal mt-6 mb-4">Eventos</p>
-  <div class="mx-8 flex flex-col gap-y-2">
+  <div class="mx-20 flex flex-col gap-y-2">
     @for (event of item.events; track event; let pIndex = $index) {
     <app-card-events-mini
       [event]="event"

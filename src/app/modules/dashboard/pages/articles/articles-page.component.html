@@ -1,6 +1,6 @@
 <app-sticky-zone [height]="210">
   <app-dashboard-header
-    [icon]="'uil-newspaper'"
+    [icon]="'uil uil-newspaper'"
     [title]="'Artículos'"
     [number]="list.countSig()"
     [type]="'Artículos'"
@@ -21,11 +21,10 @@
   <app-spinner-loading />
   } @else { @if (list.processedSig().length > 0) {
   <div class="pb-4" #printArea>
-    <h2 class="only-on-pdf print-title">Listado artículos</h2>
+    <h2 class="only-on-pdf print-title">Listado de artículos</h2>
     <app-table
       [data]="list.processedSig()"
-      [typeSection]="typeSection"
-      [typeModal]="typeModal"
+      [typeSection]="TypeList.Articles"
       [headerColumns]="col.getVisibleColumns()"
       [columnVisibility]="col.columnVisSig()"
       [displayedColumns]="col.displayedColumnsSig()"
@@ -40,12 +39,12 @@
   } }
 </div>
 
-<!-- Modal -->
+<!-- Modal controlado por ModalFacade -->
 <app-modal-shell
   [visible]="modalVisibleSig()"
-  [typeModal]="typeModal"
-  [action]="currentModalAction"
-  [item]="item"
+  [typeModal]="currentModalTypeSig()"
+  [action]="currentModalActionSig()"
+  [item]="currentItemSig()"
   (close)="onCloseModal()"
   (confirmDelete)="onDelete($event)"
   (sendFormArticleData)="sendFormArticle($event)"

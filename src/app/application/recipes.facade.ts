@@ -42,6 +42,7 @@ export class RecipesFacade extends LoadableFacade {
 
   // ───────────────────── LISTA (isLoadingList$)
   loadAllRecipes(): void {
+    console.log('[RecipesFacade] loadAllRecipes called');
     this.setCurrentFilter(null);
     this.listLoadingSubject.next(true);
     this.recipesService
