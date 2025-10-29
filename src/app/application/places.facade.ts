@@ -4,7 +4,7 @@ import { BehaviorSubject, EMPTY, Observable } from 'rxjs';
 import { catchError, finalize, map, tap } from 'rxjs/operators';
 import { PlaceModel } from 'src/app/core/interfaces/place.interface';
 import { PlacesService } from 'src/app/core/services/places.services';
-import { includesNormalized, toSearchKey } from '../shared/utils/text.utils';
+import { filterByKeyword } from '../shared/utils/facade.utils';
 import { LoadableFacade } from './loadable.facade';
 
 @Injectable({ providedIn: 'root' })
@@ -185,22 +185,9 @@ export class PlacesFacade extends LoadableFacade {
 
   applyFilterWord(keyword: string): void {
     const all = this.placesSubject.getValue();
-
-    if (!all) {
-      this.filteredPlacesSubject.next(all);
-      return;
-    }
-
-    if (!toSearchKey(keyword)) {
-      this.filteredPlacesSubject.next(all);
-      return;
-    }
-
-    const filtered = all.filter((place) =>
-      [place.name].some((field) => includesNormalized(field, keyword))
+    this.filteredPlacesSubject.next(
+      filterByKeyword(all, keyword, [(b) => b.name, (b) => b.town])
     );
-
-    this.filteredPlacesSubject.next(filtered);
   }
 
   // ───────── PRIVATE ─────────

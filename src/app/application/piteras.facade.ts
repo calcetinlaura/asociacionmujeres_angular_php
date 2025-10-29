@@ -4,7 +4,7 @@ import { BehaviorSubject, EMPTY, Observable } from 'rxjs';
 import { catchError, finalize, tap } from 'rxjs/operators';
 import { PiteraModel } from 'src/app/core/interfaces/pitera.interface';
 import { PiterasService } from 'src/app/core/services/piteras.services';
-import { includesNormalized, toSearchKey } from '../shared/utils/text.utils';
+import { filterByKeyword } from '../shared/utils/facade.utils';
 import { LoadableFacade } from './loadable.facade';
 
 @Injectable({ providedIn: 'root' })
@@ -120,22 +120,9 @@ export class PiterasFacade extends LoadableFacade {
 
   applyFilterWord(keyword: string): void {
     const all = this.piterasSubject.getValue();
-
-    if (!all) {
-      this.filteredPiterasSubject.next(all);
-      return;
-    }
-
-    if (!toSearchKey(keyword)) {
-      this.filteredPiterasSubject.next(all);
-      return;
-    }
-
-    const filtered = all.filter((p) =>
-      [p.title, p.theme].some((field) => includesNormalized(field, keyword))
+    this.filteredPiterasSubject.next(
+      filterByKeyword(all, keyword, [(b) => b.title, (b) => b.theme])
     );
-
-    this.filteredPiterasSubject.next(filtered);
   }
 
   // ───────── PRIVATE UTILS ─────────

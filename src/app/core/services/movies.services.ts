@@ -2,7 +2,6 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { MovieModel } from 'src/app/core/interfaces/movie.interface';
 import { GeneralService } from 'src/app/core/services/generalService.service';
 import { environments } from 'src/environments/environments';
 
@@ -58,23 +57,5 @@ export class MoviesService {
 
   delete(id: number): Observable<any> {
     return this.generalService.deleteOverride<any>(this.apiUrl, { id });
-  }
-
-  sortMoviesByTitle(movies: MovieModel[]): MovieModel[] {
-    return movies.sort((a, b) =>
-      a.title.toLowerCase().localeCompare(b.title.toLowerCase())
-    );
-  }
-
-  sortMoviesById(movies: MovieModel[]): MovieModel[] {
-    return movies.sort((a, b) => b.id - a.id);
-  }
-
-  hasResults(movies: MovieModel[] | null): boolean {
-    return !!movies && movies.length > 0;
-  }
-
-  countMovies(movies: MovieModel[] | null): number {
-    return movies?.length ?? 0;
   }
 }

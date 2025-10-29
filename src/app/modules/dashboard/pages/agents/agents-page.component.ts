@@ -1,17 +1,17 @@
 import { CommonModule } from '@angular/common';
 import {
   Component,
+  computed,
   DestroyRef,
   ElementRef,
+  inject,
   OnInit,
   ViewChild,
-  computed,
-  inject,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
-import { map, take } from 'rxjs';
+import { filter, map, take, tap } from 'rxjs';
 
 import { AgentsFacade } from 'src/app/application/agents.facade';
 import { FiltersFacade } from 'src/app/application/filters.facade';
@@ -21,7 +21,6 @@ import {
   ColumnWidth,
 } from 'src/app/core/interfaces/column.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
-import { AgentsService } from 'src/app/core/services/agents.services';
 import { PdfPrintService } from 'src/app/core/services/PdfPrintService.service';
 
 import { DashboardHeaderComponent } from 'src/app/shared/components/dashboard-header/dashboard-header.component';
@@ -32,10 +31,12 @@ import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loadi
 import { StickyZoneComponent } from 'src/app/shared/components/sticky-zone/sticky-zone.component';
 import { TableComponent } from 'src/app/shared/components/table/table.component';
 
+import { EventsFacade } from 'src/app/application/events.facade';
 import { ModalFacade } from 'src/app/application/modal.facade';
-import { EventsService } from 'src/app/core/services/events.services';
+import { EventModelFullData } from 'src/app/core/interfaces/event.interface';
 import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
+import { count, sortById } from 'src/app/shared/utils/facade.utils';
 
 @Component({
   selector: 'app-agents-page',
@@ -57,8 +58,7 @@ import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
 export class AgentsPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly modalFacade = inject(ModalFacade);
-  private readonly agentsService = inject(AgentsService);
-  private readonly eventsService = inject(EventsService);
+  private readonly eventsFacade = inject(EventsFacade);
   private readonly pdfPrintService = inject(PdfPrintService);
   readonly agentsFacade = inject(AgentsFacade);
   readonly filtersFacade = inject(FiltersFacade);
@@ -117,8 +117,8 @@ export class AgentsPageComponent implements OnInit {
   // Lista derivada reactiva
   readonly list = useEntityList<AgentsModelFullData>({
     filtered$: this.agentsFacade.filteredAgents$.pipe(map((v) => v ?? [])),
-    sort: (arr) => this.agentsService.sortAgentsById(arr),
-    count: (arr) => this.agentsService.countAgents(arr),
+    sort: (arr) => sortById(arr),
+    count: (arr) => count(arr),
   });
   readonly TypeList = TypeList;
   readonly hasRowsSig = computed(() => this.list.countSig() > 0);
@@ -190,14 +190,18 @@ export class AgentsPageComponent implements OnInit {
   }
 
   onOpenEvent(eventId: number): void {
-    this.eventsService
-      .getEventById(eventId)
-      .pipe(take(1))
-      .subscribe({
-        next: (event) =>
-          this.modalFacade.open(TypeList.Events, TypeActionModal.Show, event),
-        error: (err) => console.error('Error cargando evento', err),
-      });
+    this.eventsFacade.loadEventById(eventId);
+
+    this.eventsFacade.selectedEvent$
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        filter((e): e is EventModelFullData => !!e),
+        take(1),
+        tap((event) =>
+          this.modalFacade.open(TypeList.Events, TypeActionModal.Show, event)
+        )
+      )
+      .subscribe();
   }
 
   onCloseModal(): void {
@@ -224,8 +228,12 @@ export class AgentsPageComponent implements OnInit {
       : this.agentsFacade.addAgent(event.formData);
 
     save$
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => this.modalFacade.close());
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        // efecto: cerrar la modal al completar correctamente
+        tap(() => this.modalFacade.close())
+      )
+      .subscribe();
   }
 
   // ────────────────────────────────────────────────

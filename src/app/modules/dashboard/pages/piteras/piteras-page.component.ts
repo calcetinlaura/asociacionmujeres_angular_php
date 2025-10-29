@@ -11,7 +11,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
-import { map } from 'rxjs';
+import { map, tap } from 'rxjs';
 
 import { PiterasFacade } from 'src/app/application/piteras.facade';
 import {
@@ -21,7 +21,6 @@ import {
 import { PiteraModel } from 'src/app/core/interfaces/pitera.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { PdfPrintService } from 'src/app/core/services/PdfPrintService.service';
-import { PiterasService } from 'src/app/core/services/piteras.services';
 
 import { DashboardHeaderComponent } from 'src/app/shared/components/dashboard-header/dashboard-header.component';
 import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
@@ -33,6 +32,7 @@ import { TableComponent } from 'src/app/shared/components/table/table.component'
 import { ModalFacade } from 'src/app/application/modal.facade';
 import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
+import { count, sortByYear } from 'src/app/shared/utils/facade.utils';
 
 @Component({
   selector: 'app-piteras-page',
@@ -53,12 +53,8 @@ import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
   templateUrl: './piteras-page.component.html',
 })
 export class PiterasPageComponent implements OnInit {
-  // ──────────────────────────────────────────────────────────────────────────────
-  // Inyecciones
-  // ──────────────────────────────────────────────────────────────────────────────
   private readonly destroyRef = inject(DestroyRef);
   private readonly modalFacade = inject(ModalFacade);
-  private readonly piterasService = inject(PiterasService);
   private readonly pdfPrintService = inject(PdfPrintService);
   readonly piterasFacade = inject(PiterasFacade);
 
@@ -105,8 +101,8 @@ export class PiterasPageComponent implements OnInit {
   readonly col = useColumnVisibility('piteras-table', this.headerListPiteras);
   readonly list = useEntityList<PiteraModel>({
     filtered$: this.piterasFacade.filteredPiteras$.pipe(map((v) => v ?? [])),
-    sort: (arr) => this.piterasService.sortPiterasByYear(arr),
-    count: (arr) => this.piterasService.countPiteras(arr),
+    sort: (arr) => sortByYear(arr),
+    count: (arr) => count(arr),
   });
 
   readonly TypeList = TypeList;
@@ -175,8 +171,11 @@ export class PiterasPageComponent implements OnInit {
       : this.piterasFacade.addPitera(event.formData);
 
     save$
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => this.modalFacade.close());
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap(() => this.modalFacade.close())
+      )
+      .subscribe();
   }
 
   // ──────────────────────────────────────────────────────────────────────────────

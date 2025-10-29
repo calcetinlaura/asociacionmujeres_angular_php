@@ -11,7 +11,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
-import { map } from 'rxjs';
+import { map, tap } from 'rxjs';
 
 import { ArticlesFacade } from 'src/app/application/articles.facade';
 import { ArticleModel } from 'src/app/core/interfaces/article.interface';
@@ -20,7 +20,6 @@ import {
   ColumnWidth,
 } from 'src/app/core/interfaces/column.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
-import { ArticlesService } from 'src/app/core/services/articles.services';
 import { PdfPrintService } from 'src/app/core/services/PdfPrintService.service';
 
 import { DashboardHeaderComponent } from 'src/app/shared/components/dashboard-header/dashboard-header.component';
@@ -34,6 +33,7 @@ import { FiltersFacade } from 'src/app/application/filters.facade';
 import { ModalFacade } from 'src/app/application/modal.facade';
 import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
+import { count, sortById } from 'src/app/shared/utils/facade.utils';
 
 @Component({
   selector: 'app-articles-page',
@@ -54,12 +54,8 @@ import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
   templateUrl: './articles-page.component.html',
 })
 export class ArticlesPageComponent implements OnInit {
-  // ──────────────────────────────────────────────────────────────────────────────
-  // Inyecciones
-  // ──────────────────────────────────────────────────────────────────────────────
   private readonly destroyRef = inject(DestroyRef);
   private readonly modalFacade = inject(ModalFacade);
-  private readonly articlesService = inject(ArticlesService);
   private readonly pdfPrintService = inject(PdfPrintService);
   readonly articlesFacade = inject(ArticlesFacade);
   readonly filtersFacade = inject(FiltersFacade);
@@ -95,8 +91,8 @@ export class ArticlesPageComponent implements OnInit {
 
   readonly list = useEntityList<ArticleModel>({
     filtered$: this.articlesFacade.filteredArticles$.pipe(map((v) => v ?? [])),
-    sort: (arr) => this.articlesService.sortArticlesById(arr),
-    count: (arr) => this.articlesService.countArticles(arr),
+    sort: (arr) => sortById(arr),
+    count: (arr) => count(arr),
   });
 
   readonly TypeList = TypeList;
@@ -142,24 +138,7 @@ export class ArticlesPageComponent implements OnInit {
     action: TypeActionModal;
     item?: ArticleModel;
   }): void {
-    const { typeModal, action, item } = event;
-    if (
-      typeModal === TypeList.Articles &&
-      action !== TypeActionModal.Create &&
-      item?.id
-    ) {
-      this.articlesService
-        .getArticleById(item.id)
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe({
-          next: (fresh) =>
-            this.modalFacade.open(typeModal, action, fresh ?? item ?? null),
-          error: () => this.modalFacade.open(typeModal, action, item ?? null),
-        });
-      return;
-    }
-
-    this.modalFacade.open(typeModal, action, item ?? null);
+    this.modalFacade.open(event.typeModal, event.action, event.item ?? null);
   }
 
   onCloseModal(): void {
@@ -172,15 +151,19 @@ export class ArticlesPageComponent implements OnInit {
     };
     actions[type]?.(id);
   }
-
   sendFormArticle(event: { itemId: number; formData: FormData }): void {
-    const save$ = event.itemId
-      ? this.articlesFacade.editArticle(event.formData)
-      : this.articlesFacade.addArticle(event.formData);
+    const { itemId, formData } = event;
+
+    const save$ = itemId
+      ? this.articlesFacade.editArticle(formData)
+      : this.articlesFacade.addArticle(formData);
 
     save$
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => this.modalFacade.close());
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap(() => this.modalFacade.close())
+      )
+      .subscribe();
   }
 
   // ──────────────────────────────────────────────────────────────────────────────

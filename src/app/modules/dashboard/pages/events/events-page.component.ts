@@ -12,7 +12,7 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
-import { finalize, of, switchMap, tap } from 'rxjs';
+import { filter, finalize, of, switchMap, take, tap } from 'rxjs';
 
 import { EventsFacade } from 'src/app/application/events.facade';
 import { ModalFacade } from 'src/app/application/modal.facade';
@@ -24,8 +24,6 @@ import { EventModelFullData } from 'src/app/core/interfaces/event.interface';
 import { Filter } from 'src/app/core/interfaces/general.interface';
 import { MacroeventModelFullData } from 'src/app/core/interfaces/macroevent.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
-import { EventsService } from 'src/app/core/services/events.services';
-import { MacroeventsService } from 'src/app/core/services/macroevents.services';
 
 import { GeneralService } from 'src/app/core/services/generalService.service';
 import { PdfPrintService } from 'src/app/core/services/PdfPrintService.service';
@@ -40,9 +38,10 @@ import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
 
 import { EventsReportsFacade } from 'src/app/application/events-reports.facade';
 import { FiltersFacade } from 'src/app/application/filters.facade';
-import { EventsReportsService } from 'src/app/core/services/events-reports.service';
+import { MacroeventsFacade } from 'src/app/application/macroevents.facade';
 import { ButtonFilterComponent } from 'src/app/shared/components/buttons/button-filter/button-filter.component';
 import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
+import { count, sortById } from 'src/app/shared/utils/facade.utils';
 
 @Component({
   selector: 'app-events-page',
@@ -65,13 +64,11 @@ import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell
 })
 export class EventsPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
-  private readonly eventsService = inject(EventsService);
-  private readonly eventsReportsService = inject(EventsReportsService);
-  private readonly macroeventsService = inject(MacroeventsService);
   private readonly generalService = inject(GeneralService);
   private readonly pdfPrintService = inject(PdfPrintService);
 
   readonly eventsFacade = inject(EventsFacade);
+  readonly macroeventsFacade = inject(MacroeventsFacade);
   readonly eventsReportsFacade = inject(EventsReportsFacade);
   readonly modalFacade = inject(ModalFacade);
   readonly filtersFacade = inject(FiltersFacade);
@@ -216,8 +213,8 @@ export class EventsPageComponent implements OnInit {
   // ── Lista
   readonly list = useEntityList<EventModelFullData>({
     filtered$: this.eventsFacade.visibleEvents$,
-    sort: (arr) => this.eventsService.sortEventsById(arr),
-    count: (arr) => this.eventsService.countEvents(arr),
+    sort: (arr) => sortById(arr),
+    count: (arr) => count(arr),
   });
 
   // ── Estado local
@@ -325,26 +322,30 @@ export class EventsPageComponent implements OnInit {
   }
 
   onOpenEvent(eventId: number): void {
-    this.eventsService
-      .getEventById(eventId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (ev) =>
-          this.modalFacade.open(TypeList.Events, TypeActionModal.Show, ev),
-      });
+    this.eventsFacade.loadEventById(eventId);
+
+    this.eventsFacade.selectedEvent$
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        filter((e): e is EventModelFullData => !!e),
+        take(1),
+        tap((event) =>
+          this.modalFacade.open(TypeList.Events, TypeActionModal.Show, event)
+        )
+      )
+      .subscribe();
   }
 
   onOpenMacroevent(macroId: number): void {
-    this.macroeventsService
-      .getMacroeventById(macroId)
+    this.macroeventsFacade
+      .getMacroeventByIdOnce(macroId)
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (macro) =>
-          this.modalFacade.open(
-            TypeList.Macroevents,
-            TypeActionModal.Show,
-            macro
-          ),
+      .subscribe((macro) => {
+        this.modalFacade.open(
+          TypeList.Macroevents,
+          TypeActionModal.Show,
+          macro
+        );
       });
   }
 
@@ -361,9 +362,10 @@ export class EventsPageComponent implements OnInit {
   onDelete({ type, id, item }: { type: TypeList; id: number; item?: any }) {
     if (type === TypeList.Events) {
       const periodicId = this.isEvent(item) ? item.periodic_id : null;
+
       if (periodicId) {
-        this.eventsService
-          .deleteEventsByPeriodicId(periodicId)
+        this.eventsFacade
+          .deleteEventsByPeriodicIdExcept(periodicId, id)
           .pipe(
             takeUntilDestroyed(this.destroyRef),
             tap(() =>
@@ -389,6 +391,7 @@ export class EventsPageComponent implements OnInit {
     const oldPeriodicId = this.isEvent(currentItem)
       ? currentItem?.periodic_id ?? null
       : null;
+
     const isRepeatedToUnique = !!oldPeriodicId && !newPeriodicId;
 
     const request$ = event.itemId
@@ -400,7 +403,7 @@ export class EventsPageComponent implements OnInit {
         takeUntilDestroyed(this.destroyRef),
         switchMap(() =>
           isRepeatedToUnique && oldPeriodicId
-            ? this.eventsService.deleteOtherEventsByPeriodicId(
+            ? this.eventsFacade.deleteEventsByPeriodicIdExcept(
                 oldPeriodicId,
                 event.itemId
               )
@@ -412,15 +415,17 @@ export class EventsPageComponent implements OnInit {
   }
 
   sendFormEventReport(event: { itemId: number; formData: FormData }): void {
-    this.eventsReportsService.add(event.formData).subscribe({
-      next: () => {
-        this.onCloseModal();
-        this.filterSelected(
-          String(this.selectedFilter ?? this.lastYearSelected)
-        );
-      },
-      error: (err) => console.error('❌ Error al guardar el informe', err),
-    });
+    this.eventsReportsFacade
+      .add(event.formData)
+      .pipe(
+        tap(() => {
+          this.onCloseModal();
+          this.filterSelected(
+            String(this.selectedFilter ?? this.lastYearSelected)
+          );
+        })
+      )
+      .subscribe();
   }
 
   // ── Impresión

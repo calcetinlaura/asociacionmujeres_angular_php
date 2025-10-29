@@ -4,7 +4,11 @@ import { BehaviorSubject, EMPTY, Observable } from 'rxjs';
 import { catchError, finalize, tap } from 'rxjs/operators';
 import { PodcastModel } from 'src/app/core/interfaces/podcast.interface';
 import { PodcastsService } from 'src/app/core/services/podcasts.services';
-import { includesNormalized, toSearchKey } from '../shared/utils/text.utils';
+import {
+  count,
+  filterByKeyword,
+  hasResults,
+} from '../shared/utils/facade.utils';
 import { LoadableFacade } from './loadable.facade';
 
 @Injectable({ providedIn: 'root' })
@@ -120,27 +124,22 @@ export class PodcastsFacade extends LoadableFacade {
 
   applyFilterWord(keyword: string): void {
     const all = this.podcastsSubject.getValue();
-
-    if (!all) {
-      this.filteredPodcastsSubject.next(all);
-      return;
-    }
-
-    if (!toSearchKey(keyword)) {
-      this.filteredPodcastsSubject.next(all);
-      return;
-    }
-
-    const filtered = all.filter((p) =>
-      [p.title, p.artists].some((field) => includesNormalized(field, keyword))
+    this.filteredPodcastsSubject.next(
+      filterByKeyword(all, keyword, [(b) => b.title, (b) => b.artists])
     );
-
-    this.filteredPodcastsSubject.next(filtered);
   }
 
   // ───────── PRIVATE ─────────
   private updatePodcastState(podcasts: PodcastModel[]): void {
     this.podcastsSubject.next(podcasts);
     this.filteredPodcastsSubject.next(podcasts);
+  }
+
+  get totalPodcast(): number {
+    return count(this.podcastsSubject.getValue());
+  }
+
+  get hasPodcasts(): boolean {
+    return hasResults(this.podcastsSubject.getValue());
   }
 }

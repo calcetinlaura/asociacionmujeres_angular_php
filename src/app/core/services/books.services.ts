@@ -2,7 +2,6 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { BookModel } from 'src/app/core/interfaces/book.interface';
 import { GeneralService } from 'src/app/core/services/generalService.service';
 import { environments } from 'src/environments/environments';
 
@@ -58,23 +57,5 @@ export class BooksService {
 
   delete(id: number): Observable<any> {
     return this.generalService.deleteOverride<any>(this.apiUrl, { id });
-  }
-
-  sortBooksByTitle(books: BookModel[]): BookModel[] {
-    return books.sort((a, b) =>
-      a.title.toLowerCase().localeCompare(b.title.toLowerCase())
-    );
-  }
-
-  sortBooksById(books: BookModel[]): BookModel[] {
-    return books.sort((a, b) => b.id - a.id);
-  }
-
-  hasResults(books: BookModel[] | null): boolean {
-    return !!books && books.length > 0;
-  }
-
-  countBooks(books: BookModel[] | null): number {
-    return books?.length ?? 0;
   }
 }

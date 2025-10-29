@@ -22,12 +22,12 @@ import { QuillModule } from 'ngx-quill';
 import { filter, Observable, tap } from 'rxjs';
 
 import { ProjectsFacade } from 'src/app/application/projects.facade';
+import { SubsidiesFacade } from 'src/app/application/subsidies.facade';
 import { EventModelFullData } from 'src/app/core/interfaces/event.interface';
 import { ProjectModelFullData } from 'src/app/core/interfaces/project.interface';
 import { SubsidyModelFullData } from 'src/app/core/interfaces/subsidy.interface';
 import { TypeList } from 'src/app/core/models/general.model';
 import { GeneralService } from 'src/app/core/services/generalService.service';
-import { SubsidiesService } from 'src/app/core/services/subsidies.services';
 
 import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
 import { ButtonSelectComponent } from 'src/app/shared/components/buttons/button-select/button-select.component';
@@ -56,8 +56,8 @@ import { dateRangeValidator } from 'src/app/shared/utils/validators.utils';
 })
 export class FormProjectComponent implements OnInit {
   readonly projectsFacade = inject(ProjectsFacade);
+  private readonly subsidiesFacade = inject(SubsidiesFacade);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly subsidiesService = inject(SubsidiesService);
   private readonly generalService = inject(GeneralService);
 
   // === Inputs / Outputs ===
@@ -142,7 +142,7 @@ export class FormProjectComponent implements OnInit {
       this.formProject.controls.year.setValue(year);
       this.formProject.controls.year.disable({ emitEvent: false });
 
-      this.loadSubisidiesByYear(year)
+      this.loadSubsidiesByYear(year)
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe(() => {
           this.formProject.controls.subsidy_id.enable({ emitEvent: false });
@@ -180,7 +180,7 @@ export class FormProjectComponent implements OnInit {
     }
 
     if (typeof project.year === 'number') {
-      this.loadSubisidiesByYear(project.year).subscribe(() => {
+      this.loadSubsidiesByYear(project.year).subscribe(() => {
         this.formProject.controls.subsidy_id.enable();
       });
     }
@@ -234,10 +234,16 @@ export class FormProjectComponent implements OnInit {
   // =====================================================
   // 📦 SERVICIOS Y CARGA
   // =====================================================
-  loadSubisidiesByYear(year: number): Observable<SubsidyModelFullData[]> {
-    return this.subsidiesService
-      .getSubsidiesByYear(year)
-      .pipe(tap((subs) => (this.subsidies = subs)));
+  loadSubsidiesByYear(year: number): Observable<SubsidyModelFullData[]> {
+    // Dispara la carga en la facade
+    this.subsidiesFacade.loadSubsidiesByYear(year);
+
+    // Nos suscribimos una sola vez a la lista filtrada (ya ordenada si lo haces en facade)
+    return this.subsidiesFacade.filteredSubsidies$.pipe(
+      filter((subs): subs is SubsidyModelFullData[] => Array.isArray(subs)),
+      tap((subs) => (this.subsidies = subs)),
+      takeUntilDestroyed(this.destroyRef)
+    );
   }
 
   async onImageSelected(file: File) {

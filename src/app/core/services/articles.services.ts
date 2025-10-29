@@ -4,7 +4,6 @@ import { Observable } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { GeneralService } from 'src/app/core/services/generalService.service';
 import { environments } from 'src/environments/environments';
-import { ArticleModel } from '../interfaces/article.interface';
 
 @Injectable({
   providedIn: 'root',
@@ -58,23 +57,5 @@ export class ArticlesService {
 
   delete(id: number): Observable<any> {
     return this.generalService.deleteOverride<any>(this.apiUrl, { id });
-  }
-
-  sortArticlesByTitle(articles: ArticleModel[]): ArticleModel[] {
-    return articles.sort((a, b) =>
-      a.title.toLowerCase().localeCompare(b.title.toLowerCase())
-    );
-  }
-
-  sortArticlesById(articles: ArticleModel[]): ArticleModel[] {
-    return articles.sort((a, b) => b.id - a.id);
-  }
-
-  hasResults(articles: ArticleModel[] | null): boolean {
-    return !!articles && articles.length > 0;
-  }
-
-  countArticles(articles: ArticleModel[] | null): number {
-    return articles?.length ?? 0;
   }
 }

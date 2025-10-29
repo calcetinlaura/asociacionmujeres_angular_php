@@ -11,7 +11,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
-import { map } from 'rxjs';
+import { map, tap } from 'rxjs';
 
 import { FiltersFacade } from 'src/app/application/filters.facade';
 import { MoviesFacade } from 'src/app/application/movies.facade';
@@ -21,7 +21,6 @@ import {
 } from 'src/app/core/interfaces/column.interface';
 import { MovieModel } from 'src/app/core/interfaces/movie.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
-import { MoviesService } from 'src/app/core/services/movies.services';
 import { PdfPrintService } from 'src/app/core/services/PdfPrintService.service';
 
 import { DashboardHeaderComponent } from 'src/app/shared/components/dashboard-header/dashboard-header.component';
@@ -35,6 +34,7 @@ import { TableComponent } from 'src/app/shared/components/table/table.component'
 import { ModalFacade } from 'src/app/application/modal.facade';
 import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
+import { count, sortById } from 'src/app/shared/utils/facade.utils';
 
 @Component({
   selector: 'app-movies-page',
@@ -56,7 +56,6 @@ import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
 export class MoviesPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly modalFacade = inject(ModalFacade);
-  private readonly moviesService = inject(MoviesService);
   private readonly pdfPrintService = inject(PdfPrintService);
   readonly moviesFacade = inject(MoviesFacade);
   readonly filtersFacade = inject(FiltersFacade);
@@ -107,8 +106,8 @@ export class MoviesPageComponent implements OnInit {
   // Lista derivada reactiva
   readonly list = useEntityList<MovieModel>({
     filtered$: this.moviesFacade.filteredMovies$.pipe(map((v) => v ?? [])),
-    sort: (arr) => this.moviesService.sortMoviesById(arr),
-    count: (arr) => this.moviesService.countMovies(arr),
+    sort: (arr) => sortById(arr),
+    count: (arr) => count(arr),
   });
   readonly TypeList = TypeList;
   readonly hasRowsSig = computed(() => this.list.countSig() > 0);
@@ -194,8 +193,11 @@ export class MoviesPageComponent implements OnInit {
       : this.moviesFacade.addMovie(event.formData);
 
     save$
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => this.modalFacade.close());
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap(() => this.modalFacade.close())
+      )
+      .subscribe();
   }
 
   // Impresión

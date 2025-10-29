@@ -4,7 +4,6 @@ import { Observable } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { GeneralService } from 'src/app/core/services/generalService.service';
 import { environments } from 'src/environments/environments';
-import { PodcastModel } from '../interfaces/podcast.interface';
 
 @Injectable({
   providedIn: 'root',
@@ -40,22 +39,5 @@ export class PodcastsService {
 
   delete(id: number): Observable<any> {
     return this.generalService.deleteOverride<any>(this.apiUrl, { id });
-  }
-
-  sortPodcastsById(podcasts: PodcastModel[]): PodcastModel[] {
-    return podcasts.sort((a, b) => b.id - a.id);
-  }
-
-  sortPodcastsByTitle(podcasts: PodcastModel[]): PodcastModel[] {
-    return podcasts.sort((a, b) =>
-      a.title.toLowerCase().localeCompare(b.title.toLowerCase())
-    );
-  }
-  hasResults(podcasts: PodcastModel[] | null): boolean {
-    return !!podcasts && podcasts.length > 0;
-  }
-
-  countPodcasts(podcasts: PodcastModel[] | null): number {
-    return podcasts?.length ?? 0;
   }
 }

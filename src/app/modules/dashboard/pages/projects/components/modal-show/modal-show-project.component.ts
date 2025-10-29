@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import {
   Component,
+  DestroyRef,
   ElementRef,
   EventEmitter,
   inject,
@@ -8,12 +9,13 @@ import {
   Output,
   ViewChild,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Options } from 'html2pdf.js';
-import { tap } from 'rxjs';
+import { map, tap } from 'rxjs';
+import { EventsFacade } from 'src/app/application/events.facade';
 import { EventModelFullData } from 'src/app/core/interfaces/event.interface';
 import { ProjectModelFullData } from 'src/app/core/interfaces/project.interface';
 import { TypeList } from 'src/app/core/models/general.model';
-import { EventsService } from 'src/app/core/services/events.services';
 import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
 import { CardEventMiniComponent } from 'src/app/shared/components/cards/card-events-min/card-events.min.component';
 import { TableInvoicesComponent } from 'src/app/shared/components/table/table-invoice/table-invoice.component';
@@ -22,6 +24,7 @@ import { TextEditorComponent } from 'src/app/shared/components/text/text-editor/
 import { TextTitleComponent } from 'src/app/shared/components/text/text-title/text-title.component';
 import { EurosFormatPipe } from 'src/app/shared/pipe/eurosFormat.pipe';
 import { SafeHtmlPipe } from 'src/app/shared/pipe/safe-html.pipe';
+import { sortByDate } from 'src/app/shared/utils/facade.utils';
 
 @Component({
   selector: 'app-modal-show-project',
@@ -40,7 +43,9 @@ import { SafeHtmlPipe } from 'src/app/shared/pipe/safe-html.pipe';
   styleUrls: ['./modal-show-project.component.css'],
 })
 export class ModalShowProjectComponent {
-  private readonly eventsService = inject(EventsService);
+  protected readonly destroyRef = inject(DestroyRef);
+  private readonly eventsFacade = inject(EventsFacade);
+
   @Input() item!: ProjectModelFullData;
   @Output() openEvent = new EventEmitter<number>();
   @Output() openInvoice = new EventEmitter<number>();
@@ -52,13 +57,13 @@ export class ModalShowProjectComponent {
   eventsOfMacro: EventModelFullData[] = [];
 
   ngOnInit(): void {
-    if (this.item.id) {
-      this.eventsService
-        .getEventsByProject(this.item.id)
+    if (this.item?.id) {
+      this.eventsFacade
+        .loadEventsByProject(this.item.id)
         .pipe(
-          tap((events) => {
-            this.eventsOfMacro = this.eventsService.sortEventsByDate(events);
-          })
+          map((events) => sortByDate(events)),
+          tap((sorted) => (this.eventsOfMacro = sorted)),
+          takeUntilDestroyed(this.destroyRef)
         )
         .subscribe();
     }

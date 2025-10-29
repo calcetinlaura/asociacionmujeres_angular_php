@@ -11,9 +11,11 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
-import { map, tap } from 'rxjs';
+import { filter, map, take, tap } from 'rxjs';
+import { EventsFacade } from 'src/app/application/events.facade';
 
 import { FiltersFacade } from 'src/app/application/filters.facade';
+import { InvoicesFacade } from 'src/app/application/invoices.facade';
 import { ModalFacade } from 'src/app/application/modal.facade';
 import { ProjectsFacade } from 'src/app/application/projects.facade';
 
@@ -26,11 +28,8 @@ import { InvoiceModelFullData } from 'src/app/core/interfaces/invoice.interface'
 import { ProjectModel } from 'src/app/core/interfaces/project.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 
-import { EventsService } from 'src/app/core/services/events.services';
 import { GeneralService } from 'src/app/core/services/generalService.service';
-import { InvoicesService } from 'src/app/core/services/invoices.services';
 import { PdfPrintService } from 'src/app/core/services/PdfPrintService.service';
-import { ProjectsService } from 'src/app/core/services/projects.services';
 
 import { DashboardHeaderComponent } from 'src/app/shared/components/dashboard-header/dashboard-header.component';
 import { FiltersComponent } from 'src/app/shared/components/filters/filters.component';
@@ -41,6 +40,7 @@ import { StickyZoneComponent } from 'src/app/shared/components/sticky-zone/stick
 import { TableComponent } from 'src/app/shared/components/table/table.component';
 import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
+import { count, sortById } from 'src/app/shared/utils/facade.utils';
 
 type ProjectsModalItem =
   | ProjectModel
@@ -68,9 +68,8 @@ export class ProjectsPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly pdfPrintService = inject(PdfPrintService);
   private readonly generalService = inject(GeneralService);
-  private readonly projectsService = inject(ProjectsService);
-  private readonly eventsService = inject(EventsService);
-  private readonly invoicesService = inject(InvoicesService);
+  private readonly eventsFacade = inject(EventsFacade);
+  private readonly invoicesFacade = inject(InvoicesFacade);
   private readonly modalFacade = inject(ModalFacade);
   readonly projectsFacade = inject(ProjectsFacade);
   readonly filtersFacade = inject(FiltersFacade);
@@ -146,8 +145,8 @@ export class ProjectsPageComponent implements OnInit {
   // ────────────────────────────────────────────────
   readonly list = useEntityList<ProjectModel>({
     filtered$: this.projectsFacade.filteredProjects$.pipe(map((v) => v ?? [])),
-    sort: (arr) => this.projectsService.sortProjectsById(arr),
-    count: (arr) => this.projectsService.countProjects(arr),
+    sort: (arr) => sortById(arr),
+    count: (arr) => count(arr),
   });
 
   readonly hasRowsSig = computed(() => this.list.countSig() > 0);
@@ -222,29 +221,37 @@ export class ProjectsPageComponent implements OnInit {
   }
 
   onOpenEvent(eventId: number): void {
-    this.eventsService
-      .getEventById(eventId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (event: EventModelFullData) =>
-          this.modalFacade.open(TypeList.Events, TypeActionModal.Show, event),
-        error: (err) => console.error('Error cargando evento', err),
-      });
+    this.eventsFacade.loadEventById(eventId);
+
+    this.eventsFacade.selectedEvent$
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        filter((e): e is EventModelFullData => !!e),
+        take(1),
+        tap((event) =>
+          this.modalFacade.open(TypeList.Events, TypeActionModal.Show, event)
+        )
+      )
+      .subscribe();
   }
 
   onOpenInvoice(invoiceId: number): void {
-    this.invoicesService
-      .getInvoiceById(invoiceId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (invoice: InvoiceModelFullData) =>
+    this.invoicesFacade.loadInvoiceById(invoiceId); // maneja loader/errores dentro
+
+    this.invoicesFacade.selectedInvoice$
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        filter((inv): inv is InvoiceModelFullData => !!inv), // ignora null inicial
+        take(1), // solo la primera vez que llega la factura
+        tap((invoice) =>
           this.modalFacade.open(
             TypeList.Invoices,
             TypeActionModal.Show,
             invoice
-          ),
-        error: (err) => console.error('Error cargando factura', err),
-      });
+          )
+        )
+      )
+      .subscribe();
   }
 
   // ────────────────────────────────────────────────

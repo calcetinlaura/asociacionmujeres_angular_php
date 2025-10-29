@@ -4,7 +4,11 @@ import { BehaviorSubject, EMPTY, Observable } from 'rxjs';
 import { catchError, finalize, tap } from 'rxjs/operators';
 import { BookModel } from 'src/app/core/interfaces/book.interface';
 import { BooksService } from 'src/app/core/services/books.services';
-import { includesNormalized, toSearchKey } from '../shared/utils/text.utils';
+import {
+  count,
+  filterByKeyword,
+  hasResults,
+} from '../shared/utils/facade.utils';
 import { LoadableFacade } from './loadable.facade';
 
 export enum BooksFilter {
@@ -185,22 +189,9 @@ export class BooksFacade extends LoadableFacade {
 
   applyFilterWord(keyword: string): void {
     const all = this.booksSubject.getValue();
-
-    if (!all) {
-      this.filteredBooksSubject.next(all);
-      return;
-    }
-
-    if (!toSearchKey(keyword)) {
-      this.filteredBooksSubject.next(all);
-      return;
-    }
-
-    const filtered = all.filter((b) =>
-      [b.title, b.author].some((field) => includesNormalized(field, keyword))
+    this.filteredBooksSubject.next(
+      filterByKeyword(all, keyword, [(b) => b.title, (b) => b.author])
     );
-
-    this.filteredBooksSubject.next(filtered);
   }
 
   setCurrentFilter(filter: string | null): void {
@@ -218,5 +209,13 @@ export class BooksFacade extends LoadableFacade {
   private updateBookState(books: BookModel[]): void {
     this.booksSubject.next(books);
     this.filteredBooksSubject.next(books);
+  }
+
+  get totalBooks(): number {
+    return count(this.booksSubject.getValue());
+  }
+
+  get hasBooks(): boolean {
+    return hasResults(this.booksSubject.getValue());
   }
 }

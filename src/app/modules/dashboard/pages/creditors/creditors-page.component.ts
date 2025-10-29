@@ -11,10 +11,11 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
-import { map } from 'rxjs';
+import { filter, map, take, tap } from 'rxjs';
 
 import { CreditorsFacade } from 'src/app/application/creditors.facade';
 import { FiltersFacade } from 'src/app/application/filters.facade';
+import { InvoicesFacade } from 'src/app/application/invoices.facade';
 import { ModalFacade } from 'src/app/application/modal.facade';
 
 import {
@@ -25,8 +26,6 @@ import { CreditorWithInvoices } from 'src/app/core/interfaces/creditor.interface
 import { InvoiceModelFullData } from 'src/app/core/interfaces/invoice.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 
-import { CreditorsService } from 'src/app/core/services/creditors.services';
-import { InvoicesService } from 'src/app/core/services/invoices.services';
 import { PdfPrintService } from 'src/app/core/services/PdfPrintService.service';
 
 import { DashboardHeaderComponent } from 'src/app/shared/components/dashboard-header/dashboard-header.component';
@@ -38,6 +37,7 @@ import { StickyZoneComponent } from 'src/app/shared/components/sticky-zone/stick
 import { TableComponent } from 'src/app/shared/components/table/table.component';
 import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
+import { count, sortById } from 'src/app/shared/utils/facade.utils';
 
 type CreditorsModalItem = CreditorWithInvoices | InvoiceModelFullData;
 
@@ -61,8 +61,7 @@ type CreditorsModalItem = CreditorWithInvoices | InvoiceModelFullData;
 export class CreditorsPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly pdfPrintService = inject(PdfPrintService);
-  private readonly creditorsService = inject(CreditorsService);
-  private readonly invoicesService = inject(InvoicesService);
+  private readonly invoicesFacade = inject(InvoicesFacade);
   readonly creditorsFacade = inject(CreditorsFacade);
   private readonly modalFacade = inject(ModalFacade);
   readonly filtersFacade = inject(FiltersFacade);
@@ -150,8 +149,8 @@ export class CreditorsPageComponent implements OnInit {
     filtered$: this.creditorsFacade.filteredCreditors$.pipe(
       map((v) => v ?? [])
     ),
-    sort: (arr) => this.creditorsService.sortCreditorsById(arr),
-    count: (arr) => this.creditorsService.countCreditors(arr),
+    sort: (arr) => sortById(arr),
+    count: (arr) => count(arr),
   });
   readonly TypeList = TypeList;
   readonly hasRowsSig = computed(() => this.list.countSig() > 0);
@@ -194,7 +193,7 @@ export class CreditorsPageComponent implements OnInit {
     if (!filter) {
       this.creditorsFacade.loadAllCreditors();
     } else {
-      this.creditorsFacade.loadCreditorsByFilter(filter);
+      this.creditorsFacade.loadCreditorsByCategory(filter);
     }
   }
 
@@ -235,28 +234,37 @@ export class CreditorsPageComponent implements OnInit {
   }
 
   sendFormCreditor(event: { itemId: number; formData: FormData }): void {
-    const request$ = event.itemId
-      ? this.creditorsFacade.editCreditor(event.formData)
-      : this.creditorsFacade.addCreditor(event.formData);
+    const { itemId, formData } = event;
+
+    const request$ = itemId
+      ? this.creditorsFacade.editCreditor(formData)
+      : this.creditorsFacade.addCreditor(formData);
 
     request$
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => this.modalFacade.close());
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap(() => this.modalFacade.close())
+      )
+      .subscribe();
   }
 
   onOpenInvoice(invoiceId: number): void {
-    this.invoicesService
-      .getInvoiceById(invoiceId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (invoice) =>
+    this.invoicesFacade.loadInvoiceById(invoiceId); // maneja loader/errores dentro
+
+    this.invoicesFacade.selectedInvoice$
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        filter((inv): inv is InvoiceModelFullData => !!inv), // ignora null inicial
+        take(1), // solo la primera vez que llega la factura
+        tap((invoice) =>
           this.modalFacade.open(
             TypeList.Invoices,
             TypeActionModal.Show,
             invoice
-          ),
-        error: (err) => console.error('Error cargando factura', err),
-      });
+          )
+        )
+      )
+      .subscribe();
   }
 
   // ────────────────────────────────────────────────

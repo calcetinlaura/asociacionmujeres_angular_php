@@ -14,18 +14,19 @@ import { environments } from 'src/environments/environments';
 })
 export class CreditorsService {
   private readonly generalService = inject(GeneralService);
-  private apiUrl: string = `${environments.api}/backend/creditors.php`;
-  constructor(private http: HttpClient) {}
+  private readonly http = inject(HttpClient);
+  private readonly apiUrl = `${environments.api}/backend/creditors.php`;
 
-  getCreditors(): Observable<any> {
+  // ─────────── GETTERS ───────────
+  getCreditors(): Observable<CreditorWithInvoices[]> {
+    console.log('📡 Llamando a:', this.apiUrl);
     return this.http
-      .get(this.apiUrl)
+      .get<CreditorWithInvoices[]>(this.apiUrl)
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
-
-  getCreditorsByCategory(category: string): Observable<any> {
+  getCreditorsByCategory(category: string): Observable<CreditorWithInvoices[]> {
     return this.http
-      .get(this.apiUrl, { params: { category: category } })
+      .get<CreditorWithInvoices[]>(this.apiUrl, { params: { category } })
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
   }
 
@@ -54,32 +55,10 @@ export class CreditorsService {
     return this.generalService.deleteOverride<any>(this.apiUrl, { id });
   }
 
-  //Autocomplete de factura
+  // ─────────── AUTOCOMPLETE ───────────
   getSuggestions(query: string): Observable<CreditorModel[]> {
     return this.http
       .get<CreditorModel[]>(`${this.apiUrl}?q=${query}&_limit=6`)
       .pipe(catchError((err) => this.generalService.handleHttpError(err)));
-  }
-
-  sortCreditorsByCompany(creditors: CreditorModel[]): CreditorModel[] {
-    return creditors.sort((a, b) =>
-      a.company
-        .toLowerCase()
-        .localeCompare(b.company.toLowerCase(), undefined, {
-          sensitivity: 'base',
-        })
-    );
-  }
-
-  sortCreditorsById(creditors: CreditorWithInvoices[]): CreditorWithInvoices[] {
-    return creditors.sort((a, b) => b.id - a.id);
-  }
-
-  hasResults(creditors: CreditorWithInvoices[] | null): boolean {
-    return !!creditors && creditors.length > 0;
-  }
-
-  countCreditors(creditors: CreditorWithInvoices[] | null): number {
-    return creditors?.length ?? 0;
   }
 }

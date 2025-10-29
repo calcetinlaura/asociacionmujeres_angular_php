@@ -11,7 +11,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
-import { map, tap } from 'rxjs';
+import { filter, map, take, tap } from 'rxjs';
 
 import { FiltersFacade } from 'src/app/application/filters.facade';
 import { MacroeventsFacade } from 'src/app/application/macroevents.facade';
@@ -22,8 +22,6 @@ import {
 import { MacroeventModelFullData } from 'src/app/core/interfaces/macroevent.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 
-import { EventsService } from 'src/app/core/services/events.services';
-import { MacroeventsService } from 'src/app/core/services/macroevents.services';
 import { PdfPrintService } from 'src/app/core/services/PdfPrintService.service';
 
 import { DashboardHeaderComponent } from 'src/app/shared/components/dashboard-header/dashboard-header.component';
@@ -34,10 +32,13 @@ import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loadi
 import { StickyZoneComponent } from 'src/app/shared/components/sticky-zone/sticky-zone.component';
 import { TableComponent } from 'src/app/shared/components/table/table.component';
 
+import { EventsFacade } from 'src/app/application/events.facade';
 import { ModalFacade } from 'src/app/application/modal.facade';
+import { EventModelFullData } from 'src/app/core/interfaces/event.interface';
 import { GeneralService } from 'src/app/core/services/generalService.service';
 import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
+import { count, sortById } from 'src/app/shared/utils/facade.utils';
 
 @Component({
   selector: 'app-macroevents-page',
@@ -60,8 +61,7 @@ export class MacroeventsPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly pdfPrintService = inject(PdfPrintService);
   private readonly generalService = inject(GeneralService);
-  private readonly macroeventsService = inject(MacroeventsService);
-  private readonly eventsService = inject(EventsService);
+  private readonly eventsFacade = inject(EventsFacade);
   private readonly modalFacade = inject(ModalFacade);
   readonly macroeventsFacade = inject(MacroeventsFacade);
   readonly filtersFacade = inject(FiltersFacade);
@@ -106,8 +106,8 @@ export class MacroeventsPageComponent implements OnInit {
     filtered$: this.macroeventsFacade.filteredMacroevents$.pipe(
       map((v) => v ?? [])
     ),
-    sort: (arr) => this.macroeventsService.sortMacroeventsById(arr),
-    count: (arr) => this.macroeventsService.countMacroevents(arr),
+    sort: (arr) => sortById(arr),
+    count: (arr) => count(arr),
   });
   readonly TypeList = TypeList;
   readonly hasRowsSig = computed(() => this.list.countSig() > 0);
@@ -184,13 +184,13 @@ export class MacroeventsPageComponent implements OnInit {
       action !== TypeActionModal.Create &&
       item?.id
     ) {
-      this.macroeventsService
-        .getMacroeventById(item.id)
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe({
-          next: (fresh) => this.modalFacade.open(typeModal, action, fresh),
-          error: () => this.modalFacade.open(typeModal, action, item),
-        });
+      this.macroeventsFacade
+        .getMacroeventByIdOnce(item.id)
+        .pipe(
+          takeUntilDestroyed(this.destroyRef),
+          tap((fresh) => this.modalFacade.open(typeModal, action, fresh))
+        )
+        .subscribe(); // nada en subscribe
       return;
     }
 
@@ -198,14 +198,18 @@ export class MacroeventsPageComponent implements OnInit {
   }
 
   onOpenEvent(eventId: number): void {
-    this.eventsService
-      .getEventById(eventId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (event) =>
-          this.modalFacade.open(TypeList.Events, TypeActionModal.Show, event),
-        error: (err) => console.error('Error cargando evento', err),
-      });
+    this.eventsFacade.loadEventById(eventId);
+
+    this.eventsFacade.selectedEvent$
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        filter((e): e is EventModelFullData => !!e),
+        take(1),
+        tap((event) =>
+          this.modalFacade.open(TypeList.Events, TypeActionModal.Show, event)
+        )
+      )
+      .subscribe();
   }
 
   onBackModal(): void {

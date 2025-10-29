@@ -4,7 +4,7 @@ import { BehaviorSubject, EMPTY, Observable, Subject } from 'rxjs';
 import { catchError, finalize, tap } from 'rxjs/operators';
 import { SubsidyModelFullData } from 'src/app/core/interfaces/subsidy.interface';
 import { SubsidiesService } from 'src/app/core/services/subsidies.services';
-import { includesNormalized, toSearchKey } from '../shared/utils/text.utils';
+import { filterByKeyword, sortByYear } from '../shared/utils/facade.utils';
 import { LoadableFacade } from './loadable.facade';
 
 @Injectable({ providedIn: 'root' })
@@ -21,6 +21,10 @@ export class SubsidiesFacade extends LoadableFacade {
   private readonly selectedSubsidySubject =
     new BehaviorSubject<SubsidyModelFullData | null>(null);
 
+  private readonly currentFilterSubject = new BehaviorSubject<string | null>(
+    null
+  );
+
   // ───────── EVENTOS ─────────
   private readonly savedSubject = new Subject<SubsidyModelFullData>();
   private readonly deletedSubject = new Subject<number>();
@@ -33,6 +37,8 @@ export class SubsidiesFacade extends LoadableFacade {
   readonly subsidies$ = this.subsidiesSubject.asObservable();
   readonly filteredSubsidies$ = this.filteredSubsidiesSubject.asObservable();
   readonly selectedSubsidy$ = this.selectedSubsidySubject.asObservable();
+  readonly currentFilter$ = this.currentFilterSubject.asObservable();
+
   readonly saved$ = this.savedSubject.asObservable();
   readonly deleted$ = this.deletedSubject.asObservable();
 
@@ -78,12 +84,47 @@ export class SubsidiesFacade extends LoadableFacade {
       .subscribe();
   }
 
+  loadSubsidiesByType(type: string): void {
+    this.listLoadingSubject.next(true);
+
+    this.subsidiesService
+      .getSubsidiesByType(type)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap((subs) => this.updateSubsidyState(subs)),
+        catchError((err) => {
+          this.generalService.handleHttpError(err);
+          return EMPTY;
+        }),
+        finalize(() => this.listLoadingSubject.next(false))
+      )
+      .subscribe();
+  }
+
+  loadLatestSubsidies(): void {
+    this.setCurrentFilter(null);
+    this.listLoadingSubject.next(true);
+
+    this.subsidiesService
+      .getSubsidiesByLatest()
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap((subs) => this.updateSubsidyState(subs)),
+        catchError((err) => {
+          this.generalService.handleHttpError(err);
+          return EMPTY;
+        }),
+        finalize(() => this.listLoadingSubject.next(false))
+      )
+      .subscribe();
+  }
+
   // ───────── ITEM → isLoadingItem$ ─────────
   loadSubsidyById(id: number): void {
     this.itemLoadingSubject.next(true);
 
     this.subsidiesService
-      .getSubsidieById(id)
+      .getSubsidyById(id)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((sub) => this.selectedSubsidySubject.next(sub)),
@@ -103,7 +144,7 @@ export class SubsidiesFacade extends LoadableFacade {
     return this.subsidiesService.add(subsidy).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap((saved) => {
-        this.savedSubject.next(saved as SubsidyModelFullData);
+        this.savedSubject.next(saved);
         this.reloadCurrentFilter();
       }),
       catchError((err) => {
@@ -120,7 +161,7 @@ export class SubsidiesFacade extends LoadableFacade {
     return this.subsidiesService.edit(subsidy).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap((saved) => {
-        this.savedSubject.next(saved as SubsidyModelFullData);
+        this.savedSubject.next(saved);
         this.reloadCurrentFilter();
       }),
       catchError((err) => {
@@ -151,34 +192,22 @@ export class SubsidiesFacade extends LoadableFacade {
       .subscribe();
   }
 
-  // ───────── HELPERS ─────────
+  // ───────── BUSCADOR / FILTROS ─────────
+  applyFilterWord(keyword: string): void {
+    const all = this.subsidiesSubject.getValue();
+    this.filteredSubsidiesSubject.next(
+      filterByKeyword(all, keyword, [(b) => b.name])
+    );
+  }
+
+  // ───────── HELPERS / STATE ─────────
   clearSelectedSubsidy(): void {
     this.selectedSubsidySubject.next(null);
   }
 
-  applyFilterWord(keyword: string): void {
-    const all = this.subsidiesSubject.getValue();
-    const key = toSearchKey(keyword);
-
-    if (!all) {
-      this.filteredSubsidiesSubject.next(all);
-      return;
-    }
-
-    if (!key) {
-      this.filteredSubsidiesSubject.next(all);
-      return;
-    }
-
-    const filtered = all.filter((s) =>
-      [s.name].filter(Boolean).some((field) => includesNormalized(field!, key))
-    );
-
-    this.filteredSubsidiesSubject.next(filtered);
-  }
-
   setCurrentFilter(year: number | null): void {
     this.currentFilter = year;
+    this.currentFilterSubject.next(year?.toString() ?? null);
   }
 
   private reloadCurrentFilter(): void {
@@ -189,8 +218,10 @@ export class SubsidiesFacade extends LoadableFacade {
     }
   }
 
-  private updateSubsidyState(subsidies: SubsidyModelFullData[]): void {
-    this.subsidiesSubject.next(subsidies);
-    this.filteredSubsidiesSubject.next(subsidies);
+  private updateSubsidyState(subsidies: SubsidyModelFullData[] | null): void {
+    const data = subsidies ?? [];
+    const sorted = sortByYear(data);
+    this.subsidiesSubject.next(sorted);
+    this.filteredSubsidiesSubject.next(sorted);
   }
 }

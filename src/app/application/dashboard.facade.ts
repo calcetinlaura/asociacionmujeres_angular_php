@@ -27,7 +27,11 @@ import { MovieModel } from '../core/interfaces/movie.interface';
 import { PartnerModel } from '../core/interfaces/partner.interface';
 import { ProjectModelFullData } from '../core/interfaces/project.interface';
 import { RecipeModel } from '../core/interfaces/recipe.interface';
-import { SubsidyModelFullData } from '../core/interfaces/subsidy.interface';
+import {
+  SUBSIDY_NAME_LABELS,
+  SubsidyModelFullData,
+  SubsidyName,
+} from '../core/interfaces/subsidy.interface';
 import {
   AnalyticsService,
   AnnualPoint,
@@ -39,7 +43,6 @@ import { InvoicesService } from '../core/services/invoices.services';
 import { MoviesService } from '../core/services/movies.services';
 import { PartnersService } from '../core/services/partners.services';
 import { PiterasService } from '../core/services/piteras.services';
-import { ProjectsService } from '../core/services/projects.services';
 import { RecipesService } from '../core/services/recipes.services';
 import { SubsidiesService } from '../core/services/subsidies.services';
 import { MonthBar } from '../modules/dashboard/pages/home/charts/monthly-chart/monthly-chart.component';
@@ -51,6 +54,7 @@ import {
 } from '../shared/utils/audience.util';
 import { LoadState, withLoading } from '../shared/utils/loading.operator';
 import { EventsFacade } from './events.facade';
+import { ProjectsFacade } from './projects.facade';
 
 // === Tipos ===
 type YearFilter = number | 'historic';
@@ -143,6 +147,8 @@ const AGE_BUCKETS = [
 export class DashboardFacade {
   // ── Inyecciones ──────────────────────────────
   private readonly eventsFacade = inject(EventsFacade);
+  private readonly projectsFacade = inject(ProjectsFacade);
+
   private readonly eventsService = inject(EventsService);
   private readonly booksService = inject(BooksService);
   private readonly moviesService = inject(MoviesService);
@@ -151,7 +157,6 @@ export class DashboardFacade {
   private readonly piterasService = inject(PiterasService);
   private readonly invoicesService = inject(InvoicesService);
   private readonly subsidiesService = inject(SubsidiesService);
-  private readonly projectsService = inject(ProjectsService);
   private readonly analytics = inject(AnalyticsService);
   private readonly i18n = inject(TranslationsService);
 
@@ -189,6 +194,7 @@ export class DashboardFacade {
     const y = this.year();
     this.eventsFacade.loadDashboardAllNotGrouped(y);
     this.eventsFacade.loadDashboardAllGrouped(y);
+    this.projectsFacade.loadAllProjects();
   }
 
   // ── Helpers generales ─────────────────────────────────────────────────────────
@@ -615,15 +621,6 @@ export class DashboardFacade {
     }));
   }
 
-  private paidCuotasFromPartners(partners: any[]): CuotaLite[] {
-    const out: CuotaLite[] = [];
-    for (const p of partners ?? []) {
-      const cs = this.normalizeCuotas(p?.cuotas);
-      for (const c of cs) if (c.paid) out.push(c);
-    }
-    return out;
-  }
-
   private labelMetodo(k: 'cash' | 'domiciliation' | 'unknown'): string {
     const pm = ((this.i18n.dict() as any) ?? {}).paymentMethod ?? {};
     if (k === 'cash') return pm.cash ?? 'Efectivo';
@@ -955,7 +952,7 @@ export class DashboardFacade {
 
       // Mapea con los nombres legibles
       return [...grouped.entries()].map(([code, value]) => ({
-        label: this.subsidiesService.subsidiesMap[code] ?? code,
+        label: SUBSIDY_NAME_LABELS[code as SubsidyName] ?? code,
         value,
       })) satisfies PieDatum[];
     }),
@@ -1109,26 +1106,20 @@ export class DashboardFacade {
   );
   readonly economyByYearState$ = withLoading(this.economyByYear$);
 
-  // 3️⃣ Gastos por proyecto
   readonly expensesByProject$ = combineLatest([
     this.viewYear$,
-    this.projectsService.getProjects(),
+    this.projectsFacade.filteredProjects$, // ✅ usamos la facade
   ]).pipe(
-    map(([vy, projects]: [YearFilter, ProjectModelFullData[] | null]) => {
-      const year: number =
-        vy === 'historic' ? this.currentYear : (vy as number);
+    map(([vy, projects]): PieDatum[] => {
+      const year = vy === 'historic' ? this.currentYear : (vy as number);
 
-      const list: ProjectModelFullData[] = Array.isArray(projects)
-        ? projects
-        : [];
+      const list = Array.isArray(projects) ? projects : [];
 
-      const rows: PieDatum[] = list
+      const rows = list
         .map((p: ProjectModelFullData): PieDatum => {
-          const invs: InvoiceModelFullData[] = Array.isArray(p.invoices)
-            ? p.invoices
-            : [];
+          const invs = Array.isArray(p.invoices) ? p.invoices : [];
 
-          const total: number = invs
+          const total = invs
             .filter(
               (inv: InvoiceModelFullData) =>
                 (inv.type_invoice === 'INVOICE' ||
@@ -1143,9 +1134,8 @@ export class DashboardFacade {
 
           return { label: p.title, value: total };
         })
-        .filter((row: PieDatum) => row.value > 0)
-        .sort((a: PieDatum, b: PieDatum) => b.value - a.value);
-
+        .filter((row) => row.value > 0)
+        .sort((a, b) => b.value - a.value);
       return rows;
     }),
     catchError(() => of([] as PieDatum[]))

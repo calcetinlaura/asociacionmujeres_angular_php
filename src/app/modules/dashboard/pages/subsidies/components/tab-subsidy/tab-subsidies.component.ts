@@ -18,6 +18,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatIconModule } from '@angular/material/icon';
 import { catchError, of, tap } from 'rxjs';
+import { InvoicesFacade } from 'src/app/application/invoices.facade';
 
 import {
   ColumnModel,
@@ -25,11 +26,12 @@ import {
 } from 'src/app/core/interfaces/column.interface';
 import { InvoiceModelFullData } from 'src/app/core/interfaces/invoice.interface';
 import { ProjectModelFullData } from 'src/app/core/interfaces/project.interface';
-import { SubsidyModelFullData } from 'src/app/core/interfaces/subsidy.interface';
+import {
+  MOVEMENT_LABELS,
+  SUBSIDY_NAME_LABELS,
+  SubsidyModelFullData,
+} from 'src/app/core/interfaces/subsidy.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
-
-import { InvoicesService } from 'src/app/core/services/invoices.services';
-import { SubsidiesService } from 'src/app/core/services/subsidies.services';
 
 import {
   ActionBarComponent,
@@ -61,9 +63,8 @@ import { EurosFormatPipe } from 'src/app/shared/pipe/eurosFormat.pipe';
   templateUrl: './tab-subsidies.component.html',
   styleUrls: ['./tab-subsidies.component.css'],
 })
-export class ModalShowSubsidyComponent implements OnChanges, OnInit {
-  private subsidiesService = inject(SubsidiesService);
-  private invoicesService = inject(InvoicesService);
+export class TabSubsidyComponent implements OnChanges, OnInit {
+  private invoicesFacade = inject(InvoicesFacade);
   private destroyRef = inject(DestroyRef);
   private readonly colStore = inject(ColumnVisibilityStore);
 
@@ -78,22 +79,20 @@ export class ModalShowSubsidyComponent implements OnChanges, OnInit {
     item: any;
   }>();
 
-  // Signals columnas (clave dinámica por subvención/año)
+  // Signals columnas
   columnVisSig!: WritableSignal<Record<string, boolean>>;
   displayedColumnsSig!: Signal<string[]>;
 
-  itemInvoice?: InvoiceModelFullData;
-  readonly TypeList = TypeList;
-  typeModal: TypeList = TypeList.Subsidies;
-
   filteredInvoices: InvoiceModelFullData[] = [];
   number_invoices = 0;
-  currentModalAction: TypeActionModal = TypeActionModal.Create;
   loading = true;
 
-  nameMovement = this.subsidiesService.movementMap;
-  nameSubsidy = this.subsidiesService.subsidiesMap;
+  readonly TypeList = TypeList;
   readonly TypeActionModal = TypeActionModal;
+  typeModal: TypeList = TypeList.Subsidies;
+
+  nameMovement = MOVEMENT_LABELS;
+  nameSubsidy = SUBSIDY_NAME_LABELS;
 
   private previousKey: string | null = null;
 
@@ -224,14 +223,13 @@ export class ModalShowSubsidyComponent implements OnChanges, OnInit {
   ];
 
   ngOnInit(): void {
-    // Clave genérica por si aún no hay item
     this.initColumnSignals('subsidy-invoices:default');
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['item']) {
       const newItem = changes['item'].currentValue as SubsidyModelFullData;
-      const key = newItem?.name + '_' + newItem?.year;
+      const key = `${newItem?.name}_${newItem?.year}`;
 
       if (
         key &&
@@ -242,13 +240,10 @@ export class ModalShowSubsidyComponent implements OnChanges, OnInit {
         newItem.year !== 0
       ) {
         this.previousKey = key;
-
-        // Re-inicializa señales con clave por subvención/año
         this.initColumnSignals(
           `subsidy-invoices:${newItem.name}_${newItem.year}`
         );
-
-        this.load();
+        this.loadInvoicesBySubsidy();
       }
     }
   }
@@ -266,7 +261,6 @@ export class ModalShowSubsidyComponent implements OnChanges, OnInit {
     );
   }
 
-  // Normalizador numérico
   private toNumber(value: any): number {
     if (value == null || value === '') return 0;
     if (typeof value === 'number' && isFinite(value)) return value;
@@ -279,33 +273,24 @@ export class ModalShowSubsidyComponent implements OnChanges, OnInit {
     return isFinite(n) ? n : 0;
   }
 
-  load(): void {
+  /** Usa la FACADE para cargar facturas filtradas por subvención/año */
+  loadInvoicesBySubsidy(): void {
     if (!this.item?.name || !this.item?.year) return;
     this.loading = true;
 
-    this.invoicesService
-      .getInvoicesBySubsidy(this.item.name, this.item.year)
+    this.invoicesFacade.loadInvoicesBySubsidy(this.item.name, this.item.year);
+
+    this.invoicesFacade.filteredInvoices$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((invoices: InvoiceModelFullData[]) => {
-          this.filteredInvoices = (invoices ?? [])
-            .map((inv) => ({
-              ...inv,
-              amount: this.toNumber(inv.amount),
-              iva: this.toNumber(inv.iva),
-              irpf: this.toNumber(inv.irpf),
-              total_amount: this.toNumber(inv.total_amount),
-            }))
-            .sort((a, b) => {
-              const ta = a?.date_invoice
-                ? new Date(a.date_invoice).getTime()
-                : Number.POSITIVE_INFINITY;
-              const tb = b?.date_invoice
-                ? new Date(b.date_invoice).getTime()
-                : Number.POSITIVE_INFINITY;
-              return ta - tb;
-            });
-
+        tap((invoices: InvoiceModelFullData[] | null) => {
+          this.filteredInvoices = (invoices ?? []).map((inv) => ({
+            ...inv,
+            amount: this.toNumber(inv.amount),
+            iva: this.toNumber(inv.iva),
+            irpf: this.toNumber(inv.irpf),
+            total_amount: this.toNumber(inv.total_amount),
+          }));
           this.number_invoices = this.filteredInvoices.length;
           this.loading = false;
         }),
@@ -331,7 +316,7 @@ export class ModalShowSubsidyComponent implements OnChanges, OnInit {
     this.openModal.emit({ typeModal, action, item });
   }
 
-  // Columnas (vía store)
+  // Columnas
   getVisibleColumns() {
     return this.colStore.visibleColumnModels(
       this.headerListInvoices,
@@ -346,24 +331,12 @@ export class ModalShowSubsidyComponent implements OnChanges, OnInit {
     );
   }
 
+  /** Usa la FACADE para descargar ZIP con facturas y justificantes */
   downloadFilteredPdfs(includeProof: boolean = true): void {
     const data = this.filteredInvoices || [];
-    this.invoicesService
-      .downloadInvoicesZipFromData(data, {
-        includeProof,
-        filename: includeProof ? 'documentos.zip' : 'facturas.zip',
-      })
-      .subscribe({
-        error: (e) => {
-          if (e?.message === 'NO_FILES') {
-            alert('No hay PDFs para descargar.');
-          } else {
-            console.error('💥 Error al descargar ZIP:', e);
-            alert('Error al descargar el ZIP. Revisa la consola.');
-          }
-        },
-      });
+    this.invoicesFacade.downloadFilteredPdfs(data, includeProof);
   }
+
   readonly actionsSubsidy = [
     { icon: 'uil-eye', tooltip: 'Ver', type: 'view' },
     { icon: 'uil-edit', tooltip: 'Editar', type: 'edit' },
@@ -406,7 +379,7 @@ export class ModalShowSubsidyComponent implements OnChanges, OnInit {
         this.downloadFilteredPdfs(true);
         break;
       default:
-        return; // ignora otras acciones si no aplican
+        return;
     }
   }
 }

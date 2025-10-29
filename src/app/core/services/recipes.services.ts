@@ -2,7 +2,6 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { RecipeModel } from 'src/app/core/interfaces/recipe.interface';
 import { GeneralService } from 'src/app/core/services/generalService.service';
 import { environments } from 'src/environments/environments';
 
@@ -62,23 +61,5 @@ export class RecipesService {
 
   delete(id: number): Observable<any> {
     return this.generalService.deleteOverride<any>(this.apiUrl, { id });
-  }
-
-  sortRecipesByTitle(recipes: RecipeModel[]): RecipeModel[] {
-    return recipes.sort((a, b) =>
-      a.title.toLowerCase().localeCompare(b.title.toLowerCase())
-    );
-  }
-
-  sortRecipesById(recipes: RecipeModel[]): RecipeModel[] {
-    return recipes.sort((a, b) => b.id - a.id);
-  }
-
-  hasResults(recipes: RecipeModel[] | null): boolean {
-    return !!recipes && recipes.length > 0;
-  }
-
-  countRecipes(recipes: RecipeModel[] | null): number {
-    return recipes?.length ?? 0;
   }
 }

@@ -12,7 +12,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
-import { map } from 'rxjs';
+import { map, tap } from 'rxjs';
 
 import { FiltersFacade } from 'src/app/application/filters.facade';
 import { ModalFacade } from 'src/app/application/modal.facade';
@@ -26,7 +26,6 @@ import { RecipeModel } from 'src/app/core/interfaces/recipe.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 
 import { PdfPrintService } from 'src/app/core/services/PdfPrintService.service';
-import { RecipesService } from 'src/app/core/services/recipes.services';
 
 import { DashboardHeaderComponent } from 'src/app/shared/components/dashboard-header/dashboard-header.component';
 import { FiltersComponent } from 'src/app/shared/components/filters/filters.component';
@@ -38,6 +37,7 @@ import { TableComponent } from 'src/app/shared/components/table/table.component'
 
 import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
+import { count, sortByTitle } from 'src/app/shared/utils/facade.utils';
 
 @Component({
   selector: 'app-recipes-page',
@@ -61,7 +61,6 @@ export class RecipesPageComponent implements OnInit {
   // ─────────────── Inyecciones ───────────────
   private readonly destroyRef = inject(DestroyRef);
   private readonly modalFacade = inject(ModalFacade);
-  private readonly recipesService = inject(RecipesService);
   private readonly pdfPrintService = inject(PdfPrintService);
   readonly recipesFacade = inject(RecipesFacade);
   readonly filtersFacade = inject(FiltersFacade);
@@ -123,8 +122,8 @@ export class RecipesPageComponent implements OnInit {
   // ─────────────── Lista derivada ───────────────
   readonly list = useEntityList<RecipeModel>({
     filtered$: this.recipesFacade.filteredRecipes$.pipe(map((v) => v ?? [])),
-    sort: (arr) => this.recipesService.sortRecipesById(arr),
-    count: (arr) => this.recipesService.countRecipes(arr),
+    sort: (arr) => sortByTitle(arr),
+    count: (arr) => count(arr),
   });
 
   readonly TypeList = TypeList;
@@ -208,8 +207,11 @@ export class RecipesPageComponent implements OnInit {
       : this.recipesFacade.addRecipe(event.formData);
 
     save$
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => this.modalFacade.close());
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap(() => this.modalFacade.close())
+      )
+      .subscribe();
   }
 
   // ─────────────── Impresión ───────────────

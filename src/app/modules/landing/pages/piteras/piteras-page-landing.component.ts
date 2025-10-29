@@ -15,6 +15,7 @@ import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loadi
 import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
 import { NoResultsComponent } from 'src/app/shared/components/no-results/no-results.component';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
+import { count, sortByYear } from 'src/app/shared/utils/facade.utils';
 
 @Component({
   selector: 'app-piteras-page-landing',
@@ -30,7 +31,6 @@ import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
   providers: [PiterasService],
 })
 export class PiterasPageLandingComponent implements OnInit {
-  private readonly piterasService = inject(PiterasService);
   readonly piterasFacade = inject(PiterasFacade);
   readonly modalFacade = inject(ModalFacade);
 
@@ -40,8 +40,8 @@ export class PiterasPageLandingComponent implements OnInit {
   readonly list = useEntityList<PiteraModel>({
     filtered$: this.piterasFacade.piteras$,
     map: (arr) => arr,
-    sort: (arr) => this.piterasService.sortPiterasByYear(arr),
-    count: (arr) => this.piterasService.countPiteras(arr),
+    sort: (arr) => sortByYear(arr),
+    count: (arr) => count(arr),
   });
 
   readonly totalSig = this.list.countSig;

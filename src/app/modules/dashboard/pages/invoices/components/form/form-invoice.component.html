@@ -149,26 +149,28 @@
                 }"
               />
               <mat-autocomplete
-                autoActiveFirstOption
                 #auto="matAutocomplete"
-                style="z-index: 1200; position: fixed"
                 (optionSelected)="onSelectedOption($event)"
               >
-                @for (creditor of creditors; track creditor.id) {
+                @for (creditor of (creditorsSorted$ | async) ?? []; track
+                creditor.id) {
                 <mat-option
                   [value]="creditor"
                   (onSelectionChange)="creditorSelected(creditor)"
                 >
-                  {{ creditor.company }}
-                  @if ( creditor.contact && creditor.contact !==
-                  creditor.company ) {
-                  <span>- {{ creditor.contact }}</span>
-                  }
+                  {{ creditor.company
+                  }}<span
+                    *ngIf="
+                      creditor.contact && creditor.contact !== creditor.company
+                    "
+                  >
+                    - {{ creditor.contact }}</span
+                  >
                 </mat-option>
-                } @if ( creditors.length === 0 && searchInput.value &&
-                searchInput.value.length > 0 ) {
-                <mat-option value=""
-                  >No se encontró ningún acreedor con el término
+                } @if ((creditorsFacade.filteredCreditors$ | async)?.length ===
+                0 && searchInput.value?.length) {
+                <mat-option value="">
+                  No se encontró ningún acreedor con el término
                   {{ searchInput.value }}
                 </mat-option>
                 }
@@ -359,7 +361,7 @@
                 @if (formInvoice.controls.subsidy_id.disabled) {
                 <div>
                   <small class="text-gray-500 italic">
-                    Selecciona una fecha de inicio para habilitar las
+                    Selecciona una fecha de factura para habilitar las
                     subvenciones de ese año
                   </small>
                 </div>
@@ -414,8 +416,8 @@
                 @if (formInvoice.controls.project_id.disabled) {
                 <div>
                   <small class="text-gray-500 italic">
-                    Selecciona una fecha de inicio para habilitar los proyectos
-                    de ese año
+                    Selecciona una fecha de movimiento para habilitar los
+                    proyectos de ese año
                   </small>
                 </div>
                 }

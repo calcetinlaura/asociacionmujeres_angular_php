@@ -4,7 +4,11 @@ import { BehaviorSubject, EMPTY, Observable } from 'rxjs';
 import { catchError, finalize, tap } from 'rxjs/operators';
 import { ArticleModel } from 'src/app/core/interfaces/article.interface';
 import { ArticlesService } from 'src/app/core/services/articles.services';
-import { includesNormalized, toSearchKey } from '../shared/utils/text.utils';
+import {
+  count,
+  filterByKeyword,
+  hasResults,
+} from '../shared/utils/facade.utils';
 import { LoadableFacade } from './loadable.facade';
 
 @Injectable({ providedIn: 'root' })
@@ -120,24 +124,22 @@ export class ArticlesFacade extends LoadableFacade {
 
   applyFilterWord(keyword: string): void {
     const all = this.articlesSubject.getValue();
-    if (!all) {
-      this.filteredArticlesSubject.next(all);
-      return;
-    }
-    if (!toSearchKey(keyword)) {
-      this.filteredArticlesSubject.next(all);
-      return;
-    }
-
-    const filtered = all.filter((p) =>
-      [p.title].some((field) => includesNormalized(field, keyword))
+    this.filteredArticlesSubject.next(
+      filterByKeyword(all, keyword, [(p) => p.title])
     );
-    this.filteredArticlesSubject.next(filtered);
   }
 
   // ───────── PRIVADO / UTILIDADES ─────────
   private updateArticleState(articles: ArticleModel[]): void {
     this.articlesSubject.next(articles);
     this.filteredArticlesSubject.next(articles);
+  }
+
+  get totalArticles(): number {
+    return count(this.articlesSubject.getValue());
+  }
+
+  get hasArticles(): boolean {
+    return hasResults(this.articlesSubject.getValue());
   }
 }

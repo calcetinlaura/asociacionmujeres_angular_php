@@ -34,9 +34,11 @@ import {
   Observable,
   startWith,
   tap,
-  throwError,
 } from 'rxjs';
+import { CreditorsFacade } from 'src/app/application/creditors.facade';
 import { InvoicesFacade } from 'src/app/application/invoices.facade';
+import { ProjectsFacade } from 'src/app/application/projects.facade';
+import { SubsidiesFacade } from 'src/app/application/subsidies.facade';
 import {
   CreditorAutocompleteModel,
   CreditorModel,
@@ -48,14 +50,12 @@ import {
   SubsidyModelFullData,
 } from 'src/app/core/interfaces/subsidy.interface';
 import { TypeList } from 'src/app/core/models/general.model';
-import { CreditorsService } from 'src/app/core/services/creditors.services';
 import { GeneralService } from 'src/app/core/services/generalService.service';
-import { ProjectsService } from 'src/app/core/services/projects.services';
-import { SubsidiesService } from 'src/app/core/services/subsidies.services';
 import { ButtonSelectComponent } from 'src/app/shared/components/buttons/button-select/button-select.component';
 import { PdfControlComponent } from 'src/app/shared/components/pdf-control/pdf-control.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { ScrollToFirstErrorDirective } from 'src/app/shared/directives/scroll-to-first-error.directive';
+import { sortByCompany } from 'src/app/shared/utils/facade.utils';
 import { dateBetween } from 'src/app/shared/utils/validators.utils';
 
 @Component({
@@ -82,10 +82,10 @@ import { dateBetween } from 'src/app/shared/utils/validators.utils';
 export class FormInvoiceComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   readonly invoicesFacade = inject(InvoicesFacade);
+  readonly creditorsFacade = inject(CreditorsFacade);
+  private readonly projectsFacade = inject(ProjectsFacade);
+  private readonly subsidiesFacade = inject(SubsidiesFacade);
   private readonly generalService = inject(GeneralService);
-  private readonly creditorsService = inject(CreditorsService);
-  private readonly subsidiesService = inject(SubsidiesService);
-  private readonly projectsService = inject(ProjectsService);
 
   readonly minDate = new Date(2018, 0, 1);
   readonly tomorrowDate = (() => {
@@ -94,7 +94,9 @@ export class FormInvoiceComponent implements OnInit {
     d.setDate(d.getDate() + 1);
     return d;
   })();
-
+  readonly creditorsSorted$ = this.creditorsFacade.filteredCreditors$.pipe(
+    map((arr) => sortByCompany(arr))
+  );
   @Input() itemId!: number;
   @Input() item: InvoiceModelFullData | null = null;
 
@@ -186,26 +188,63 @@ export class FormInvoiceComponent implements OnInit {
       [{ indent: '-1' }, { indent: '+1' }],
     ],
   };
-
   ngOnInit(): void {
+    this.initYears();
+    this.initInvoiceData();
+    this.initCreditors();
+    this.handleDateAndTypeChanges();
+    this.handleAmountChanges();
+  }
+  // ────────────────────────────────────────────────────────────────
+  // Inicialización general
+  // ────────────────────────────────────────────────────────────────
+  private initYears(): void {
     this.years = this.generalService.loadYears(this.currentYear, 2018);
+  }
 
-    // ✅ Si se recibe el item completo, lo usamos directamente
+  // ────────────────────────────────────────────────────────────────
+  // Inicializa factura (item o itemId)
+  // ────────────────────────────────────────────────────────────────
+  private initInvoiceData(): void {
     if (this.item) {
       this.populateFormWithItem(this.item);
-    } else if (this.itemId) {
-      // 🟡 Si solo tenemos el ID, cargamos desde la fachada
+      return;
+    }
+
+    if (this.itemId) {
       this.invoicesFacade.loadInvoiceById(this.itemId);
       this.invoicesFacade.selectedInvoice$
         .pipe(
           takeUntilDestroyed(this.destroyRef),
-          filter((invoice: InvoiceModelFullData | null) => invoice !== null),
-          tap((invoice) => invoice && this.populateFormWithItem(invoice))
+          filter((invoice): invoice is InvoiceModelFullData => !!invoice),
+          tap((invoice) => this.populateFormWithItem(invoice))
         )
         .subscribe();
     }
+  }
 
-    // Activar `project_id` solo con date_invoice válido
+  // ────────────────────────────────────────────────────────────────
+  // Acreedores (carga + sincronización reactiva)
+  // ────────────────────────────────────────────────────────────────
+  private initCreditors(): void {
+    this.creditorsFacade.loadAllCreditors();
+
+    this.creditorsFacade.filteredCreditors$
+      .pipe(
+        map((arr) => sortByCompany(arr)), // ✅ orden alfabético
+        takeUntilDestroyed(this.destroyRef),
+        tap((creditors) =>
+          console.log('🧾 Acreedores cargados (ordenados):', creditors)
+        )
+      )
+      .subscribe((creditors) => (this.filteredCreditors = creditors ?? []));
+  }
+
+  // ────────────────────────────────────────────────────────────────
+  // Gestión de fechas y activación de inputs dependientes
+  // ────────────────────────────────────────────────────────────────
+  private handleDateAndTypeChanges(): void {
+    // Activar `project_id` según la fecha
     this.formInvoice
       .get('date_invoice')!
       .valueChanges.pipe(
@@ -227,7 +266,7 @@ export class FormInvoiceComponent implements OnInit {
       )
       .subscribe();
 
-    // Activar `subsidy_id` solo si date_invoice es válido Y type_invoice es 'Factura'
+    // Activar `subsidy_id` solo si es factura
     combineLatest([
       this.formInvoice
         .get('date_invoice')!
@@ -256,24 +295,24 @@ export class FormInvoiceComponent implements OnInit {
         })
       )
       .subscribe();
+  }
 
-    // Recalcular totales
+  // ────────────────────────────────────────────────────────────────
+  // Cálculo reactivo de totales (amount + iva + irpf)
+  // ────────────────────────────────────────────────────────────────
+  private handleAmountChanges(): void {
     combineLatest([
       this.formInvoice
         .get('amount')!
         .valueChanges.pipe(
-          startWith(this.formInvoice.get('amount')!.value || null)
+          startWith(this.formInvoice.get('amount')!.value || 0)
         ),
       this.formInvoice
         .get('iva')!
-        .valueChanges.pipe(
-          startWith(this.formInvoice.get('iva')!.value || null)
-        ),
+        .valueChanges.pipe(startWith(this.formInvoice.get('iva')!.value || 0)),
       this.formInvoice
         .get('irpf')!
-        .valueChanges.pipe(
-          startWith(this.formInvoice.get('irpf')!.value || null)
-        ),
+        .valueChanges.pipe(startWith(this.formInvoice.get('irpf')!.value || 0)),
     ])
       .pipe(
         takeUntilDestroyed(this.destroyRef),
@@ -281,7 +320,6 @@ export class FormInvoiceComponent implements OnInit {
           const parsedAmount = Number(amount) || 0;
           const parsedIva = Number(iva) || 0;
           const parsedIrpf = Number(irpf) || 0;
-
           const total = parsedAmount + parsedIva - parsedIrpf;
           const totalIrpf = parsedAmount + parsedIva;
 
@@ -355,9 +393,11 @@ export class FormInvoiceComponent implements OnInit {
     if (invoice.project_id) this.invoiceTypeProject = 'PROJECT';
 
     if (invoice.creditor_id) {
-      this.getCreditorsById(invoice.creditor_id)
+      this.creditorsFacade.loadCreditorById(invoice.creditor_id);
+      this.creditorsFacade.selectedCreditor$
         .pipe(
           takeUntilDestroyed(this.destroyRef),
+          filter((creditor): creditor is any => !!creditor),
           tap((creditor) => {
             this.creditors = [creditor];
             this.formInvoice.patchValue({ creditor_id: creditor.id });
@@ -404,19 +444,31 @@ export class FormInvoiceComponent implements OnInit {
     ]).pipe(map(() => void 0));
   }
 
-  loadSubsidiesByYear(year: number): Observable<SubsidyModelFullData[]> {
-    return this.subsidiesService.getSubsidiesByYear(year).pipe(
-      tap((subsidies) => {
-        this.subsidies = subsidies;
-      })
+  private loadSubsidiesByYear(
+    year: number
+  ): Observable<SubsidyModelFullData[]> {
+    // Dispara la carga en la facade
+    this.subsidiesFacade.loadSubsidiesByYear(year);
+
+    // Nos suscribimos una sola vez a la lista filtrada (ya ordenada si lo haces en facade)
+    return this.subsidiesFacade.filteredSubsidies$.pipe(
+      filter((subs): subs is SubsidyModelFullData[] => Array.isArray(subs)),
+      tap((subs) => (this.subsidies = subs)),
+      takeUntilDestroyed(this.destroyRef)
     );
   }
 
-  loadProjectsByYear(year: number): Observable<ProjectModel[]> {
-    return this.projectsService.getProjectsByYear(year).pipe(
+  private loadProjectsByYear(year: number): Observable<void> {
+    this.projectsFacade.loadProjectsByYear(year);
+
+    // Nos suscribimos una sola vez a la lista de proyectos cargados
+    return this.projectsFacade.filteredProjects$.pipe(
+      filter((projects): projects is ProjectModel[] => Array.isArray(projects)),
       tap((projects) => {
         this.projects = projects;
-      })
+      }),
+      takeUntilDestroyed(this.destroyRef),
+      map(() => void 0)
     );
   }
 
@@ -451,28 +503,23 @@ export class FormInvoiceComponent implements OnInit {
 
     if (!value) {
       creditorControl?.reset(null);
-      this.creditors = [];
       creditorControl?.setErrors(null);
+      this.creditorsFacade.setKeyword('');
       return;
     }
 
-    this.creditorsService
-      .getSuggestions(value)
+    // Actualiza la palabra clave en la facade
+    this.creditorsFacade.setKeyword(value);
+
+    // Busca coincidencias en los acreedores filtrados
+    this.creditorsFacade.filteredCreditors$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((creditors) => {
-          this.creditors = creditors
-            .filter((c) =>
-              c.company.toLowerCase().startsWith(value.toLowerCase())
-            )
-            .concat(
-              creditors.filter(
-                (c) => !c.company.toLowerCase().startsWith(value.toLowerCase())
-              )
-            );
-
-          const matchedCreditor = this.creditors.find(
-            (c) => c.company === value || value.includes(c.company)
+          const matchedCreditor = creditors.find(
+            (c) =>
+              c.company.toLowerCase() === value.toLowerCase() ||
+              value.toLowerCase().includes(c.company.toLowerCase())
           );
 
           if (matchedCreditor) {
@@ -513,19 +560,6 @@ export class FormInvoiceComponent implements OnInit {
     setTimeout(() => {
       this.showSuggestions = false;
     }, 100);
-  }
-
-  getCreditorsById(id: number | null): Observable<CreditorAutocompleteModel> {
-    if (id === null) {
-      return throwError(() => new Error('ID del acreedor no puede ser null'));
-    }
-    return this.creditorsService.getCreditorById(id).pipe(
-      map((creditor) => ({
-        id: creditor.id,
-        company: creditor.company,
-        cif: creditor.cif,
-      }))
-    );
   }
 
   // ────────────────────────────────────────────────────────────────

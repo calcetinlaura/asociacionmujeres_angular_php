@@ -28,7 +28,6 @@ import {
 import { InvoiceModelFullData } from 'src/app/core/interfaces/invoice.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { GeneralService } from 'src/app/core/services/generalService.service';
-import { InvoicesService } from 'src/app/core/services/invoices.services';
 import { PdfPrintService } from 'src/app/core/services/PdfPrintService.service';
 
 import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
@@ -65,7 +64,6 @@ import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
 })
 export class InvoicesPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
-  private readonly invoicesService = inject(InvoicesService);
   private readonly generalService = inject(GeneralService);
   private readonly pdfPrintService = inject(PdfPrintService);
   readonly invoicesFacade = inject(InvoicesFacade);
@@ -436,20 +434,11 @@ export class InvoicesPageComponent implements OnInit {
 
   downloadFilteredPdfs(includeProof: boolean = true): void {
     const data = this.list.processedSig() || [];
-    this.invoicesService
-      .downloadInvoicesZipFromData(data, {
-        includeProof,
-        filename: includeProof ? 'facturas_justificantes.zip' : 'facturas.zip',
-      })
-      .subscribe({
-        error: (e) => {
-          if (e?.message === 'NO_FILES') {
-            alert('No hay PDFs para descargar.');
-          } else {
-            console.error('💥 Error al descargar ZIP:', e);
-            alert('Error al descargar el ZIP. Revisa la consola.');
-          }
-        },
-      });
+    if (!data.length) {
+      alert('No hay facturas disponibles para descargar.');
+      return;
+    }
+
+    this.invoicesFacade.downloadFilteredPdfs(data, includeProof);
   }
 }

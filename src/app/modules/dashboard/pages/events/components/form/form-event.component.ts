@@ -37,8 +37,11 @@ import {
   take,
   tap,
 } from 'rxjs';
+import { AgentsFacade } from 'src/app/application/agents.facade';
 import { EventsFacade } from 'src/app/application/events.facade';
+import { MacroeventsFacade } from 'src/app/application/macroevents.facade';
 import { PlacesFacade } from 'src/app/application/places.facade';
+import { ProjectsFacade } from 'src/app/application/projects.facade';
 import { AgentModel } from 'src/app/core/interfaces/agent.interface';
 import {
   AudienceDTO,
@@ -55,11 +58,8 @@ import { MacroeventModel } from 'src/app/core/interfaces/macroevent.interface';
 import { PlaceModel, SalaModel } from 'src/app/core/interfaces/place.interface';
 import { ProjectModel } from 'src/app/core/interfaces/project.interface';
 import { TypeList } from 'src/app/core/models/general.model';
-import { AgentsService } from 'src/app/core/services/agents.services';
 import { FormErrorNavigatorService } from 'src/app/core/services/form-error-navigator.service';
 import { GeneralService } from 'src/app/core/services/generalService.service';
-import { MacroeventsService } from 'src/app/core/services/macroevents.services';
-import { ProjectsService } from 'src/app/core/services/projects.services';
 import { ButtonCategoryComponent } from 'src/app/shared/components/buttons/button-category/button-category.component';
 import { ButtonIconComponent } from 'src/app/shared/components/buttons/button-icon/button-icon.component';
 import { ButtonSelectComponent } from 'src/app/shared/components/buttons/button-select/button-select.component';
@@ -169,10 +169,10 @@ export function audienceValidatorFactory(
 export class FormEventComponent implements OnInit, OnChanges {
   private readonly destroyRef = inject(DestroyRef);
   readonly eventsFacade = inject(EventsFacade);
+  readonly macroeventsFacade = inject(MacroeventsFacade);
   private readonly placesFacade = inject(PlacesFacade);
-  private readonly macroeventsService = inject(MacroeventsService);
-  private readonly projectsService = inject(ProjectsService);
-  private readonly agentsService = inject(AgentsService);
+  private readonly projectsFacade = inject(ProjectsFacade);
+  private readonly agentsFacade = inject(AgentsFacade);
   private readonly generalService = inject(GeneralService);
   private readonly fb = inject(FormBuilder);
   private readonly cdr = inject(ChangeDetectorRef);
@@ -451,11 +451,13 @@ export class FormEventComponent implements OnInit, OnChanges {
       .flatMap((region) => region.provinces)
       .sort((a, b) => a.label.localeCompare(b.label));
 
-    this.agentsService
-      .getAgents()
+    this.agentsFacade.loadAllAgents();
+
+    // Escucha la lista filtrada (o usa agents$ si prefieres sin filtros)
+    this.agentsFacade.filteredAgents$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((data) => (this.agents = data))
+        tap((agents) => (this.agents = agents ?? []))
       )
       .subscribe();
 
@@ -1093,19 +1095,22 @@ export class FormEventComponent implements OnInit, OnChanges {
     ]).pipe(map(() => void 0));
   }
 
-  loadMacroeventosByYear(year: number): Observable<MacroeventModel[]> {
-    return this.macroeventsService.getMacroeventsByYear(year).pipe(
-      tap((macroevents) => {
-        this.macroevents = macroevents;
-      })
-    );
+  loadMacroeventosByYear(year: number): void {
+    this.macroeventsFacade.loadMacroeventsByYear(year);
   }
 
-  loadProjectsByYear(year: number): Observable<ProjectModel[]> {
-    return this.projectsService.getProjectsByYear(year).pipe(
+  private loadProjectsByYear(year: number): Observable<void> {
+    // Llamamos a la facade para que haga la carga
+    this.projectsFacade.loadProjectsByYear(year);
+
+    // Nos suscribimos una sola vez a la lista de proyectos cargados
+    return this.projectsFacade.filteredProjects$.pipe(
+      filter((projects): projects is ProjectModel[] => Array.isArray(projects)),
       tap((projects) => {
         this.projects = projects;
-      })
+      }),
+      takeUntilDestroyed(this.destroyRef),
+      map(() => void 0)
     );
   }
 

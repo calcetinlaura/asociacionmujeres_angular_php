@@ -2,7 +2,6 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { PartnerModel } from 'src/app/core/interfaces/partner.interface';
 import { GeneralService } from 'src/app/core/services/generalService.service';
 import { environments } from 'src/environments/environments';
 
@@ -46,23 +45,5 @@ export class PartnersService {
 
   delete(id: number): Observable<any> {
     return this.generalService.deleteOverride<any>(this.apiUrl, { id });
-  }
-
-  sortPartnersByName(partners: PartnerModel[]): PartnerModel[] {
-    return partners.sort((a, b) =>
-      a.name.toLowerCase().localeCompare(b.name.toLowerCase())
-    );
-  }
-
-  sortPartnersById(partners: PartnerModel[]): PartnerModel[] {
-    return partners.sort((a, b) => b.id - a.id);
-  }
-
-  hasResults(partners: PartnerModel[] | null): boolean {
-    return !!partners && partners.length > 0;
-  }
-
-  countPartners(partners: PartnerModel[] | null): number {
-    return partners?.length ?? 0;
   }
 }

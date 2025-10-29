@@ -4,7 +4,11 @@ import { BehaviorSubject, EMPTY, Observable } from 'rxjs';
 import { catchError, finalize, tap } from 'rxjs/operators';
 import { RecipeModel } from 'src/app/core/interfaces/recipe.interface';
 import { RecipesService } from 'src/app/core/services/recipes.services';
-import { includesNormalized, toSearchKey } from '../shared/utils/text.utils';
+import {
+  count,
+  filterByKeyword,
+  hasResults,
+} from '../shared/utils/facade.utils';
 import { LoadableFacade } from './loadable.facade';
 
 export enum RecipesFilter {
@@ -186,22 +190,9 @@ export class RecipesFacade extends LoadableFacade {
 
   applyFilterWord(keyword: string): void {
     const all = this.recipesSubject.getValue();
-
-    if (!all) {
-      this.filteredRecipesSubject.next(all);
-      return;
-    }
-
-    if (!toSearchKey(keyword)) {
-      this.filteredRecipesSubject.next(all);
-      return;
-    }
-
-    const filtered = all.filter((r) =>
-      [r.title, r.owner].some((field) => includesNormalized(field, keyword))
+    this.filteredRecipesSubject.next(
+      filterByKeyword(all, keyword, [(b) => b.title, (b) => b.owner])
     );
-
-    this.filteredRecipesSubject.next(filtered);
   }
 
   setCurrentFilter(filter: string | null): void {
@@ -219,5 +210,12 @@ export class RecipesFacade extends LoadableFacade {
   private updateRecipeState(recipes: RecipeModel[]): void {
     this.recipesSubject.next(recipes);
     this.filteredRecipesSubject.next(recipes);
+  }
+  get totalRecipes(): number {
+    return count(this.recipesSubject.getValue());
+  }
+
+  get hasRecipes(): boolean {
+    return hasResults(this.recipesSubject.getValue());
   }
 }

@@ -11,7 +11,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
-import { map } from 'rxjs';
+import { map, tap } from 'rxjs';
 
 import { BooksFacade } from 'src/app/application/books.facade';
 import { FiltersFacade } from 'src/app/application/filters.facade'; // ← NUEVO
@@ -24,7 +24,6 @@ import {
 } from 'src/app/core/interfaces/column.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 
-import { BooksService } from 'src/app/core/services/books.services';
 import { PdfPrintService } from 'src/app/core/services/PdfPrintService.service';
 
 import { DashboardHeaderComponent } from 'src/app/shared/components/dashboard-header/dashboard-header.component';
@@ -37,6 +36,7 @@ import { TableComponent } from 'src/app/shared/components/table/table.component'
 
 import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
+import { count, sortById } from 'src/app/shared/utils/facade.utils';
 
 @Component({
   selector: 'app-books-page',
@@ -58,7 +58,6 @@ import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
 export class BooksPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly modalFacade = inject(ModalFacade);
-  private readonly booksService = inject(BooksService);
   private readonly pdfPrintService = inject(PdfPrintService);
   readonly booksFacade = inject(BooksFacade);
   readonly filtersFacade = inject(FiltersFacade);
@@ -110,8 +109,8 @@ export class BooksPageComponent implements OnInit {
     filtered$: this.booksFacade.filteredBooks$.pipe(map((v) => v ?? [])),
     map: (arr) =>
       arr.map((b) => ({ ...b, description: (b.description ?? '').toString() })),
-    sort: (arr) => this.booksService.sortBooksById(arr),
-    count: (arr) => this.booksService.countBooks(arr),
+    sort: (arr) => sortById(arr),
+    count: (arr) => count(arr),
   });
 
   readonly TypeList = TypeList;
@@ -181,15 +180,19 @@ export class BooksPageComponent implements OnInit {
   }
 
   sendFormBook(event: { itemId: number; formData: FormData }): void {
-    const save$ = event.itemId
-      ? this.booksFacade.editBook(event.formData)
-      : this.booksFacade.addBook(event.formData);
+    const { itemId, formData } = event;
+
+    const save$ = itemId
+      ? this.booksFacade.editBook(formData)
+      : this.booksFacade.addBook(formData);
 
     save$
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => this.modalFacade.close());
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap(() => this.modalFacade.close())
+      )
+      .subscribe();
   }
-
   // ─────────────── Impresión ───────────────
   async printTableAsPdf(): Promise<void> {
     if (!this.printArea) return;

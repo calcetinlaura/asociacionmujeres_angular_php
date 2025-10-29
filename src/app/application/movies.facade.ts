@@ -4,7 +4,11 @@ import { BehaviorSubject, EMPTY, Observable } from 'rxjs';
 import { catchError, finalize, tap } from 'rxjs/operators';
 import { MovieModel } from 'src/app/core/interfaces/movie.interface';
 import { MoviesService } from 'src/app/core/services/movies.services';
-import { includesNormalized, toSearchKey } from '../shared/utils/text.utils';
+import {
+  count,
+  filterByKeyword,
+  hasResults,
+} from '../shared/utils/facade.utils';
 import { LoadableFacade } from './loadable.facade';
 
 @Injectable({ providedIn: 'root' })
@@ -179,22 +183,9 @@ export class MoviesFacade extends LoadableFacade {
 
   applyFilterWord(keyword: string): void {
     const all = this.moviesSubject.getValue();
-
-    if (!all) {
-      this.filteredMoviesSubject.next(all);
-      return;
-    }
-
-    if (!toSearchKey(keyword)) {
-      this.filteredMoviesSubject.next(all);
-      return;
-    }
-
-    const filtered = all.filter((m) =>
-      [m.title, m.director].some((field) => includesNormalized(field, keyword))
+    this.filteredMoviesSubject.next(
+      filterByKeyword(all, keyword, [(b) => b.title, (b) => b.director])
     );
-
-    this.filteredMoviesSubject.next(filtered);
   }
 
   setCurrentFilter(filter: string | null): void {
@@ -212,5 +203,12 @@ export class MoviesFacade extends LoadableFacade {
   private updateMovieState(movies: MovieModel[]): void {
     this.moviesSubject.next(movies);
     this.filteredMoviesSubject.next(movies);
+  }
+  get totalMovies(): number {
+    return count(this.moviesSubject.getValue());
+  }
+
+  get hasMovies(): boolean {
+    return hasResults(this.moviesSubject.getValue());
   }
 }

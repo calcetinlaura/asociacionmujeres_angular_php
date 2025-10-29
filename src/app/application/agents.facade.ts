@@ -10,7 +10,7 @@ import {
 } from 'rxjs';
 import { AgentModel } from '../core/interfaces/agent.interface';
 import { AgentsService } from '../core/services/agents.services';
-import { includesNormalized, toSearchKey } from '../shared/utils/text.utils';
+import { filterByKeyword } from '../shared/utils/facade.utils';
 import { LoadableFacade } from './loadable.facade';
 
 @Injectable({ providedIn: 'root' })
@@ -147,19 +147,9 @@ export class AgentsFacade extends LoadableFacade {
 
   applyFilterWord(keyword: string): void {
     const all = this.agentsSubject.getValue();
-    if (!all) {
-      this.filteredAgentsSubject.next(all);
-      return;
-    }
-    if (!toSearchKey(keyword)) {
-      this.filteredAgentsSubject.next(all);
-      return;
-    }
-
-    const filtered = all.filter((b) =>
-      [b.name].some((field) => includesNormalized(field, keyword))
+    this.filteredAgentsSubject.next(
+      filterByKeyword(all, keyword, [(a) => a.name])
     );
-    this.filteredAgentsSubject.next(filtered);
   }
 
   setCurrentFilter(filter: string | null): void {

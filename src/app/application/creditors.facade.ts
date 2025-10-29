@@ -1,10 +1,10 @@
 import { inject, Injectable } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, EMPTY, Observable } from 'rxjs';
-import { catchError, finalize, tap } from 'rxjs/operators';
+import { BehaviorSubject, combineLatest, EMPTY, Observable } from 'rxjs';
+import { catchError, finalize, map, startWith, tap } from 'rxjs/operators';
 import { CreditorWithInvoices } from 'src/app/core/interfaces/creditor.interface';
 import { CreditorsService } from 'src/app/core/services/creditors.services';
-import { includesNormalized, toSearchKey } from '../shared/utils/text.utils';
+import { filterByKeyword } from '../shared/utils/facade.utils';
 import { LoadableFacade } from './loadable.facade';
 
 @Injectable({ providedIn: 'root' })
@@ -13,68 +13,79 @@ export class CreditorsFacade extends LoadableFacade {
 
   // ───────── STATE ─────────
   private readonly creditorsSubject = new BehaviorSubject<
-    CreditorWithInvoices[] | null
-  >(null);
+    CreditorWithInvoices[]
+  >([]);
   private readonly filteredCreditorsSubject = new BehaviorSubject<
-    CreditorWithInvoices[] | null
-  >(null);
+    CreditorWithInvoices[]
+  >([]);
   private readonly selectedCreditorSubject =
     new BehaviorSubject<CreditorWithInvoices | null>(null);
+  private readonly keywordSubject = new BehaviorSubject<string>('');
 
   private readonly listLoadingSubject = new BehaviorSubject<boolean>(false);
   private readonly itemLoadingSubject = new BehaviorSubject<boolean>(false);
 
+  private currentFilter: string | null = null;
+
   // ───────── PUBLIC STREAMS ─────────
   readonly creditors$ = this.creditorsSubject.asObservable();
-  readonly filteredCreditors$ = this.filteredCreditorsSubject.asObservable();
+  readonly keyword$ = this.keywordSubject.asObservable();
   readonly selectedCreditor$ = this.selectedCreditorSubject.asObservable();
   readonly isLoadingList$ = this.listLoadingSubject.asObservable();
   readonly isLoadingItem$ = this.itemLoadingSubject.asObservable();
 
-  private currentFilter: string | null = null;
+  // Filtrado reactivo por texto
+  readonly filteredCreditors$: Observable<CreditorWithInvoices[]> =
+    combineLatest([this.creditors$, this.keyword$]).pipe(
+      map(([creditors, keyword]) =>
+        filterByKeyword(creditors, keyword, [
+          (b) => b.company,
+          (b) => b.contact,
+        ])
+      ),
+      startWith([])
+    );
 
-  // ───────── LISTA (isLoadingList$) ─────────
+  // ───────── LISTA ─────────
   loadAllCreditors(): void {
-    this.setCurrentFilter(null);
-    this.listLoadingSubject.next(true);
-
-    this.creditorsService
-      .getCreditors()
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((creditors) => this.updateCreditorState(creditors)),
-        catchError((err) => {
-          this.generalService.handleHttpError(err);
-          return EMPTY;
-        }),
-        finalize(() => this.listLoadingSubject.next(false))
-      )
-      .subscribe();
-  }
-
-  loadCreditorsByFilter(filter: string): void {
-    this.setCurrentFilter(filter);
-    this.loadCreditorsByCategory(filter);
+    this.reloadCreditors(null);
   }
 
   loadCreditorsByCategory(category: string): void {
+    this.reloadCreditors(category);
+  }
+
+  private reloadCreditors(filter: string | null): void {
+    this.setCurrentFilter(filter);
     this.listLoadingSubject.next(true);
 
-    this.creditorsService
-      .getCreditorsByCategory(category)
+    const request$ = filter
+      ? this.creditorsService.getCreditorsByCategory(filter)
+      : this.creditorsService.getCreditors();
+
+    console.log('📡 Llamando a backend de acreedores...');
+
+    request$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tap((creditors) => this.updateCreditorState(creditors)),
+        tap((creditors) => {
+          console.log('✅ Datos recibidos:', creditors);
+          this.updateCreditorState(creditors);
+        }),
         catchError((err) => {
+          console.error('❌ Error en loadAllCreditors:', err);
           this.generalService.handleHttpError(err);
+          this.updateCreditorState([]);
           return EMPTY;
         }),
-        finalize(() => this.listLoadingSubject.next(false))
+        finalize(() => {
+          console.log('🟡 Carga completada (finalize)');
+          this.listLoadingSubject.next(false);
+        })
       )
       .subscribe();
   }
-
-  // ───────── ITEM (isLoadingItem$) ─────────
+  // ───────── ITEM ─────────
   loadCreditorById(id: number): void {
     this.itemLoadingSubject.next(true);
 
@@ -138,43 +149,27 @@ export class CreditorsFacade extends LoadableFacade {
       .subscribe();
   }
 
-  // ───────── HELPERS ─────────
+  // ───────── FILTRO Y ESTADO ─────────
+  setKeyword(keyword: string): void {
+    this.keywordSubject.next(keyword.trim());
+  }
+
   clearSelectedCreditor(): void {
     this.selectedCreditorSubject.next(null);
   }
 
   applyFilterWord(keyword: string): void {
     const all = this.creditorsSubject.getValue();
-
-    if (!all) {
-      this.filteredCreditorsSubject.next(all);
-      return;
-    }
-
-    if (!toSearchKey(keyword)) {
-      this.filteredCreditorsSubject.next(all);
-      return;
-    }
-
-    const filtered = all.filter((c) =>
-      [c.company, c.contact]
-        .filter(Boolean)
-        .some((field) => includesNormalized(field!, keyword))
+    this.filteredCreditorsSubject.next(
+      filterByKeyword(all, keyword, [(b) => b.company, (b) => b.contact])
     );
-
-    this.filteredCreditorsSubject.next(filtered);
   }
-
-  setCurrentFilter(filter: string | null): void {
+  private setCurrentFilter(filter: string | null): void {
     this.currentFilter = filter;
   }
 
   private reloadCurrentFilter(): void {
-    if (this.currentFilter === null) {
-      this.loadAllCreditors();
-    } else {
-      this.loadCreditorsByCategory(this.currentFilter);
-    }
+    this.reloadCreditors(this.currentFilter);
   }
 
   private updateCreditorState(creditors: CreditorWithInvoices[]): void {

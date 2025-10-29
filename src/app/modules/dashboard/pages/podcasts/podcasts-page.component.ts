@@ -12,7 +12,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
-import { map } from 'rxjs';
+import { map, tap } from 'rxjs';
 
 import { PodcastsFacade } from 'src/app/application/podcasts.facade';
 import {
@@ -22,7 +22,6 @@ import {
 import { PodcastModel } from 'src/app/core/interfaces/podcast.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { PdfPrintService } from 'src/app/core/services/PdfPrintService.service';
-import { PodcastsService } from 'src/app/core/services/podcasts.services';
 
 import { DashboardHeaderComponent } from 'src/app/shared/components/dashboard-header/dashboard-header.component';
 import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
@@ -35,6 +34,7 @@ import { FiltersFacade } from 'src/app/application/filters.facade';
 import { ModalFacade } from 'src/app/application/modal.facade';
 import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
+import { count, sortByTitle } from 'src/app/shared/utils/facade.utils';
 
 @Component({
   selector: 'app-podcasts-page',
@@ -61,7 +61,6 @@ export class PodcastsPageComponent implements OnInit {
   // ──────────────────────────────────────────────────────────────────────────────
   private readonly destroyRef = inject(DestroyRef);
   private readonly modalFacade = inject(ModalFacade);
-  private readonly podcastsService = inject(PodcastsService);
   private readonly pdfPrintService = inject(PdfPrintService);
   readonly podcastsFacade = inject(PodcastsFacade);
   readonly filtersFacade = inject(FiltersFacade);
@@ -136,8 +135,8 @@ export class PodcastsPageComponent implements OnInit {
 
   readonly list = useEntityList<PodcastModel>({
     filtered$: this.podcastsFacade.filteredPodcasts$.pipe(map((v) => v ?? [])),
-    sort: (arr) => this.podcastsService.sortPodcastsById(arr),
-    count: (arr) => this.podcastsService.countPodcasts(arr),
+    sort: (arr) => sortByTitle(arr),
+    count: (arr) => count(arr),
   });
 
   readonly TypeList = TypeList;
@@ -183,24 +182,7 @@ export class PodcastsPageComponent implements OnInit {
     action: TypeActionModal;
     item?: PodcastModel;
   }): void {
-    const { typeModal, action, item } = event;
-    if (
-      typeModal === TypeList.Podcasts &&
-      action !== TypeActionModal.Create &&
-      item?.id
-    ) {
-      this.podcastsService
-        .getPodcastById(item.id)
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe({
-          next: (fresh) =>
-            this.modalFacade.open(typeModal, action, fresh ?? item ?? null),
-          error: () => this.modalFacade.open(typeModal, action, item ?? null),
-        });
-      return;
-    }
-
-    this.modalFacade.open(typeModal, action, item ?? null);
+    this.modalFacade.open(event.typeModal, event.action, event.item ?? null);
   }
 
   onCloseModal(): void {
@@ -220,8 +202,11 @@ export class PodcastsPageComponent implements OnInit {
       : this.podcastsFacade.addPodcast(event.formData);
 
     save$
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => this.modalFacade.close());
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap(() => this.modalFacade.close())
+      )
+      .subscribe();
   }
 
   // ──────────────────────────────────────────────────────────────────────────────

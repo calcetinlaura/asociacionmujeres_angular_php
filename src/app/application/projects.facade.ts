@@ -4,7 +4,7 @@ import { BehaviorSubject, EMPTY, Observable } from 'rxjs';
 import { catchError, finalize, tap } from 'rxjs/operators';
 import { ProjectModel } from 'src/app/core/interfaces/project.interface';
 import { ProjectsService } from 'src/app/core/services/projects.services';
-import { includesNormalized, toSearchKey } from '../shared/utils/text.utils';
+import { filterByKeyword } from '../shared/utils/facade.utils';
 import { LoadableFacade } from './loadable.facade';
 
 @Injectable({ providedIn: 'root' })
@@ -42,17 +42,20 @@ export class ProjectsFacade extends LoadableFacade {
   private currentFilter: number | null = null;
 
   // ───────── LISTA → isLoadingList$ ─────────
-  loadAllProjects(): void {
-    this.setCurrentFilter(null);
+  private loadProjects(
+    request$: Observable<ProjectModel[]>,
+    year: number | null
+  ): void {
+    this.setCurrentFilter(year);
     this.listLoadingSubject.next(true);
-
-    this.projectsService
-      .getProjects()
+    request$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tap((projects) => this.updateProjectState(projects)),
         catchError((err) => {
           this.generalService.handleHttpError(err);
+          this.projectsSubject.next([]);
+          this.filteredProjectsSubject.next([]);
           return EMPTY;
         }),
         finalize(() => this.listLoadingSubject.next(false))
@@ -60,22 +63,12 @@ export class ProjectsFacade extends LoadableFacade {
       .subscribe();
   }
 
-  loadProjectsByYear(year: number): void {
-    this.setCurrentFilter(year);
-    this.listLoadingSubject.next(true);
+  loadAllProjects(): void {
+    this.loadProjects(this.projectsService.getProjects(), null);
+  }
 
-    this.projectsService
-      .getProjectsByYear(year)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((projects) => this.updateProjectState(projects)),
-        catchError((err) => {
-          this.generalService.handleHttpError(err);
-          return EMPTY;
-        }),
-        finalize(() => this.listLoadingSubject.next(false))
-      )
-      .subscribe();
+  loadProjectsByYear(year: number): void {
+    this.loadProjects(this.projectsService.getProjectsByYear(year), year);
   }
 
   // ───────── ITEM → isLoadingItem$ ─────────
@@ -158,22 +151,9 @@ export class ProjectsFacade extends LoadableFacade {
 
   applyFilterWord(keyword: string): void {
     const all = this.projectsSubject.getValue();
-
-    if (!all) {
-      this.filteredProjectsSubject.next(all);
-      return;
-    }
-
-    if (!toSearchKey(keyword)) {
-      this.filteredProjectsSubject.next(all);
-      return;
-    }
-
-    const filtered = all.filter((p) =>
-      [p.title].some((field) => includesNormalized(field, keyword))
+    this.filteredProjectsSubject.next(
+      filterByKeyword(all, keyword, [(b) => b.title])
     );
-
-    this.filteredProjectsSubject.next(filtered);
   }
 
   // ───────── PRIVATE ─────────

@@ -8,13 +8,13 @@ import {
   SimpleChanges,
   inject,
 } from '@angular/core';
+import { EventsFacade } from 'src/app/application/events.facade';
 import {
   EventModel,
   EventModelFullData,
 } from 'src/app/core/interfaces/event.interface';
 import { TypeList } from 'src/app/core/models/general.model';
 import { CalendarGridService } from 'src/app/core/services/calendar-grid.service';
-import { EventsService } from 'src/app/core/services/events.services';
 import { ImgBrokenDirective } from 'src/app/shared/directives/img-broken.directive';
 import { ItemImagePipe } from 'src/app/shared/pipe/item-img.pipe';
 import {
@@ -35,6 +35,9 @@ import {
   styleUrls: ['./calendar.component.css'],
 })
 export class CalendarComponent implements OnChanges {
+  private readonly eventsFacade = inject(EventsFacade);
+  private readonly grid = inject(CalendarGridService);
+
   @Input() events: (EventModel | EventModelFullData)[] = [];
   @Input() filterYear: number | null = null;
 
@@ -61,9 +64,6 @@ export class CalendarComponent implements OnChanges {
   currentMonth: number = new Date().getMonth();
   currentYear: number = new Date().getFullYear();
   readonly TypeList = TypeList;
-
-  private readonly eventsService = inject(EventsService);
-  private readonly grid = inject(CalendarGridService);
 
   /** Para deep-link público (opcional) */
   private pendingMultiDate: string | null = null;
@@ -183,11 +183,11 @@ export class CalendarComponent implements OnChanges {
           .filter((v): v is number => v !== null)
       )
     );
-    ids.forEach((id) => this.eventsService.prefetchEventById(id));
+    ids.forEach((id) => this.eventsFacade.prefetchEventById(id));
   }
 
   prefetchEventId(id?: number | null): void {
-    if (typeof id === 'number') this.eventsService.prefetchEventById(id);
+    if (typeof id === 'number') this.eventsFacade.prefetchEventById(id);
   }
 
   private getYearForCalendar(): number {

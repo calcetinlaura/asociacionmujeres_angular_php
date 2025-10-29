@@ -15,7 +15,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTabChangeEvent, MatTabsModule } from '@angular/material/tabs';
-import { map, take } from 'rxjs';
+import { filter, map, take, tap } from 'rxjs';
 
 import { FiltersFacade } from 'src/app/application/filters.facade';
 import { InvoicesFacade } from 'src/app/application/invoices.facade';
@@ -48,11 +48,10 @@ import { TableComponent } from 'src/app/shared/components/table/table.component'
 import { Filter } from 'src/app/core/interfaces/general.interface';
 import { InvoiceModelFullData } from 'src/app/core/interfaces/invoice.interface';
 import { ProjectModelFullData } from 'src/app/core/interfaces/project.interface';
-import { InvoicesService } from 'src/app/core/services/invoices.services';
-import { ProjectsService } from 'src/app/core/services/projects.services';
 import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
-import { ModalShowSubsidyComponent } from './components/tab-subsidy/tab-subsidies.component';
+import { count, sortByYear } from 'src/app/shared/utils/facade.utils';
+import { TabSubsidyComponent } from './components/tab-subsidy/tab-subsidies.component';
 
 type ModalItem =
   | SubsidyModel
@@ -77,7 +76,7 @@ type ModalItem =
     MatCheckboxModule,
     StickyZoneComponent,
     PageToolbarComponent,
-    ModalShowSubsidyComponent,
+    TabSubsidyComponent,
   ],
   providers: [SubsidiesService],
   templateUrl: './subsidies-page.component.html',
@@ -91,13 +90,10 @@ export class SubsidiesPageComponent implements OnInit {
   readonly filtersFacade = inject(FiltersFacade);
   readonly modalFacade = inject(ModalFacade);
   private readonly invoicesFacade = inject(InvoicesFacade);
-  private readonly invoicesService = inject(InvoicesService);
   private readonly projectsFacade = inject(ProjectsFacade);
-  private readonly projectsService = inject(ProjectsService);
-  private readonly subsidiesService = inject(SubsidiesService);
 
-  @ViewChildren(ModalShowSubsidyComponent)
-  tabSubsidies!: QueryList<ModalShowSubsidyComponent>;
+  @ViewChildren(TabSubsidyComponent)
+  tabSubsidies!: QueryList<TabSubsidyComponent>;
 
   @ViewChild('printArea', { static: false })
   printArea!: ElementRef<HTMLElement>;
@@ -243,8 +239,8 @@ export class SubsidiesPageComponent implements OnInit {
       map((v) => v ?? [])
     ),
     map: (arr) => arr.map((sub) => ({ ...sub, nameSubsidy: sub.name })),
-    sort: (arr) => this.subsidiesService.sortSubsidiesByYear(arr),
-    count: (arr) => this.subsidiesService.countSubsidies(arr),
+    sort: (arr) => sortByYear(arr),
+    count: (arr) => count(arr),
   });
 
   readonly groupedByYearSig = computed(() => {
@@ -269,15 +265,19 @@ export class SubsidiesPageComponent implements OnInit {
 
     // Suscribe para mantener tabs actualizadas
     this.subsidiesFacade.filteredSubsidies$
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((subs) => {
-        const list = (subs ?? []).map((s) => ({ ...s, nameSubsidy: s.name }));
-        const sorted = this.subsidiesService.sortSubsidiesByYear(list);
-        if (!this.showAllSubsidies) this.classifySubsidies(sorted);
-      });
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        map((subs) => (subs ?? []).map((s) => ({ ...s, nameSubsidy: s.name }))),
+        map((list) => sortByYear(list)),
+        tap((sorted) => {
+          if (!this.showAllSubsidies) this.classifySubsidies(sorted);
+        })
+      )
+      .subscribe();
 
-    // Carga inicial
-    this.filterSelected(String(this.filtersFacade.selectedSig()));
+    // Carga inicial (si no hay selección, carga todas o el año actual)
+    const selected = this.filtersFacade.selectedSig();
+    this.filterSelected(selected != null ? String(selected) : '');
   }
 
   // ───────────────────────────────
@@ -348,7 +348,9 @@ export class SubsidiesPageComponent implements OnInit {
     this.selectedIndex = event.index;
     const tab = this.visibleTabs[event.index];
     this.activeTabKey = tab ? this.makeKey(tab.item) : null;
-    setTimeout(() => this.tabSubsidies.toArray()[event.index]?.load());
+    setTimeout(() =>
+      this.tabSubsidies.toArray()[event.index]?.loadInvoicesBySubsidy()
+    );
   }
 
   // ───────────────────────────────
@@ -376,31 +378,42 @@ export class SubsidiesPageComponent implements OnInit {
   }
 
   onOpenProject(projectId: number): void {
-    this.projectsService
-      .getProjectById(projectId)
-      .pipe(take(1))
-      .subscribe({
-        next: (project) =>
-          this.modalFacade.open(
-            TypeList.Projects,
-            TypeActionModal.Show,
-            project
-          ),
-      });
+    this.projectsFacade.loadProjectById(projectId);
+
+    this.projectsFacade.selectedProject$
+      .pipe(
+        take(1),
+        // Solo abrimos el modal si hay un proyecto cargado
+        tap((project) => {
+          if (project) {
+            this.modalFacade.open(
+              TypeList.Projects,
+              TypeActionModal.Show,
+              project
+            );
+          }
+        })
+      )
+      .subscribe();
   }
 
   onOpenInvoice(invoiceId: number): void {
-    this.invoicesService
-      .getInvoiceById(invoiceId)
-      .pipe(take(1))
-      .subscribe({
-        next: (invoice) =>
+    this.invoicesFacade.loadInvoiceById(invoiceId); // maneja loader/errores dentro
+
+    this.invoicesFacade.selectedInvoice$
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        filter((inv): inv is InvoiceModelFullData => !!inv), // ignora null inicial
+        take(1), // solo la primera vez que llega la factura
+        tap((invoice) =>
           this.modalFacade.open(
             TypeList.Invoices,
             TypeActionModal.Show,
             invoice
-          ),
-      });
+          )
+        )
+      )
+      .subscribe();
   }
 
   onDelete({ type, id }: { type: TypeList; id: number }) {

@@ -1,16 +1,16 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnInit } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { distinctUntilChanged, EMPTY, map, switchMap, tap } from 'rxjs';
 
 import { EventsFacade } from 'src/app/application/events.facade';
 import { FiltersFacade } from 'src/app/application/filters.facade';
+import { MacroeventsFacade } from 'src/app/application/macroevents.facade';
 import { ModalFacade } from 'src/app/application/modal.facade';
 import { EventModel } from 'src/app/core/interfaces/event.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
-import { EventsService } from 'src/app/core/services/events.services';
 import { GeneralService } from 'src/app/core/services/generalService.service';
-import { MacroeventsService } from 'src/app/core/services/macroevents.services';
 
 import { CalendarComponent } from 'src/app/shared/components/calendar/calendar.component';
 import { FiltersComponent } from 'src/app/shared/components/filters/filters.component';
@@ -19,6 +19,7 @@ import { NoResultsComponent } from 'src/app/shared/components/no-results/no-resu
 import { SectionGenericComponent } from 'src/app/shared/components/section-generic/section-generic.component';
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
+import { sortByDate } from 'src/app/shared/utils/facade.utils';
 
 @Component({
   selector: 'app-events-page-landing',
@@ -35,12 +36,11 @@ import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
   templateUrl: './events-page-landing.component.html',
 })
 export class EventsPageLandingComponent implements OnInit {
-  // === Inyecciones ===
   readonly eventsFacade = inject(EventsFacade);
+  readonly macroeventsFacade = inject(MacroeventsFacade);
+  private readonly destroyRef = inject(DestroyRef);
   readonly modalFacade = inject(ModalFacade);
   readonly filtersFacade = inject(FiltersFacade);
-  private readonly eventsService = inject(EventsService);
-  private readonly macroeventsService = inject(MacroeventsService);
   private readonly generalService = inject(GeneralService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -59,7 +59,7 @@ export class EventsPageLandingComponent implements OnInit {
 
   // === Derivados ===
   private readonly allForCalendar$ = this.allBase$.pipe(
-    map((list) => this.eventsService.sortEventsByDate(list ?? []))
+    map((list) => sortByDate(list ?? []))
   );
 
   private readonly groupedForSection$ = this.groupedBase$.pipe(
@@ -71,7 +71,7 @@ export class EventsPageLandingComponent implements OnInit {
   // === Hooks reutilizables (compat con tu HTML) ===
   readonly calendarList = useEntityList<EventModel>({
     filtered$: this.allForCalendar$,
-    sort: (arr) => this.eventsService.sortEventsByDate(arr),
+    sort: (arr) => sortByDate(arr),
     count: (arr) => arr.length,
   });
 
@@ -112,12 +112,14 @@ export class EventsPageLandingComponent implements OnInit {
         distinctUntilChanged(),
         switchMap((id) => {
           if (!id) return EMPTY;
+
           const numericId = Number(id);
           const path = this.route.snapshot.routeConfig?.path ?? '';
           const isMacro = path.startsWith('macroevents');
 
           if (isMacro) {
-            return this.eventsService.getEventsByMacroevent(numericId).pipe(
+            // 🔹 Usa la fachada (no el service)
+            return this.eventsFacade.loadEventsByMacroevent(numericId).pipe(
               tap((events) => {
                 const y = this.pickYearFromMacro(events ?? []);
                 this.loadEvents(y);
@@ -125,7 +127,8 @@ export class EventsPageLandingComponent implements OnInit {
               })
             );
           } else {
-            return this.eventsService.getEventById(numericId).pipe(
+            // 🔹 Usa la fachada (no el service)
+            return this.eventsFacade.getEventByIdOnce(numericId).pipe(
               tap((event) => {
                 const y = new Date(event.start).getFullYear();
                 this.loadEvents(y);
@@ -133,7 +136,8 @@ export class EventsPageLandingComponent implements OnInit {
               })
             );
           }
-        })
+        }),
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe();
 
@@ -235,15 +239,29 @@ export class EventsPageLandingComponent implements OnInit {
   // === Apertura de modales ===
   onOpenEvent(ev: EventModel | number): void {
     const id = typeof ev === 'number' ? ev : ev.id;
-    this.eventsService.getEventById(id).subscribe((event) => {
-      this.modalFacade.open(TypeList.Events, TypeActionModal.Show, event);
-    });
+
+    this.eventsFacade
+      .getEventByIdOnce(id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((event) => {
+        this.modalFacade.open(TypeList.Events, TypeActionModal.Show, event);
+      });
   }
 
   onOpenMacroEvent(id: number): void {
-    this.macroeventsService.getMacroeventById(id).subscribe((macro) => {
-      this.modalFacade.open(TypeList.Macroevents, TypeActionModal.Show, macro);
-    });
+    this.macroeventsFacade
+      .getMacroeventByIdOnce(id)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap((macro) =>
+          this.modalFacade.open(
+            TypeList.Macroevents,
+            TypeActionModal.Show,
+            macro
+          )
+        )
+      )
+      .subscribe(); // nada en subscribe
   }
 
   onOpenMulti(payload: { date: Date; events: any[] }): void {

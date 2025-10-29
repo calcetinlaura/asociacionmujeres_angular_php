@@ -15,7 +15,6 @@ import { filter, map, take, tap } from 'rxjs';
 import { MoviesFacade } from 'src/app/application/movies.facade';
 import { MovieModel } from 'src/app/core/interfaces/movie.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
-import { MoviesService } from 'src/app/core/services/movies.services';
 
 import { FiltersComponent } from 'src/app/shared/components/filters/filters.component';
 import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
@@ -28,6 +27,7 @@ import { FiltersFacade } from 'src/app/application/filters.facade';
 import { ModalFacade } from 'src/app/application/modal.facade';
 import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
+import { count, sortByTitle } from 'src/app/shared/utils/facade.utils';
 
 @Component({
   selector: 'app-movies-page-landing',
@@ -46,7 +46,6 @@ import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
 export class MoviesPageLandingComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
-  private readonly moviesService = inject(MoviesService);
 
   readonly modalFacade = inject(ModalFacade);
   readonly filtersFacade = inject(FiltersFacade);
@@ -56,8 +55,8 @@ export class MoviesPageLandingComponent implements OnInit {
   readonly list = useEntityList<MovieModel>({
     filtered$: this.moviesFacade.filteredMovies$, // puede emitir null
     map: (arr) => arr,
-    sort: (arr) => this.moviesService.sortMoviesByTitle(arr),
-    count: (arr) => this.moviesService.countMovies(arr),
+    sort: (arr) => sortByTitle(arr),
+    count: (arr) => count(arr),
   });
 
   readonly totalSig = this.list.countSig;

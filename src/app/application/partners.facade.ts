@@ -4,7 +4,7 @@ import { BehaviorSubject, EMPTY, Observable } from 'rxjs';
 import { catchError, finalize, tap } from 'rxjs/operators';
 import { PartnerModel } from 'src/app/core/interfaces/partner.interface';
 import { PartnersService } from 'src/app/core/services/partners.services';
-import { includesNormalized, toSearchKey } from '../shared/utils/text.utils';
+import { filterByKeyword } from '../shared/utils/facade.utils';
 import { LoadableFacade } from './loadable.facade';
 
 @Injectable({ providedIn: 'root' })
@@ -141,22 +141,9 @@ export class PartnersFacade extends LoadableFacade {
 
   applyFilterWord(keyword: string): void {
     const all = this.partnersSubject.getValue();
-
-    if (!all) {
-      this.filteredPartnersSubject.next(all);
-      return;
-    }
-
-    if (!toSearchKey(keyword)) {
-      this.filteredPartnersSubject.next(all);
-      return;
-    }
-
-    const filtered = all.filter((partner) =>
-      [partner.name].some((field) => includesNormalized(field, keyword))
+    this.filteredPartnersSubject.next(
+      filterByKeyword(all, keyword, [(b) => b.name, (b) => b.surname])
     );
-
-    this.filteredPartnersSubject.next(filtered);
   }
 
   setCurrentFilter(year: number | null): void {

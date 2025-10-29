@@ -71,22 +71,4 @@ export class PlacesService {
   delete(id: number): Observable<any> {
     return this.generalService.deleteOverride<any>(this.apiUrl, { id });
   }
-
-  sortPlacesByTitle(places: PlaceModel[]): PlaceModel[] {
-    return places.sort((a, b) =>
-      a.name.toLowerCase().localeCompare(b.name.toLowerCase())
-    );
-  }
-
-  sortPlacesById(places: PlaceModel[]): PlaceModel[] {
-    return places.sort((a, b) => b.id - a.id);
-  }
-
-  hasResults(places: PlaceModel[] | null): boolean {
-    return !!places && places.length > 0;
-  }
-
-  countPlaces(places: PlaceModel[] | null): number {
-    return places?.length ?? 0;
-  }
 }

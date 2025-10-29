@@ -1,65 +1,48 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, inject, OnInit } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl } from '@angular/forms';
-import { BehaviorSubject, tap } from 'rxjs';
+import { Component, inject, OnInit } from '@angular/core';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { combineLatest, map, startWith } from 'rxjs';
+import { CreditorsFacade } from 'src/app/application/creditors.facade';
 import { CreditorModel } from 'src/app/core/interfaces/creditor.interface';
-import { CreditorsService } from 'src/app/core/services/creditors.services';
 
 @Component({
   standalone: true,
   selector: 'app-autocomplete',
   templateUrl: './autocomplete.component.html',
   styleUrls: ['./autocomplete.component.css'],
-  imports: [CommonModule],
+  imports: [CommonModule, ReactiveFormsModule],
 })
 export class InputSearchComponent implements OnInit {
-  private destroyRef = inject(DestroyRef);
-  creditors = new BehaviorSubject<CreditorModel[]>([]); // Cambia según tu lógica
-  filteredCreditors: CreditorModel[] = [];
-  searchControl = new FormControl(); // Control de formulario para la búsqueda
+  private readonly creditorsFacade = inject(CreditorsFacade);
 
-  constructor(private creditorsService: CreditorsService) {}
+  // Control del input
+  readonly searchControl = new FormControl<string>('');
+
+  // Resultado filtrado (stream reactivo)
+  readonly filteredCreditors$ = combineLatest([
+    this.creditorsFacade.creditors$,
+    this.searchControl.valueChanges.pipe(startWith('')),
+  ]).pipe(
+    map(([creditors, value]) => {
+      const filterValue = (value ?? '').toLowerCase().trim();
+      if (!filterValue) return creditors ?? [];
+      return creditors.filter((c) =>
+        c.company.toLowerCase().includes(filterValue)
+      );
+    })
+  );
 
   ngOnInit(): void {
-    // Cargar la lista de acreedores desde un servicio
-    this.loadCreditors();
-
-    // Escuchar cambios en el control de búsqueda
-    this.searchControl.valueChanges
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((value) => {
-          this.categoryFilterCreditors(value);
-        })
-      )
-      .subscribe();
+    // Cargamos todos los acreedores al iniciar
+    this.creditorsFacade.loadAllCreditors();
+    console.log('Acreedores cargados');
   }
 
-  loadCreditors(): void {
-    this.creditorsService
-      .getCreditors()
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tap((creditors: CreditorModel[]) => {
-          this.creditors.next(creditors); // Actualiza la lista de acreedores
-          this.filteredCreditors = creditors; // Asigna el valor actualizado a filteredCreditors
-        })
-      )
-      .subscribe();
-  }
-
-  categoryFilterCreditors(value: string): void {
-    const filterValue = value.toLowerCase();
-    this.filteredCreditors = this.creditors
-      .getValue()
-      .filter((creditor) =>
-        creditor.company.toLowerCase().includes(filterValue)
-      );
-  }
-
+  // ───────────────────────────────
+  // Selección de acreedor
+  // ───────────────────────────────
   creditorSelected(creditor: CreditorModel): void {
-    this.searchControl.setValue(creditor.company); // Ajustar el valor del campo de búsqueda
-    this.filteredCreditors = []; // Limpiar la lista de sugerencias
+    if (!creditor) return;
+    this.searchControl.setValue(creditor.company, { emitEvent: false });
   }
 }

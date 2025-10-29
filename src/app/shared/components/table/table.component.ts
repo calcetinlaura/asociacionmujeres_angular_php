@@ -19,8 +19,11 @@ import { MatSort, MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { ColumnModel } from 'src/app/core/interfaces/column.interface';
 import { ProjectModelFullData } from 'src/app/core/interfaces/project.interface';
+import {
+  MOVEMENT_LABELS,
+  SUBSIDY_NAME_LABELS,
+} from 'src/app/core/interfaces/subsidy.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
-import { SubsidiesService } from 'src/app/core/services/subsidies.services';
 import { EventPublishPillComponent } from 'src/app/modules/dashboard/pages/events/components/publish-pill/publish-pill.component';
 import {
   ActionBarComponent,
@@ -77,7 +80,6 @@ import { CircleIndicatorComponent } from '../circle-indicator/circle-indicator.c
   styleUrls: ['./table.component.css'],
 })
 export class TableComponent {
-  private readonly subsidiesService = inject(SubsidiesService);
   private _liveAnnouncer = inject(LiveAnnouncer);
   private itemImagePipe = inject(ItemImagePipe);
 
@@ -100,8 +102,8 @@ export class TableComponent {
     item: any;
   }>();
 
-  nameMovement = this.subsidiesService.movementMap;
-  nameSubsidy = this.subsidiesService.subsidiesMap;
+  nameMovement = MOVEMENT_LABELS;
+  nameSubsidy = SUBSIDY_NAME_LABELS;
 
   dataSource = new MatTableDataSource();
   readonly TypeActionModal = TypeActionModal;

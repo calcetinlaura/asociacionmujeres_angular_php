@@ -3,19 +3,21 @@ import {
   Component,
   ElementRef,
   EventEmitter,
-  inject,
   Input,
   OnChanges,
   Output,
   SimpleChanges,
   ViewChild,
+  inject,
 } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
+import { InvoicesFacade } from 'src/app/application/invoices.facade';
 import { ProjectModelFullData } from 'src/app/core/interfaces/project.interface';
-import { SubsidyModelFullData } from 'src/app/core/interfaces/subsidy.interface';
+import {
+  SUBSIDY_NAME_LABELS,
+  SubsidyModelFullData,
+} from 'src/app/core/interfaces/subsidy.interface';
 import { TypeList } from 'src/app/core/models/general.model';
-import { InvoicesService } from 'src/app/core/services/invoices.services';
-import { SubsidiesService } from 'src/app/core/services/subsidies.services';
 import { IconActionComponent } from 'src/app/shared/components/buttons/icon-action/icon-action.component';
 import { PdfPrintComponent } from 'src/app/shared/components/pdf-print/pdf-print.component';
 import { TableInvoicesComponent } from 'src/app/shared/components/table/table-invoice/table-invoice.component';
@@ -40,20 +42,22 @@ import { EurosFormatPipe } from 'src/app/shared/pipe/eurosFormat.pipe';
   styleUrl: './modal-show-subsidy.component.css',
 })
 export class ModalShowSubsidyComponent implements OnChanges {
-  private invoicesService = inject(InvoicesService);
-  private subsidiesService = inject(SubsidiesService);
+  private invoicesFacade = inject(InvoicesFacade);
 
   @Input() item!: SubsidyModelFullData;
   @Output() openProject = new EventEmitter<number>();
   @Output() openInvoice = new EventEmitter<number>();
-  nameSubsidy = this.subsidiesService.subsidiesMap;
 
   @ViewChild('pdfArea', { static: false }) pdfArea!: ElementRef<HTMLElement>;
 
+  nameSubsidy = SUBSIDY_NAME_LABELS;
   typeModal: TypeList = TypeList.Subsidies;
 
   ngOnChanges(_: SimpleChanges): void {}
 
+  // ────────────────────────────────
+  //   UTILIDADES PRESUPUESTO
+  // ────────────────────────────────
   getProjectTotalBudget(project: ProjectModelFullData): number {
     return (
       project.activities?.reduce((total, act) => {
@@ -75,28 +79,27 @@ export class ModalShowSubsidyComponent implements OnChanges {
     );
   }
 
+  // ────────────────────────────────
+  //   DESCARGA DE FACTURAS
+  // ────────────────────────────────
   downloadFilteredPdfs(includeProof: boolean = true): void {
     const data = this.item.invoices || [];
+    if (!data.length) {
+      alert('No hay facturas disponibles para descargar.');
+      return;
+    }
 
-    this.invoicesService
-      .downloadInvoicesZipFromData(data, {
-        includeProof, // true: invoice+proof | false: solo invoice
-        filename: includeProof ? 'documentos.zip' : 'facturas.zip',
-      })
-      .subscribe({
-        error: (e) => {
-          if (e?.message === 'NO_FILES') {
-            alert('No hay PDFs para descargar.');
-          } else {
-            console.error('💥 Error al descargar ZIP:', e);
-            alert('Error al descargar el ZIP. Revisa la consola.');
-          }
-        },
-      });
+    // 👉 Llamada centralizada a la FACADE
+    this.invoicesFacade.downloadFilteredPdfs(data, includeProof);
   }
+
+  // ────────────────────────────────
+  //   EVENTOS DE APERTURA
+  // ────────────────────────────────
   onOpenInvoice(id: number) {
     if (id) this.openInvoice.emit(id);
   }
+
   onOpenProject(id: number) {
     if (id) this.openProject.emit(id);
   }

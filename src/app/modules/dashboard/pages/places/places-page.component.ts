@@ -11,7 +11,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatMenuModule } from '@angular/material/menu';
-import { map } from 'rxjs';
+import { map, tap } from 'rxjs';
 
 import { PlacesFacade } from 'src/app/application/places.facade';
 import {
@@ -21,7 +21,6 @@ import {
 import { PlaceModel } from 'src/app/core/interfaces/place.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { PdfPrintService } from 'src/app/core/services/PdfPrintService.service';
-import { PlacesService } from 'src/app/core/services/places.services';
 
 import { DashboardHeaderComponent } from 'src/app/shared/components/dashboard-header/dashboard-header.component';
 import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
@@ -34,6 +33,7 @@ import { FiltersFacade } from 'src/app/application/filters.facade';
 import { ModalFacade } from 'src/app/application/modal.facade';
 import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
+import { count, sortById } from 'src/app/shared/utils/facade.utils';
 
 @Component({
   selector: 'app-places-page',
@@ -54,7 +54,6 @@ import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
 export class PlacesPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly pdfPrintService = inject(PdfPrintService);
-  private readonly placesService = inject(PlacesService);
   private readonly modalFacade = inject(ModalFacade);
   readonly placesFacade = inject(PlacesFacade);
   readonly filtersFacade = inject(FiltersFacade);
@@ -135,8 +134,8 @@ export class PlacesPageComponent implements OnInit {
         }
         return place;
       }),
-    sort: (arr) => arr,
-    count: (arr) => this.placesService.countPlaces(arr),
+    sort: (arr) => sortById(arr),
+    count: (arr) => count(arr),
   });
 
   readonly TypeList = TypeList;
@@ -203,8 +202,11 @@ export class PlacesPageComponent implements OnInit {
       : this.placesFacade.addPlace(event.formData);
 
     save$
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => this.modalFacade.close());
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap(() => this.modalFacade.close())
+      )
+      .subscribe();
   }
 
   // ──────────────────────────────────────────────────────────────────────────────

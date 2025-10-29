@@ -21,7 +21,6 @@ import {
 import { PartnerModel } from 'src/app/core/interfaces/partner.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
 import { GeneralService } from 'src/app/core/services/generalService.service';
-import { PartnersService } from 'src/app/core/services/partners.services';
 import { PdfPrintService } from 'src/app/core/services/PdfPrintService.service';
 
 import { DashboardHeaderComponent } from 'src/app/shared/components/dashboard-header/dashboard-header.component';
@@ -37,6 +36,7 @@ import { FiltersFacade } from 'src/app/application/filters.facade';
 import { ModalFacade } from 'src/app/application/modal.facade';
 import { useColumnVisibility } from 'src/app/shared/hooks/use-column-visibility';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
+import { count, sortById } from 'src/app/shared/utils/facade.utils';
 
 @Component({
   selector: 'app-partners-page',
@@ -57,7 +57,6 @@ import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
 })
 export class PartnersPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
-  private readonly partnersService = inject(PartnersService);
   private readonly generalService = inject(GeneralService);
   private readonly pdfPrintService = inject(PdfPrintService);
   private readonly modalFacade = inject(ModalFacade);
@@ -151,8 +150,8 @@ export class PartnersPageComponent implements OnInit {
 
   readonly list = useEntityList<PartnerModel>({
     filtered$: this.partnersFacade.filteredPartners$.pipe(map((v) => v ?? [])),
-    sort: (arr) => this.partnersService.sortPartnersById(arr),
-    count: (arr) => this.partnersService.countPartners(arr),
+    sort: (arr) => sortById(arr),
+    count: (arr) => count(arr),
   });
 
   readonly currentYear = this.generalService.currentYear;

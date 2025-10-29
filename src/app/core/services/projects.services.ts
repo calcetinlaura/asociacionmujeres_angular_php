@@ -4,7 +4,6 @@ import { Observable } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { GeneralService } from 'src/app/core/services/generalService.service';
 import { environments } from 'src/environments/environments';
-import { ProjectModel } from '../interfaces/project.interface';
 
 @Injectable({
   providedIn: 'root',
@@ -45,23 +44,5 @@ export class ProjectsService {
 
   delete(id: number): Observable<any> {
     return this.generalService.deleteOverride<any>(this.apiUrl, { id });
-  }
-
-  sortProjectsByTitle(projects: ProjectModel[]): ProjectModel[] {
-    return projects.sort((a, b) =>
-      a.title.toLowerCase().localeCompare(b.title.toLowerCase())
-    );
-  }
-
-  sortProjectsById(projects: ProjectModel[]): ProjectModel[] {
-    return projects.sort((a, b) => b.id - a.id);
-  }
-
-  hasResults(projects: ProjectModel[] | null): boolean {
-    return !!projects && projects.length > 0;
-  }
-
-  countProjects(projects: ProjectModel[] | null): number {
-    return projects?.length ?? 0;
   }
 }

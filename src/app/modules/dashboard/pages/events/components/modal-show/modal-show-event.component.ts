@@ -8,13 +8,13 @@ import {
   inject,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { finalize } from 'rxjs/operators';
+import { finalize, tap } from 'rxjs/operators';
+import { EventsFacade } from 'src/app/application/events.facade';
 import {
   EnumStatusEvent,
   EventModelFullData,
 } from 'src/app/core/interfaces/event.interface';
 import { TypeList } from 'src/app/core/models/general.model';
-import { EventsService } from 'src/app/core/services/events.services';
 import { ImageZoomOverlayComponent } from 'src/app/shared/components/image-zoom-overlay/image-zoom-overlay.component';
 import { MapComponent } from 'src/app/shared/components/map/map.component';
 import { SocialMediaShareComponent } from 'src/app/shared/components/social-media/social-media-share.component';
@@ -64,7 +64,7 @@ import { EventPublishPillComponent } from '../publish-pill/publish-pill.componen
   styleUrls: ['./modal-show-event.component.css'],
 })
 export class ModalShowEventComponent {
-  private readonly eventsService = inject(EventsService);
+  private readonly eventsFacade = inject(EventsFacade);
   private readonly destroyRef = inject(DestroyRef);
 
   @Input() item!: Partial<EventModelFullData> & { id: number };
@@ -77,20 +77,21 @@ export class ModalShowEventComponent {
   dictType = DictType;
   showZoom = false;
 
-  ngOnChanges() {
-    // Si viene parcial, completa datos mostrando spinner
+  ngOnChanges(): void {
     if (this.item?.id && (!this.item.title || !this.item.start)) {
       this.loading = true;
-      this.eventsService
-        .getEventById(this.item.id)
+
+      this.eventsFacade.loadEventById(this.item.id);
+
+      this.eventsFacade.selectedEvent$
         .pipe(
           takeUntilDestroyed(this.destroyRef),
+          tap((ev) => {
+            if (ev) this.item = ev;
+          }),
           finalize(() => (this.loading = false))
         )
-        .subscribe({
-          next: (ev) => (this.item = ev),
-          error: () => {},
-        });
+        .subscribe();
     }
   }
 

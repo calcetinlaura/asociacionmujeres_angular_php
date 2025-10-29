@@ -5,7 +5,6 @@ import { ModalFacade } from 'src/app/application/modal.facade';
 import { PodcastsFacade } from 'src/app/application/podcasts.facade';
 import { PodcastModel } from 'src/app/core/interfaces/podcast.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
-import { PodcastsService } from 'src/app/core/services/podcasts.services';
 
 import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
 import { NoResultsComponent } from 'src/app/shared/components/no-results/no-results.component';
@@ -15,6 +14,7 @@ import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loadi
 import { FiltersFacade } from 'src/app/application/filters.facade';
 import { ModalShellComponent } from 'src/app/shared/components/modal/modal-shell.component';
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
+import { count, sortByTitle } from 'src/app/shared/utils/facade.utils';
 
 @Component({
   selector: 'app-podcasts-page-landing',
@@ -30,8 +30,6 @@ import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
   templateUrl: './podcasts-page-landing.component.html',
 })
 export class PodcastsPageLandingComponent implements OnInit {
-  // ===== Inyección de dependencias =====
-  private readonly podcastsService = inject(PodcastsService);
   readonly podcastsFacade = inject(PodcastsFacade);
   readonly modalFacade = inject(ModalFacade);
   readonly filtersFacade = inject(FiltersFacade);
@@ -42,8 +40,8 @@ export class PodcastsPageLandingComponent implements OnInit {
   readonly list = useEntityList<PodcastModel>({
     filtered$: this.podcastsFacade.filteredPodcasts$,
     map: (arr) => arr,
-    sort: (arr) => this.podcastsService.sortPodcastsByTitle(arr),
-    count: (arr) => this.podcastsService.countPodcasts(arr),
+    sort: (arr) => sortByTitle(arr),
+    count: (arr) => count(arr),
   });
 
   readonly totalSig = this.list.countSig;

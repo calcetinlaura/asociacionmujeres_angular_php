@@ -18,7 +18,6 @@ import { ModalFacade } from 'src/app/application/modal.facade';
 
 import { BookModel } from 'src/app/core/interfaces/book.interface';
 import { TypeActionModal, TypeList } from 'src/app/core/models/general.model';
-import { BooksService } from 'src/app/core/services/books.services';
 
 import { FiltersComponent } from 'src/app/shared/components/filters/filters.component';
 import { InputSearchComponent } from 'src/app/shared/components/inputs/input-search/input-search.component';
@@ -28,6 +27,7 @@ import { SectionGenericComponent } from 'src/app/shared/components/section-gener
 import { SpinnerLoadingComponent } from 'src/app/shared/components/spinner-loading/spinner-loading.component';
 
 import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
+import { count, sortByTitle } from 'src/app/shared/utils/facade.utils';
 
 @Component({
   selector: 'app-books-page-landing',
@@ -46,7 +46,6 @@ import { useEntityList } from 'src/app/shared/hooks/use-entity-list';
 export class BooksPageLandingComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
-  private readonly booksService = inject(BooksService);
 
   readonly modalFacade = inject(ModalFacade);
   readonly filtersFacade = inject(FiltersFacade);
@@ -56,8 +55,8 @@ export class BooksPageLandingComponent implements OnInit {
   readonly list = useEntityList<BookModel>({
     filtered$: this.booksFacade.filteredBooks$,
     map: (arr) => arr,
-    sort: (arr) => this.booksService.sortBooksByTitle(arr),
-    count: (arr) => this.booksService.countBooks(arr),
+    sort: (arr) => sortByTitle(arr),
+    count: (arr) => count(arr),
   });
 
   readonly totalSig = this.list.countSig;

@@ -2,9 +2,17 @@ import { inject, Injectable } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, EMPTY, Observable, Subject } from 'rxjs';
 import { catchError, finalize, tap } from 'rxjs/operators';
-import { InvoiceModelFullData } from 'src/app/core/interfaces/invoice.interface';
+import {
+  InvoiceModelFullData,
+  InvoicePdf,
+} from 'src/app/core/interfaces/invoice.interface';
 import { InvoicesService } from 'src/app/core/services/invoices.services';
-import { includesNormalized, toSearchKey } from '../shared/utils/text.utils';
+import {
+  buildInvoicePdfPaths,
+  downloadBlobFile,
+  filterByKeyword,
+  sortInvoicesByDate,
+} from '../shared/utils/facade.utils';
 import { LoadableFacade } from './loadable.facade';
 
 @Injectable({ providedIn: 'root' })
@@ -20,7 +28,6 @@ export class InvoicesFacade extends LoadableFacade {
   >(null);
   private readonly selectedInvoiceSubject =
     new BehaviorSubject<InvoiceModelFullData | null>(null);
-
   private readonly currentFilterSubject = new BehaviorSubject<string | null>(
     null
   );
@@ -29,7 +36,6 @@ export class InvoicesFacade extends LoadableFacade {
   private readonly listLoadingSubject = new BehaviorSubject<boolean>(false);
   private readonly itemLoadingSubject = new BehaviorSubject<boolean>(false);
 
-  // ───────── EVENTOS ─────────
   private readonly savedSubject = new Subject<InvoiceModelFullData>();
   private readonly deletedSubject = new Subject<number>();
 
@@ -41,7 +47,6 @@ export class InvoicesFacade extends LoadableFacade {
   readonly tabFilter$ = this.tabFilterSubject.asObservable();
   readonly saved$ = this.savedSubject.asObservable();
   readonly deleted$ = this.deletedSubject.asObservable();
-
   readonly isLoadingList$ = this.listLoadingSubject.asObservable();
   readonly isLoadingItem$ = this.itemLoadingSubject.asObservable();
 
@@ -54,14 +59,11 @@ export class InvoicesFacade extends LoadableFacade {
   }
 
   private reloadCurrentFilter(): void {
-    if (this.currentFilter === null) {
-      this.loadAllInvoices();
-    } else {
-      this.loadInvoicesByYear(this.currentFilter);
-    }
+    if (this.currentFilter === null) this.loadAllInvoices();
+    else this.loadInvoicesByYear(this.currentFilter);
   }
 
-  // ───────── LISTA → isLoadingList$ ─────────
+  // ───────── LISTA ─────────
   loadAllInvoices(): void {
     this.setCurrentFilter(null);
     this.listLoadingSubject.next(true);
@@ -115,7 +117,7 @@ export class InvoicesFacade extends LoadableFacade {
       .subscribe();
   }
 
-  // ───────── ITEM → isLoadingItem$ ─────────
+  // ───────── ITEM ─────────
   loadInvoiceById(id: number): void {
     this.itemLoadingSubject.next(true);
 
@@ -133,7 +135,7 @@ export class InvoicesFacade extends LoadableFacade {
       .subscribe();
   }
 
-  // ───────── CRUD (isLoadingItem$) ─────────
+  // ───────── CRUD ─────────
   addInvoice(invoice: FormData): Observable<InvoiceModelFullData> {
     this.itemLoadingSubject.next(true);
 
@@ -188,33 +190,46 @@ export class InvoicesFacade extends LoadableFacade {
       .subscribe();
   }
 
-  // ───────── FILTROS / BÚSQUEDAS ─────────
+  // ───────── DESCARGAS ZIP ─────────
+  downloadFilteredPdfs(data: InvoicePdf[], includeProof: boolean = true): void {
+    if (!Array.isArray(data) || data.length === 0) {
+      alert('No hay facturas disponibles para descargar.');
+      return;
+    }
+
+    const filename = includeProof ? 'documentos.zip' : 'facturas.zip';
+    const paths = buildInvoicePdfPaths(data, includeProof);
+
+    if (!paths.length) {
+      alert('No hay PDFs para descargar.');
+      return;
+    }
+
+    this.invoicesService
+      .downloadFilteredPdfs(paths)
+      .pipe(
+        tap((blob) => downloadBlobFile(blob, filename)),
+        catchError((err) => {
+          console.error('💥 Error al descargar ZIP:', err);
+          this.generalService.handleHttpError(err);
+          alert('Error al descargar el ZIP. Revisa la consola.');
+          return EMPTY;
+        })
+      )
+      .subscribe();
+  }
+
+  // ───────── FILTROS ─────────
   applyFilterWord(keyword: string): void {
     const list = this.invoicesSubject.getValue();
-    const key = toSearchKey(keyword);
-
-    if (!list) {
-      this.filteredInvoicesSubject.next(list);
-      return;
-    }
-
-    if (!key) {
-      this.filteredInvoicesSubject.next(list);
-      return;
-    }
-
-    const filtered = list.filter((inv) =>
-      [
-        inv.creditor_company,
-        inv.description,
-        inv.creditor_contact,
-        inv.creditor_cif,
-      ]
-        .filter(Boolean)
-        .some((field) => includesNormalized(field!, key))
+    this.filteredInvoicesSubject.next(
+      filterByKeyword(list, keyword, [
+        (inv) => inv.creditor_company,
+        (inv) => inv.description,
+        (inv) => inv.creditor_contact,
+        (inv) => inv.creditor_cif,
+      ])
     );
-
-    this.filteredInvoicesSubject.next(filtered);
   }
 
   applyFilterWordTab(typeInvoice: string): void {
@@ -253,7 +268,7 @@ export class InvoicesFacade extends LoadableFacade {
 
   private updateInvoiceState(invoices: InvoiceModelFullData[] | null): void {
     if (!invoices) return;
-    const sorted = this.invoicesService.sortInvoicesByDate(invoices);
+    const sorted = sortInvoicesByDate(invoices);
     this.invoicesSubject.next(sorted);
     this.filteredInvoicesSubject.next(sorted);
   }

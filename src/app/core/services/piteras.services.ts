@@ -2,7 +2,6 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { PiteraModel } from 'src/app/core/interfaces/pitera.interface';
 import { GeneralService } from 'src/app/core/services/generalService.service';
 import { environments } from 'src/environments/environments';
 
@@ -40,21 +39,5 @@ export class PiterasService {
 
   delete(id: number): Observable<any> {
     return this.generalService.deleteOverride<any>(this.apiUrl, { id });
-  }
-
-  sortPiterasByYear(piteras: PiteraModel[]): PiteraModel[] {
-    return piteras.sort((a, b) => Number(b.year) - Number(a.year));
-  }
-
-  sortPiterasById(piteras: PiteraModel[]): PiteraModel[] {
-    return piteras.sort((a, b) => b.id - a.id);
-  }
-
-  hasResults(piteras: PiteraModel[] | null): boolean {
-    return !!piteras && piteras.length > 0;
-  }
-
-  countPiteras(piteras: PiteraModel[] | null): number {
-    return piteras?.length ?? 0;
   }
 }
