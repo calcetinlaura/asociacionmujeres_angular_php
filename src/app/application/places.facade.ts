@@ -1,13 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import {
-  BehaviorSubject,
-  catchError,
-  finalize,
-  map,
-  Observable,
-  tap,
-} from 'rxjs';
+import { BehaviorSubject, EMPTY, Observable } from 'rxjs';
+import { catchError, finalize, map, tap } from 'rxjs/operators';
 import { PlaceModel } from 'src/app/core/interfaces/place.interface';
 import { PlacesService } from 'src/app/core/services/places.services';
 import { includesNormalized, toSearchKey } from '../shared/utils/text.utils';
@@ -17,7 +11,7 @@ import { LoadableFacade } from './loadable.facade';
 export class PlacesFacade extends LoadableFacade {
   private readonly placesService = inject(PlacesService);
 
-  // State
+  // ───────── STATE ─────────
   private readonly placesSubject = new BehaviorSubject<PlaceModel[] | null>(
     null
   );
@@ -27,65 +21,81 @@ export class PlacesFacade extends LoadableFacade {
   private readonly selectedPlaceSubject =
     new BehaviorSubject<PlaceModel | null>(null);
 
-  // NEW: loaders separados
   private readonly listLoadingSubject = new BehaviorSubject<boolean>(false);
   private readonly itemLoadingSubject = new BehaviorSubject<boolean>(false);
 
-  // Streams públicos
+  // ───────── PUBLIC STREAMS ─────────
   readonly places$ = this.placesSubject.asObservable();
   readonly filteredPlaces$ = this.filteredPlacesSubject.asObservable();
   readonly selectedPlace$ = this.selectedPlaceSubject.asObservable();
-
-  // NEW: usa estos en la UI
   readonly isLoadingList$ = this.listLoadingSubject.asObservable();
   readonly isLoadingItem$ = this.itemLoadingSubject.asObservable();
 
-  // ───────── LISTA (isLoadingList$)
+  // ───────── LISTAS → isLoadingList$ ─────────
   loadAllPlaces(): void {
     this.listLoadingSubject.next(true);
+
     this.placesService
       .getPlaces()
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        catchError((err) => this.generalService.handleHttpError(err)),
+        tap((places) => this.updatePlaceState(places)),
+        catchError((err) => {
+          this.generalService.handleHttpError(err);
+          return EMPTY;
+        }),
         finalize(() => this.listLoadingSubject.next(false))
       )
-      .subscribe((places) => this.updatePlaceState(places));
+      .subscribe();
   }
 
   loadPlacesByManagement(management: string): void {
     this.listLoadingSubject.next(true);
+
     this.placesService
       .getPlacesByManagement(management)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        catchError((err) => this.generalService.handleHttpError(err)),
+        tap((places) => this.updatePlaceState(places)),
+        catchError((err) => {
+          this.generalService.handleHttpError(err);
+          return EMPTY;
+        }),
         finalize(() => this.listLoadingSubject.next(false))
       )
-      .subscribe((places) => this.updatePlaceState(places));
+      .subscribe();
   }
 
   loadPlacesByType(type: string): void {
     this.listLoadingSubject.next(true);
+
     this.placesService
       .getPlacesByType(type)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        catchError((err) => this.generalService.handleHttpError(err)),
+        tap((places) => this.updatePlaceState(places)),
+        catchError((err) => {
+          this.generalService.handleHttpError(err);
+          return EMPTY;
+        }),
         finalize(() => this.listLoadingSubject.next(false))
       )
-      .subscribe((places) => this.updatePlaceState(places));
+      .subscribe();
   }
 
   /**
-   * Útil para modales/listas dependientes.
-   * IMPORTANTE: no actualiza el estado global para evitar "recargas por detrás".
+   * Útil para modales o listas dependientes.
+   * No actualiza el estado global para evitar recargas no deseadas.
    */
   loadPlacesByTown(town: string): Observable<PlaceModel[]> {
     this.itemLoadingSubject.next(true);
+
     return this.placesService.getPlacesByTown(town).pipe(
       takeUntilDestroyed(this.destroyRef),
-      catchError((err) => this.generalService.handleHttpError(err)),
+      catchError((err) => {
+        this.generalService.handleHttpError(err);
+        return EMPTY;
+      }),
       finalize(() => this.itemLoadingSubject.next(false))
     );
   }
@@ -94,8 +104,6 @@ export class PlacesFacade extends LoadableFacade {
     placeId: number,
     salaId?: number
   ): Observable<{ salas: any[]; selectedSala?: any }> {
-    // Si quieres mostrar spinner en la modal al cargar salas, descomenta las 2 líneas de itemLoading
-    // this.itemLoadingSubject.next(true);
     return this.placesService.getSalasByPlaceId(placeId).pipe(
       map((salas) => {
         const selectedSala = salaId
@@ -103,65 +111,86 @@ export class PlacesFacade extends LoadableFacade {
           : undefined;
         return { salas, selectedSala };
       })
-      // finalize(() => this.itemLoadingSubject.next(false))
     );
   }
 
-  // ───────── ITEM (isLoadingItem$)
+  // ───────── ITEM → isLoadingItem$ ─────────
   loadPlaceById(id: number): void {
     this.itemLoadingSubject.next(true);
+
     this.placesService
       .getPlaceById(id)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        catchError((err) => this.generalService.handleHttpError(err)),
+        tap((place) => this.selectedPlaceSubject.next(place)),
+        catchError((err) => {
+          this.generalService.handleHttpError(err);
+          return EMPTY;
+        }),
         finalize(() => this.itemLoadingSubject.next(false))
       )
-      .subscribe((place) => this.selectedPlaceSubject.next(place));
+      .subscribe();
   }
 
+  // ───────── CRUD ─────────
   addPlace(place: FormData): Observable<FormData> {
     this.itemLoadingSubject.next(true);
+
     return this.placesService.add(place).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.loadAllPlaces()),
-      catchError((err) => this.generalService.handleHttpError(err)),
+      catchError((err) => {
+        this.generalService.handleHttpError(err);
+        return EMPTY;
+      }),
       finalize(() => this.itemLoadingSubject.next(false))
     );
   }
 
   editPlace(place: FormData): Observable<FormData> {
     this.itemLoadingSubject.next(true);
+
     return this.placesService.edit(place).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.loadAllPlaces()),
-      catchError((err) => this.generalService.handleHttpError(err)),
+      catchError((err) => {
+        this.generalService.handleHttpError(err);
+        return EMPTY;
+      }),
       finalize(() => this.itemLoadingSubject.next(false))
     );
   }
 
   deletePlace(id: number): void {
     this.itemLoadingSubject.next(true);
+
     this.placesService
       .delete(id)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        catchError((err) => this.generalService.handleHttpError(err)),
+        tap(() => this.loadAllPlaces()),
+        catchError((err) => {
+          this.generalService.handleHttpError(err);
+          return EMPTY;
+        }),
         finalize(() => this.itemLoadingSubject.next(false))
       )
-      .subscribe(() => this.loadAllPlaces());
+      .subscribe();
   }
 
+  // ───────── HELPERS ─────────
   clearSelectedPlace(): void {
     this.selectedPlaceSubject.next(null);
   }
 
   applyFilterWord(keyword: string): void {
     const all = this.placesSubject.getValue();
+
     if (!all) {
       this.filteredPlacesSubject.next(all);
       return;
     }
+
     if (!toSearchKey(keyword)) {
       this.filteredPlacesSubject.next(all);
       return;
@@ -170,9 +199,11 @@ export class PlacesFacade extends LoadableFacade {
     const filtered = all.filter((place) =>
       [place.name].some((field) => includesNormalized(field, keyword))
     );
+
     this.filteredPlacesSubject.next(filtered);
   }
 
+  // ───────── PRIVATE ─────────
   private updatePlaceState(places: PlaceModel[]): void {
     const sorted = [...places].sort((a, b) => a.name.localeCompare(b.name));
     this.placesSubject.next(sorted);

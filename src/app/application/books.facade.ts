@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, catchError, finalize, Observable, tap } from 'rxjs';
+import { BehaviorSubject, EMPTY, Observable } from 'rxjs';
+import { catchError, finalize, tap } from 'rxjs/operators';
 import { BookModel } from 'src/app/core/interfaces/book.interface';
 import { BooksService } from 'src/app/core/services/books.services';
 import { includesNormalized, toSearchKey } from '../shared/utils/text.utils';
@@ -14,9 +15,7 @@ export enum BooksFilter {
 export class BooksFacade extends LoadableFacade {
   private readonly booksService = inject(BooksService);
 
-  // ─────────────────────────────────────────────
-  // State
-  // ─────────────────────────────────────────────
+  // ───────── STATE ─────────
   private readonly booksSubject = new BehaviorSubject<BookModel[] | null>(null);
   private readonly filteredBooksSubject = new BehaviorSubject<
     BookModel[] | null
@@ -25,37 +24,35 @@ export class BooksFacade extends LoadableFacade {
     null
   );
 
-  // NEW: loaders separados
   private readonly listLoadingSubject = new BehaviorSubject<boolean>(false);
   private readonly itemLoadingSubject = new BehaviorSubject<boolean>(false);
 
-  // ─────────────────────────────────────────────
-  // Public streams
-  // ─────────────────────────────────────────────
+  // ───────── PUBLIC STREAMS ─────────
   readonly books$ = this.booksSubject.asObservable();
   readonly filteredBooks$ = this.filteredBooksSubject.asObservable();
   readonly selectedBook$ = this.selectedBookSubject.asObservable();
-
-  // NEW: usa estos en la UI
   readonly isLoadingList$ = this.listLoadingSubject.asObservable();
   readonly isLoadingItem$ = this.itemLoadingSubject.asObservable();
 
   private currentFilter: string | null = null;
 
-  // ─────────────────────────────────────────────
-  // Cargas de LISTA  → isLoadingList$
-  // ─────────────────────────────────────────────
+  // ───────── LISTAS → isLoadingList$ ─────────
   loadAllBooks(): void {
     this.setCurrentFilter(null);
     this.listLoadingSubject.next(true);
+
     this.booksService
       .getBooks()
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        catchError((err) => this.generalService.handleHttpError(err)),
+        tap((books) => this.updateBookState(books)),
+        catchError((err) => {
+          this.generalService.handleHttpError(err);
+          return EMPTY;
+        }),
         finalize(() => this.listLoadingSubject.next(false))
       )
-      .subscribe((books) => this.updateBookState(books));
+      .subscribe();
   }
 
   loadBooksByFilter(filter: string): void {
@@ -68,90 +65,120 @@ export class BooksFacade extends LoadableFacade {
 
   loadBooksByLatest(): void {
     this.listLoadingSubject.next(true);
+
     this.booksService
       .getBooksByLatest()
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        catchError((err) => this.generalService.handleHttpError(err)),
+        tap((books) => this.updateBookState(books)),
+        catchError((err) => {
+          this.generalService.handleHttpError(err);
+          return EMPTY;
+        }),
         finalize(() => this.listLoadingSubject.next(false))
       )
-      .subscribe((books) => this.updateBookState(books));
+      .subscribe();
   }
 
   loadBooksByGender(gender: string): void {
     this.listLoadingSubject.next(true);
+
     this.booksService
       .getBooksByGender(gender)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        catchError((err) => this.generalService.handleHttpError(err)),
+        tap((books) => this.updateBookState(books)),
+        catchError((err) => {
+          this.generalService.handleHttpError(err);
+          return EMPTY;
+        }),
         finalize(() => this.listLoadingSubject.next(false))
       )
-      .subscribe((books) => this.updateBookState(books));
+      .subscribe();
   }
 
   loadBooksByYear(year: number): void {
     this.listLoadingSubject.next(true);
+
     this.booksService
       .getBooksByYear(year)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        catchError((err) => this.generalService.handleHttpError(err)),
+        tap((books) => this.updateBookState(books)),
+        catchError((err) => {
+          this.generalService.handleHttpError(err);
+          return EMPTY;
+        }),
         finalize(() => this.listLoadingSubject.next(false))
       )
-      .subscribe((books) => this.updateBookState(books));
+      .subscribe();
   }
 
-  // ─────────────────────────────────────────────
-  // Cargas/acciones de ITEM  → isLoadingItem$
-  // ─────────────────────────────────────────────
+  // ───────── ITEM → isLoadingItem$ ─────────
   loadBookById(id: number): void {
     this.itemLoadingSubject.next(true);
+
     this.booksService
       .getBookById(id)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        catchError((err) => this.generalService.handleHttpError(err)),
+        tap((book) => this.selectedBookSubject.next(book)),
+        catchError((err) => {
+          this.generalService.handleHttpError(err);
+          return EMPTY;
+        }),
         finalize(() => this.itemLoadingSubject.next(false))
       )
-      .subscribe((book) => this.selectedBookSubject.next(book));
+      .subscribe();
   }
 
+  // ───────── CRUD ─────────
   addBook(book: FormData): Observable<FormData> {
     this.itemLoadingSubject.next(true);
+
     return this.booksService.add(book).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.reloadCurrentFilter()),
-      catchError((err) => this.generalService.handleHttpError(err)),
+      catchError((err) => {
+        this.generalService.handleHttpError(err);
+        return EMPTY;
+      }),
       finalize(() => this.itemLoadingSubject.next(false))
     );
   }
 
   editBook(book: FormData): Observable<FormData> {
     this.itemLoadingSubject.next(true);
+
     return this.booksService.edit(book).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.reloadCurrentFilter()),
-      catchError((err) => this.generalService.handleHttpError(err)),
+      catchError((err) => {
+        this.generalService.handleHttpError(err);
+        return EMPTY;
+      }),
       finalize(() => this.itemLoadingSubject.next(false))
     );
   }
 
   deleteBook(id: number): void {
     this.itemLoadingSubject.next(true);
+
     this.booksService
       .delete(id)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        catchError((err) => this.generalService.handleHttpError(err)),
+        tap(() => this.reloadCurrentFilter()),
+        catchError((err) => {
+          this.generalService.handleHttpError(err);
+          return EMPTY;
+        }),
         finalize(() => this.itemLoadingSubject.next(false))
       )
-      .subscribe(() => this.reloadCurrentFilter());
+      .subscribe();
   }
 
-  // ─────────────────────────────────────────────
-  // Utilidades
-  // ─────────────────────────────────────────────
+  // ───────── HELPERS ─────────
   clearSelectedBook(): void {
     this.selectedBookSubject.next(null);
   }
@@ -183,9 +210,9 @@ export class BooksFacade extends LoadableFacade {
   private reloadCurrentFilter(): void {
     if (this.currentFilter === null) {
       this.loadAllBooks();
-      return;
+    } else {
+      this.loadBooksByFilter(this.currentFilter);
     }
-    this.loadBooksByFilter(this.currentFilter);
   }
 
   private updateBookState(books: BookModel[]): void {

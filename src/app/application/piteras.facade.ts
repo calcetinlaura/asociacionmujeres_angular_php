@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, catchError, finalize, Observable, tap } from 'rxjs';
+import { BehaviorSubject, EMPTY, Observable } from 'rxjs';
+import { catchError, finalize, tap } from 'rxjs/operators';
 import { PiteraModel } from 'src/app/core/interfaces/pitera.interface';
 import { PiterasService } from 'src/app/core/services/piteras.services';
 import { includesNormalized, toSearchKey } from '../shared/utils/text.utils';
@@ -10,7 +11,7 @@ import { LoadableFacade } from './loadable.facade';
 export class PiterasFacade extends LoadableFacade {
   private readonly piterasService = inject(PiterasService);
 
-  // State propio
+  // ───────── STATE ─────────
   private readonly piterasSubject = new BehaviorSubject<PiteraModel[] | null>(
     null
   );
@@ -20,87 +21,111 @@ export class PiterasFacade extends LoadableFacade {
   private readonly selectedPiteraSubject =
     new BehaviorSubject<PiteraModel | null>(null);
 
-  // NEW: loaders separados
   private readonly listLoadingSubject = new BehaviorSubject<boolean>(false);
   private readonly itemLoadingSubject = new BehaviorSubject<boolean>(false);
 
-  // Streams públicos
+  // ───────── PUBLIC STREAMS ─────────
   readonly piteras$ = this.piterasSubject.asObservable();
   readonly filteredPiteras$ = this.filteredPiterasSubject.asObservable();
   readonly selectedPitera$ = this.selectedPiteraSubject.asObservable();
-
-  // NEW: usa estos en la UI
   readonly isLoadingList$ = this.listLoadingSubject.asObservable();
   readonly isLoadingItem$ = this.itemLoadingSubject.asObservable();
 
-  // ---------- API pública
-
+  // ───────── LISTA → isLoadingList$ ─────────
   loadAllPiteras(): void {
     this.listLoadingSubject.next(true);
+
     this.piterasService
       .getPiteras()
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        catchError((err) => this.generalService.handleHttpError(err)),
+        tap((piteras) => this.updatePiteraState(piteras)),
+        catchError((err) => {
+          this.generalService.handleHttpError(err);
+          return EMPTY;
+        }),
         finalize(() => this.listLoadingSubject.next(false))
       )
-      .subscribe((piteras) => this.updatePiteraState(piteras));
+      .subscribe();
   }
 
+  // ───────── ITEM → isLoadingItem$ ─────────
   loadPiteraById(id: number): void {
     this.itemLoadingSubject.next(true);
+
     this.piterasService
       .getPiteraById(id)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        catchError((err) => this.generalService.handleHttpError(err)),
+        tap((pitera) => this.selectedPiteraSubject.next(pitera)),
+        catchError((err) => {
+          this.generalService.handleHttpError(err);
+          return EMPTY;
+        }),
         finalize(() => this.itemLoadingSubject.next(false))
       )
-      .subscribe((pitera) => this.selectedPiteraSubject.next(pitera));
+      .subscribe();
   }
 
+  // ───────── CRUD ─────────
   addPitera(pitera: FormData): Observable<FormData> {
     this.itemLoadingSubject.next(true);
+
     return this.piterasService.add(pitera).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.loadAllPiteras()),
-      catchError((err) => this.generalService.handleHttpError(err)),
+      catchError((err) => {
+        this.generalService.handleHttpError(err);
+        return EMPTY;
+      }),
       finalize(() => this.itemLoadingSubject.next(false))
     );
   }
 
   editPitera(pitera: FormData): Observable<FormData> {
     this.itemLoadingSubject.next(true);
+
     return this.piterasService.edit(pitera).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.loadAllPiteras()),
-      catchError((err) => this.generalService.handleHttpError(err)),
+      catchError((err) => {
+        this.generalService.handleHttpError(err);
+        return EMPTY;
+      }),
       finalize(() => this.itemLoadingSubject.next(false))
     );
   }
 
   deletePitera(id: number): void {
     this.itemLoadingSubject.next(true);
+
     this.piterasService
       .delete(id)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        catchError((err) => this.generalService.handleHttpError(err)),
+        tap(() => this.loadAllPiteras()),
+        catchError((err) => {
+          this.generalService.handleHttpError(err);
+          return EMPTY;
+        }),
         finalize(() => this.itemLoadingSubject.next(false))
       )
-      .subscribe(() => this.loadAllPiteras());
+      .subscribe();
   }
 
+  // ───────── HELPERS ─────────
   clearSelectedPitera(): void {
     this.selectedPiteraSubject.next(null);
   }
 
   applyFilterWord(keyword: string): void {
     const all = this.piterasSubject.getValue();
+
     if (!all) {
       this.filteredPiterasSubject.next(all);
       return;
     }
+
     if (!toSearchKey(keyword)) {
       this.filteredPiterasSubject.next(all);
       return;
@@ -109,10 +134,11 @@ export class PiterasFacade extends LoadableFacade {
     const filtered = all.filter((p) =>
       [p.title, p.theme].some((field) => includesNormalized(field, keyword))
     );
+
     this.filteredPiterasSubject.next(filtered);
   }
 
-  // ---------- Privado / utilidades
+  // ───────── PRIVATE UTILS ─────────
   private updatePiteraState(piteras: PiteraModel[]): void {
     this.piterasSubject.next(piteras);
     this.filteredPiterasSubject.next(piteras);

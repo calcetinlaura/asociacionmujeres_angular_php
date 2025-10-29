@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, EMPTY, Observable } from 'rxjs';
 import { catchError, finalize, tap } from 'rxjs/operators';
 import { PartnerModel } from 'src/app/core/interfaces/partner.interface';
 import { PartnersService } from 'src/app/core/services/partners.services';
@@ -11,7 +11,7 @@ import { LoadableFacade } from './loadable.facade';
 export class PartnersFacade extends LoadableFacade {
   private readonly partnersService = inject(PartnersService);
 
-  // Estado
+  // ───────── STATE ─────────
   private readonly partnersSubject = new BehaviorSubject<PartnerModel[] | null>(
     null
   );
@@ -21,104 +21,132 @@ export class PartnersFacade extends LoadableFacade {
   private readonly selectedPartnerSubject =
     new BehaviorSubject<PartnerModel | null>(null);
 
-  // NEW: loaders separados
   private readonly listLoadingSubject = new BehaviorSubject<boolean>(false);
   private readonly itemLoadingSubject = new BehaviorSubject<boolean>(false);
 
-  // Streams públicos
+  // ───────── PUBLIC STREAMS ─────────
   readonly partners$ = this.partnersSubject.asObservable();
   readonly filteredPartners$ = this.filteredPartnersSubject.asObservable();
   readonly selectedPartner$ = this.selectedPartnerSubject.asObservable();
-
-  // NEW: usa estos en la UI
   readonly isLoadingList$ = this.listLoadingSubject.asObservable();
   readonly isLoadingItem$ = this.itemLoadingSubject.asObservable();
 
   private currentFilter: number | null = null;
 
-  // ─────────── LISTA → isLoadingList$
+  // ───────── LISTAS → isLoadingList$ ─────────
   loadAllPartners(): void {
     this.setCurrentFilter(null);
     this.listLoadingSubject.next(true);
+
     this.partnersService
       .getPartners()
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        catchError((err) => this.generalService.handleHttpError(err)),
+        tap((partners) => this.updatePartnerState(partners)),
+        catchError((err) => {
+          this.generalService.handleHttpError(err);
+          return EMPTY;
+        }),
         finalize(() => this.listLoadingSubject.next(false))
       )
-      .subscribe((partners) => this.updatePartnerState(partners));
+      .subscribe();
   }
 
   loadPartnersByYear(year: number): void {
     this.setCurrentFilter(year);
     this.listLoadingSubject.next(true);
+
     this.partnersService
       .getPartnersByYear(year)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        catchError((err) => this.generalService.handleHttpError(err)),
+        tap((partners) => this.updatePartnerState(partners)),
+        catchError((err) => {
+          this.generalService.handleHttpError(err);
+          return EMPTY;
+        }),
         finalize(() => this.listLoadingSubject.next(false))
       )
-      .subscribe((partners) => this.updatePartnerState(partners));
+      .subscribe();
   }
 
-  // ─────────── ITEM → isLoadingItem$
+  // ───────── ITEM → isLoadingItem$ ─────────
   loadPartnerById(id: number): void {
     this.itemLoadingSubject.next(true);
+
     this.partnersService
       .getPartnerById(id)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        catchError((err) => this.generalService.handleHttpError(err)),
+        tap((partner) => this.selectedPartnerSubject.next(partner)),
+        catchError((err) => {
+          this.generalService.handleHttpError(err);
+          return EMPTY;
+        }),
         finalize(() => this.itemLoadingSubject.next(false))
       )
-      .subscribe((partner) => this.selectedPartnerSubject.next(partner));
+      .subscribe();
   }
 
+  // ───────── CRUD ─────────
   addPartner(partner: FormData): Observable<any> {
     this.itemLoadingSubject.next(true);
+
     return this.partnersService.add(partner).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.reloadCurrentFilter()),
-      catchError((err) => this.generalService.handleHttpError(err)),
+      catchError((err) => {
+        this.generalService.handleHttpError(err);
+        return EMPTY;
+      }),
       finalize(() => this.itemLoadingSubject.next(false))
     );
   }
 
-  // Nota: si tu service necesita el id en la edición, pásalo ahí.
   editPartner(id: number, partner: FormData): Observable<any> {
     this.itemLoadingSubject.next(true);
+
     return this.partnersService.edit(partner).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.reloadCurrentFilter()),
-      catchError((err) => this.generalService.handleHttpError(err)),
+      catchError((err) => {
+        this.generalService.handleHttpError(err);
+        return EMPTY;
+      }),
       finalize(() => this.itemLoadingSubject.next(false))
     );
   }
 
   deletePartner(id: number): void {
     this.itemLoadingSubject.next(true);
+
     this.partnersService
       .delete(id)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        catchError((err) => this.generalService.handleHttpError(err)),
+        tap(() => this.reloadCurrentFilter()),
+        catchError((err) => {
+          this.generalService.handleHttpError(err);
+          return EMPTY;
+        }),
         finalize(() => this.itemLoadingSubject.next(false))
       )
-      .subscribe(() => this.reloadCurrentFilter());
+      .subscribe();
   }
 
+  // ───────── HELPERS ─────────
   clearSelectedPartner(): void {
     this.selectedPartnerSubject.next(null);
   }
 
   applyFilterWord(keyword: string): void {
     const all = this.partnersSubject.getValue();
+
     if (!all) {
       this.filteredPartnersSubject.next(all);
       return;
     }
+
     if (!toSearchKey(keyword)) {
       this.filteredPartnersSubject.next(all);
       return;
@@ -127,6 +155,7 @@ export class PartnersFacade extends LoadableFacade {
     const filtered = all.filter((partner) =>
       [partner.name].some((field) => includesNormalized(field, keyword))
     );
+
     this.filteredPartnersSubject.next(filtered);
   }
 
@@ -137,9 +166,9 @@ export class PartnersFacade extends LoadableFacade {
   private reloadCurrentFilter(): void {
     if (this.currentFilter === null) {
       this.loadAllPartners();
-      return;
+    } else {
+      this.loadPartnersByYear(this.currentFilter);
     }
-    this.loadPartnersByYear(this.currentFilter);
   }
 
   private updatePartnerState(partners: PartnerModel[]): void {

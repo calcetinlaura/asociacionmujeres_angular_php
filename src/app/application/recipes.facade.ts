@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, catchError, finalize, Observable, tap } from 'rxjs';
+import { BehaviorSubject, EMPTY, Observable } from 'rxjs';
+import { catchError, finalize, tap } from 'rxjs/operators';
 import { RecipeModel } from 'src/app/core/interfaces/recipe.interface';
 import { RecipesService } from 'src/app/core/services/recipes.services';
 import { includesNormalized, toSearchKey } from '../shared/utils/text.utils';
@@ -14,7 +15,7 @@ export enum RecipesFilter {
 export class RecipesFacade extends LoadableFacade {
   private readonly recipesService = inject(RecipesService);
 
-  // Estado
+  // ───────── STATE ─────────
   private readonly recipesSubject = new BehaviorSubject<RecipeModel[] | null>(
     null
   );
@@ -24,35 +25,35 @@ export class RecipesFacade extends LoadableFacade {
   private readonly selectedRecipeSubject =
     new BehaviorSubject<RecipeModel | null>(null);
 
-  // NEW: loaders separados
   private readonly listLoadingSubject = new BehaviorSubject<boolean>(false);
   private readonly itemLoadingSubject = new BehaviorSubject<boolean>(false);
 
-  // Streams públicos
+  // ───────── PUBLIC STREAMS ─────────
   readonly recipes$ = this.recipesSubject.asObservable();
   readonly filteredRecipes$ = this.filteredRecipesSubject.asObservable();
   readonly selectedRecipe$ = this.selectedRecipeSubject.asObservable();
-
-  // NEW: usa estos en la UI
   readonly isLoadingList$ = this.listLoadingSubject.asObservable();
   readonly isLoadingItem$ = this.itemLoadingSubject.asObservable();
 
-  // Último filtro aplicado (para recargar)
   private currentFilter: string | null = null;
 
-  // ───────────────────── LISTA (isLoadingList$)
+  // ───────── LISTA → isLoadingList$ ─────────
   loadAllRecipes(): void {
-    console.log('[RecipesFacade] loadAllRecipes called');
     this.setCurrentFilter(null);
     this.listLoadingSubject.next(true);
+
     this.recipesService
       .getRecipes()
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        catchError((err) => this.generalService.handleHttpError(err)),
+        tap((recipes) => this.updateRecipeState(recipes)),
+        catchError((err) => {
+          this.generalService.handleHttpError(err);
+          return EMPTY;
+        }),
         finalize(() => this.listLoadingSubject.next(false))
       )
-      .subscribe((recipes) => this.updateRecipeState(recipes));
+      .subscribe();
   }
 
   loadRecipesByFilter(filter: string): void {
@@ -65,96 +66,132 @@ export class RecipesFacade extends LoadableFacade {
 
   loadRecipesByLatest(): void {
     this.listLoadingSubject.next(true);
+
     this.recipesService
       .getRecipesByLatest()
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        catchError((err) => this.generalService.handleHttpError(err)),
+        tap((recipes) => this.updateRecipeState(recipes)),
+        catchError((err) => {
+          this.generalService.handleHttpError(err);
+          return EMPTY;
+        }),
         finalize(() => this.listLoadingSubject.next(false))
       )
-      .subscribe((recipes) => this.updateRecipeState(recipes));
+      .subscribe();
   }
 
   loadRecipesByCategory(category: string): void {
     this.listLoadingSubject.next(true);
+
     this.recipesService
       .getRecipesByCategory(category)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        catchError((err) => this.generalService.handleHttpError(err)),
+        tap((recipes) => this.updateRecipeState(recipes)),
+        catchError((err) => {
+          this.generalService.handleHttpError(err);
+          return EMPTY;
+        }),
         finalize(() => this.listLoadingSubject.next(false))
       )
-      .subscribe((recipes) => this.updateRecipeState(recipes));
+      .subscribe();
   }
 
   loadRecipesByYear(year: number): void {
     this.listLoadingSubject.next(true);
+
     this.recipesService
       .getRecipesByYear(year)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        catchError((err) => this.generalService.handleHttpError(err)),
+        tap((recipes) => this.updateRecipeState(recipes)),
+        catchError((err) => {
+          this.generalService.handleHttpError(err);
+          return EMPTY;
+        }),
         finalize(() => this.listLoadingSubject.next(false))
       )
-      .subscribe((recipes) => this.updateRecipeState(recipes));
+      .subscribe();
   }
 
-  // ───────────────────── ITEM (isLoadingItem$)
+  // ───────── ITEM → isLoadingItem$ ─────────
   loadRecipeById(id: number): void {
     this.itemLoadingSubject.next(true);
+
     this.recipesService
       .getRecipeById(id)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        catchError((err) => this.generalService.handleHttpError(err)),
+        tap((recipe) => this.selectedRecipeSubject.next(recipe)),
+        catchError((err) => {
+          this.generalService.handleHttpError(err);
+          return EMPTY;
+        }),
         finalize(() => this.itemLoadingSubject.next(false))
       )
-      .subscribe((recipe) => this.selectedRecipeSubject.next(recipe));
+      .subscribe();
   }
 
+  // ───────── CRUD ─────────
   addRecipe(recipe: FormData): Observable<FormData> {
     this.itemLoadingSubject.next(true);
+
     return this.recipesService.add(recipe).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.reloadCurrentFilter()),
-      catchError((err) => this.generalService.handleHttpError(err)),
+      catchError((err) => {
+        this.generalService.handleHttpError(err);
+        return EMPTY;
+      }),
       finalize(() => this.itemLoadingSubject.next(false))
     );
   }
 
   editRecipe(recipe: FormData): Observable<FormData> {
     this.itemLoadingSubject.next(true);
+
     return this.recipesService.edit(recipe).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.reloadCurrentFilter()),
-      catchError((err) => this.generalService.handleHttpError(err)),
+      catchError((err) => {
+        this.generalService.handleHttpError(err);
+        return EMPTY;
+      }),
       finalize(() => this.itemLoadingSubject.next(false))
     );
   }
 
   deleteRecipe(id: number): void {
     this.itemLoadingSubject.next(true);
+
     this.recipesService
       .delete(id)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        catchError((err) => this.generalService.handleHttpError(err)),
+        tap(() => this.reloadCurrentFilter()),
+        catchError((err) => {
+          this.generalService.handleHttpError(err);
+          return EMPTY;
+        }),
         finalize(() => this.itemLoadingSubject.next(false))
       )
-      .subscribe(() => this.reloadCurrentFilter());
+      .subscribe();
   }
 
-  // ───────────────────── Utilidades
+  // ───────── HELPERS ─────────
   clearSelectedRecipe(): void {
     this.selectedRecipeSubject.next(null);
   }
 
   applyFilterWord(keyword: string): void {
     const all = this.recipesSubject.getValue();
+
     if (!all) {
       this.filteredRecipesSubject.next(all);
       return;
     }
+
     if (!toSearchKey(keyword)) {
       this.filteredRecipesSubject.next(all);
       return;
@@ -163,6 +200,7 @@ export class RecipesFacade extends LoadableFacade {
     const filtered = all.filter((r) =>
       [r.title, r.owner].some((field) => includesNormalized(field, keyword))
     );
+
     this.filteredRecipesSubject.next(filtered);
   }
 
@@ -173,9 +211,9 @@ export class RecipesFacade extends LoadableFacade {
   private reloadCurrentFilter(): void {
     if (this.currentFilter === null) {
       this.loadAllRecipes();
-      return;
+    } else {
+      this.loadRecipesByFilter(this.currentFilter);
     }
-    this.loadRecipesByFilter(this.currentFilter);
   }
 
   private updateRecipeState(recipes: RecipeModel[]): void {

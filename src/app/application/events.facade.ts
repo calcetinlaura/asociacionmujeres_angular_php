@@ -7,10 +7,10 @@ import {
   finalize,
   forkJoin,
   iif,
+  map,
   Observable,
   of,
   switchMap,
-  take,
   tap,
 } from 'rxjs';
 import { EventModelFullData } from 'src/app/core/interfaces/event.interface';
@@ -188,34 +188,38 @@ export class EventsFacade extends LoadableFacade {
     this.isListLoadingSubject.next(true);
 
     forkJoin({
-      all: this.eventsService.getEventsByYear(
-        year,
-        'all',
-        'all' === scope ? 'all' : scope
-      ),
+      all: this.eventsService.getEventsByYear(year, 'all', scope),
       grouped: this.eventsService.getEventsByYear(
         year,
         'groupedByPeriodicId',
-        'all' === scope ? 'all' : scope
+        scope
       ),
     })
       .pipe(
         takeUntilDestroyed(this.destroyRef),
+        // Aplica el scope y normaliza a [] aquí
+        map(({ all, grouped }) => ({
+          all: this.applyScopeFallback(all) ?? [],
+          grouped: this.applyScopeFallback(grouped) ?? [],
+        })),
+        // Efectos secundarios: actualizar estado y vista visible
+        tap(({ all, grouped }) => {
+          this.allEventsSubject.next(all);
+          this.groupedEventsSubject.next(grouped);
+          this.setVisibleFromView('groupedByPeriodicId');
+        }),
+        // Manejo de error sin romper el flujo
         catchError((err) => {
           this.generalService.handleHttpError(err);
-          return of({ all: [], grouped: [] } as BundleResult);
+          // Aún así dejamos el estado en arrays vacíos para la UI
+          this.allEventsSubject.next([]);
+          this.groupedEventsSubject.next([]);
+          this.setVisibleFromView('groupedByPeriodicId');
+          return EMPTY;
         }),
         finalize(() => this.isListLoadingSubject.next(false))
       )
-      .subscribe(({ all, grouped }) => {
-        const allScoped = this.applyScopeFallback(all);
-        const groupedScoped = this.applyScopeFallback(grouped);
-
-        if (allScoped) this.allEventsSubject.next(allScoped);
-        if (groupedScoped) this.groupedEventsSubject.next(groupedScoped);
-
-        this.setVisibleFromView('groupedByPeriodicId');
-      });
+      .subscribe();
   }
 
   loadEventsByYear(
@@ -230,24 +234,29 @@ export class EventsFacade extends LoadableFacade {
       .getEventsByYear(year, view, scope)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
+        // aplica el scope y normaliza a []
+        map((list) => this.applyScopeFallback(list) ?? []),
+        // efectos secundarios: actualizar el estado y la vista visible
+        tap((scoped) => {
+          (view === 'all'
+            ? this.allEventsSubject
+            : this.groupedEventsSubject
+          ).next(scoped);
+          this.visibleEventsSubject.next(scoped);
+        }),
+        // maneja errores sin romper el flujo y deja el estado coherente
         catchError((err) => {
           this.generalService.handleHttpError(err);
-          return of([] as EventModelFullData[]);
+          (view === 'all'
+            ? this.allEventsSubject
+            : this.groupedEventsSubject
+          ).next([]);
+          this.visibleEventsSubject.next([]);
+          return EMPTY;
         }),
         finalize(() => this.isListLoadingSubject.next(false))
       )
-      .subscribe((list) => {
-        const scoped = this.applyScopeFallback(list) ?? [];
-
-        if (view === 'all') {
-          this.allEventsSubject.next(scoped);
-        } else {
-          this.groupedEventsSubject.next(scoped);
-        }
-
-        // ✅ deja visible exactamente lo que acabas de cargar
-        this.visibleEventsSubject.next(scoped);
-      });
+      .subscribe();
   }
 
   // ================= MODOS QUE PEDISTE =================
@@ -274,21 +283,32 @@ export class EventsFacade extends LoadableFacade {
       .getEventsByYear(year, 'groupedByPeriodicId', 'published')
       .pipe(
         takeUntilDestroyed(this.destroyRef),
+
+        // Normaliza y aplica filtros de visibilidad
+        map((list) => this.applyScopeFallback(list) ?? []),
+
+        // Actualiza estado y divide entre futuros y pasados
+        tap((scoped) => {
+          this.groupedEventsSubject.next(scoped);
+          this.setVisibleFromView('groupedByPeriodicId');
+
+          const { upcoming, past } = this.splitUpcomingPastThisYear(scoped);
+          this.landingUpcomingEventsSubject.next(upcoming);
+          this.landingPastEventsSubject.next(past);
+        }),
+
+        // Maneja errores sin romper el flujo y deja los subjects coherentes
         catchError((err) => {
           this.generalService.handleHttpError(err);
-          return of([] as EventModelFullData[]);
+          this.groupedEventsSubject.next([]);
+          this.landingUpcomingEventsSubject.next([]);
+          this.landingPastEventsSubject.next([]);
+          return EMPTY;
         }),
+
         finalize(() => this.isListLoadingSubject.next(false))
       )
-      .subscribe((list) => {
-        const scoped = this.applyScopeFallback(list) ?? [];
-        this.groupedEventsSubject.next(scoped);
-        this.setVisibleFromView('groupedByPeriodicId');
-
-        const { upcoming, past } = this.splitUpcomingPastThisYear(scoped);
-        this.landingUpcomingEventsSubject.next(upcoming);
-        this.landingPastEventsSubject.next(past);
-      });
+      .subscribe();
   }
 
   /** dashboard: por años, publicados y no publicados, NO agrupados */
@@ -325,44 +345,72 @@ export class EventsFacade extends LoadableFacade {
       .getEventsByYear(year, view, scope)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
+
+        // Normaliza y aplica el filtro de visibilidad
+        map((list) => this.applyScopeFallback(list) ?? []),
+
+        // Actualiza los subjects y visibilidad según el tipo de vista
+        tap((scoped) => {
+          const targetSubject =
+            view === 'all' ? this.allEventsSubject : this.groupedEventsSubject;
+          targetSubject.next(scoped);
+          this.visibleEventsSubject.next(scoped);
+        }),
+
+        // Maneja errores y mantiene el estado consistente
         catchError((err) => {
           this.generalService.handleHttpError(err);
-          return of([] as EventModelFullData[]);
+          if (view === 'all') {
+            this.allEventsSubject.next([]);
+          } else {
+            this.groupedEventsSubject.next([]);
+          }
+          this.visibleEventsSubject.next([]);
+          return EMPTY;
         }),
+
         finalize(() => this.isListLoadingSubject.next(false))
       )
-      .subscribe((list) => {
-        const scoped = this.applyScopeFallback(list) ?? [];
-        if (view === 'all') {
-          this.allEventsSubject.next(scoped);
-          this.visibleEventsSubject.next(scoped);
-        } else {
-          this.groupedEventsSubject.next(scoped);
-          this.visibleEventsSubject.next(scoped);
-        }
-      });
+      .subscribe();
   }
+
   loadDashboardDraftsAllYears(
     view: PeriodicView = 'groupedByPeriodicId'
   ): void {
     this.isListLoadingSubject.next(true);
     this.current = { kind: 'none' }; // no hay filtro por año
+
     this.eventsService
       .getAllByScope(view, 'drafts')
       .pipe(
         takeUntilDestroyed(this.destroyRef),
+
+        // Aplica filtros de visibilidad y normaliza
+        map((list) => this.applyScopeFallback(list) ?? []),
+
+        // Actualiza subjects según el tipo de vista
+        tap((scoped) => {
+          const targetSubject =
+            view === 'all' ? this.allEventsSubject : this.groupedEventsSubject;
+          targetSubject.next(scoped);
+          this.visibleEventsSubject.next(scoped);
+        }),
+
+        // Manejo seguro de errores
         catchError((err) => {
           this.generalService.handleHttpError(err);
-          return of([] as EventModelFullData[]);
+          if (view === 'all') {
+            this.allEventsSubject.next([]);
+          } else {
+            this.groupedEventsSubject.next([]);
+          }
+          this.visibleEventsSubject.next([]);
+          return EMPTY;
         }),
+
         finalize(() => this.isListLoadingSubject.next(false))
       )
-      .subscribe((list) => {
-        const scoped = this.applyScopeFallback(list) ?? [];
-        if (view === 'all') this.allEventsSubject.next(scoped);
-        else this.groupedEventsSubject.next(scoped);
-        this.visibleEventsSubject.next(scoped);
-      });
+      .subscribe();
   }
 
   // Sólo programados (todos los años)
@@ -371,23 +419,40 @@ export class EventsFacade extends LoadableFacade {
   ): void {
     this.isListLoadingSubject.next(true);
     this.current = { kind: 'none' };
+
     this.eventsService
       .getAllByScope(view, 'scheduled')
       .pipe(
         takeUntilDestroyed(this.destroyRef),
+
+        // Aplica el filtro de visibilidad y normaliza la lista
+        map((list) => this.applyScopeFallback(list) ?? []),
+
+        // Actualiza los subjects según la vista seleccionada
+        tap((scoped) => {
+          const targetSubject =
+            view === 'all' ? this.allEventsSubject : this.groupedEventsSubject;
+          targetSubject.next(scoped);
+          this.visibleEventsSubject.next(scoped);
+        }),
+
+        // Maneja errores de forma consistente
         catchError((err) => {
           this.generalService.handleHttpError(err);
-          return of([] as EventModelFullData[]);
+          if (view === 'all') {
+            this.allEventsSubject.next([]);
+          } else {
+            this.groupedEventsSubject.next([]);
+          }
+          this.visibleEventsSubject.next([]);
+          return EMPTY;
         }),
+
         finalize(() => this.isListLoadingSubject.next(false))
       )
-      .subscribe((list) => {
-        const scoped = this.applyScopeFallback(list) ?? [];
-        if (view === 'all') this.allEventsSubject.next(scoped);
-        else this.groupedEventsSubject.next(scoped);
-        this.visibleEventsSubject.next(scoped);
-      });
+      .subscribe();
   }
+
   // ================= ITEM & PERIODIC HELPERS =================
 
   loadEventById(id: number): void {
@@ -397,16 +462,22 @@ export class EventsFacade extends LoadableFacade {
     this.eventsService
       .getEventById(id)
       .pipe(
-        take(1),
+        takeUntilDestroyed(this.destroyRef),
+        // si prefieres asegurar una sola emisión:
+        // take(1),
+
+        tap((event) => this.selectedEventSubject.next(event)),
+
         catchError((err) => {
           this.generalService.handleHttpError(err);
-          return of(null);
+          // mantenemos seleccionado = null en caso de error
+          this.selectedEventSubject.next(null);
+          return EMPTY;
         }),
+
         finalize(() => this.isItemLoadingSubject.next(false))
       )
-      .subscribe((event) => {
-        this.selectedEventSubject.next(event);
-      });
+      .subscribe();
   }
 
   /** Para modales/listas dependientes. No toca estado global. */
@@ -481,17 +552,24 @@ export class EventsFacade extends LoadableFacade {
 
   deleteEvent(id: number): void {
     this.isItemLoadingSubject.next(true);
+
     this.eventsService
       .delete(id)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
+
+        // efecto: tras borrar, recargar el filtro actual
+        tap(() => this.reloadCurrentFilter()),
+
+        // maneja errores sin romper el flujo
         catchError((err) => {
           this.generalService.handleHttpError(err);
-          return of(null);
+          return EMPTY;
         }),
+
         finalize(() => this.isItemLoadingSubject.next(false))
       )
-      .subscribe(() => this.reloadCurrentFilter());
+      .subscribe();
   }
 
   /**
